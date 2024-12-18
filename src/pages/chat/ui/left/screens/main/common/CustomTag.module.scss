@@ -1,0 +1,36 @@
+.CustomTag {
+  position: relative;
+  display: flex;
+  flex: 1 1 auto;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  background-color: var(--awe-palette-secondary-900);
+  border-radius: 18px;
+  padding: 0.1rem;
+  z-index: 1;
+  cursor: pointer;
+  min-height: 28px;
+}
+
+.TagImage {
+  width: 24px !important;
+  height: 24px;
+
+  & > img {
+    border-radius: 50%;
+    box-shadow: 0 0 5px rgba(0, 0, 0, 0.5);
+    object-fit: cover;
+  }
+}
+
+.TagName {
+  font-size: var(--font-size-desc);
+  font-weight: 600;
+  color: var(--awe-palette-text-primary);
+  white-space: nowrap;
+}
+
+.CloseButton {
+  z-index: 2;
+}

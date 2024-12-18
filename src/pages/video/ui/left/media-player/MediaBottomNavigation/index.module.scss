@@ -1,0 +1,30 @@
+.MediaNavigation {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0 0.25rem;
+  border-radius: var(--awe-radius-md);
+  cursor: pointer;
+  user-select: none;
+  height: 64px;
+  width: 100%;
+  background-color: var(--awe-palette-secondary-main);
+  overflow: hidden;
+}
+
+.slide {
+  display: flex;
+  align-self: flex-end;
+  align-items: center;
+  gap: 0.5rem;
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 1;
+  padding-inline-start: 0.75rem;
+}

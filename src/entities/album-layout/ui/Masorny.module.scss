@@ -1,0 +1,38 @@
+.AlbumMasonry > .MasornySell {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.AlbumMasonry {
+  display: grid;
+  grid-gap: 2px;
+  grid-template-columns: repeat(4, minmax(20px, 1fr));
+  grid-auto-rows: minmax(20px, 110px);
+  grid-auto-flow: dense;
+  padding: 1px;
+
+  // These formulas define the specific positions of elements that will match each selector,
+  // following the arithmetic progression in the pattern `start + 8(n - 1)`. And simplify formula for css.
+  & > * {
+    &:nth-of-type(8n-2),
+    &:nth-of-type(8n-7) {
+      grid-column: span 2;
+      grid-row: span 2;
+    }
+
+    &:nth-of-type(8n-4),
+    &:nth-of-type(8n-3) {
+      grid-column: span 2;
+    }
+
+    img {
+      border-radius: 10px;
+      border: 2px rgb(89, 74, 74) solid;
+
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+  }
+}

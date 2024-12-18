@@ -1,0 +1,86 @@
+.DotAnimationRoot {
+  display: flex;
+  align-items: center;
+  font-size: var(--font-size-desc);
+  line-height: 1.3125rem;
+  gap: calc(8px * var(--reflect));
+}
+
+.dotAnimation {
+  overflow: hidden;
+  height: 100%;
+  width: 16px;
+  aspect-ratio: 2;
+  --_g: no-repeat radial-gradient(circle closest-side, var(--joy-palette-primary-500) 90%, #0000);
+  background:
+    var(--_g) 0% 50%,
+    var(--_g) 50% 50%,
+    var(--_g) 100% 50%;
+  background-size: calc(100% / 3) 50%;
+  animation: l3 1s infinite linear;
+}
+@keyframes l3 {
+  20% {
+    background-position:
+      0% 0%,
+      50% 50%,
+      100% 50%;
+  }
+  40% {
+    background-position:
+      0% 100%,
+      50% 0%,
+      100% 50%;
+  }
+  60% {
+    background-position:
+      0% 50%,
+      50% 100%,
+      100% 0%;
+  }
+  80% {
+    background-position:
+      0% 50%,
+      50% 50%,
+      100% 100%;
+  }
+}
+
+.eyeAnimation {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 50%;
+  height: 21px;
+}
+.eyeAnimation:before,
+.eyeAnimation:after {
+  content: '';
+  height: 12px;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  border: 1px solid var(--joy-palette-primary-500);
+  background: radial-gradient(farthest-side, var(--joy-palette-primary-500) 95%, #0000) 35% 35%/5px 5px no-repeat #fff;
+  animation: l5 3s infinite;
+}
+@keyframes l5 {
+  0%,
+  11% {
+    background-position: 35% 35%;
+  }
+  14%,
+  36% {
+    background-position: 65% 35%;
+  }
+  38%,
+  61% {
+    background-position: 65% 65%;
+  }
+  64%,
+  86% {
+    background-position: 35% 65%;
+  }
+  88%,
+  100% {
+    background-position: 35% 35%;
+  }
+}

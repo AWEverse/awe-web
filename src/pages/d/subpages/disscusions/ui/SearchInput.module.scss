@@ -1,0 +1,86 @@
+$actual-height: 1px;
+$primary-color: var(--awe-palette-primary-main);
+
+.wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: 100%;
+
+  &::before {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    height: $actual-height;
+    width: 100%;
+    background-color: var(--awe-palette-secondary-main);
+    border-radius: 1rem;
+  }
+}
+
+.label {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  font-size: 16px;
+  color: rgba(204, 204, 204, 0);
+  pointer-events: none;
+  transition: all 0.3s ease;
+  user-select: none;
+}
+
+.input {
+  display: block;
+  width: 100%;
+  padding: 4px 0px;
+  font-size: 16px;
+  border: none;
+  outline: none;
+  background-color: transparent;
+}
+
+.decorator {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.highlight {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  height: $actual-height;
+  width: 0;
+  background-color: $primary-color;
+  transition: all 0.3s ease-in-out;
+  user-select: none;
+  border-radius: 1rem;
+}
+
+.input:focus + .label {
+  top: -10px;
+  left: 0;
+  font-size: 12px;
+  color: $primary-color;
+}
+
+.input:focus ~ .highlight {
+  width: 100%;
+}
+
+.input:not(:placeholder-shown) + .label {
+  top: -15px;
+  left: 0;
+  font-size: 12px;
+  color: $primary-color;
+}
+
+.active {
+  .label {
+    top: -15px;
+    left: 0;
+    font-size: 12px;
+    color: $primary-color;
+  }
+}

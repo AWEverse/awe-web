@@ -1,0 +1,44 @@
+.publisher {
+  justify-content: center;
+}
+
+.label {
+  font-size: small;
+  color: var(--awe-palette-text-secondary);
+}
+
+.date {
+  font-size: small ;
+}
+
+.info {
+  display: flex;
+  justify-content: center;
+  flex-direction: column;
+  padding-inline-start: 4rem;
+}
+
+.wrapper {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  justify-content: space-between;
+}
+
+.avatarSection {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.title {
+  font-weight: bold;
+  display: -webkit-box;
+  align-items: center;
+  flex-direction: row;
+  line-clamp: 1;
+  -webkit-line-clamp: 1;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}

@@ -1,0 +1,127 @@
+.Message {
+	display: flex;
+  align-items: flex-end;
+  margin-bottom: 0.375rem;
+  position: relative;
+
+	--background-color: var(--color-background);
+  --hover-color: var(--color-reply-hover);
+  --color-reaction: var(--color-message-reaction);
+  --hover-color-reaction: var(--color-message-reaction-hover);
+  --text-color-reaction: var(--accent-color);
+  --color-reaction-chosen: var(--accent-color);
+  --text-color-reaction-chosen: #FFFFFF;
+  --hover-color-reaction-chosen: var(--color-message-reaction-chosen-hover);
+  --active-color: var(--color-reply-active);
+  --max-width: 29rem;
+  --accent-color: var(--color-primary);
+  --accent-shade-color: var(--color-primary-shade);
+  --secondary-color: var(--color-text-secondary);
+  --color-voice-transcribe: var(--color-voice-transcribe-button);
+  --thumbs-background: var(--color-background);
+  --deleting-translate-x: -50%;
+  --select-message-scale: 0.9;
+
+  --border-top-left-radius: var(--border-radius-messages);
+  --border-top-right-radius: var(--border-radius-messages);
+  --border-bottom-left-radius: var(--border-radius-messages);
+  --border-bottom-right-radius: var(--border-radius-messages);
+
+  @media (min-width: 1921px) {
+    --max-width: calc(30vw - 1rem);
+  }
+
+  @media (max-width: 600px) {
+    margin-bottom: 0.25rem;
+  }
+
+  &.is-swiped {
+    transform: translateX(-2.5rem) !important;
+  }
+
+  &.is-protected {
+    user-select: none;
+  }
+
+  &.own {
+    flex-direction: row-reverse;
+    --background-color: var(--color-background-own);
+    --hover-color: var(--color-reply-own-hover);
+    --color-reaction: var(--color-message-reaction-own);
+    --hover-color-reaction: var(--color-message-reaction-hover-own);
+    --text-color-reaction: var(--accent-color);
+    --color-reaction-chosen: var(--accent-color);
+    --text-color-reaction-chosen: var(--color-background);
+    --hover-color-reaction-chosen: var(--color-message-reaction-chosen-hover-own);
+    --active-color: var(--color-reply-own-active);
+    --max-width: 30rem;
+    --accent-color: var(--color-accent-own);
+    --accent-shade-color: var(--color-green);
+    --secondary-color: var(--color-accent-own);
+    --color-code: var(--color-code-own);
+    --color-code-bg: var(--color-code-own-bg);
+    --color-links: var(--color-own-links);
+    --deleting-translate-x: 50%;
+    --color-text-green: var(--color-accent-own);
+    --color-voice-transcribe: var(--color-voice-transcribe-button-own);
+    --thumbs-background: var(--color-background-own);
+
+    .theme-dark & {
+      --color-reaction: rgb(255, 255, 255, 0.1);
+      --hover-color-reaction: rgb(255, 255, 255, 0.2);
+      --text-color-reaction: var(--color-text);
+
+      --color-reaction-chosen: rgb(255, 255, 255, 0.75);
+      --hover-color-reaction-chosen: rgb(255, 255, 255, 0.85);
+      --text-color-reaction-chosen: rgb(62, 62, 62);
+    }
+
+    @media (min-width: 1921px) {
+      --max-width: 30vw;
+    }
+
+    body.is-ios &,
+    body.is-macos & {
+      --color-background-own: var(--color-background-own-apple);
+      --color-reply-own-hover: var(--color-reply-own-hover-apple);
+      --color-reply-own-active: var(--color-reply-own-active-apple);
+    }
+
+    @media (max-width: 600px) {
+      padding-right: 0.25rem;
+    }
+
+    &.first-in-group:not(.last-in-group) {
+      --border-bottom-right-radius: var(--border-radius-messages-small);
+    }
+
+    &:not(.first-in-group):not(.last-in-group) {
+      --border-top-right-radius: var(--border-radius-messages-small);
+      --border-bottom-right-radius: var(--border-radius-messages-small);
+    }
+
+    &.last-in-group:not(.first-in-group) {
+      --border-top-right-radius: var(--border-radius-messages-small);
+    }
+
+    &.last-in-group {
+      --border-bottom-right-radius: var(--border-radius-messages-small);
+
+      .message-content.has-appendix {
+        --border-bottom-right-radius: 0;
+        border-bottom-right-radius: 0;
+      }
+    }
+  }
+
+  &__bottom {
+    position: absolute;
+    bottom: 0;
+    height: 1px;
+    width: 100%;
+    opacity: 0;
+    pointer-events: none;
+    user-select: none;
+    background-color: transparent;
+  }
+}

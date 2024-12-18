@@ -1,0 +1,89 @@
+$primary-color: var(--awe-palette-Button-inheritContainedHoverBg);
+$neutral-color: var(--awe-palette-secondary-main);
+
+.iconButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  cursor: pointer;
+  padding: 0.5rem;
+  font-size: 1rem;
+  position: relative;
+  transition:
+    background-color 0.3s,
+    color 0.3s,
+    border-color 0.3s;
+
+  &:hover:not(:disabled) {
+    background-color: $neutral-color;
+  }
+
+  &:disabled {
+    cursor: not-allowed;
+    opacity: 0.6;
+  }
+
+  &.active {
+    background-color: $primary-color;
+    border-color: $primary-color;
+  }
+
+  &.outlined,
+  &.plain {
+    border: 1px solid $primary-color;
+    background-color: transparent;
+
+    &:hover:not(:disabled) {
+      background-color: $primary-color;
+    }
+  }
+
+  &.plain {
+    border: none;
+  }
+
+  &.small {
+    --button-size: 28px;
+    --button-font-size: var(--font-size-desc);
+  }
+
+  &.medium {
+    --button-size: 36px;
+    --button-font-size: var(--font-size-body);
+  }
+
+  &.large {
+    --button-size: 48px;
+    --button-font-size: var(--font-size-title);
+  }
+
+  &.small,
+  &.medium,
+  &.large {
+    border-radius: 50% !important;
+    width: var(--button-size) !important;
+    height: var(--button-size) !important;
+    font-size: var(--button-font-size) !important;
+  }
+
+  .icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 0.25rem;
+
+    &:first-child {
+      margin-right: 0.5rem;
+    }
+
+    &:last-child {
+      margin-left: 0.5rem;
+    }
+  }
+
+  &.active {
+    background-color: $primary-color;
+    color: white;
+  }
+}

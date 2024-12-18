@@ -1,0 +1,107 @@
+ profileColor: {
+          "peer-0": {
+            rgb: "204, 80, 73",
+            "border-background":
+              "repeating-linear-gradient(-45deg, #992f37 0px, #992f37 5px, #ff9380 5px, #ff9380 10px)",
+          },
+          "peer-1": {
+            rgb: "214, 119, 34",
+            "border-background":
+              "repeating-linear-gradient(-45deg, #c35714 0px, #c35714 5px, #ecb04e 5px, #ecb04e 10px)",
+          },
+          "peer-2": {
+            rgb: "149, 92, 219",
+            "border-background":
+              "repeating-linear-gradient(-45deg, #5e31c8 0px, #5e31c8 5px, #c697ff 5px, #c697ff 10px)",
+          },
+          "peer-3": {
+            rgb: "64, 169, 32",
+            "border-background":
+              "repeating-linear-gradient(-45deg, #167e2d 0px, #167e2d 5px, #a7eb6e 5px, #a7eb6e 10px)",
+          },
+          "peer-4": {
+            rgb: "48, 158, 186",
+            "border-background":
+              "repeating-linear-gradient(-45deg, #3fa2fe 0px, #3fa2fe 5px, #e5424f 5px, #e5424f 10px, #ffffff 10px, #ffffff 15px)",
+          },
+          "peer-5": {
+            rgb: "54, 138, 209",
+            "border-background":
+              "" /* Здесь не указан фон рамки, уточните при необходимости */,
+          },
+          "peer-6": {
+            rgb: "199, 80, 139",
+            "border-background":
+              "" /* Здесь не указан фон рамки, уточните при необходимости */,
+          },
+          "peer-7": {
+            rgb: "255, 147, 128",
+            "border-background":
+              "" /* Здесь не указан фон рамки, уточните при необходимости */,
+          },
+          "peer-8": {
+            rgb: "236, 176, 78",
+            "border-background":
+              "" /* Здесь не указан фон рамки, уточните при необходимости */,
+          },
+          "peer-9": {
+            rgb: "198, 151, 255",
+            "border-background":
+              "" /* Здесь не указан фон рамки, уточните при необходимости */,
+          },
+          "peer-10": {
+            rgb: "167, 235, 110",
+            "border-background":
+              "" /* Здесь не указан фон рамки, уточните при необходимости */,
+          },
+          "peer-11": {
+            rgb: "64, 216, 208",
+            "border-background":
+              "" /* Здесь не указан фон рамки, уточните при необходимости */,
+          },
+          "peer-12": {
+            rgb: "82, 191, 255",
+            "border-background":
+              "" /* Здесь не указан фон рамки, уточните при необходимости */,
+          },
+          "peer-13": {
+            rgb: "255, 134, 166",
+            "border-background":
+              "" /* Здесь не указан фон рамки, уточните при необходимости */,
+          },
+          "peer-14": {
+            rgb: "63, 162, 254",
+            "border-background":
+              "" /* Здесь не указан фон рамки, уточните при необходимости */,
+          },
+          "peer-15": {
+            rgb: "255, 144, 94",
+            "border-background":
+              "" /* Здесь не указан фон рамки, уточните при необходимости */,
+          },
+          "peer-16": {
+            rgb: "102, 211, 100",
+            "border-background":
+              "" /* Здесь не указан фон рамки, уточните при необходимости */,
+          },
+          "peer-17": {
+            rgb: "34, 188, 226",
+            "border-background":
+              "" /* Здесь не указан фон рамки, уточните при необходимости */,
+          },
+          "peer-18": {
+            rgb: "34, 188, 226",
+            "border-background":
+              "repeating-linear-gradient(-45deg, #22bce2 0px, #22bce2 5px, #ff9778 5px, #ff9778 10px, #ffda6b 10px, #ffda6b 15px)",
+          },
+          "peer-19": {
+            rgb: "151, 145, 255",
+            "border-background":
+              "repeating-linear-gradient(-45deg, #9791ff 0px, #9791ff 5px, #f2731d 5px, #f2731d 10px, #ffdb59 10px, #ffdb59 15px)",
+          },
+          "peer-20": {
+            rgb: "61, 166, 235",
+            "border-background":
+              "repeating-linear-gradient(-45deg, #3da6eb 0px, #3da6eb 5px, #eea51d 5px, #eea51d 10px, #ffffff 10px, #ffffff 15px)",
+          },
+        },

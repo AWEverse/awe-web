@@ -1,0 +1,1 @@
+Encapsulation of common components for the shared block, there are cases when this is necessary, but in such a way as not to break dependency inversion. There should be no more generic components.

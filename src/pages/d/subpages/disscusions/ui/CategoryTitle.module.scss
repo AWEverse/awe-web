@@ -1,0 +1,18 @@
+.CategoryTitle {
+  .title > h1 {
+    font-size: var(--font-size-title);
+    font-weight: 700;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .title > p {
+    font-size: var(--font-size-body);
+    font-weight: 400;
+  }
+}
+
+.postCount {
+  font-size: 1rem;
+}

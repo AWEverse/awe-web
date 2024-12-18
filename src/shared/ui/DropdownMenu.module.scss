@@ -1,0 +1,78 @@
+.dropdownContainer {
+  --offset: 7px;
+  --position: calc(100% + var(--offset));
+  position: relative;
+  display: flex;
+  height: min-content;
+  width: min-content;
+  overflow: visible !important;
+}
+
+.dropdownBody {
+  position: relative;
+  max-height: calc(100 * var(--vh) - 4.375rem);
+  z-index: 100;
+  min-width: 15rem;
+  max-width: 19rem;
+  background-color: rgba(var(--awe-palette-background-paperChannel) / 0.875);
+  backdrop-filter: blur(1rem);
+  border-radius: calc(var(--awe-radius-lg) - 1.75px);
+  padding: 0.3125rem 0.25rem;
+  overflow-y: scroll;
+}
+
+.dropdownMenu {
+  position: absolute;
+  overflow: hidden;
+  font-size: 1rem;
+  user-select: none;
+  z-index: 100;
+  border-radius: var(--awe-radius-lg);
+  padding: 1.75px;
+  background-color: rgba(var(--awe-palette-background-paperChannel) / 0.875);
+  backdrop-filter: blur(1rem);
+  overflow: hidden;
+}
+
+.dropdownBackdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 10
+}
+
+.top-left,
+.top-right,
+.bottom-left,
+.bottom-right {
+  transform-origin: var(--transform-origin);
+}
+
+.top-left {
+  top: var(--position);
+  left: 0;
+  --transform-origin: top left;
+}
+
+.top-right {
+  top: var(--position);
+  right: 0;
+  --transform-origin: top right;
+}
+
+.bottom-left {
+  bottom: var(--position);
+  left: 0;
+  --transform-origin: bottom left;
+}
+
+.bottom-right {
+  bottom: var(--position);
+  right: 0;
+  --transform-origin: bottom right;
+}
+

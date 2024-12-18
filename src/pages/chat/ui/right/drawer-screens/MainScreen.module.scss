@@ -1,0 +1,26 @@
+.TabListFolders {
+  margin-bottom: 4px;
+  box-shadow: 0px 2px 2px 0px var(--awe-palette-primary-main);
+}
+
+.MainScreenFab {
+  position: absolute;
+  right: 0.5rem;
+  bottom: 0.5rem;
+  transform: translateY(5rem);
+  transition: transform var(--slide-transition);
+
+  &.FabVisible {
+    transform: translateY(0) !important;
+  }
+}
+
+.MainScreenBody {
+  height: 100%;
+  overflow-y: scroll;
+  scroll-behavior: smooth;
+
+  & > *:not(:last-of-type) {
+    margin-bottom: 0.5rem;
+  }
+}

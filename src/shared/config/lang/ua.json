@@ -1,0 +1,47 @@
+{
+  "confirm.action": "Ви впевнені, що хочете {action}?",
+
+  "lng_morning": "ранок",
+  "lng_afternoon": "післяобід",
+  "lng_evening": "вечір",
+  "lng_night": "ніч",
+
+  "lng_today": "Сьогодні",
+  "lng_yesterday": "Вчора",
+  "lng_tomorrow": "Завтра",
+
+  "lng_weekday1": "Понеділок",
+  "lng_weekday2": "Вівторок",
+  "lng_weekday3": "Середа",
+  "lng_weekday4": "Четвер",
+  "lng_weekday5": "П’ятниця",
+  "lng_weekday6": "Субота",
+  "lng_weekday7": "Неділя",
+
+  "lng_first_month": "Січень",
+  "lng_second_month": "Лютий",
+  "lng_third_month": "Березень",
+  "lng_fourth_month": "Квітень",
+  "lng_fifth_month": "Травень",
+  "lng_sixth_month": "Червень",
+  "lng_seventh_month": "Липень",
+  "lng_eighth_month": "Серпень",
+  "lng_ninth_month": "Вересень",
+  "lng_tenth_month": "Жовтень",
+  "lng_eleventh_month": "Листопад",
+  "lng_twelfth_month": "Грудень",
+
+  "search.placeholder": "Пошук",
+
+  "left.menu": "Меню",
+  "left.settings": "Налаштування",
+  "left.settings.account": "Акаунт",
+  "left.settings.account.description": "• Налаштування акаунту\n  • Пароль\n  • Електронна пошта\n  • Телефон\n  • Сповіщення\n  • Конфіденційність і безпека\n  • Контент\n  • Чати\n  • Персоналізація",
+  "left.settings.chats": "Чати",
+  "left.settings.content": "Контент",
+  "left.settings.exitAccount": "Вийти з акаунту",
+  "left.settings.exitAccountDialog": "Ви впевнені, що хочете вийти з акаунту?",
+  "left.settings.notifications": "Сповіщення",
+  "left.settings.personalization": "Персоналізація",
+  "left.settings.privacy": "Конфіденційність і безпека"
+}

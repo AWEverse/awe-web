@@ -1,0 +1,44 @@
+.ActionWrapper {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  gap: 0.5rem;
+  padding: 0.5rem;
+}
+
+.Icon {
+  font-size: 1.5rem;
+}
+
+.Decorator {
+  font-size: 1.5rem;
+}
+
+.Container {
+  display: flex;
+  flex-direction: column;
+  border-radius: 8px;
+  transition: all 0.3s ease;
+  width: 100%;
+
+  &:hover {
+    background-color: var(--awe-palette-secondary-main);
+  }
+
+  &:active {
+    background-color: var(--awe-palette-secondary-main);
+  }
+
+  & > h3 {
+    margin: 0;
+    font-size: var(--font-size-subtitle);
+    color: var(--awe-palette-text-primary);
+    font-weight: 500;
+  }
+
+  & > span {
+    font-size: var(--font-size-desc);
+    color: var(--awe-palette-text-secondary);
+    font-weight: 400;
+  }
+}

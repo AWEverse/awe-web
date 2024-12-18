@@ -1,0 +1,89 @@
+$roll-width: 4px;
+$border-width: 1px;
+$padding-left: $roll-width * 3 + $border-width;
+$padding-right: $roll-width + $border-width;
+$margin-left: $roll-width;
+
+$transition-duration: 0.3s;
+$transition-easing: cubic-bezier(0.4, 0, 0.2, 1);
+
+.pinnedMessageWrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 $padding-right 0 $padding-left;
+  width: 100%;
+  min-height: 48px;
+  overflow: hidden;
+  cursor: pointer;
+  user-select: none;  
+  background-color: var(--awe-palette-secondary-main);
+  transition: all $transition-duration $transition-easing;
+  z-index: 1;
+
+  &:hover {
+    background-color: var(--awe-palette-secondary-main);
+  }
+}
+
+.pinnedMessageAvatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.pinnedAditionalInfo,
+.pinnedMessageText {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 1;
+  line-clamp: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: normal;
+  word-break: break-word;
+}
+
+.pinnedAditionalInfo {
+  color: var(--awe-palette-primary-500);
+  font-weight: var(--awe-typography-fontWeight-regular);
+  margin-top: 0;
+  align-items: center;
+  gap: 4px;
+}
+
+.roller {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: $roll-width;
+  height: 100%;
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column-reverse;
+  align-self: center;
+  gap: 1px;
+  padding: 4px 0;
+  margin-left: $margin-left;
+  z-index: 1;
+
+  .rollerSegment {
+    width: $roll-width;
+    height: 100%;
+    background-color: var(--awe-palette-primary-softBg);
+    border: $border-width solid var(--awe-palette-secondary-700);
+    border-radius: 2px;
+    background-repeat: no-repeat;
+    outline: none;
+    transition:
+      background-color 0.5s cubic-bezier(1, -0.4, 0, 1.4),
+      background-position 0.15s cubic-bezier(1, -0.4, 0, 1.4);
+
+    &[data-active='true'] {
+      background-color: var(--awe-palette-primary-500);
+      transition: background-color $transition-duration $transition-easing;
+    }
+  }
+}

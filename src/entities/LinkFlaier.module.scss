@@ -1,0 +1,26 @@
+.containerInline,
+.containerFlex {
+  .flaier,
+  .text {
+    cursor: pointer;
+    &:hover {
+      text-decoration: underline;
+    }
+  }
+
+  .flaier {
+    color: var(--awe-palette-primary-400);
+  }
+
+  .text {
+    font-weight: bold;
+  }
+}
+
+.containerInline {
+  display: inline;
+}
+
+.containerFlex {
+  display: flex;
+}

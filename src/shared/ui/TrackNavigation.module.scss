@@ -1,0 +1,48 @@
+.trackNavigationBorder {
+  position: relative;
+  height: var(--mask-height);
+  margin: 0.125rem 0;
+  width: 0.15rem;
+  min-width: 0.125rem;
+  overflow-y: hidden;
+}
+
+.small {
+  transform: scaleX(1);
+}
+
+.medium {
+  transform: scaleX(2);
+}
+
+.large {
+  transform: scaleX(3);
+}
+
+.trackNavigationBorderWrapper1 {
+  height: 100%;
+  width: 0.15rem;
+  border-radius: 0.0625rem;
+  background: var(--awe-palette-primary-500);
+}
+
+.trackNavigationBorderWrapper {
+  background-color: var(--awe-palette-secondary-main);
+  position: relative;
+  will-change: transform;
+  transition: transform var(--slide-transition);
+}
+
+.trackNavigationBorderMark {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  width: 0.15rem;
+  background: var(--awe-palette-primary-500);
+  border-radius: 0.0625rem;
+  will-change: transform;
+  transition: transform var(--slide-transition);
+  transform: translateY(var(--translate-y));
+  height: var(--height);
+}

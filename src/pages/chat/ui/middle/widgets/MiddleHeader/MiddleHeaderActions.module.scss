@@ -1,0 +1,20 @@
+.MiddleHeaderActions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-left: auto;
+
+  // // Search button
+  // @media (max-width: 1200px) {
+  //   & > *:first-child {
+  //     display: none;
+  //   }
+  // }
+
+  // Notifications button
+  @media (max-width: 900px) {
+    & > *:nth-child(3) {
+      display: none;
+    }
+  }
+}

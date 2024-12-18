@@ -1,0 +1,58 @@
+.SettingButtonWrapper {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.SettingIcon,
+.SettingContent,
+.HelpButton {
+  padding: 0.25rem;
+}
+
+.SettingIcon,
+.SettingContent,
+.HelpButton {
+  position: relative;
+  z-index: 2;
+  align-items: center;
+  &::before {
+    content: '';
+    position: absolute;
+    z-index: 2;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+  }
+}
+
+.SettingContent {
+  width: 100%;
+  padding: 0.25rem 0.5rem;
+  border-radius: var(--awe-radius-md);
+  background-color: var(--awe-palette-secondary-900);
+}
+
+.SettingName {
+  font-size: var(--font-size-body);
+  font-weight: 600;
+  color: var(--awe-palette-text-secondary);
+  margin-left: 0.5rem;
+  white-space: wrap;
+  align-self: center;
+}
+
+.HelpButton {
+  display: flex;
+  align-items: center;
+  margin-left: auto;
+
+  svg {
+    z-index: 1;
+  }
+
+  &:hover > svg {
+    transition: fill 0.15s ease-in-out;
+    fill: var(--awe-palette-primary-plainColor) !important;
+  }
+}

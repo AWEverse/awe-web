@@ -1,0 +1,77 @@
+.AlbumSquare {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(8rem, 1fr));
+  grid-auto-rows: 1fr;
+
+  &::before {
+    content: '';
+    width: 0;
+    padding-bottom: 100%;
+    grid-row: 1 / 1;
+    grid-column: 1 / 1;
+  }
+
+  & > *:first-child {
+    grid-row: 1 / 1;
+    grid-column: 1 / 1;
+  }
+
+  & > * {
+    background: rgba(0, 0, 0, 0.1);
+    border: 1px white solid;
+  }
+}
+
+.AlbumMasonry > .MasornySell {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.AlbumMasonry {
+  display: grid;
+  grid-gap: 10px;
+  grid-template-columns: repeat(4, minmax(20px, 1fr));
+  grid-auto-rows: minmax(20px, 110px);
+  grid-auto-flow: dense;
+
+  padding: 2px;
+
+  & > * {
+    &:nth-of-type(even) {
+      &:nth-of-type(8n-2) {
+        grid-column: span 2;
+        grid-row: span 2;
+      }
+
+      &:nth-of-type(8n-4) {
+        grid-column: span 2;
+      }
+    }
+
+    &:nth-of-type(odd) {
+      &:nth-of-type(8n-7) {
+        grid-column: span 2;
+        grid-row: span 2;
+      }
+
+      &:nth-of-type(8n-3) {
+        grid-column: span 2;
+      }
+    }
+
+    img {
+      border-radius: 10px;
+      border: 2px rgb(89, 74, 74) solid;
+
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+
+      .tapped {
+        position: absolute;
+        object-position: 50% 50%;
+      }
+    }
+  }
+}

@@ -1,0 +1,22 @@
+.ChatListItem {
+  min-height: 3rem;
+  padding-inline: 1rem 0.25rem;
+  padding-inline-start: 4.1rem !important;
+  padding-block: 0.5625rem;
+  border-radius: var(--awe-radius-md) !important;
+  transition: background-color 200ms ease-in-out;
+}
+
+.TopActions {
+  margin-top: 0.125rem;
+  font-size: var(--font-size-desc);
+  font-weight: 400;
+  color: var(--awe-palette-text-secondary);
+}
+
+.Avatar {
+  position: absolute !important;
+  inset-inline-start: 0.5625rem !important;
+  width: 3rem !important;
+  height: 3rem !important;
+}

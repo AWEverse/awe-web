@@ -1,0 +1,29 @@
+.LeftMainSearchBody {
+  width: 100%;
+  height: 100%;
+
+  overflow: auto;
+  scroll-behavior: smooth;
+  z-index: 100;
+}
+
+.SeacrhNavBar,
+.SeacrhResultTitle {
+  position: sticky;
+  top: 0;
+  background-color: var(--awe-palette-secondary-900);
+  padding: 0.25rem 0.5rem;
+}
+
+.SeacrhResultTitle {
+  padding-bottom: 0.5rem;
+}
+
+.SearchList {
+  display: contents;
+}
+
+.SearchResult {
+  width: 100%;
+  height: 100%;
+}

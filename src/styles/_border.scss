@@ -1,0 +1,43 @@
+$border-color: var(--awe-palette-primary-500);
+$border-width: 1px;
+$border-init: $border-width solid transparent;
+
+.awe-border {
+  -o-border-image: linear-gradient(
+    360deg,
+    rgba(250, 180, 84, 0.13) 0%,
+    $border-color 11.64%,
+    $border-color 47.57%,
+    $border-color 89.33%,
+    rgba(250, 180, 84, 0.13) 100%
+  );
+  border-image: linear-gradient(
+    360deg,
+    rgba(250, 180, 84, 0.13) 0%,
+    $border-color 11.64%,
+    $border-color 47.57%,
+    $border-color 89.33%,
+    rgba(250, 180, 84, 0.13) 100%
+  );
+  border-image-slice: 1;
+
+  &-t {
+    border-top: $border-init;
+    border-image-width: $border-width 0 0 0;
+  }
+
+  &-r {
+    border-right: $border-init;
+    border-image-width: 0 $border-width 0 0;
+  }
+
+  &-b {
+    border-bottom: $border-init;
+    border-image-width: 0 0 $border-width 0;
+  }
+
+  &-l {
+    border-left: $border-init;
+    border-image-width: 0 0 0 $border-width;
+  }
+}

@@ -1,0 +1,113 @@
+.button {
+  --padding-vertical: 0.25rem;
+  --padding-inline-start: 0.25rem;
+  --padding-inline-end: 0.75rem;
+  --icon-margin: 1.25rem;
+  --icon-size: 1.25rem;
+
+  display: flex;
+  align-items: center;
+  gap: calc(var(--padding-inline-start) + 4px);
+  padding: var(--padding-vertical) var(--padding-inline-end) var(--padding-vertical) var(--padding-inline-start);
+  min-height: 2rem;
+  cursor: pointer;
+  color: var(--primary-text-color);
+  text-align: start;
+  font-size: var(--font-size-body);
+  line-height: var(--line-height-body);
+  font-weight: 500;
+  border-radius: 0.3125rem;
+  transform: scale(1);
+
+  &:hover {
+    background-color: rgba(var(--awe-palette-primary-mainChannel) / 0.3);
+  }
+
+  // Size variants
+  &.small,
+  &.medium,
+  &.large {
+    border-radius: 50%;
+    width: var(--button-size);
+    height: var(--button-size);
+    font-size: var(--button-font-size);
+  }
+
+  &.custom-small,
+  &.custom-medium,
+  &.custom-large { 
+    height: var(--button-size);
+    width: 100%;
+  } 
+
+
+  // Custom sizes
+  &.custom-small {
+    --button-size: 24px;
+    --button-font-size: var(--font-size-desc);
+    border-radius: 4px;
+  }
+
+  &.custom-medium {
+    --button-size: 36px;
+    --button-font-size: var(--font-size-body);
+    border-radius: 6px;
+  }
+
+  &.custom-large {
+    --button-size: 48px;
+    --button-font-size: var(--font-size-title);
+    border-radius: 8px;
+  }
+
+  &.small {
+    --button-size: 24px;
+    --button-font-size: var(--font-size-desc);
+  }
+
+  &.medium {
+    --button-size: 36px;
+    --button-font-size: var(--font-size-body);
+  }
+
+  &.large {
+    --button-size: 48px;
+    --button-font-size: var(--font-size-title);
+  }
+
+  // Variant-specific styles
+  &.rounded {
+    padding: 0;
+    margin: 0;
+    border-radius: 50%;
+    justify-content: center;
+    align-items: center;
+  }
+
+  &.outlined {
+    border: 1px solid var(--awe-palette-text-secondary);
+    border-radius: 8px;
+  }
+
+  &.plain {
+    border-radius: 8px;
+  }
+
+  &.active {
+    background-color: rgba(var(--awe-palette-primary-mainChannel) / 0.5);
+  }
+}
+
+.label {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 1;
+  line-clamp: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+
+  &.small {
+    font-size: var(--font-size-desc);
+  }
+}

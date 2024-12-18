@@ -1,0 +1,96 @@
+$padding: 3.25px;
+$button-height: 30px;
+$button-width: 65px;
+$left-shift: calc(100% - #{$button-height} + #{$padding});
+
+$success-color: var(--awe-palette-success-500);
+$success-shadow: rgba(96, 212, 128, 0.5);
+$danger-color: var(--awe-palette-danger-500);
+$danger-shadow: rgba(239, 86, 95, 0.5);
+
+@mixin button-base {
+  height: $button-height;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.switch-button {
+  @include button-base;
+  margin: auto;
+}
+
+.switch-outer {
+  @include button-base;
+  width: $button-width;
+  padding: $padding;
+  position: relative;
+  background: var(--awe-palette-secondary-main);
+  border-radius: 165px;
+  border: 1px solid var(--awe-palette-divider);
+  box-sizing: border-box;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: border-color 0.25s ease; // Add transition for border
+
+  &::before,
+  &::after {
+    content: '';
+    border: 3px solid transparent; // Use transparent initially
+    transition: border-color 0.25s ease; // Transition for smoother border color changes
+  }
+
+  &::before {
+    border-color: $success-color; // Set border color for the active state
+    left: #{$padding * 2};
+  }
+
+  &::after {
+    border-color: $danger-color; // Set border color for the inactive state
+    right: #{$padding * 2};
+  }
+}
+
+input[type='checkbox'] {
+  opacity: 0;
+  appearance: none;
+  position: absolute;
+}
+
+.button-toggle {
+  height: calc(#{$button-height} - #{$padding} * 2 - 1px);
+  width: calc(#{$button-height} - #{$padding} * 2 - 1px);
+  background: $success-color;
+  border-radius: 50%; // Circular buttons
+  box-shadow:
+    inset 0 4px 6px $success-shadow,
+    0 1px 12px $success-color; // Enhanced shadow effect
+  position: absolute;
+  z-index: 2;
+  transition:
+    left 0.25s ease,
+    background 0.25s ease,
+    box-shadow 0.25s ease;
+  left: $padding;
+  transform-origin: left center;
+
+  // Change styles when checked
+  input[type='checkbox']:checked + & {
+    left: $left-shift;
+    background: $danger-color;
+    box-shadow:
+      inset 0 4px 6px $danger-shadow,
+      0 1px 12px $danger-color; // Enhanced shadow effect when active
+    transform-origin: right center;
+  }
+}
+
+.button-indicator,
+.switch-outer::after,
+.switch-outer::before {
+  height: calc(#{$button-height} - #{$padding} * 4);
+  width: calc(#{$button-height} - #{$padding} * 4);
+  border-radius: 50%;
+  box-sizing: border-box;
+  position: absolute;
+}

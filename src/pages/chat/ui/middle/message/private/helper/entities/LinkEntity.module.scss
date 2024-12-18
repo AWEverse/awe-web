@@ -1,0 +1,15 @@
+.EntityLink {
+  text-decoration: underline;
+  color: var(--awe-palette-primary-main);
+  cursor: pointer;
+  transition: color 0.2s ease;
+
+  &[disabled] {
+    color: var(--awe-palette-grey-400);
+    cursor: default;
+  }
+
+  &:not([disabled]):hover {
+    color: rgba(var(--awe-palette-primary-main) / 0.7) !important;
+  }
+}

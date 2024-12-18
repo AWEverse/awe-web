@@ -1,0 +1,20 @@
+.Content {
+  position: relative;
+  overflow: hidden;
+}
+
+.enter {
+  max-height: 0;
+  transition: max-height 300ms ease;
+}
+
+.enterActive,
+.exit {
+  max-height: 1000px;
+  transition: max-height 300ms ease;
+}
+
+.exitActive {
+  max-height: 0;
+  transition: max-height 300ms ease;
+}

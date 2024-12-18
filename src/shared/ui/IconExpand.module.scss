@@ -1,0 +1,75 @@
+.iconContainer {
+  height: 30px;
+  width: 30px;
+  padding: 0px 5px;
+  border-radius: 8px;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  white-space: nowrap;
+  cursor: pointer;
+  user-select: none;
+  overflow: hidden;
+  width: auto;
+  max-width: 30px;
+  transition-property: max-width;
+  transition:
+    max-width 300ms ease-in-out 0s,
+    background-color 300ms linear 300ms;
+    
+  &:hover,
+  &:focus-visible {  
+    background-color: rgba(var(--awe-palette-primary-mainChannel) / 0.3);
+    max-width: 200px;
+    transition:
+      max-width 300ms ease-in-out 0s,
+      background-color 300ms linear 100ms;  
+  }
+
+  &:focus-visible {
+    outline: 1px solid rgba(var(--awe-palette-primary-mainChannel) / 0.3);
+    outline-offset: 4px;
+  }
+
+  &:active {
+    opacity: 0.7;
+  }
+
+  &::after {
+    content: attr(tooltip);
+    margin-left: 12px;
+    animation: fadeIn 600ms linear forwards;
+  }
+
+  .iconSVG {
+    aspect-ratio: 1 / 1;
+  }
+
+  .iconSpacer {
+    flex-grow: 1;
+  }
+
+  .iconDivider {
+    height: 18px;
+    width: 1px;
+    background-color: rgb(83, 100, 124);
+  }
+
+  .iconLabel {
+    text-overflow: ellipsis;
+    overflow: hidden;
+    padding-left: 8px;
+  }
+}
+
+@keyframes fadeIn {
+  0% {
+    opacity: 0;
+  }
+  50% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 1;
+  }
+}

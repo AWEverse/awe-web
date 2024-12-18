@@ -1,0 +1,32 @@
+.Title {
+  font-weight: 700;
+  color: var(--awe-palette-text-primary);
+  font-size: var(--font-size-title);
+}
+
+.Description {
+  padding-inline: 1rem;
+}
+
+.Separator {
+  height: 2px;
+  border-radius: 2px;
+  background-color: var(--awe-palette-divider);
+  border-color: var(--awe-palette-divider);  
+  padding-inline: 1.25em;
+}
+
+.ProfileDescription {
+  display: grid;
+  grid-template-columns: 60% 20% 20%;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+
+  @media (max-width: 768px) {
+    grid-template-columns: 1fr;
+  }
+
+  @media (min-width: 769px) and (max-width: 1024px) {
+    grid-template-columns: 55% 22.5% 22.5%;
+  }
+}

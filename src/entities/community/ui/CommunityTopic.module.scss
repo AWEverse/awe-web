@@ -1,0 +1,105 @@
+:root {
+  --font-size: 16px;
+  --font-size-title: calc(var(--font-size) + 4px);
+  --font-size-subtitle: var(--font-size-title);
+  --font-size-metadata: calc(var(--font-size) - 4px);
+}
+
+.listItem {
+  display: block;
+  position: relative;
+  border: 1px solid var(--awe-palette-secondary-main);
+  border-radius: 6px;
+  padding: 0;
+  padding-left: 5px;
+  background-color: var(--awe-palette-secondary-800);
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+
+  &:hover {
+    background-color: var(--awe-palette-secondary-main);
+  }
+
+  &:active {
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    background-color: var(--awe-palette-secondary-main);
+    transform: scale(0.98);
+    box-shadow: 0 0 0 0.2rem var(--awe-palette-background-soft);
+  }
+
+  &::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    border-top-left-radius: 20px;
+    border-bottom-left-radius: 20px;
+    width: 5px;
+    height: 100%;
+    background-color: var(--awe-palette-primary-plainColor);
+  }
+}
+
+.textSection {
+  padding: 0.25rem;
+}
+
+.link {
+  color: var(--awe-palette-primary-500);
+  font-size: 20px;
+  font-weight: 500;
+}
+
+.imageCaption {
+  font-size: var(--font-size-title);
+  color: var(--awe-palette-text-tertiary);
+  font-weight: 500;
+}
+
+.questionText {
+  white-space: pre-wrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.divider {
+  margin: 1rem 0;
+  background-color: var(--awe-palette-divider);
+}
+
+.publisher {
+}
+
+.endSection {
+  display: flex;
+  gap: 1rem;
+  flex-direction: column;
+  justify-content: space-between;
+  align-items: flex-end;
+
+  @media (min-width: 600px) {
+    flex-direction: row;
+    align-items: center;
+  }
+}
+
+.metaData {
+  display: inline;
+  float: right;
+  margin-top: 0.5rem;
+  font-size: var(--font-size-metadata);
+}
+
+.viewsCount,
+.viewsText {
+  margin-right: 0.5rem;
+}
+
+.image {
+  width: 100%;
+  height: auto;
+}

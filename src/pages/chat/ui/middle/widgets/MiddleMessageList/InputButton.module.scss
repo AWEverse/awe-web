@@ -1,0 +1,30 @@
+.InputButton {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding-left: 0.25rem;
+  border-radius: 25px 25px 25px 25px;
+  background-color: var(--awe-palette-secondary-main);
+}
+
+.chatOption {
+  transition: transform 0.3s ease-out;
+  &[aria-pressed='true'] {
+    transform: scale(1) rotate(180deg) !important;
+  }
+
+  &:hover {
+    cursor: pointer;
+    transform: scale(1) rotate(180deg);
+  }
+}
+
+.expandIcon {
+  transition: transform 0.3s ease-out;
+}
+
+.sendButton {
+  border-radius: 50% !important;
+  height: var(--Messages-ButtonSize);
+  width: var(--Messages-ButtonSize);
+}

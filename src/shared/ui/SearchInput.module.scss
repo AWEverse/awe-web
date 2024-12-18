@@ -1,0 +1,199 @@
+.searchInputRoot {
+  --border-width: 2px;
+  --search-height: 2.25rem;
+
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: 100%;
+  gap: 1px;
+  background-color: var(--awe-palette-secondary-main);
+  border: var(--border-width) solid var(--awe-palette-divider);
+  border-radius: 1.375rem;
+  padding: calc(0.4375rem - var(--border-width)) calc(0.5rem - var(--border-width));
+
+  border-width: var(--border-width);
+  height: var(--search-height);
+
+  transition: border 0.15s ease;
+
+  &.small {
+    --search-height: 1.75rem;
+  }
+
+  &.medium {
+    --search-height: 2.25rem;
+  }
+
+  &.large {
+    --search-height: 2.5rem;
+  }
+
+  input {
+    margin-bottom: 0 !important;
+    border: none !important;
+    border-radius: 0 !important;
+    background-color: transparent !important;
+    box-shadow: none !important;
+    width: 100% !important;
+
+    &::placeholder {
+      color: var(--awe-palette-text-secondary);
+    }
+
+    &:focus {
+      outline: none;
+    }
+
+    &.noLabels {
+      margin-left: 0.25rem;
+    }
+  }
+}
+
+.separator {
+  width: 3px;
+  height: 22px;
+  margin: 0 4px;
+  background-color: var(--awe-palette-primary-main);
+  border-radius: 2px;
+}
+
+.focused {
+  border: var(--border-width) solid var(--awe-palette-primary-main);
+
+  & > .bottomIndicator > span {
+    border: 1px solid var(--awe-palette-primary-main);
+    color: var(--awe-palette-primary-main);
+  }
+}
+
+.clearIcon {
+  margin-top: 0.1rem !important;
+}
+
+.searchIcon,
+.clearIcon {
+  font-size: 1.375rem;
+  line-height: 1;
+  color: var(--awe-palette-primary-main);
+}
+
+.clearIcon {
+  border-radius: 50%;
+  transition: background-color 0.2s ease;
+
+  &:hover {
+    background-color: var(--awe-palette-secondary-main);
+    cursor: pointer;
+  }
+
+  &:active {
+    background-color: var(--awe-palette-secondary-main);
+  }
+}
+
+.labelsContainer {
+  display: flex;
+  gap: 0.15rem;
+}
+
+.label {
+  display: flex;
+  flex-direction: column;
+}
+
+.labelText {
+  color: var(--awe-palette-text-tertiary);
+  font-size: var(--font-size-meta);
+  line-height: 1.1rem;
+  font-weight: 500;
+  padding-inline: 0.25rem;
+  background-color: var(--awe-palette-primary-main);
+  border-radius: var(--awe-radius-md);
+}
+
+.visuallyHidden {
+  position: absolute;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  width: 0px;
+  height: 0px;
+  border: 0;
+  padding: 0;
+
+  white-space: nowrap;
+  clip-path: inset(100%);
+  clip: rect(0 0 0 0);
+  -webkit-clip-path: inset(100%);
+
+  &:focus,
+  &:focus:not(:focus-visible),
+  &:focus-within {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 1px;
+    height: 1px;
+    clip: rect(0 0 0 0);
+    overflow: hidden;
+    white-space: nowrap;
+  }
+}
+
+.spinner {
+  color: var(--awe-palette-primary-main);
+  font-size: 1.375rem;
+}
+
+.bottomIndicator {
+  display: flex;
+  align-items: center;
+  position: absolute;
+  right: 1.15rem;
+  bottom: calc(var(--border-width) * -1) !important;
+  height: var(--border-width) !important;
+  background-color: var(--awe-palette-background-default);
+  box-shadow: 0 1px 2px var(--awe-palette-background-default);
+  font-size: var(--font-size-meta);
+  opacity: 0;
+  transform: scale(0);
+  transition: opacity 0.15s ease, transform 0.15s ease;
+  transform-origin: center;
+  
+  &.visible {
+    opacity: 1;
+    transform: scale(1);
+  }
+
+  span {    
+    transition: border 0.15s ease;
+    color: var(--awe-palette-text-secondary);
+    line-height: 0.975rem;
+    padding-top: 0.75px !important;
+    margin-bottom: 1.15px !important;
+    padding-inline: 0.25rem;
+    border: 1px solid var(--awe-palette-divider);
+    border-radius: var(--awe-radius-md);
+    vertical-align: middle;
+    background-color: transparent;
+    backdrop-filter: blur(0.25rem);
+  }
+}
+
+.searchIcon {
+  position: relative;
+  display: flex;
+  padding-top: 0.1rem !important;  
+}
+
+.dot { 
+  position: absolute;
+  bottom: 0px;
+  display: block;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  opacity: 0.8;
+  background-color: var(--awe-palette-primary-main);
+}

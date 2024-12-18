@@ -1,0 +1,14 @@
+{
+  "scopeName": "source.ts",
+  "patterns": [
+    {
+      "name": "comment.block.documentation",
+      "match": "#v-ifdef",
+      "captures": {
+        "0": {
+          "name": "entity.name.tag.custom"
+        }
+      }
+    }
+  ]
+}

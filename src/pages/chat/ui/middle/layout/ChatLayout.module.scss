@@ -1,0 +1,39 @@
+.ChatContainer {
+  --footer-height: 22px;
+  --chat-height: calc(100dvh - var(--footer-height));
+
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+
+  height: 100dvh;
+}
+
+.Body {  
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(225px, min(40%, 400px)) 1fr;
+  width: 100dvw;
+
+
+  @media (max-width: 640px) {
+    grid-template-columns: 1fr;
+  }
+}
+
+
+.MainContainer {
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  height: var(--chat-height);
+  transition: height 0.25s ease;
+}
+
+.Footer {
+  z-index: 100;
+  overflow: hidden;
+  background-color: gray;  
+}

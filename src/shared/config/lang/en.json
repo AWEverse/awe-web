@@ -1,0 +1,53 @@
+{
+  "confirm.action": "Are you sure you want to {action}?",
+
+  "lng_morning": "morning",
+  "lng_afternoon": "afternoon",
+  "lng_evening": "evening",
+  "lng_night": "night",
+
+  "lng_today": "Today",
+  "lng_yesterday": "Yesterday",
+  "lng_tomorrow": "Tomorrow",
+
+  "lng_weekday1": "Monday",
+  "lng_weekday2": "Tuesday",
+  "lng_weekday3": "Wednesday",
+  "lng_weekday4": "Thursday",
+  "lng_weekday5": "Friday",
+  "lng_weekday6": "Saturday",
+  "lng_weekday7": "Sunday",
+
+  "lng_first_month": "January",
+  "lng_second_month": "February",
+  "lng_third_month": "March",
+  "lng_fourth_month": "April",
+  "lng_fifth_month": "May",
+  "lng_sixth_month": "June",
+  "lng_seventh_month": "July",
+  "lng_eighth_month": "August",
+  "lng_ninth_month": "September",
+  "lng_tenth_month": "October",
+  "lng_eleventh_month": "November",
+  "lng_twelfth_month": "December",
+
+  "search.placeholder": "Search",
+
+  "left.tabs.all": "All",
+  "left.tabs.chats": "Chats",
+  "left.tabs.contacts": "Contacts",
+  "left.tabs.calls": "Calls",
+  
+
+  "left.menu": "Menu",
+  "left.settings": "Settings",
+  "left.settings.account": "Account",
+  "left.settings.account.description": "• Account settings\n  • Password\n  • Email\n  • Phone\n  • Notifications\n  • Confidentiality & Security\n  • Content\n  • Chats\n  • Personalization",
+  "left.settings.chats": "Chats",
+  "left.settings.content": "Content",
+  "left.settings.exitAccount": "Exit account",
+  "left.settings.exitAccountDialog": "Are you sure you want to exit the account?",
+  "left.settings.notifications": "Notifications",
+  "left.settings.personalization": "Personalization",
+  "left.settings.privacy": "Confidentiality & Security"
+}

@@ -1,0 +1,23 @@
+.ProfileRoot {
+  overflow-y: scroll !important;
+  scroll-behavior: smooth;
+  height: 100dvh;
+  padding: 1.25rem 8rem;
+
+  @media (max-width: 640px) {
+    padding: 0.25rem;
+  }
+
+  @media (min-width: 641px) and (max-width: 768px) {
+    padding: 1.25rem 2rem;
+  }
+
+  @media (min-width: 769px) and (max-width: 1024px) {
+    padding: 1.25rem 3rem;
+  }
+  
+  & > *:not(:last-of-type) {
+    margin-bottom: 1.25rem;
+  }
+}
+

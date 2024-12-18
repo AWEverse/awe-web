@@ -1,0 +1,42 @@
+.root {
+  display: inline-block;
+  width: 100%;
+  position: relative;
+}
+
+.collapsed {
+  mask-image: linear-gradient(to bottom, black 60%, transparent 100%);
+}
+
+.blockquote {
+  overflow: hidden;
+  transition: max-height 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+
+  &.expanded {
+    max-height: 500px;
+  }
+}
+
+.gradientContainer {
+  margin-top: 0.125rem;
+  margin-bottom: 0.125rem;
+  min-height: 0;
+  max-height: inherit;  
+}
+
+.collapseIcon {
+  position: absolute;
+  display: grid;
+  place-items: center;
+
+  width: 1.5rem;
+  height: 1.5rem;
+  border-radius: 50%;
+
+  bottom: 0;
+  right: 0;
+}
+
+.clickable {
+  cursor: pointer;
+}

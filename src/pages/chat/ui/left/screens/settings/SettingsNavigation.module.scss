@@ -1,0 +1,76 @@
+.SettingSection {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  background-color: var(--awe-palette-secondary-main);
+  padding: 0.5rem;
+  border-radius: var(--awe-radius-md);
+  box-shadow: inset 0 0 0 1px var(--awe-palette-divider);
+
+  @media (max-width: 640px) {
+    margin: 0 0.25rem;
+  }
+}
+
+.UserDetails {
+  min-height: 3rem;
+  padding-block: 0.5625rem;
+  padding-inline: 1rem 0.75rem;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding-inline-start: 4.75rem !important;
+  border-radius: var(--awe-radius-md) !important;
+  transition: background-color 200ms ease-in-out;
+
+  & > h1,
+  & > p {
+    line-height: 1.75rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 1;
+    line-clamp: 1;
+    width: 100%;
+  }
+
+  & > h1 {
+    font-size: var(--font-size-title);
+    font-weight: 600;
+  }
+
+  & > p {
+    position: relative;
+    font-size: var(--font-size-meta);
+    color: var(--awe-palette-text-secondary);
+  }
+}
+
+.Divider {
+  --Divider-childPosition: 95% !important;
+  position: absolute !important;
+  bottom: -0.25rem;
+  left: 4.75rem;
+  right: 0;
+  color: var(--awe-palette-primary-plainColor) !important;
+}
+
+.UserAvatar {
+  --Avatar-size: 60px;
+  border: 1px solid var(--awe-palette-divider);
+  position: absolute !important;
+  inset-inline-start: 0.5rem !important;
+}
+
+.UpdateButton {
+  justify-content: space-between;
+  padding: 0.5rem;
+}
+
+.PremiumButton {
+  line-height: 1.375rem;
+  background-color: var(--awe-palette-secondary-900);
+}

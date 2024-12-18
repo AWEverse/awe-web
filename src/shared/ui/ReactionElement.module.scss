@@ -1,0 +1,38 @@
+.ReactionElement {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1px 2px;
+  border: 1px solid var(--awe-palette-divider);
+  border-radius: 1rem;
+  background-color: transparent;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+
+  &.active {
+    background-color: var(--awe-palette-primary-plainActiveBg);
+  }
+
+  &:hover {
+    background-color: var(--awe-palette-primary-plainHoverBg);
+  }
+
+  .startDecorator {
+    display: inherit;
+    margin: 1px 4px;
+    align-self: center;
+  }
+
+  .endDecorator {
+    margin-right: 2px;
+  }
+
+  .avatar {
+    width: 18px;
+    height: 18px;
+  }
+
+  .reactionsCount {
+    font-size: 14px;
+  }
+}

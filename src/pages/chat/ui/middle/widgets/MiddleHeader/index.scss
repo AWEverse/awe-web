@@ -1,0 +1,117 @@
+.MiddleHeaderWrapper,
+.HeaderBodyWrapper,
+.AvatarContainer,
+.UserDetails > p,
+.MiddleHeaderActions,
+.HeaderTransition {
+  display: flex;
+  align-items: center;
+}
+
+.MiddleHeaderWrapper {
+  position: relative;
+  width: 100%;
+  min-height: 3.5rem;
+  box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.1);
+  z-index: 3;
+  gap: 1.125rem;
+  background-color: var(--awe-palette-background-default);
+
+  padding-inline: 1.5rem;
+
+  @media (max-width: 1024px) {
+    gap: 0.25rem;
+    padding-inline: 0.5rem;
+  }
+
+  .AvatarContainer {
+    cursor: pointer;
+    gap: 1.125rem;
+
+    .UserAvatar {
+      align-self: center;
+    }
+
+    @media (max-width: 1024px) {
+      gap: 0.5rem;
+    }
+  }
+
+  .BackButton {
+    display: inline-flex;
+    border-radius: 50%;
+
+    @media (min-width: 640px) {
+      display: none;
+    }
+  }
+}
+
+.UserDetails {
+  display: flex;
+  flex-direction: column;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  overflow: hidden;
+
+  & > p {
+    font-size: var(--font-size-subtitle);
+    width: 100%;
+    font-weight: 600;
+    line-height: 1.3125rem;
+  }
+}
+
+.currentDay {
+  color: var(--awe-palette-primary-plainColor);
+  background-color: var(--awe-palette-primary-plainColor);
+}
+
+.MiddleHeaderActions {
+  gap: 0.5rem;
+  margin-left: auto;
+}
+
+.InAction {
+  border-radius: var(--awe-radius-md);
+  max-width: 250px;
+}
+
+.UnderHeader {
+  will-change: transform;
+
+  &__Hidden {
+    opacity: 0;
+    transform: translateY(-150%);
+  }
+}
+
+.HeaderBodyWrapper {
+  position: relative;
+  flex-grow: 1;
+  height: 100%;
+  width: 100%;
+}
+
+.HeaderTransition {
+  gap: 0.5rem;
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 1;
+  cursor: pointer;
+}
+
+.Search_Visible {  
+  @media (max-width: 1024px) {
+    display: none !important;
+  }
+}
+
+.Search_Hidden {
+  @media (min-width: 1024px) {
+    display: none !important;
+  }
+}

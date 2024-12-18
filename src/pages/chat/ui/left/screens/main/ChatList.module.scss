@@ -1,0 +1,19 @@
+.ChatList {
+  height: 100%;
+}
+
+.TabListBorders {
+  position: sticky;
+  top: 0;
+  margin-bottom: 12px;    
+  box-shadow: 0px 10px 0px 0px var(--awe-palette-secondary-main);
+  z-index: 5;
+  background-color: var(--awe-palette-background-default);
+}
+
+.ChatListDivider {
+  height: 1px;
+  background-color: var(--awe-palette-divider);
+  border-color: var(--awe-palette-divider);
+  margin-inline-start: 4.1rem;
+}

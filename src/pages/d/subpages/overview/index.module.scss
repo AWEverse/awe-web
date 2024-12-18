@@ -1,0 +1,115 @@
+.root {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+  padding: 1rem;
+
+  @media screen and (max-width: 600px) {
+    gap: 1rem;
+    padding: 4px;
+  }
+
+  .headerSection {
+    padding: 1rem 10px;
+    display: flex;
+    flex-direction: column;
+    z-index: 2;
+    gap: 1.5rem;
+    height: 100%;
+
+    @media screen and (max-width: 600px) {
+      gap: 1rem;
+      padding: 4px;
+    }
+
+    .communityWrapper {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+
+      .avatar {
+        width: 132px;
+        height: 132px;
+
+        @media screen and (max-width: 600px) {
+          width: 72px;
+          height: 72px;
+        }
+      }
+
+      .communityInfo {
+        display: flex;
+        flex-direction: column;
+
+        .communityType,
+        .communityTitle,
+        .communityDesc {
+          font-weight: 400;
+        }
+
+        .communityType {
+          font-size: 24px;
+
+          @media screen and (max-width: 600px) {
+            font-size: 16px;
+          }
+        }
+
+        .communityTitle {
+          font-size: 36px;
+          font-weight: 700;
+          line-height: 1.2;
+
+          @media screen and (max-width: 600px) {
+            font-size: 24px;
+          }
+        }
+
+        .communityDesc {
+          font-size: 14px;
+          line-height: 1.5;
+
+          @media screen and (max-width: 600px) {
+            font-size: 12px;
+          }
+        }
+      }
+    }
+
+    .communityActions {
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+      justify-content: space-between;
+
+      @media screen and (max-width: 600px) {
+        flex-direction: column;
+        gap: 0.5rem;
+        align-items: flex-start;
+      }
+
+      .mainActions {
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        gap: 0.5rem;
+
+        .interactionButton {
+          border-radius: 20px;
+        }
+      }
+    }
+  }
+}
+
+.metaContainer {
+  font-size: 14px;
+  align-self: flex-end;
+}
+
+.metaIconWrapper {
+  display: flex;
+  align-items: center;
+  border-radius: 16px;
+  gap: 4px;
+}

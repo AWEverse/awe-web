@@ -1,0 +1,260 @@
+[
+  {
+    "name": "General",
+    "desc": "General Discussion of Unreal Engine",
+    "posts": 133489,
+    "subcategories": [
+      {
+        "name": "Announcements",
+        "posts": 44050,
+        "tags": [
+          {
+            "name": "Announcements",
+            "posts": 0
+          },
+          {
+            "name": "General",
+            "posts": 0
+          },
+          {
+            "name": "News",
+            "posts": 0
+          }
+        ]
+      },
+      {
+        "name": "Tutorial & Course Discussions",
+        "posts": 9417
+      },
+      {
+        "name": "Feedback & Requests",
+        "posts": 76686
+      }
+    ]
+  },
+  {
+    "name": "Development",
+    "desc": "Development Discussions of Unreal Engine",
+    "posts": 1011777,
+    "subcategories": [
+      {
+        "name": "Getting Started & Setup",
+        "desc": "Getting Started and Setup Discussions of Unreal Engine",
+        "posts": 42430
+      },
+      {
+        "name": "Programming & Scripting",
+        "desc": "Programming and Scripting Discussions of Unreal Engine",
+        "posts": 10112,
+        "tags": [
+          {
+            "name": "Blueprint",
+            "posts": 0
+          },
+          {
+            "name": "C++",
+            "posts": 0
+          },
+          {
+            "name": "AI",
+            "posts": 0
+          },
+          {
+            "name": "UI",
+            "posts": 0
+          },
+          {
+            "name": "Multiplayer & Networking",
+            "posts": 0
+          }
+        ]
+      },
+      {
+        "name": "Devices",
+        "posts": 752137
+      },
+      {
+        "name": "Asset Creation",
+        "tags": [
+          {
+            "name": "FX",
+            "posts": 0
+          },
+          {
+            "name": "Photogrammetry",
+            "posts": 92630
+          },
+          {
+            "name": "Character & Animation",
+            "posts": 120147
+          },
+          {
+            "name": "World Creation",
+            "posts": 121083
+          },
+          {
+            "name": "Rendering",
+            "posts": 226253
+          },
+          {
+            "name": "Cinematics & Media",
+            "posts": 0
+          }
+        ]
+      },
+      {
+        "name": "Platform & Builds",
+        "tags": [
+          {
+            "name": "Mobile",
+            "posts": 0
+          },
+          {
+            "name": "XR Development",
+            "posts": 0
+          },
+          {
+            "name": "Debugging, Optimization, & Profiling",
+            "posts": 0
+          },
+          {
+            "name": "Cloud Marketplace VM",
+            "posts": 224436
+          },
+          {
+            "name": "Audio",
+            "posts": 19456
+          },
+          {
+            "name": "Pipeline & Plugins",
+            "posts": 0
+          },
+          {
+            "name": "Editor Scripting",
+            "posts": 0
+          },
+          {
+            "name": "Plugins",
+            "posts": 47739
+          },
+          {
+            "name": "Quixel Megascans",
+            "posts": 0
+          }
+        ]
+      },
+      {
+        "name": "Showcase",
+        "posts": 617
+      },
+      {
+        "name": "Architectural and Design Visualization",
+        "posts": 17259
+      },
+      {
+        "name": "Modding",
+        "tags": [
+          {
+            "name": "ARK: Survival Evolved",
+            "posts": 28530
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "Community",
+    "posts": 252044,
+    "subcategories": [
+      {
+        "name": "Community & Industry Discussion",
+        "posts": 110530
+      },
+      {
+        "name": "Marketplace",
+        "posts": 100754
+      },
+      {
+        "name": "Showcase",
+        "posts": 101838
+      },
+      {
+        "name": "Got Skills? Looking for Talent?",
+        "tags": [
+          {
+            "name": "Job Offerings",
+            "posts": 0
+          },
+          {
+            "name": "Looking For Work?",
+            "posts": 30201
+          }
+        ]
+      },
+      {
+        "name": "Off-Topic",
+        "posts": 15414
+      }
+    ]
+  },
+  {
+    "name": "International",
+    "posts": 24049,
+    "subcategories": [
+      {
+        "name": "Português (Portuguese)",
+        "posts": 2681
+      },
+      {
+        "name": "简体中文 (Simplified Chinese)",
+        "posts": 4377
+      },
+      {
+        "name": "Pусский (Russian)",
+        "posts": 497
+      },
+      {
+        "name": "日本語 (Japanese)",
+        "posts": 4440
+      },
+      {
+        "name": "한국어 (Korean)",
+        "posts": 157
+      },
+      {
+        "name": "Español (Spanish)",
+        "posts": 1884
+      },
+      {
+        "name": "العربية (Arabic)",
+        "posts": 578
+      },
+      {
+        "name": "Français (French)",
+        "posts": 1250
+      },
+      {
+        "name": "Deutsch (German)",
+        "posts": 55
+      }
+    ]
+  },
+  {
+    "name": "Legacy",
+    "posts": 7263,
+    "subcategories": [
+      {
+        "name": "UDK Content Creation and Design",
+        "posts": 1441
+      },
+      {
+        "name": "UDK Programming and UnrealScript",
+        "posts": 4490
+      },
+      {
+        "name": "UDK Projects",
+        "posts": 0
+      }
+    ]
+  }
+]

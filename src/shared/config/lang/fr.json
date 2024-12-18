@@ -1,0 +1,47 @@
+{
+  "confirm.action": "Êtes-vous sûr de vouloir {action}?",
+
+  "lng_morning": "matin",
+  "lng_afternoon": "après-midi",
+  "lng_evening": "soir",
+  "lng_night": "nuit",
+
+  "lng_today": "Aujourd'hui",
+  "lng_yesterday": "Hier",
+  "lng_tomorrow": "Demain",
+
+  "lng_weekday1": "Lundi",
+  "lng_weekday2": "Mardi",
+  "lng_weekday3": "Mercredi",
+  "lng_weekday4": "Jeudi",
+  "lng_weekday5": "Vendredi",
+  "lng_weekday6": "Samedi",
+  "lng_weekday7": "Dimanche",
+
+  "lng_first_month": "Janvier",
+  "lng_second_month": "Février",
+  "lng_third_month": "Mars",
+  "lng_fourth_month": "Avril",
+  "lng_fifth_month": "Mai",
+  "lng_sixth_month": "Juin",
+  "lng_seventh_month": "Juillet",
+  "lng_eighth_month": "Août",
+  "lng_ninth_month": "Septembre",
+  "lng_tenth_month": "Octobre",
+  "lng_eleventh_month": "Novembre",
+  "lng_twelfth_month": "Décembre",
+
+  "search.placeholder": "Recherche",
+
+  "left.menu": "Menu",
+  "left.settings": "Paramètres",
+  "left.settings.account": "Compte",
+  "left.settings.account.description": "• Paramètres du compte\n  • Mot de passe\n  • E-mail\n  • Téléphone\n  • Notifications\n  • Confidentialité et sécurité\n  • Contenu\n  • Discussions\n  • Personnalisation",
+  "left.settings.chats": "Discussions",
+  "left.settings.content": "Contenu",
+  "left.settings.exitAccount": "Déconnexion",
+  "left.settings.exitAccountDialog": "Êtes-vous sûr de vouloir vous déconnecter?",
+  "left.settings.notifications": "Notifications",
+  "left.settings.personalization": "Personnalisation",
+  "left.settings.privacy": "Confidentialité et sécurité"
+}

@@ -1,0 +1,12 @@
+.title {
+  cursor: pointer;
+  user-select: none;
+  font-size: var(--font-size-title);
+}
+
+.navigation {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  z-index: 6;
+}

@@ -1,0 +1,33 @@
+.ConfirmActionPopup {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.ConfirmPopupTitle {
+  font-size: var(--font-size-title);
+  font-weight: 600;
+  line-height: 1.5rem;
+  color: var(--awe-palette-text-primary);
+}
+
+.ConfirmPopupBody {
+  font-size: var(--font-size-body);
+  color: var(--awe-palette-text-secondary);
+  margin-top: 0;
+  margin-bottom: 0;
+  min-width: min(100%, 15rem);
+  max-width: -moz-fit-content;
+  max-width: fit-content;
+  line-height: 1.3125rem;
+  white-space: pre-wrap;
+  word-break: break-word;
+  text-overflow: ellipsis;
+  overflow: hidden;
+}
+
+.PopupButtons {
+  & > button:not(:first-of-type) {
+    margin-left: 0.5rem;
+  }
+}

@@ -1,0 +1,18 @@
+.Img {
+  height: 100%;
+  width: 100%;
+  object-fit: cover;
+  display: block;
+  object-position: center;
+}
+
+.ImgCaption {
+  font-size: 18px;
+  color: var(--awe-palette-primary-500);
+  font-weight: 500;
+  line-height: 1.2;
+  text-transform: capitalize;
+  letter-spacing: 0.02em;
+  font-family: inherit;
+  font-style: normal;
+}

@@ -1,0 +1,34 @@
+.InfoSection {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+}
+
+.Avatar {
+  width: var(--Avatar-size);
+  height: var(--Avatar-size);
+}
+
+.UserDetails {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+
+  & > h1 {
+    margin: 0;
+    font-size: var(--font-size-title);
+    font-weight: 500;
+    color: var(--awe-palette-text-primary);
+  }
+
+  & > span {
+    font-weight: 400;
+    font-size: var(--font-size-desc);
+    color: var(--awe-palette-text-secondary);
+  }
+}
+
+.Actions {
+  width: 100%;
+}

@@ -1,0 +1,49 @@
+.ContactScreen {
+  padding-bottom: 0 !important;
+  padding-inline: 0 !important;
+  overflow-y: auto;
+  gap: 0.25rem;
+}
+
+.ContactsCreateActions,
+.ContactsResultList {
+  background-color: var(--awe-palette-secondary-softBg);
+}
+
+.ContactsHeader,
+.ContactsSort {
+  padding: 0 0.25rem;
+}
+
+.ContactSection {
+  width: 100%;
+  padding: 0.25rem;
+
+  & > *:not(:first-child) {
+    margin-top: 0.15rem;
+  }
+}
+
+.SortEnter {
+  opacity: 0;
+  transform: translateY(-10px);
+}
+.SortEnterActive {
+  opacity: 1;
+  transform: translateY(0);
+  transition:
+    opacity 300ms,
+    transform 300ms;
+}
+
+.SortExit {
+  opacity: 1;
+  transform: translateY(0);
+}
+.SortExitActive {
+  opacity: 0;
+  transform: translateY(-10px);
+  transition:
+    opacity 300ms,
+    transform 300ms;
+}

@@ -1,0 +1,20 @@
+.ContactsSortDropdown {
+  border-radius: var(--awe-radius-md);
+  border: 2px solid var(--awe-palette-divider);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+  padding: 0.25rem;
+}
+
+.SearchType {
+  position: absolute;
+  bottom: -3px;
+  right: -1px;
+  background-color: var(--awe-palette-secondary-main);
+  border-radius: 50%;
+  width: 1rem;
+  height: 1rem;
+  line-height: 0.7rem;
+  border: 1px solid var(--awe-palette-divider);
+  font-weight: 600;
+  color: var(--awe-palette-text-secondary);
+}

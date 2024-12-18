@@ -1,0 +1,219 @@
+
+
+.datePicker {
+  width: calc(var(--cell-size) * 7);
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+
+  --skewX: 2.5deg;
+}
+
+.slider,
+.weekdays {
+  display: flex;
+  width: 100%;
+}
+
+.gridWrapper {
+  position: relative;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+  height: calc(var(--cell-size) * 6);
+  z-index: 20;  
+  overflow: hidden;
+}
+
+.calendarGrid {
+  display: grid;
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  top: 0;
+  left: 0;
+  z-index: 5;
+  will-change: transform, opacity;
+}
+
+.weekView {
+  grid-template-columns: repeat(7, 1fr);
+  grid-template-rows: repeat(6, var(--cell-size));
+}
+
+.monthView,
+.yearView {
+  grid-template-columns: repeat(4, 1fr);
+  grid-template-rows: repeat(4, 1fr);
+}
+
+.weekday,
+.dayCell,
+.calendarCell {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.calendarCell {
+  height: 100%;
+  width: 100%;
+}
+
+.weekday,
+.dayCell {
+  width: var(--cell-size);
+  height: var(--cell-size);
+}
+
+.calendarCell {
+  position: relative;
+  z-index: 10;
+  cursor: pointer;
+  user-select: none;
+  border: 2px solid var(--awe-palette-secondary-main);
+  transition:
+    background-color 0.15s ease,
+    border-color 0.15s ease;
+  will-change: background-color, border-color;
+
+  &::before {
+    content: "";
+    position: absolute;
+    z-index: -1;
+    top: 3px;
+    bottom: 3px;
+    right: 3px;
+    left: 3px;
+    background: var(--awe-palette-secondary-main);
+  }
+}
+
+.calendarValue {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 10;
+}
+
+.calendarSelectorMask {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 2;
+  background-color: var(--awe-palette-primary-main);
+  opacity: 0.5;
+  transition: clip-path 0.25s ease;
+  will-change: clip-path;
+}
+
+.selectedDay {
+  background-color: var(--awe-palette-primary-main);  
+}
+
+.calendarCell:hover {
+  background-color: var(--awe-palette-primary-main);
+}
+
+.selectedDay:hover {
+  background-color: var(--awe-palette-primary-main);
+}
+
+.currentDay::after {
+  content: "";
+  position: absolute;
+  
+  z-index: -1;
+  top: 6px;
+  bottom: 6px;
+  right: 6px;
+  left: 6px;
+  background: var(--awe-palette-primary-main);
+  transition: margin 0.15s ease;
+  will-change: margin;
+  margin: -6px;  
+  opacity: 0.5;
+}
+
+.selectedDay.currentDay::after {
+  margin: 0;
+}
+
+.another {
+  color: #6b6a6a;
+}
+
+.light {
+  position: absolute;
+  width: var(--light-size);
+  height: var(--light-size);
+  z-index: 1;
+  border-radius: 50%;
+  top: var(--light-position-y);
+  left: var(--light-position-x);
+  background: radial-gradient(
+    ellipse at center,
+    rgb(162, 160, 160) 0%,
+    rgba(238, 238, 238, 0) 50%
+  );
+  pointer-events: none;
+}
+
+
+// Right-to-Left Animations
+.RTL-enter {
+  transform: translateX(100%) skewX(var(--skewX));
+  opacity: 0.95;
+}
+.RTL-enter-active {
+  transform: translateX(0) scale(1) skewX(0deg);
+  opacity: 1;
+  transition:
+    transform 250ms ease,
+    opacity 250ms ease;
+}
+.RTL-exit {
+  transform: translateX(0) scale(1) skewX(0deg);
+  opacity: 1;
+}
+.RTL-exit-active {
+  transform: translateX(-100%) skewX(var(--skewX));
+  opacity: 0.75;
+  transition:
+    transform 250ms ease,
+    opacity 250ms ease;
+}
+
+// Left-to-Right Animations
+.LTR-enter {
+  transform: translateX(-100%) skewX(calc(var(--skewX) * -1));
+  opacity: 0.95;
+}
+.LTR-enter-active {
+  transform: translateX(0) scale(1) skewX(0deg);
+  opacity: 1;
+  transition:
+    transform 250ms ease,
+    opacity 250ms ease;
+}
+.LTR-exit {
+  transform: translateX(0) scale(1) skewX(0deg);
+  opacity: 1;
+}
+.LTR-exit-active {
+  transform: translateX(100%) skewX(calc(var(--skewX) * -1));
+  opacity: 0.75;
+  transition:
+    transform 250ms ease,
+    opacity 250ms ease;
+}

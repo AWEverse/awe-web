@@ -1,0 +1,12 @@
+.lightEffect {
+  position: absolute;
+  top: var(--light-position-y);
+  left: var(--light-position-x);
+  width: var(--light-size);
+  height: var(--light-size);
+  z-index: 1;
+  border-radius: 50%;
+  background: radial-gradient(ellipse at center, var(--awe-palette-primary-main) 0%, transparent 50%);
+  pointer-events: none;
+  user-select: none;
+}

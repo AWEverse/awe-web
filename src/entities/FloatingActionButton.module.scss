@@ -1,0 +1,110 @@
+.FabContainer {
+  position: absolute;
+  display: flex;
+  flex-direction: column-reverse;
+  z-index: 1000;
+
+  &.small {
+    .fab {
+      width: 40px;
+      height: 40px;
+    }
+  }
+
+  &.medium {
+    .fab {
+      width: 56px;
+      height: 56px;
+    }
+  }
+
+  &.large {
+    .fab {
+      width: 96px;
+      height: 96px;
+    }
+  }
+
+  &.bottom-right {
+    bottom: var(--transform-origin-y);
+    right: var(--transform-origin-x);
+  }
+
+  &.bottom-left {
+    bottom: var(--transform-origin-y);
+    left: var(--transform-origin-x);
+  }
+
+  &.top-right {
+    top: var(--transform-origin-y);
+    right: var(--transform-origin-x);
+  }
+
+  &.top-left {
+    top: var(--transform-origin-y);
+    left: var(--transform-origin-x);
+  }
+
+  .fab {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    border-radius: 50%;
+    background-color: var(--awe-palette-primary-main);
+    border: none;
+    box-shadow: 0 3px 5px rgba(0, 0, 0, 0.3);
+    cursor: pointer;
+    transition: transform 0.2s ease-in-out;
+
+    &:hover {
+      transform: scale(1.1);
+      background-color: var(--awe-palette-primary-main);
+    }
+  }
+
+  .fab-actions {
+    display: flex;
+    flex-direction: column;
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    position: absolute;
+    bottom: 70px;
+    opacity: 0;
+    transform: scale(0.8);
+    transition: all 0.3s ease;
+
+    &.open {
+      opacity: 1;
+      transform: scale(1);
+    }
+
+    .fab-action {
+      display: flex;
+      align-items: center;
+      margin-bottom: 10px;
+
+      button {
+        background-color: #fff;
+        border-radius: 50%;
+        padding: 10px;
+        border: none;
+        cursor: pointer;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        transition: background-color 0.2s ease-in-out;
+
+        &:hover {
+          background-color: #f0f0f0;
+        }
+      }
+
+      span {
+        margin-left: 8px; // Space between icon and label
+        font-size: 14px; // Font size for the label
+        color: #333; // Label color
+      }
+    }
+  }
+}

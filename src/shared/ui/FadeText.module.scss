@@ -1,0 +1,45 @@
+.FadeText {
+  position: relative;
+  font-size: 16px;
+  font-weight: bold;
+}
+
+.FadeEnter {
+  opacity: 0;
+}
+
+.FadeEnterActive {
+  opacity: 1;
+  transition: opacity 300ms;
+}
+
+.FadeExit {
+  opacity: 1;
+}
+
+.FadeExitActive {
+  opacity: 0;
+  transition: opacity 300ms;
+}
+
+.SlideEnter {
+  transform: translateY(20px);
+  opacity: 0;
+}
+
+.SlideEnterActive {
+  transform: translateY(0);
+  opacity: 1;
+  transition: all 300ms ease;
+}
+
+.SlideExit {
+  transform: translateY(0);
+  opacity: 1;
+}
+
+.SlideExitActive {
+  transform: translateY(-20px);
+  opacity: 0;
+  transition: all 300ms ease;
+}

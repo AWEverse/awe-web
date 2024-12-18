@@ -1,0 +1,34 @@
+.mainScreen {
+  width: 100%;
+  height: 100%;
+}
+
+.LeftMainBody {
+  position: relative;
+  height: 100%;
+}
+
+.LeftMainContent {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  top: 0;
+  left: 0;
+  overflow-y: scroll;
+  scroll-behavior: smooth;
+}
+
+.ChatListFab {
+  transform: translateY(5rem);
+  transition: transform var(--slide-transition);
+
+  &.FabVisible {
+    transform: translateY(0) !important;
+  }
+}
+
+.LeftMainHeader {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}

@@ -1,0 +1,27 @@
+:root {
+  --line-height-20: 26px;
+  --line-height-18: 24px;
+  --line-height-16: 21px;
+  --line-height-15: 20px;
+  --line-height-14: 18px;
+  --line-height-13: 17px;
+  --line-height-12: 16px;
+  --line-height-11: 15px;
+  --line-height: 1.3125;
+  --font-size-20: 20px;
+  --font-size-18: 18px;
+  --font-size-16: 16px;
+  --font-size-15: 15px;
+  --font-size-14: 14px;
+  --font-size-13: 13px;
+  --font-size-12: 12px;
+  --font-size-11: 11px;
+
+  --font-size: var(--font-size-16); //default
+
+  --font-size-title: calc(var(--font-size) * 1.5);
+  --font-size-subtitle: calc(var(--font-size) * 1.25);
+  --font-size-body: var(--font-size);
+  --font-size-desc: calc(var(--font-size) * 0.9);
+  --font-size-meta: calc(var(--font-size) * 0.8);
+}
