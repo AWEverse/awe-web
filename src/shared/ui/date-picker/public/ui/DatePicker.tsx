@@ -1,18 +1,14 @@
-import { FC, useMemo, useRef, cloneElement, createRef, useState, memo, ReactElement } from 'react';
+import { FC, useRef, cloneElement, createRef, useState, memo, ReactElement } from 'react';
 import { CSSTransition, TransitionGroup } from 'react-transition-group';
 import { useIntl } from 'react-intl';
 import useLastCallback from '@/lib/hooks/events/useLastCallback';
 import { throttle } from '@/lib/utils/schedulers';
-import buildClassName from '@/shared/lib/buildClassName';
-import buildStyle from '@/shared/lib/buildStyle';
 
 import { DateRangeData, ISelectDate } from '../../private/lib/types';
 import {
   CELL_SIZE,
   ZoomLevel,
   TRANSITION_DURATION,
-  COLUMNS,
-  MAX_DATE_CELLS,
   CURRENT_MONTH,
   DECEMBER,
   JANUARY,
@@ -29,9 +25,7 @@ import {
 } from '../../private/ui';
 
 import './DatePicker.scss';
-import calculateGridSelection from '../../private/lib/helpers/calculateGridSelection';
 import { CSSTransitionProps } from 'react-transition-group/CSSTransition';
-import { createSignal } from '@/lib/modules/signals';
 
 import { initGrigPosition, initDateRange } from './config';
 import useSelectedOrCurrentDate from '../../private/lib/hooks/useSelectedOrCurrentDate';
@@ -64,25 +58,6 @@ interface OwnProps {
   range?: boolean; // Whether the picker is in range mode
   selectedAt?: number; // The currently selected date
 }
-// const calculateIsDisabled = (
-//   isFutureMode: boolean,
-//   isPastMode: boolean,
-//   minDate: Date | null,
-//   maxDate: Date | null,
-//   selectedDate: Date,
-// ) => {
-//   return (isFutureMode && selectedDate < minDate!) || (isPastMode && selectedDate > maxDate!);
-// };
-
-// const calculateClipPathValue = (
-//   dateRange: DateRange,
-//   gridPosition: { rows: number; columns: number },
-// ) => {
-//   if (!dateRange.from) return 'none';
-//   const startIndex = 0;
-//   const lastIndex = gridPosition.rows * COLUMNS + gridPosition.columns + 1;
-//   return calculateGridSelection(startIndex, lastIndex);
-// };
 
 const LEVELS = [ZoomLevel.WEEK, ZoomLevel.MONTH, ZoomLevel.YEAR];
 
@@ -92,8 +67,6 @@ const CALENDAR_VIEWS = {
   [ZoomLevel.YEAR]: YearView,
 };
 
-const [isLongPressActive, setLongPressActive] = createSignal(false);
-
 const DatePicker: FC<OwnProps> = ({ selectedAt, mode }) => {
   const { formatMessage } = useIntl();
   const initSelectedDate = useSelectedOrCurrentDate(selectedAt);
@@ -102,6 +75,7 @@ const DatePicker: FC<OwnProps> = ({ selectedAt, mode }) => {
   const gridRef = useRef<HTMLDivElement>(null);
   const direction = useRef<AnimationType>('LTR');
   const selectedCount = useRef(0);
+  const isLongPressActive = useRef(false);
 
   const [zoomLevel, setZoomLevel] = useState<ZoomLevel>(ZoomLevel.WEEK);
   const [gridPosition, setGridPosition] = useState(initGrigPosition);
@@ -123,6 +97,10 @@ const DatePicker: FC<OwnProps> = ({ selectedAt, mode }) => {
 
   const setAnimationDirection = useLastCallback((_direction: AnimationType) => {
     direction.current = _direction;
+  });
+
+  const setLongPressActive = useLastCallback((value?: boolean) => {
+    isLongPressActive.current = value ?? !isLongPressActive.current;
   });
 
   const updateMonth = useLastCallback((increment: number) => {
@@ -163,7 +141,7 @@ const DatePicker: FC<OwnProps> = ({ selectedAt, mode }) => {
           }
         }
 
-        if (isLongPressActive()) {
+        if (isLongPressActive.current) {
           selectedCount.current++;
 
           switch (selectedCount.current) {
@@ -241,7 +219,7 @@ const DatePicker: FC<OwnProps> = ({ selectedAt, mode }) => {
       <div
         ref={gridRef}
         className="gridWrapper"
-        onMouseOver={isLongPressActive() ? handleMouseOver : undefined}
+        onMouseOver={isLongPressActive.current ? handleMouseOver : undefined}
       >
         <TransitionGroup
           component={null}
@@ -276,16 +254,4 @@ const DatePicker: FC<OwnProps> = ({ selectedAt, mode }) => {
   );
 };
 
-// if(!bFirstOverRef.current) {
-//   bFirstOverRef.current = false;
-// } else {
-//   trackCursor(target, () => {
-//     close()
-//   });
-// }
-
-// Bad idea here, but needs to be moved to its own date picker component
-// const trackCursor = (e: HTMLDivElement, callback: NoneToVoidFunction) => {
-
-// }
 export default memo(DatePicker);
