@@ -112,9 +112,9 @@
   height: 100%;
   z-index: 2;
   background-color: var(--awe-palette-primary-main);
-  opacity: 0.5;
-  transition: clip-path 0.25s ease;
+  opacity: 0.5;  
   will-change: clip-path;
+  transition: clip-path 0.25s ease;
 }
 
 .selectedDay {

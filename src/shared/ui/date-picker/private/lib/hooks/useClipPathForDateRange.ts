@@ -6,8 +6,10 @@ import { COLUMNS, MAX_DATE_CELLS } from '../constans';
 export default function useClipPathForDateRange(
   dateRange: DateRange,
   gridPosition: { rows: number; columns: number },
+  disabled: boolean,
 ) {
   return useMemo(() => {
+    if (disabled) return 'none';
     if (!dateRange?.from) return 'none';
 
     const startIndex = getDayIndexInMonth(dateRange.from) - 1;
