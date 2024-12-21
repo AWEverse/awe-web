@@ -21,7 +21,7 @@ export type PerformanceType = {
   [key in PerformanceTypeKey]: boolean;
 };
 
-const classMap: { [key in PerformanceTypeKey]: string } = {
+const classMap: Record<PerformanceTypeKey, string> = {
   pageTransitions: 'no-page-transitions',
   messageSendingAnimations: 'no-message-sending-animations',
   mediaViewerAnimations: 'no-media-viewer-animations',
@@ -43,14 +43,22 @@ export function applyPerformanceSettings(performanceType: PerformanceType) {
   const root = document.body;
 
   requestMutation(() => {
-    (Object.keys(performanceType) as PerformanceTypeKey[]).forEach(key => {
-      root.classList.toggle(classMap[key], !performanceType[key]);
-    });
+    for (const key in performanceType) {
+      if (performanceType.hasOwnProperty(key)) {
+        root.classList.toggle(
+          classMap[key as PerformanceTypeKey],
+          !performanceType[key as PerformanceTypeKey],
+        );
+      }
+    }
   });
 }
 
 export function applyAnimationSettings(performanceType: 0 | 1 | 2) {
   const root = document.body;
 
-  root.classList.toggle(`animation-level-${performanceType}`, performanceType in [0, 1, 2]);
+  requestMutation(() => {
+    root.classList.remove('animation-level-0', 'animation-level-1', 'animation-level-2');
+    root.classList.add(`animation-level-${performanceType}`);
+  });
 }

@@ -19,6 +19,7 @@ function useLongPress({ onClick, onStart, onEnd, threshold = DEFAULT_THRESHOLD }
     (e: React.MouseEvent | React.TouchEvent) => {
       const canProcessEvent =
         ('button' in e && e.button === 0) || ('touches' in e && e.touches.length > 0);
+
       if (isPressed.current || !canProcessEvent) {
         return;
       }

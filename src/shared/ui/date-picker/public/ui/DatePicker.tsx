@@ -1,14 +1,4 @@
-import {
-  FC,
-  useMemo,
-  useRef,
-  cloneElement,
-  createRef,
-  useState,
-  memo,
-  ReactElement,
-  useEffect,
-} from 'react';
+import { FC, useMemo, useRef, cloneElement, createRef, useState, memo, ReactElement } from 'react';
 import { CSSTransition, TransitionGroup } from 'react-transition-group';
 import { useIntl } from 'react-intl';
 import useLastCallback from '@/lib/hooks/events/useLastCallback';
@@ -22,7 +12,12 @@ import {
   ZoomLevel,
   TRANSITION_DURATION,
   COLUMNS,
-  LIGHT_SIZE,
+  MAX_DATE_CELLS,
+  CURRENT_MONTH,
+  DECEMBER,
+  JANUARY,
+  NEXT_MONTH,
+  PREVIOUS_MONTH,
 } from '../../private/lib/constans';
 
 import {
@@ -35,13 +30,17 @@ import {
 
 import './DatePicker.scss';
 import calculateGridSelection from '../../private/lib/helpers/calculateGridSelection';
-import LightEffect from '@/shared/ui/common/LightEffect';
-import { CSSTransitionClassNames, CSSTransitionProps } from 'react-transition-group/CSSTransition';
+import { CSSTransitionProps } from 'react-transition-group/CSSTransition';
 import { createSignal } from '@/lib/modules/signals';
+
+import { initGrigPosition, initDateRange } from './config';
+import useSelectedOrCurrentDate from '../../private/lib/hooks/useSelectedOrCurrentDate';
+import { requestMeasure } from '@/lib/modules/fastdom/fastdom';
+import useClipPathForDateRange from '../../private/lib/hooks/useClipPathForDateRange';
 
 type Mode = 'future' | 'past' | 'all';
 
-type ChildType = ReactElement & { classNames: string };
+type AnimationType = 'LTR' | 'RTL' | 'zoomIn' | 'zoomOut';
 
 interface DateRange {
   from?: Date;
@@ -55,147 +54,148 @@ interface DatePickerProps {
   mode?: Mode;
 }
 
-const calculateIsDisabled = (
-  isFutureMode: boolean,
-  isPastMode: boolean,
-  minDate: Date | null,
-  maxDate: Date | null,
-  selectedDate: Date,
-) => {
-  return (isFutureMode && selectedDate < minDate!) || (isPastMode && selectedDate > maxDate!);
-};
+// const calculateIsDisabled = (
+//   isFutureMode: boolean,
+//   isPastMode: boolean,
+//   minDate: Date | null,
+//   maxDate: Date | null,
+//   selectedDate: Date,
+// ) => {
+//   return (isFutureMode && selectedDate < minDate!) || (isPastMode && selectedDate > maxDate!);
+// };
 
-const calculateClipPathValue = (
-  dateRange: DateRange,
-  gridPosition: { rows: number; columns: number },
-) => {
-  if (!dateRange.from) return 'none';
-  const startIndex = 0;
-  const lastIndex = gridPosition.rows * COLUMNS + gridPosition.columns + 1;
-  return calculateGridSelection(startIndex, lastIndex);
-};
+// const calculateClipPathValue = (
+//   dateRange: DateRange,
+//   gridPosition: { rows: number; columns: number },
+// ) => {
+//   if (!dateRange.from) return 'none';
+//   const startIndex = 0;
+//   const lastIndex = gridPosition.rows * COLUMNS + gridPosition.columns + 1;
+//   return calculateGridSelection(startIndex, lastIndex);
+// };
 
-let nLongPressCount = 0;
+const LEVELS = [ZoomLevel.WEEK, ZoomLevel.MONTH, ZoomLevel.YEAR];
 
-const trackLongPress = (max: number) => {
-  nLongPressCount = (++nLongPressCount + 1) % max;
-  console.log('nLongPressCount', nLongPressCount, nLongPressCount === 0);
-
-  return nLongPressCount === 0;
-};
-
-// boolean-Signal-{variable name}
-const [bSSelected, setSelected] = createSignal(false);
+const [isLongPressActive, setLongPressActive] = createSignal(false);
 
 const DatePicker: FC<DatePickerProps> = ({ selectedAt, minAt, maxAt, mode }) => {
   const { formatMessage } = useIntl();
+  const initSelectedDate = useSelectedOrCurrentDate(selectedAt);
+
+  const nodeRef = createRef<HTMLDivElement>();
   const gridRef = useRef<HTMLDivElement>(null);
+  const directionRef = useRef<AnimationType>('LTR');
+  const selectedCountRef = useRef(0);
 
-  const isFutureMode = mode === 'future';
-  const isPastMode = mode === 'past';
-  const passedSelectedDate = useMemo(() => new Date(selectedAt ?? Date.now()), [selectedAt]);
   const [zoomLevel, setZoomLevel] = useState<ZoomLevel>(ZoomLevel.WEEK);
-
-  const directionRef = useRef<'LTR' | 'RTL' | 'zoomIn' | 'zoomOut'>('LTR');
-
-  const [gridPosition, setGridPosition] = useState({
-    columns: 0,
-    rows: 0,
-  });
-  const [dateRange, setDateRange] = useState<DateRange>({ from: passedSelectedDate });
+  const [gridPosition, setGridPosition] = useState(initGrigPosition);
+  const [dateRange, setDateRange] = useState<DateRange>(initDateRange);
 
   // current is for display on grid and second for user selection
   const [date, setDate] = useState<DateRangeData>({
-    currentSystemDate: passedSelectedDate,
-    userSelectedDate: passedSelectedDate,
+    currentSystemDate: initSelectedDate,
+    userSelectedDate: initSelectedDate,
   });
 
-  const minDate = useMemo(() => (minAt ? new Date(minAt) : null), [minAt]);
-  const maxDate = useMemo(() => (maxAt ? new Date(maxAt) : null), [maxAt]);
-  const areDisabled = calculateIsDisabled(
-    isFutureMode,
-    isPastMode,
-    minDate,
-    maxDate,
-    date.userSelectedDate,
-  );
+  const clipPathValue = useClipPathForDateRange(dateRange, gridPosition);
 
-  const handlePrevMonth = useLastCallback(() => updateMonth(-1));
-  const handleNextMonth = useLastCallback(() => updateMonth(1));
+  const handlePrevMonth = useLastCallback(() => updateMonth(PREVIOUS_MONTH));
+  const handleNextMonth = useLastCallback(() => updateMonth(NEXT_MONTH));
 
-  const updateMonth = (increment: number) => {
-    directionRef.current = increment > 0 ? 'RTL' : 'LTR';
+  const setAnimationDirection = useLastCallback((direction: AnimationType) => {
+    directionRef.current = direction;
+  });
+
+  const updateMonth = useLastCallback((increment: number) => {
+    setAnimationDirection(increment > 0 ? 'RTL' : 'LTR');
 
     setDate(prevDate => {
-      const newDate = new Date(prevDate.currentSystemDate);
-      newDate.setMonth(newDate.getMonth() + increment);
-      newDate.setDate(1);
+      const currentSystemDateCopy = new Date(prevDate.currentSystemDate);
+      currentSystemDateCopy.setDate(1);
+      currentSystemDateCopy.setMonth(currentSystemDateCopy.getMonth() + increment);
 
-      return { ...prevDate, currentSystemDate: newDate };
+      return { ...prevDate, currentSystemDate: currentSystemDateCopy };
     });
-  };
+  });
 
   const handleSelectDate = useLastCallback(
-    ({
-      day = 1,
-      month = 0,
-      year = date.userSelectedDate.getFullYear(),
-      level = zoomLevel,
-    }: ISelectDate = {}) => {
-      const dateCopy = new Date(year, month, day);
+    ({ day = 1, month = 0, year = 0, level = zoomLevel }: ISelectDate = {}) => {
+      const newDateCopy = new Date(year, month, day);
 
-      setDate(prevDate => {
-        return {
-          ...prevDate,
-          userSelectedDate: dateCopy,
-        };
-      });
+      const currentMonth = date.currentSystemDate.getMonth();
+      const targetMonth = newDateCopy.getMonth();
+
+      const monthDifference = targetMonth - currentMonth;
+      const isSameMonth = monthDifference === CURRENT_MONTH;
+
+      if (!isSameMonth) {
+        const isSwitchToPreviousMonth =
+          monthDifference === PREVIOUS_MONTH ||
+          (currentMonth === JANUARY && targetMonth === DECEMBER);
+        const isSwitchToNextMonth =
+          monthDifference === NEXT_MONTH || (currentMonth === DECEMBER && targetMonth === JANUARY);
+
+        if (isSwitchToPreviousMonth) {
+          updateMonth(PREVIOUS_MONTH);
+        } else if (isSwitchToNextMonth) {
+          updateMonth(NEXT_MONTH);
+        }
+      }
+
+      if (isLongPressActive()) {
+        selectedCountRef.current++;
+
+        switch (selectedCountRef.current) {
+          case 1:
+            setDateRange({ from: newDateCopy });
+            break;
+          case 2:
+            setDateRange(prevRange => ({ ...prevRange, to: newDateCopy }));
+            setLongPressActive(false);
+            selectedCountRef.current = 0;
+            break;
+        }
+      }
+
+      setDate(prevDate => ({
+        ...prevDate,
+        userSelectedDate: newDateCopy,
+      }));
 
       if (zoomLevel !== level) {
-        directionRef.current = 'zoomIn';
-
+        setAnimationDirection('zoomIn');
         setZoomLevel(level);
       }
     },
   );
 
   const handleLongPress = useLastCallback(() => {
-    setDateRange({ from: date.userSelectedDate, to: undefined });
+    setLongPressActive(true);
   });
-
-  const clipPathValue = useMemo(() => {
-    if (!dateRange.from) return 'none';
-
-    const startIndex = 5;
-    const lastIndex = gridPosition.rows * COLUMNS + gridPosition.columns + 1;
-
-    return calculateGridSelection(startIndex, lastIndex);
-  }, [gridPosition, dateRange]);
 
   const handleMouseOver = useLastCallback(
     throttle((e: React.MouseEvent<HTMLDivElement>) => {
       const target = e.target as HTMLElement | null;
 
-      if (target && !dateRange?.to) {
-        const column = Math.floor(target.offsetLeft / CELL_SIZE);
-        const row = Math.floor(target.offsetTop / CELL_SIZE);
+      const hasRangeEnd = !!dateRange?.to;
 
-        setGridPosition({
-          columns: column,
-          rows: row,
+      if (target && !hasRangeEnd) {
+        requestMeasure(() => {
+          const column = Math.floor(target.offsetLeft / CELL_SIZE);
+          const row = Math.floor(target.offsetTop / CELL_SIZE);
+
+          setGridPosition({
+            columns: column,
+            rows: row,
+          });
         });
       }
     }, 100), // 10 calls per second
   );
 
   const handleSwitchZoom = useLastCallback(() => {
-    const levels = [ZoomLevel.WEEK, ZoomLevel.MONTH, ZoomLevel.YEAR];
-    directionRef.current = 'zoomIn';
-
-    setZoomLevel(prev => {
-      const nextIndex = (prev + 1) % levels.length;
-      return levels[nextIndex];
-    });
+    setAnimationDirection('zoomIn');
+    setZoomLevel(prev => LEVELS[(prev + 1) % LEVELS.length]);
   });
 
   const CalendarView = useMemo(() => {
@@ -215,8 +215,6 @@ const DatePicker: FC<DatePickerProps> = ({ selectedAt, minAt, maxAt, mode }) => 
   );
   const style = useMemo(() => buildStyle(`--cell-size: ${CELL_SIZE}px`), [CELL_SIZE]);
 
-  const nodeRef = createRef<HTMLDivElement>();
-
   const transitionKey = useMemo(
     () =>
       directionRef.current === 'zoomIn'
@@ -226,7 +224,7 @@ const DatePicker: FC<DatePickerProps> = ({ selectedAt, minAt, maxAt, mode }) => 
   );
 
   return (
-    <div data-mode={mode} aria-disabled={areDisabled} className="datePicker" style={style}>
+    <div data-mode={mode} className="datePicker" style={style}>
       <DatePickerNavigation
         month={date.currentSystemDate.toLocaleString('default', { month: 'long' })}
         year={date.currentSystemDate.getFullYear()}
@@ -236,7 +234,11 @@ const DatePicker: FC<DatePickerProps> = ({ selectedAt, minAt, maxAt, mode }) => 
       />
       <WeekdayLabels formatMessage={formatMessage} />
 
-      <div ref={gridRef} className="gridWrapper" onMouseOver={handleMouseOver}>
+      <div
+        ref={gridRef}
+        className="gridWrapper"
+        onMouseOver={isLongPressActive() ? handleMouseOver : undefined}
+      >
         <TransitionGroup
           component={null}
           childFactory={(child: ReactElement<CSSTransitionProps<HTMLDivElement>>) =>
@@ -276,5 +278,14 @@ const DatePicker: FC<DatePickerProps> = ({ selectedAt, minAt, maxAt, mode }) => 
 // const trackCursor = (e: HTMLDivElement, callback: NoneToVoidFunction) => {
 
 // }
+
+function getDayIndexInMonth(date = new Date()) {
+  const firstDayOfMonth = new Date(date.getFullYear(), date.getMonth(), 1).getDay() || 7;
+  const currentDay = date.getDate();
+
+  const firstDayIndex = firstDayOfMonth;
+
+  return (currentDay + firstDayIndex - 1) % MAX_DATE_CELLS;
+}
 
 export default memo(DatePicker);

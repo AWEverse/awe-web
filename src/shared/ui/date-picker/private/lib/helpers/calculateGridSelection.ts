@@ -1,7 +1,7 @@
 import { CELL_SIZE, COLUMNS, ROWS } from '../constans';
 
-const MAX_WIDTH = 100;
-const MAX_HEIGHT = 100;
+const MAX_WIDTH = 100; // 100%
+const MAX_HEIGHT = 100; // 100%
 
 type Dimensions = {
   widthPercentage: number;
@@ -62,7 +62,6 @@ const calculatePercentage = (value: number, dimention: number) => (value * 100) 
 const calculateColumn = (endDate: number) => ((endDate % COLUMNS) + COLUMNS) % COLUMNS || COLUMNS;
 
 export default function calculateGridSelection(startDate: number, endDate: number) {
-  
   if (startDate > endDate) return;
 
   const gridWidth = CELL_SIZE * COLUMNS;
@@ -82,7 +81,9 @@ export default function calculateGridSelection(startDate: number, endDate: numbe
   const isLastColumn = endColumn === COLUMNS; // Adjusted to check against COLUMNS
 
   const bottomRight = {
-    widthPercentage: isLastColumn ? MAX_WIDTH : calculatePercentage(endColumn * CELL_SIZE, gridWidth),
+    widthPercentage: isLastColumn
+      ? MAX_WIDTH
+      : calculatePercentage(endColumn * CELL_SIZE, gridWidth),
     heightPercentage: calculatePercentage(endRow * CELL_SIZE, gridHeight),
   };
 

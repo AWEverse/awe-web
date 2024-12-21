@@ -16,6 +16,7 @@
   z-index: 3;
   gap: 1.125rem;
   background-color: var(--awe-palette-background-default);
+  border-bottom: 2px solid var(--awe-palette-background-paper);
 
   padding-inline: 1.5rem;
 
@@ -79,6 +80,7 @@
 
 .UnderHeader {
   will-change: transform;
+  border-bottom: 2px solid var(--awe-palette-background-paper);
 
   &__Hidden {
     opacity: 0;

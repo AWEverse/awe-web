@@ -28,19 +28,19 @@ export function getIsStrict() {
 }
 
 export function enableStrict() {
-  if (isStrict) return;
-
-  isStrict = true;
-  setupLayoutDetectors();
-  setupMutationObserver();
+  if (!isStrict) {
+    isStrict = true;
+    setupLayoutDetectors();
+    setupMutationObserver();
+  }
 }
 
 export function disableStrict() {
-  if (!isStrict) return;
-
-  clearMutationObserver();
-  clearLayoutDetectors();
-  isStrict = false;
+  if (isStrict) {
+    clearMutationObserver();
+    clearLayoutDetectors();
+    isStrict = false;
+  }
 }
 
 export function forceMeasure(cb: NoneToVoidFunction) {

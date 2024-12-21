@@ -4,6 +4,8 @@ import { CalendarViewProps } from '../lib/types';
 import { buildCalendarGrid } from '../lib/utils';
 import useLongPress from '@/lib/hooks/events/useLongPress';
 
+type TimeLapse = 'prev' | 'current' | 'next';
+
 const WeekView: React.FC<CalendarViewProps> = ({
   date,
   onSelectDate,
@@ -14,17 +16,19 @@ const WeekView: React.FC<CalendarViewProps> = ({
 }) => {
   const { currentSystemDate, userSelectedDate } = date;
 
-  const currentDay = new Date().getDate();
+  const currentDay = currentSystemDate.getDate();
   const currentYear = currentSystemDate.getFullYear();
   const currentMonth = currentSystemDate.getMonth();
   const selectedDay = userSelectedDate.getDate();
   const selectedMonth = userSelectedDate.getMonth();
 
+  // Memoize the calendar grids to avoid recalculating unless currentSystemDate changes
   const { prevMonthGrid, currentMonthGrid, nextMonthGrid } = useMemo(
     () => buildCalendarGrid(currentSystemDate),
     [currentSystemDate],
   );
 
+  // Memoize getDayClassName to avoid unnecessary recalculation
   const getDayClassName = useCallback(
     (day: number, isCurrentMonth: boolean): string | undefined => {
       const isCurrentDay = day === currentDay && currentMonth === new Date().getMonth();
@@ -46,32 +50,53 @@ const WeekView: React.FC<CalendarViewProps> = ({
     threshold: 500,
   });
 
-  const handleSelectDate = (day: number) =>
-    useCallback(() => {
-      onSelectDate?.({ day, month: currentMonth, year: currentYear });
-    }, [currentMonth, currentSystemDate, onSelectDate]);
+  const handleSelectDate = useCallback(
+    (day: number, type: TimeLapse = 'current') => {
+      let newMonth = currentMonth;
+      let newYear = currentYear;
+
+      if (type === 'prev') {
+        newMonth -= 1;
+
+        if (newMonth < 0) {
+          newMonth = 11;
+          newYear -= 1;
+        }
+      } else if (type === 'next') {
+        newMonth += 1;
+
+        if (newMonth > 11) {
+          newMonth = 0;
+          newYear += 1;
+        }
+      }
+
+      onSelectDate?.({ day, month: newMonth, year: newYear });
+    },
+    [currentMonth, currentYear, onSelectDate],
+  );
 
   const handleRightClick = useCallback(
-    (event: React.MouseEvent | React.TouchEvent, day: number) => {
-      event.preventDefault();
+    (e: React.MouseEvent | React.TouchEvent, day: number) => {
+      e.preventDefault();
       if (onRightClick) {
         onRightClick({ day, month: currentMonth, year: currentYear });
       }
     },
-    [currentMonth, currentSystemDate, onRightClick],
+    [currentMonth, currentYear, onRightClick],
   );
 
   const renderDays = useCallback(
-    (days: number[], isCurrentMonth = false) => {
+    (days: number[], type: TimeLapse = 'current') => {
       return days.map(day => (
         <div
-          key={day}
+          key={day.toString()}
           className={buildClassName(
             'calendarCell',
             'dayCell',
-            getDayClassName(day, isCurrentMonth),
+            getDayClassName(day, type === 'current'),
           )}
-          onClick={handleSelectDate(day)}
+          onClick={() => handleSelectDate(day, type)}
           onContextMenu={event => handleRightClick(event, day)}
           {...longPressListeners}
         >
@@ -84,9 +109,9 @@ const WeekView: React.FC<CalendarViewProps> = ({
 
   return (
     <>
-      {renderDays(prevMonthGrid)}
-      {renderDays(currentMonthGrid, true)}
-      {renderDays(nextMonthGrid)}
+      {renderDays(prevMonthGrid, 'prev')}
+      {renderDays(currentMonthGrid)}
+      {renderDays(nextMonthGrid, 'next')}
     </>
   );
 };

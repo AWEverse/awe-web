@@ -57,25 +57,47 @@ const runUpdatePassOnRaf = throttleWithRafFallback(() => {
     });
 });
 
+// Запрашивает задачу для фазы измерения (measure) и добавляет её в очередь.
+// Функция runUpdatePassOnRaf обеспечивает выполнение задач на следующем кадре анимации.
 export function requestMeasure(callback: NoneToVoidFunction) {
-  pendingMeasureTasks.push(callback);
-  runUpdatePassOnRaf();
+  pendingMeasureTasks.push(callback); // Добавляем задачу в очередь микротасков для измерения.
+  runUpdatePassOnRaf(); // Планируем выполнение задач через requestAnimationFrame.
 }
 
+// Запрашивает задачу для фазы мутации (mutate) и добавляет её в очередь.
+// Задачи мутации выполняются после задач измерения.
 export function requestMutation(callback: NoneToVoidFunction) {
-  pendingMutationTasks.push(callback);
-  runUpdatePassOnRaf();
+  pendingMutationTasks.push(callback); // Добавляем задачу в очередь микротасков для мутаций.
+  runUpdatePassOnRaf(); // Планируем выполнение задач через requestAnimationFrame.
 }
 
+// Запрашивает задачу для следующей фазы мутации, которая выполняется после фазы измерения.
+// В этом случае сначала планируется задача на измерение, а затем на мутацию.
 export function requestNextMutation(callback: NoneToReflowTaskFunction) {
+  // Планируем выполнение сначала измерения, затем мутации.
   requestMeasure(() => {
     requestMutation(callback);
   });
 }
 
+// Запрашивает принудительный Reflow (перерисовку), задача добавляется в соответствующую очередь.
+// Принудительные задачи требуют выполнения всех изменений в DOM, что может замедлить работу.
 export function requestForcedReflow(callback: NoneToReflowTaskFunction) {
-  pendingForceReflowTasks.push(callback);
-  runUpdatePassOnRaf();
+  pendingForceReflowTasks.push(callback); // Добавляем задачу в очередь принудительных Reflow задач.
+  runUpdatePassOnRaf(); // Планируем выполнение задач через requestAnimationFrame.
 }
+
+/*
+Иллюстрация микротасков:
+
+1. requestMeasure() -> Добавляет задачу для измерения в очередь.
+2. requestMutation() -> Добавляет задачу для мутации в очередь.
+3. requestNextMutation() -> Сначала планирует измерение, затем мутацию.
+4. requestForcedReflow() -> Добавляет задачу принудительного Reflow в очередь.
+
+runUpdatePassOnRaf() управляет всеми этими задачами через requestAnimationFrame, что позволяет эффективно распределять 
+выполнение микротасков по фазам измерения и мутации для оптимизации перерисовки DOM.
+
+*/
 
 export * from './stricterdom';

@@ -88,7 +88,7 @@ export const randomColorHEX = () => `#${randomHex()}`;
 export const randomColorHEXA = () => `#${randomHex()}${randomHex()}`;
 export const randomColorHEXAA = () => `#${randomHex()}${randomHex()}${randomHex()}`;
 
-export const Derivative = (f: (x: number) => number, x: number, h: number = 1e-5): number => {
+export const derivative = (f: (x: number) => number, x: number, h: number = 1e-5): number => {
   const epsilon = Number.EPSILON;
   const hAdjusted = Math.max(h, epsilon);
 
