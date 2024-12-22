@@ -6,7 +6,7 @@
   height: var(--light-size);
   z-index: 1;
   border-radius: 50%;
-  background: radial-gradient(ellipse at center, var(--awe-palette-primary-main) 0%, transparent 50%);
+  background: radial-gradient(ellipse at center, var(--awe-palette-primary-main) 0%, transparent 55%);
   pointer-events: none;
   user-select: none;
 }

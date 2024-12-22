@@ -47,7 +47,7 @@ const WeekView: React.FC<CalendarViewProps> = ({
     onClick,
     onStart: onLongPressStart,
     onEnd: onLongPressEnd,
-    threshold: 500,
+    threshold: 300,
   });
 
   const handleSelectDate = useCallback(

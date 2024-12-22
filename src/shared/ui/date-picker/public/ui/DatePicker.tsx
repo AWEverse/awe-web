@@ -14,6 +14,7 @@ import {
   JANUARY,
   NEXT_MONTH,
   PREVIOUS_MONTH,
+  LIGHT_SIZE,
 } from '../../private/lib/constans';
 
 import {
@@ -33,6 +34,7 @@ import { requestMeasure } from '@/lib/modules/fastdom/fastdom';
 import useClipPathForDateRange from '../../private/lib/hooks/useClipPathForDateRange';
 import useTransitionKey from '../../private/lib/hooks/useTransitionKey';
 import useCalendarStyles from '../../private/lib/hooks/useCalendarStyles';
+import LightEffect from '@/shared/ui/common/LightEffect';
 
 type Mode = 'future' | 'past' | 'all';
 
@@ -196,6 +198,8 @@ const DatePicker: FC<OwnProps> = ({ selectedAt, mode }) => {
     }, 100), // 10 calls per second
   );
 
+  const shouldMouseOver = isLongPressActive.current ? handleMouseOver : undefined;
+
   const handleSwitchZoom = useLastCallback(() => {
     setAnimationDirection('zoomIn');
     setZoomLevel(prev => LEVELS[(prev + 1) % LEVELS.length]);
@@ -216,11 +220,7 @@ const DatePicker: FC<OwnProps> = ({ selectedAt, mode }) => {
       />
       <WeekdayLabels formatMessage={formatMessage} />
 
-      <div
-        ref={gridRef}
-        className="gridWrapper"
-        onMouseOver={isLongPressActive.current ? handleMouseOver : undefined}
-      >
+      <div ref={gridRef} className="gridWrapper" onMouseOver={shouldMouseOver}>
         <TransitionGroup
           component={null}
           childFactory={(child: ReactElement<CSSTransitionProps<HTMLDivElement>>) =>
@@ -248,7 +248,7 @@ const DatePicker: FC<OwnProps> = ({ selectedAt, mode }) => {
             clipPath: clipPathValue,
           }}
         ></div>
-        {/* <LightEffect gridRef={gridRef} lightSize={LIGHT_SIZE} /> */}
+        <LightEffect gridRef={gridRef} lightSize={LIGHT_SIZE} />
       </div>
     </div>
   );

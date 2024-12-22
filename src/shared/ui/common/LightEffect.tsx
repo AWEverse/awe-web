@@ -5,7 +5,7 @@ import s from './LightEffect.module.css';
 import { IVector2 } from '@/lib/core/public/math/vector2';
 
 interface LightEffectProps {
-  gridRef: React.RefObject<HTMLDivElement>;
+  gridRef: React.RefObject<HTMLElement | null>;
   lightSize: number;
   intencity?: number;
 }
@@ -40,10 +40,10 @@ const LightEffect: FC<LightEffectProps> = ({ gridRef, lightSize }) => {
     });
   }, [gridRef]);
 
-  useLayoutEffect(() => {
+  useEffect(() => {
     handleResize();
 
-    window.addEventListener('resize', handleResize);
+    window.addEventListener('resize', handleResize, { passive: true });
 
     return () => {
       window.removeEventListener('resize', handleResize);

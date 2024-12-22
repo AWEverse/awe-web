@@ -9,7 +9,7 @@
   align-items: center;
   justify-content: center;
   z-index: 9998;
-  will-change: opacity transform;
+  will-change: opacity, transform;
 
   &::before {
     content: '';
