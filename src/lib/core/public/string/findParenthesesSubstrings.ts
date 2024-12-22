@@ -36,7 +36,6 @@ export default function findParenthesesSubstrings(
   const result: string[] = [];
 
   let currentSubstring = '';
-
   let openCount = 0;
 
   for (let i = 0; i < str.length; i++) {

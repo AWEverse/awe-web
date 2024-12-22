@@ -70,16 +70,21 @@ const CALENDAR_VIEWS = {
 };
 
 /*
-25 26 27 28 29 30] 1
+this string templte is used for copy calendar and move int into a chat for example
+with all entities (own dates, selected dates, current month, selected range and so on)
+
+25 26 27 28 29 30 [1
 2  3  4  5  6  7  8
 9  10 (11 (12) 13 14 15
 16 17 18 19 (20 21 22
 23 24 25 26 27)) 28 29
-30 [3 31 1  2  3  4  5 
+30 31] 1  2  3  4  5 
 
 () - selected range
 [] - current month
 */
+// 1) have already function that can find all substrings in brackets
+// 2)
 
 // (11 (12) 13 14 15 16 17 18 19 (20 21 22 23 24 25 26 27))'
 ['11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27', '12', '20 21 22 23 24 25 26 27'];
