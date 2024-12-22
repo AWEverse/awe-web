@@ -1,4 +1,5 @@
 import { MAX_INT_32 } from '@/lib/constants/numeric';
+import { NumericLimits } from '@/lib/core';
 
 export const WEEKDAY_LETTERS = [
   'lng_weekday1',
@@ -32,8 +33,8 @@ export const MONTH_LIST = [
 ];
 
 export const TRANSITION_DURATION = 1000;
-export const MAX_SAFE_DATE = MAX_INT_32 * 1000;
-export const MIN_SAFE_DATE = 0;
+export const MAX_SAFE_DATE = 8640000000000000;
+export const MIN_SAFE_DATE = -8640000000000000;
 export const COLUMNS = 7;
 export const ROWS = 6;
 export const MAX_DATE_CELLS = COLUMNS * ROWS;
@@ -47,7 +48,6 @@ export enum ZoomLevel {
   YEAR,
 }
 
-// indexes
 export const PREVIOUS_MONTH = -1;
 export const CURRENT_MONTH = 0;
 export const NEXT_MONTH = 1;

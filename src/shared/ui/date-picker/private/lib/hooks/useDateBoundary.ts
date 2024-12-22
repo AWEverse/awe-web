@@ -1,9 +1,7 @@
+//@ts-ignore
 import { DEBUG } from '@/lib/config/dev';
-import { MAX_INT_32 } from '@/lib/constants/numeric';
 import { useMemo } from 'react';
-
-const MAX_SAFE_DATE = MAX_INT_32 * 1000;
-const MIN_SAFE_DATE = 0;
+import { MIN_SAFE_DATE, MAX_SAFE_DATE } from '../constans';
 
 interface UseDateBoundaryParams {
   isFutureMode?: boolean;
