@@ -1,10 +1,11 @@
-import { FC, memo, useCallback, useEffect, useRef } from 'react';
+import { FC, memo, useCallback, useEffect, useState } from 'react';
 import useCounter from '../hooks/useCounter';
 import buildClassName from '@/shared/lib/buildClassName';
 import './TallyCounter.scss';
 import { AddRounded, RemoveRounded } from '@mui/icons-material';
 import useLongPress from '@/lib/hooks/events/useLongPress';
 import useLastCallback from '@/lib/hooks/events/useLastCallback';
+import useInterval from '@/lib/hooks/shedulers/useInterval';
 
 interface OwnProps {
   className?: string;
@@ -13,49 +14,48 @@ interface OwnProps {
   onChange?: (value: number) => void;
   size?: 'xsmall' | 'small' | 'medium' | 'large' | 'bigger' | 'jumbo';
   loop?: boolean;
-  treshhold?: number;
+  threshold?: number;
 }
 
 const TallyCounter: FC<OwnProps> = ({
   className,
-  range,
+  range = [-Infinity, Infinity],
   initialValue = 0,
   size = 'large',
   onChange,
   loop = false,
-  treshhold = 50,
+  threshold = 50,
 }) => {
-  const [min, max] = range || [-Infinity, Infinity];
-  const { count, increment, decrement } = useCounter({ initialValue, min, max, loop });
+  const { count, increment, decrement } = useCounter({
+    initialValue,
+    min: range[0],
+    max: range[1],
+    loop,
+  });
 
-  const intervalRef = useRef<NodeJS.Timeout | null>(null);
+  // Managing interval state for continuous increment/decrement during long press
+  const [intervalActive, setIntervalActive] = useState(false);
 
-  const startInterval = useCallback(
-    (callback: () => void) => () => {
-      intervalRef.current = setInterval(() => {
-        callback();
+  useInterval(
+    () => {
+      if (intervalActive) {
+        increment();
         onChange?.(count);
-      }, treshhold);
+      }
     },
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [treshhold],
+    intervalActive ? threshold : undefined,
   );
 
+  const startInterval = useCallback(() => {
+    setIntervalActive(true);
+  }, []);
+
   const stopInterval = useLastCallback(() => {
-    if (intervalRef.current) {
-      clearInterval(intervalRef.current);
-      intervalRef.current = null;
-    }
+    setIntervalActive(false);
   });
 
-  const decrementListeners = useLongPress({
-    onStart: startInterval(decrement),
-    onEnd: stopInterval,
-    threshold: 500,
-  });
-
-  const incrementListeners = useLongPress({
-    onStart: startInterval(increment),
+  const longPressListeners = useLongPress({
+    onStart: startInterval,
     onEnd: stopInterval,
     threshold: 500,
   });
@@ -64,32 +64,49 @@ const TallyCounter: FC<OwnProps> = ({
     onChange?.(count);
   }, [count, onChange]);
 
+  const handleIncrement = useCallback(() => {
+    increment();
+    onChange?.(count);
+  }, [count, onChange]);
+
+  const handleDecrement = useCallback(() => {
+    decrement();
+    onChange?.(count);
+  }, [count, onChange]);
+
   return (
     <div
       className={buildClassName('tally-counter', size, className)}
       data-count={count}
-      data-max={max}
-      data-min={min}
+      data-max={range[1]}
+      data-min={range[0]}
     >
       <button
         className="tally-counter__decrement"
         type="button"
-        onClick={decrement}
-        {...decrementListeners}
+        onClick={handleDecrement}
+        {...longPressListeners}
+        aria-label="Decrement count"
       >
         <RemoveRounded />
       </button>
       <div className="tally-counter__container">
         <span className="tally-counter__resetMark">/</span>
-        <span className="tally-counter__value" data-count={count} onClick={increment}>
+        <span
+          className="tally-counter__value"
+          data-count={count}
+          onClick={handleIncrement}
+          aria-label="Increment count"
+        >
           {count}
         </span>
       </div>
       <button
         className="tally-counter__increment"
         type="button"
-        onClick={increment}
-        {...incrementListeners}
+        onClick={handleIncrement}
+        {...longPressListeners}
+        aria-label="Increment count"
       >
         <AddRounded />
       </button>

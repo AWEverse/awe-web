@@ -25,6 +25,7 @@ function useLongPress({ onClick, onStart, onEnd, threshold = DEFAULT_THRESHOLD }
       }
 
       isPressed.current = true;
+
       timerId.current = window.setTimeout(() => {
         onStart?.();
         isLongPressActive.current = true;
