@@ -12,6 +12,7 @@ export type Milliseconds = number;
 export type DateRangeData = {
   currentSystemDate: Date;
   userSelectedDate: Date;
+  dateRange: DateRange;
 };
 
 export type DateRange = Partial<{ from: Date; to: Date }>;

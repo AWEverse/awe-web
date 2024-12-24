@@ -40,11 +40,6 @@ type Mode = 'future' | 'past' | 'all';
 
 type AnimationType = 'LTR' | 'RTL' | 'zoomIn' | 'zoomOut';
 
-interface DateRange {
-  from?: Date;
-  to?: Date;
-}
-
 interface OwnProps {
   className?: string; // Custom class name for styling
   disabled?: boolean; // Whether the date picker is disabled
@@ -70,7 +65,7 @@ const CALENDAR_VIEWS = {
 };
 
 /*
-this string templte is used for copy calendar and move int into a chat for example
+this string templte is used for copy calendar and move into a chat for example
 with all entities (own dates, selected dates, current month, selected range and so on)
 
 25 26 27 28 29 30 [1
@@ -80,14 +75,19 @@ with all entities (own dates, selected dates, current month, selected range and 
 23 24 25 26 27)) 28 29
 30 31] 1  2  3  4  5 
 
+Understanding the fact that the sequence in the calendar is iterative, 
+it can be noted that the line can be reduced by an order of magnitude.
+
+this: 25 30 [1 (11 (12) (20 27)) 31] 1 5 
+
 () - selected range
 [] - current month
-*/
-// 1) have already function that can find all substrings in brackets
-// 2)
 
-// (11 (12) 13 14 15 16 17 18 19 (20 21 22 23 24 25 26 27))'
-['11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27', '12', '20 21 22 23 24 25 26 27'];
+1) have already function that can find all substrings in brackets
+2)
+
+(11 (12) 13 14 15 16 17 18 19 (20 21 22 23 24 25 26 27))'
+*/
 
 const DatePicker: FC<OwnProps> = ({ selectedAt, mode }) => {
   const { formatMessage } = useIntl();
@@ -101,17 +101,21 @@ const DatePicker: FC<OwnProps> = ({ selectedAt, mode }) => {
 
   const [zoomLevel, setZoomLevel] = useState<ZoomLevel>(ZoomLevel.WEEK);
   const [gridPosition, setGridPosition] = useState(initGrigPosition);
-  const [dateRange, setDateRange] = useState<DateRange>(initDateRange);
 
   // current is for display on grid and second for user selection
   const [date, setDate] = useState<DateRangeData>({
     currentSystemDate: initSelectedDate,
     userSelectedDate: initSelectedDate,
+    dateRange: initDateRange,
   });
 
   const isDisabledSelectionRange = zoomLevel !== ZoomLevel.WEEK;
 
-  const clipPathValue = useClipPathForDateRange(dateRange, gridPosition, isDisabledSelectionRange);
+  const clipPathValue = useClipPathForDateRange(
+    date.dateRange,
+    gridPosition,
+    isDisabledSelectionRange,
+  );
   const transitionKey = useTransitionKey(direction, zoomLevel, date.currentSystemDate);
 
   const handlePrevMonth = useLastCallback(() => updateMonth(PREVIOUS_MONTH));
@@ -168,10 +172,10 @@ const DatePicker: FC<OwnProps> = ({ selectedAt, mode }) => {
 
           switch (selectedCount.current) {
             case 1:
-              setDateRange({ from: newDateCopy });
+              setDate(p => ({ ...p, dateRange: { from: newDateCopy } }));
               break;
             case 2:
-              setDateRange(prevRange => ({ ...prevRange, to: newDateCopy }));
+              setDate(p => ({ ...p, to: newDateCopy }));
               setLongPressActive(false);
               selectedCount.current = 0;
               break;
@@ -202,7 +206,7 @@ const DatePicker: FC<OwnProps> = ({ selectedAt, mode }) => {
       e.preventDefault();
       const target = e.target as HTMLElement | null;
 
-      const hasRangeEnd = !!dateRange?.to;
+      const hasRangeEnd = !!date.dateRange?.to;
 
       if (target && !hasRangeEnd) {
         requestMeasure(() => {

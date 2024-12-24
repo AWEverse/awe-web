@@ -11,6 +11,12 @@ import TransitionProps, {
   UNMOUNTED,
 } from './types';
 
+let dStatus = EXITED;
+
+export const getTransitionStatus = () => {
+  return dStatus;
+};
+
 const Transition: React.FC<TransitionProps> = ({
   children,
   // filter props for `Transition`
@@ -49,6 +55,10 @@ const Transition: React.FC<TransitionProps> = ({
       }
     }
   });
+
+  useEffect(() => {
+    dStatus = status;
+  }, [status]);
 
   const nextCallbackRef = useMemo(
     () => ({ current: null as (() => void) | null, cancel: () => {} }),
