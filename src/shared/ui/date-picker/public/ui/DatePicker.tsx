@@ -15,6 +15,8 @@ import {
   NEXT_MONTH,
   PREVIOUS_MONTH,
   LIGHT_SIZE,
+  MIN_SAFE_DATE,
+  MAX_SAFE_DATE,
 } from '../../private/lib/constans';
 
 import {
@@ -35,6 +37,7 @@ import useClipPathForDateRange from '../../private/lib/hooks/useClipPathForDateR
 import useTransitionKey from '../../private/lib/hooks/useTransitionKey';
 import useCalendarStyles from '../../private/lib/hooks/useCalendarStyles';
 import LightEffect from '@/shared/ui/common/LightEffect';
+import useDateBoundary from '../../private/lib/hooks/useDateBoundary';
 
 type Mode = 'future' | 'past' | 'all';
 
@@ -89,7 +92,7 @@ this: 25 30 [1 (11 (12) (20 27)) 31] 1 5
 (11 (12) 13 14 15 16 17 18 19 (20 21 22 23 24 25 26 27))'
 */
 
-const DatePicker: FC<OwnProps> = ({ selectedAt, mode }) => {
+const DatePicker: FC<OwnProps> = ({ selectedAt, mode, maxAt, minAt }) => {
   const { formatMessage } = useIntl();
   const initSelectedDate = useSelectedOrCurrentDate(selectedAt);
 
@@ -97,7 +100,7 @@ const DatePicker: FC<OwnProps> = ({ selectedAt, mode }) => {
   const gridRef = useRef<HTMLDivElement>(null);
   const direction = useRef<AnimationType>('LTR');
   const selectedCount = useRef(0);
-  const isLongPressActive = useRef(false);
+  const isLongPressActive = useRef<boolean>(false);
 
   const [zoomLevel, setZoomLevel] = useState<ZoomLevel>(ZoomLevel.WEEK);
   const [gridPosition, setGridPosition] = useState(initGrigPosition);
@@ -108,6 +111,8 @@ const DatePicker: FC<OwnProps> = ({ selectedAt, mode }) => {
     userSelectedDate: initSelectedDate,
     dateRange: initDateRange,
   });
+
+  const canActivateSelect = date.dateRange.from && !date.dateRange.to;
 
   const isDisabledSelectionRange = zoomLevel !== ZoomLevel.WEEK;
 
@@ -130,20 +135,44 @@ const DatePicker: FC<OwnProps> = ({ selectedAt, mode }) => {
   });
 
   const updateMonth = useLastCallback((increment: number) => {
+    if (typeof increment !== 'number' || !Number.isInteger(increment)) {
+      return;
+    }
+
     setAnimationDirection(increment > 0 ? 'RTL' : 'LTR');
 
-    setDate(prevDate => {
-      const currentSystemDateCopy = new Date(prevDate.currentSystemDate);
+    setDate(p => {
+      const currentSystemDateCopy = new Date(p.currentSystemDate);
       currentSystemDateCopy.setDate(1);
       currentSystemDateCopy.setMonth(currentSystemDateCopy.getMonth() + increment);
 
-      return { ...prevDate, currentSystemDate: currentSystemDateCopy };
+      if (isNaN(currentSystemDateCopy.getTime())) {
+        return p;
+      }
+
+      if (minAt && currentSystemDateCopy < new Date(minAt)) {
+        return p;
+      }
+
+      if (maxAt && currentSystemDateCopy > new Date(maxAt)) {
+        return p;
+      }
+
+      return { ...p, currentSystemDate: currentSystemDateCopy };
     });
   });
 
   const handleSelectDate = useLastCallback(
     ({ day = 1, month = 0, year = 0, level = zoomLevel }: ISelectDate = {}) => {
       const newDateCopy = new Date(year, month, day);
+
+      if (minAt && newDateCopy < new Date(minAt)) {
+        return;
+      }
+
+      if (maxAt && newDateCopy > new Date(maxAt)) {
+        return;
+      }
 
       if (!isDisabledSelectionRange) {
         const currentMonth = date.currentSystemDate.getMonth();
@@ -175,7 +204,7 @@ const DatePicker: FC<OwnProps> = ({ selectedAt, mode }) => {
               setDate(p => ({ ...p, dateRange: { from: newDateCopy } }));
               break;
             case 2:
-              setDate(p => ({ ...p, to: newDateCopy }));
+              setDate(p => ({ ...p, dateRange: { ...p.dateRange, to: newDateCopy } }));
               setLongPressActive(false);
               selectedCount.current = 0;
               break;
@@ -183,8 +212,8 @@ const DatePicker: FC<OwnProps> = ({ selectedAt, mode }) => {
         }
       }
 
-      setDate(prevDate => ({
-        ...prevDate,
+      setDate(p => ({
+        ...p,
         userSelectedDate: newDateCopy,
       }));
 
@@ -266,9 +295,9 @@ const DatePicker: FC<OwnProps> = ({ selectedAt, mode }) => {
         </TransitionGroup>
 
         <div
+          data-visible={canActivateSelect}
           className="calendarSelectorMask"
           style={{
-            display: isDisabledSelectionRange ? 'none' : undefined,
             clipPath: clipPathValue,
           }}
         ></div>

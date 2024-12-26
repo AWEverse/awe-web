@@ -50,7 +50,7 @@ const LightEffect: FC<LightEffectProps> = ({ gridRef, lightSize }) => {
     };
   }, [handleResize]);
 
-  const handleMouseMove = useMemo(
+  const handleMouseMove = useCallback(
     () =>
       throttle((e: MouseEvent) => {
         if (!gridRef.current) return;

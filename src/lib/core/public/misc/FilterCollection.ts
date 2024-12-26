@@ -1,64 +1,117 @@
+import { CallbackManager, createCallbackManager } from '@/lib/utils/callbacks';
+
 export interface IFilterCollection<T> {
   passesFilter(item: T): boolean;
-  onChanged: () => void;
+  onChanged: () => void | (() => void);
 }
 
-export default class FilterCollection<T> {
-  private childFilters: IFilterCollection<T>[] = [];
-  private changedEventCallbacks: NoneToVoidFunction[] = [];
+export default class AdvancedFilterCollection<T> {
+  private childFilters: Map<number, IFilterCollection<T>> = new Map();
+  private changedEventCallbacks: CallbackManager = createCallbackManager();
+  private filterIdCounter: number = 0; // Unique ID for each filter for easy tracking
 
-  public destroy(): void {
-    this.childFilters.forEach(filter => {
-      filter.onChanged = () => {};
-    });
-  }
-
+  /**
+   * Adds a filter to the collection and sets up the onChanged callback for that filter.
+   * Returns the unique ID of the filter.
+   */
   public add(filter: IFilterCollection<T>): number {
-    const existingIdx = this.childFilters.indexOf(filter);
-    if (existingIdx !== -1) {
-      return existingIdx;
-    }
+    const filterId = this.filterIdCounter++;
+    this.childFilters.set(filterId, filter);
 
-    this.childFilters.push(filter);
     filter.onChanged = () => this.onChildFilterChanged();
 
     this.broadcastChangedEvent();
-    return this.childFilters.length - 1;
+    return filterId;
   }
 
-  public remove(filter: IFilterCollection<T>): number {
-    const index = this.childFilters.indexOf(filter);
-    if (index === -1) {
-      return 0;
+  /**
+   * Removes a filter by its ID.
+   * Returns true if the filter was successfully removed, false if the filter was not found.
+   */
+  public removeById(filterId: number): boolean {
+    const filter = this.childFilters.get(filterId);
+    if (!filter) {
+      return false;
     }
 
-    this.childFilters.splice(index, 1);
     filter.onChanged = () => {};
+    this.childFilters.delete(filterId);
 
     this.broadcastChangedEvent();
-    return 1;
+    return true;
   }
 
+  /**
+   * Removes a filter by reference.
+   * Returns true if the filter was successfully removed, false otherwise.
+   */
+  public remove(filter: IFilterCollection<T>): boolean {
+    let found = false;
+    this.childFilters.forEach((f, id) => {
+      if (f === filter) {
+        this.removeById(id);
+        found = true;
+      }
+    });
+    return found;
+  }
+
+  /**
+   * Gets the filter by its index in the Map (not the ID).
+   * Returns the filter if found, or undefined if not found.
+   */
   public getFilterAtIndex(index: number): IFilterCollection<T> | undefined {
-    return this.childFilters[index];
+    return Array.from(this.childFilters.values())[index];
   }
 
+  /**
+   * Returns the number of filters in the collection.
+   */
   public num(): number {
-    return this.childFilters.length;
+    return this.childFilters.size;
   }
 
+  /**
+   * Checks if the item passes all filters in the collection.
+   */
   public passesAllFilters(item: T): boolean {
-    return this.childFilters.every(filter => filter.passesFilter(item));
+    for (const filter of this.childFilters.values()) {
+      if (!filter.passesFilter(item)) {
+        return false;
+      }
+    }
+
+    return true;
   }
 
-  public onChanged(callback: () => void): void {
-    this.changedEventCallbacks.push(callback);
+  /**
+   * Adds a callback to the collection's change event.
+   * Returns a function that allows the caller to unsubscribe the callback.
+   */
+  public onChanged(callback: () => void): () => void {
+    const unsubscribe = this.changedEventCallbacks.addCallback(callback);
+    return unsubscribe;
   }
 
+  /**
+   * Clears all filters and broadcasts a change event.
+   */
+  public clear(): void {
+    this.childFilters.forEach(filter => (filter.onChanged = () => {}));
+    this.childFilters.clear();
+    this.broadcastChangedEvent();
+  }
+
+  /**
+   * Broadcasts the change event to all registered callbacks.
+   */
   private broadcastChangedEvent(): void {
-    this.changedEventCallbacks.forEach(callback => callback());
+    this.changedEventCallbacks.runCallbacks();
   }
 
+  /**
+   * Called when any child filter changes.
+   */
   private onChildFilterChanged(): void {
     this.broadcastChangedEvent();
   }
