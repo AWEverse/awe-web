@@ -47,12 +47,14 @@ export default class AdvancedFilterCollection<T> {
    */
   public remove(filter: IFilterCollection<T>): boolean {
     let found = false;
+
     this.childFilters.forEach((f, id) => {
       if (f === filter) {
         this.removeById(id);
         found = true;
       }
     });
+
     return found;
   }
 
