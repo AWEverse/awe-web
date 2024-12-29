@@ -5,7 +5,7 @@ export interface IFilterCollection<T> {
   onChanged: () => void | (() => void);
 }
 
-export default class AdvancedFilterCollection<T> {
+export default class FilterCollection<T> {
   private childFilters: Map<number, IFilterCollection<T>> = new Map();
   private changedEventCallbacks: CallbackManager = createCallbackManager();
   private filterIdCounter: number = 0; // Unique ID for each filter for easy tracking

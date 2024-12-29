@@ -4,38 +4,39 @@ interface IVector2 {
 }
 
 class Vector2 implements IVector2, Iterable<number> {
-  static max(prevMax: Vector2, v: Vector2): Vector2 {
-    return new Vector2(Math.max(prevMax.x, v.x), Math.max(prevMax.y, v.y));
-  }
-
-  static min(prevMin: Vector2, v: Vector2): Vector2 {
-    return new Vector2(Math.min(prevMin.x, v.x), Math.min(prevMin.y, v.y));
-  }
-
   constructor(
     public readonly x: number,
     public readonly y: number,
   ) {}
 
-  // Instance Methods (Immutable)
-  add(other: IVector2): Vector2 {
-    return new Vector2(this.x + other.x, this.y + other.y);
+  // Static Methods
+  static max(v1: Vector2, v2: Vector2): Vector2 {
+    return new Vector2(Math.max(v1.x, v2.x), Math.max(v1.y, v2.y));
   }
 
-  subtract(other: IVector2): Vector2 {
-    return new Vector2(this.x - other.x, this.y - other.y);
+  static min(v1: Vector2, v2: Vector2): Vector2 {
+    return new Vector2(Math.min(v1.x, v2.x), Math.min(v1.y, v2.y));
+  }
+
+  // Instance Methods (Immutable)
+  add(v: IVector2): Vector2 {
+    return new Vector2(this.x + v.x, this.y + v.y);
+  }
+
+  subtract(v: IVector2): Vector2 {
+    return new Vector2(this.x - v.x, this.y - v.y);
   }
 
   multiplyScalar(scalar: number): Vector2 {
     return new Vector2(this.x * scalar, this.y * scalar);
   }
 
-  dot(other: IVector2): number {
-    return this.x * other.x + this.y * other.y;
+  dot(v: IVector2): number {
+    return this.x * v.x + this.y * v.y;
   }
 
-  cross(other: IVector2): number {
-    return this.x * other.y - this.y * other.x;
+  cross(v: IVector2): number {
+    return this.x * v.y - this.y * v.x;
   }
 
   getLength(): number {
@@ -43,27 +44,27 @@ class Vector2 implements IVector2, Iterable<number> {
   }
 
   getSquaredLength(): number {
-    return this.x ** 2 + this.y ** 2; // Faster for comparisons
+    return this.x ** 2 + this.y ** 2;
   }
 
   normalize(): Vector2 {
     const length = this.getLength();
-    if (length === 0) throw new Error('Cannot normalize a vector with length 0');
+    if (length === 0) throw new Error('Cannot normalize a zero-length vector');
     return new Vector2(this.x / length, this.y / length);
   }
 
-  angleBetween(other: IVector2): number {
-    const dotProduct = this.dot(other);
-    const lengthsProduct = this.getLength() * new Vector2(other.x, other.y).getLength();
-    return Math.acos(dotProduct / lengthsProduct);
+  angleBetween(v: IVector2): number {
+    const dot = this.dot(v);
+    const lengths = this.getLength() * Math.sqrt(v.x ** 2 + v.y ** 2);
+    return Math.acos(dot / lengths);
   }
 
   clone(): Vector2 {
     return new Vector2(this.x, this.y);
   }
 
-  equals(other: IVector2): boolean {
-    return this.x === other.x && this.y === other.y;
+  equals(v: IVector2): boolean {
+    return this.x === v.x && this.y === v.y;
   }
 
   toArray(): [number, number] {
@@ -79,6 +80,38 @@ class Vector2 implements IVector2, Iterable<number> {
     return new Vector2(x, y);
   }
 
+  squaredDistance(end: IVector2) {
+    return (this.x - end.x) ** 2 + (this.y - end.y) ** 2;
+  }
+
+  distance(v: IVector2): number {
+    return Math.sqrt((this.x - v.x) ** 2 + (this.y - v.y) ** 2);
+  }
+
+  reflect(normal: Vector2): Vector2 {
+    const dot = this.dot(normal);
+    return new Vector2(this.x - 2 * dot * normal.x, this.y - 2 * dot * normal.y);
+  }
+
+  project(onto: Vector2): Vector2 {
+    const scalar = this.dot(onto) / onto.getSquaredLength();
+    return new Vector2(scalar * onto.x, scalar * onto.y);
+  }
+
+  lerp(to: Vector2, t: number): Vector2 {
+    return new Vector2(this.x + (to.x - this.x) * t, this.y + (to.y - this.y) * t);
+  }
+
+  transformHomogeneous(
+    matrix: [number, number, number, number, number, number, number, number, number],
+  ): Vector2 {
+    const [a, b, c, d, e, f, g, h, i] = matrix;
+    const x = this.x * a + this.y * b + c;
+    const y = this.x * d + this.y * e + f;
+    const w = this.x * g + this.y * h + i;
+    return w !== 0 ? new Vector2(x / w, y / w) : new Vector2(x, y);
+  }
+
   toString(): string {
     return `Vector2(${this.x}, ${this.y})`;
   }
@@ -89,7 +122,7 @@ class Vector2 implements IVector2, Iterable<number> {
     yield this.y;
   }
 
-  // Static Methods
+  // Static Helper Methods
   static add(v1: IVector2, v2: IVector2): Vector2 {
     return new Vector2(v1.x + v2.x, v1.y + v2.y);
   }
@@ -98,8 +131,8 @@ class Vector2 implements IVector2, Iterable<number> {
     return new Vector2(v1.x - v2.x, v1.y - v2.y);
   }
 
-  static multiplyScalar(vector: IVector2, scalar: number): Vector2 {
-    return new Vector2(vector.x * scalar, vector.y * scalar);
+  static multiplyScalar(v: IVector2, scalar: number): Vector2 {
+    return new Vector2(v.x * scalar, v.y * scalar);
   }
 
   static dot(v1: IVector2, v2: IVector2): number {
@@ -112,17 +145,6 @@ class Vector2 implements IVector2, Iterable<number> {
 
   static distance(v1: IVector2, v2: IVector2): number {
     return Math.sqrt((v1.x - v2.x) ** 2 + (v1.y - v2.y) ** 2);
-  }
-
-  static squaredDistance(v1: IVector2, v2: IVector2): number {
-    return (v1.x - v2.x) ** 2 + (v1.y - v2.y) ** 2; // Faster than calculating actual distance
-  }
-
-  static angleBetween(v1: IVector2, v2: IVector2): number {
-    const dotProduct = Vector2.dot(v1, v2);
-    const lengthsProduct =
-      new Vector2(v1.x, v1.y).getLength() * new Vector2(v2.x, v2.y).getLength();
-    return Math.acos(dotProduct / lengthsProduct);
   }
 
   static zero(): Vector2 {
@@ -141,15 +163,9 @@ class Vector2 implements IVector2, Iterable<number> {
     return new Vector2(0, 1);
   }
 
-  // Matrix Transformation (2x2 matrix)
-  transform(matrix: [number, number, number, number]): Vector2 {
-    const [a, b, c, d] = matrix;
-    return new Vector2(this.x * a + this.y * b, this.x * c + this.y * d);
-  }
-
-  // Static method for transformation
   static transform(v: IVector2, matrix: [number, number, number, number]): Vector2 {
-    return new Vector2(v.x * matrix[0] + v.y * matrix[1], v.x * matrix[2] + v.y * matrix[3]);
+    const [a, b, c, d] = matrix;
+    return new Vector2(v.x * a + v.y * b, v.x * c + v.y * d);
   }
 }
 

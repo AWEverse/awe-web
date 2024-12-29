@@ -41,6 +41,7 @@ function unique<T>(
   for (let i = 1; i < array.length; i++) {
     if (!predicate!(projection(array[result]), projection(array[i]))) {
       result++;
+
       if (result !== i) {
         array[result] = array[i];
       }
