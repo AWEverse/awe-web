@@ -1,45 +1,47 @@
-type Func<TInput, TOutput> = (arg: TInput) => TOutput;
+/**
+ * A function type that takes an input and returns an output.
+ */
+type Func<TInput, TOutput> = (arg: TInput, effect?: any) => TOutput;
 
 /**
- * Extract the input type of the first function in the pipe.
+ * Extracts the input type of the first function in a function pipe.
+ * This type represents the initial value passed to the pipe.
+ * If the pipe is empty, the input type is `never` or inferred properly based on the first function.
  */
-type PipeInput<T extends Func<any, any>[]> = T extends [infer F, ...any[]]
-  ? F extends Func<infer I, any>
-    ? I
-    : never
-  : never;
+export type PipeInput<T extends Func<any, any>[]> = T extends [Func<infer I, any>, ...any[]]
+  ? I
+  : unknown;
 
 /**
- * Extract the output type of the last function in the pipe.
+ * Extracts the output type of the last function in a function pipe.
  */
-type PipeOutput<T extends Func<any, any>[]> = T extends [...any[], infer L]
-  ? L extends Func<any, infer O>
-    ? O
-    : never
-  : never;
+export type PipeOutput<T extends Func<any, any>[]> = T extends [...any[], Func<infer I, any>]
+  ? I
+  : unknown;
 
 /**
- * The resulting function type after applying the pipe.
+ * The resulting function type after applying the entire pipe.
  */
-type PipeResult<T extends Func<any, any>[]> = Func<PipeInput<T>, PipeOutput<T>>;
+export type PipeResult<T extends Func<any, any>[]> = Func<PipeInput<T>, PipeOutput<T>>;
+
+export type PipeWithEffect<T extends Func<any, any>[], E> = (
+  input: PipeInput<T>,
+  effect: E,
+) => PipeOutput<T>;
 
 /**
- * @description
- * A pipe function that takes a list of functions and returns a new function that
- * takes an initial value and passes it through the list of functions.
- *
- * @param fns - A list of functions to pipe
- * @returns A new function that takes an initial value and passes it through the list of functions
- *
- * @example
- * ```typescript
- * const addOne = (x: number) => x + 1;
- * const toString = (x: number) => x.toString();
- * const addOneAndToString = pipe(addOne, toString);
- *
- * console.log(addOneAndToString(2)); // "3"
- * ```
+ * Pipe function that takes an array of functions and returns a function that applies them sequentially.
+ * Supports functions that take an additional `effect` parameter.
  */
-export default function pipe<T extends Func<any, any>[]>(...fns: T): PipeResult<T> {
-  return (initialValue: PipeInput<T>) => fns.reduce<any>((result, fn) => fn(result), initialValue);
-}
+export const pipeWithEffect =
+  <T extends Func<any, any>[], E>(...fns: T): PipeWithEffect<T, E> =>
+  (initialValue: PipeInput<T>, effect: E) =>
+    fns.reduce<any>((result, fn) => fn(result, effect), initialValue as PipeInput<T>);
+
+/**
+ * Regular pipe function that applies a series of functions to an initial value.
+ */
+export const pipe =
+  <T extends Func<any, any>[]>(...fns: T): PipeResult<T> =>
+  (initialValue: PipeInput<T>) =>
+    fns.reduce<any>((result, fn) => fn(result), initialValue);
