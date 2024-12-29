@@ -11,7 +11,7 @@ interface OwnProps {
 
 const isUsername = (username?: string) => username && username.length > 0;
 
-const EmptyChat: FC<OwnProps> = ({ username, className }) => {
+const EmptyChat: FC<OwnProps> = ({ username = 'Альбінчік', className }) => {
   return (
     <Root className={className}>
       <Header title={`Welcome to Chat${isUsername(username) ? ` with ${username}` : '!'}`}>
@@ -21,11 +21,11 @@ const EmptyChat: FC<OwnProps> = ({ username, className }) => {
         className={s.CustomContent}
         emojiLabel="Thinking emoji"
         emojiSymbol="🤔"
-        message="Who knows, maybe this is your best, but you’re just too shy to write... It's okay, just write 🙂"
+        message="Feeling a bit shy? No worries, just say 'Hi' 🙂 and let's get started!"
       >
-        <blockquote>
-          "A journey of a thousand words begins with literally only two 'Oh, Hi🙂'."
-        </blockquote>
+        <section>
+          <blockquote>"Every great conversation starts with a simple 'Hi 🙂'.</blockquote>
+        </section>
       </Content>
     </Root>
   );

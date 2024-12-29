@@ -1,5 +1,6 @@
 $primary-color: var(--awe-palette-primary-500);
 $secondary-color: var(--awe-palette-secondary-500);
+@import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&family=Open+Sans:wght@300;400;600&display=swap');
 
 .TemplateComponent {
   display: flex;
@@ -22,11 +23,14 @@ $secondary-color: var(--awe-palette-secondary-500);
 
 .Header {
   margin-bottom: 10px;
+  text-align: center;
 
   .Heading {
     font-size: 2rem;
     font-weight: bold;
+    text-align: center;
     color: $primary-color;
+    font-family: 'Roboto', sans-serif; // Use Roboto font here
   }
 
   &.CustomHeader {
@@ -34,6 +38,7 @@ $secondary-color: var(--awe-palette-secondary-500);
     padding: 10px;
     border-radius: 4px;
     color: var(--awe-palette-text-primary);
+    font-family: 'Open Sans', sans-serif; // Use Open Sans font here
   }
 }
 
@@ -49,6 +54,7 @@ $secondary-color: var(--awe-palette-secondary-500);
   .Text {
     font-size: 1.5rem;
     color: var(--awe-palette-text-primary);
+    font-family: 'Roboto', sans-serif; // Use Roboto font here
   }
 
   &.CustomContent {
@@ -57,5 +63,6 @@ $secondary-color: var(--awe-palette-secondary-500);
     border-radius: 4px;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
     padding: 15px;
+    font-family: 'Open Sans', sans-serif; // Use Open Sans font here
   }
 }

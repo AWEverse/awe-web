@@ -7,7 +7,7 @@
  */
 export default function findSequence<T>(where: T[], what: T[]): number {
   if (what.length > where.length) {
-    return -1; // Return -1 if "what" is larger than "where"
+    return -1;
   }
 
   for (let i = 0; i <= where.length - what.length; i++) {
@@ -21,8 +21,8 @@ export default function findSequence<T>(where: T[], what: T[]): number {
     }
 
     if (match) {
-      return i; // Return the starting index of the first match
+      return i;
     }
   }
-  return -1; // Return -1 if no match is found
+  return -1;
 }
