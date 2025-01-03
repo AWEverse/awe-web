@@ -7,6 +7,7 @@ import useValueRef from '@/lib/hooks/state/useValueRef';
 import React from 'react';
 import ReactDOM from 'react-dom';
 import { TransitionGroup } from 'react-transition-group';
+import Video from '@/shared/ui/Video';
 
 marked.use({
   breaks: true,
@@ -19,116 +20,23 @@ marked.use({
   },
 });
 
-type RDate = '^([0-5]?d)s([01]?d|2[0-3])s([01]?d|2[0-9]|3[01])s([1-9]|1[0-2])s([0-7])$';
-
-interface ReplaceTransitionProps {
-  in: boolean;
-  children: React.ReactNode;
-  onEnter?: (node?: Element) => void;
-  onEntering?: (node?: Element) => void;
-  onEntered?: (node?: Element) => void;
-  onExit?: (node?: Element) => void;
-  onExiting?: (node?: Element) => void;
-  onExited?: (node?: Element) => void;
-}
-
-const ReplaceTransition: React.FC<ReplaceTransitionProps> = ({
-  in: inProp,
-  children,
-  onEnter,
-  onEntering,
-  onEntered,
-  onExit,
-  onExiting,
-  onExited,
-  ...props
-}) => {
-  const handleLifecycle = useCallback(
-    (handler: string, idx: number, originalArgs: any[]) => {
-      const child = React.Children.toArray(children)[idx];
-      if (child && (child as any).props[handler]) {
-        (child as any).props[handler](...originalArgs);
-      }
-
-      if (
-        handler &&
-        (handler === 'onEnter' ||
-          handler === 'onEntering' ||
-          handler === 'onEntered' ||
-          handler === 'onExit' ||
-          handler === 'onExiting' ||
-          handler === 'onExited')
-      ) {
-        const maybeNode = (child as any).props.nodeRef;
-        if (handler === 'onEnter' && onEnter) onEnter(maybeNode);
-        if (handler === 'onEntering' && onEntering) onEntering(maybeNode);
-        if (handler === 'onEntered' && onEntered) onEntered(maybeNode);
-        if (handler === 'onExit' && onExit) onExit(maybeNode);
-        if (handler === 'onExiting' && onExiting) onExiting(maybeNode);
-        if (handler === 'onExited' && onExited) onExited(maybeNode);
-      }
-    },
-    [children, onEnter, onEntering, onEntered, onExit, onExiting, onExited],
-  );
-
-  const handleEnter = useCallback(
-    (...args as any) => handleLifecycle('onEnter', 0, args),
-    [handleLifecycle],
-  );
-  const handleEntering = useCallback(
-    (...args as any) => handleLifecycle('onEntering', 0, args),
-    [handleLifecycle],
-  );
-  const handleEntered = useCallback(
-    (...args as any) => handleLifecycle('onEntered', 0, args),
-    [handleLifecycle],
-  );
-
-  const handleExit = useCallback(
-    (...args as any) => handleLifecycle('onExit', 1, args),
-    [handleLifecycle],
-  );
-  const handleExiting = useCallback(
-    (...args as any) => handleLifecycle('onExiting', 1, args),
-    [handleLifecycle],
-  );
-  const handleExited = useCallback(
-    (...args as any) => handleLifecycle('onExited', 1, args),
-    [handleLifecycle],
-  );
-
-  const [first, second] = React.Children.toArray(children);
-
-  return (
-    <TransitionGroup {...props}>
-      {inProp
-        ? React.cloneElement(first as React.ReactElement, {
-            key: 'first',
-            onEnter: handleEnter,
-            onEntering: handleEntering,
-            onEntered: handleEntered,
-          })
-        : React.cloneElement(second as React.ReactElement, {
-            key: 'second',
-            onEnter: handleExit,
-            onEntering: handleExiting,
-            onEntered: handleExited,
-          })}
-    </TransitionGroup>
-  );
-};
-
 const TestPage = () => {
   const [isVisible, setIsVisible] = useState(true);
 
   return (
     <div>
-      <button onClick={() => setIsVisible(!isVisible)}>Toggle Transition</button>
-
-      <ReplaceTransition in={isVisible}>
-        <div>I appear first</div>
-        <div>I replace the above</div>
-      </ReplaceTransition>
+      <Video
+        canPlay
+        controls
+        onReady={() => console.log('Video is ready')}
+        onBroken={() => console.error('Video failed to load')}
+        onTimeUpdate={event => console.log('Time update:', event)}
+      >
+        <source
+          src="http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4"
+          type="video/mp4"
+        />
+      </Video>
     </div>
   );
 

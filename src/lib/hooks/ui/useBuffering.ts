@@ -43,6 +43,7 @@ const useBuffering = (
       onTimeUpdate?.(e);
     }
 
+    // Only safari: Safari has a bug where it doesn't update buffered ranges when seeking
     if (!isSafariPatchInProgress(media)) {
       if (Boolean(media.buffered.length)) {
         const ranges = getTimeRanges(media.buffered, media.duration);
@@ -51,9 +52,13 @@ const useBuffering = (
 
         setBufferedProgress(bufferedLength / media.duration);
 
-        setBufferedRanges(currentRanges =>
-          areDeepEqual(currentRanges, ranges) ? currentRanges : ranges,
-        );
+        setBufferedRanges(currentRanges => {
+          if (areDeepEqual(currentRanges, ranges)) {
+            return currentRanges;
+          }
+
+          return ranges;
+        });
       }
 
       setIsBuffered(isMediaReady || media.currentTime > 0);

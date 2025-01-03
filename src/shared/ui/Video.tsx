@@ -30,7 +30,7 @@ function Video({
   onTimeUpdate,
   ...restProps
 }: OwnProps) {
-  const { onPlaying } = restProps;
+  const { onPlay, onPlaying } = restProps;
 
   const isReadyRef = useRef(false);
 
@@ -41,9 +41,21 @@ function Video({
     }
   });
 
+  // onPLay: handleBuffering,
+  // onLoadedData: handleBuffering,
+  // onPlaying: handleBuffering,
+  // onLoadStart: handleBuffering, // Needed for Safari to start
+  // onPause: handleBuffering, // Needed for Chrome when seeking
+  // onTimeUpdate: handleBuffering, // Needed for audio buffering progress
+  // onProgress: handleBuffering, // Needed for video buffering progress
+
   // This is only needed for browsers not allowing autoplay
   const { isBuffered, bufferingHandlers } = useBuffering(true, onTimeUpdate, onBroken);
-  const { onPlaying: handlePlayingForBuffering, ...otherBufferingHandlers } = bufferingHandlers;
+  const {
+    onPLay: handlePlayForBuffering,
+    onPlaying: handlePlayingForBuffering,
+    ...otherBufferingHandlers
+  } = bufferingHandlers;
 
   useEffectSync(
     ([prevIsBuffered]) => {
@@ -60,6 +72,11 @@ function Video({
     onPlaying?.(e);
   });
 
+  const handlePlay = useLastCallback(e => {
+    handlePlayForBuffering(e);
+    onPlay?.(e);
+  });
+
   const mergedOtherBufferingHandlers = useMemo(() => {
     const mergedHandlers: Record<string, AnyFunction> = {};
 
@@ -72,6 +89,8 @@ function Video({
       };
     });
 
+    console.log(mergedHandlers);
+
     return mergedHandlers;
   }, [otherBufferingHandlers, restProps]);
 
@@ -82,9 +101,10 @@ function Video({
     <video
       ref={ref}
       autoPlay
-      {...restProps}
-      {...mergedOtherBufferingHandlers}
+      onPlay={handlePlay}
       onPlaying={handlePlaying}
+      {...mergedOtherBufferingHandlers}
+      {...restProps}
     >
       {children}
     </video>

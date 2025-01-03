@@ -1,5 +1,5 @@
 import { createTheme } from '@mui/material/styles';
-import { DarkPallete, LightPallete } from '@/shared/themes/hallowen';
+import { DarkPallete, LightPallete } from '@/shared/themes/palettes/hallowen';
 
 // Extending MUI's theme types to support custom color properties
 declare module '@mui/material/styles' {
