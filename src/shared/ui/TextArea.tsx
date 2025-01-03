@@ -14,6 +14,8 @@ import { requestMutation, requestForcedReflow } from '@/lib/modules/fastdom/fast
 import useLastCallback from '@/lib/hooks/events/useLastCallback';
 import { generateUniqueId } from '@/lib/hooks/utilities/useUniqueId';
 
+import s from './TextArea.module.scss';
+
 type OwnProps = {
   ref?: RefObject<HTMLTextAreaElement>;
   id?: string;
@@ -31,6 +33,7 @@ type OwnProps = {
   tabIndex?: number;
   replaceNewlines?: boolean;
   inputMode?: 'text' | 'none' | 'tel' | 'url' | 'email' | 'numeric' | 'decimal' | 'search';
+  maxLines?: number;
   onChange?: (e: ChangeEvent<HTMLTextAreaElement>) => void;
   onInput?: (e: FormEvent<HTMLTextAreaElement>) => void;
   onKeyDown?: (e: React.KeyboardEvent<HTMLTextAreaElement>) => void;
@@ -54,6 +57,7 @@ const TextArea: FC<OwnProps> = ({
   maxLength,
   maxLengthIndicator,
   tabIndex,
+  maxLines = 1,
   onChange,
   onInput,
   onKeyDown,
@@ -69,6 +73,7 @@ const TextArea: FC<OwnProps> = ({
   const lang = navigator.language;
   const labelText = error || success || label;
   const fullClassName = buildClassName(
+    s.TextArea,
     'input-group',
     isInputFocused && 'touched',
     error ? 'error' : success && 'success',
@@ -83,10 +88,12 @@ const TextArea: FC<OwnProps> = ({
       element.style.height = '0';
 
       requestForcedReflow(() => {
+        const maxHeight = parseFloat(element.style.maxHeight) || 0;
         const newHeight = element.scrollHeight;
 
         return () => {
           element.style.height = `${newHeight}px`;
+          element.style.overflow = maxHeight <= newHeight ? 'auto' : 'hidden';
         };
       });
     });
@@ -96,44 +103,38 @@ const TextArea: FC<OwnProps> = ({
     const textarea = textareaRef.current;
     if (!textarea) return;
 
+    textarea.style.maxHeight = `${textarea.scrollHeight * maxLines}px`;
+
     resizeHeight(textarea);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [maxLines]);
 
-  const handleChange = (e: ChangeEvent<HTMLTextAreaElement>) => {
+  const handleChange = useLastCallback((e: ChangeEvent<HTMLTextAreaElement>) => {
     const target = e.currentTarget;
     const { value } = target;
 
-    // Если значение начинается с пробела, очищаем поле
-    if (/^\s/.test(value)) {
-      target.value = '';
-      return;
-    }
-
-    const trimmedValue = value.trim();
-    setFocused(trimmedValue.length > 0);
+    setFocused(value.trim().length > 0);
 
     if (replaceNewlines) {
       const previousSelectionEnd = target.selectionEnd;
-      // Заменяем переносы строк на пробелы
       target.value = value.replace(/\n/g, ' ');
       target.selectionEnd = previousSelectionEnd;
     }
 
     resizeHeight(target);
     onChange?.(e);
-  };
+  });
 
   return (
     <div className={fullClassName} dir={lang === 'ar' ? 'rtl' : undefined}>
       <textarea
+        id={uuid}
         ref={textareaRef}
         aria-label={labelText}
         autoComplete={autoComplete}
-        className="form-control"
+        className="form-control awe-scrollbar"
         dir="auto"
         disabled={disabled}
-        id={uuid}
         inputMode={inputMode}
         maxLength={maxLength}
         placeholder={placeholder}
@@ -148,6 +149,7 @@ const TextArea: FC<OwnProps> = ({
       />
       {labelText && <label htmlFor={uuid}>{labelText}</label>}
       {maxLengthIndicator && <div className="max-length-indicator">{maxLengthIndicator}</div>}
+      <div className={s.scrollbar}></div>
     </div>
   );
 };

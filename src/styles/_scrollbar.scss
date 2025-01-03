@@ -1,55 +1,44 @@
 *::-webkit-scrollbar {
-  width: 0px;
-  padding: 0px;
+  width: 0;
+  padding: 0;
   display: none;
 }
-
-
-// *:hover {
-//   scrollbar-color: transparent transparent;
-// }
-
-// *::-ms-scrollbar {
-//   display: none;
-// }
 
 .awe-scrollbar {
   --scrollbar-width: 8px;
   overflow-y: scroll;
-  mask-image: linear-gradient(to top, transparent, black), linear-gradient(to left, transparent var(--scrollbar-width), black var(--scrollbar-width));
   mask-size: 100% 20000px;
   mask-position: left bottom;
-  -webkit-mask-image: linear-gradient(to top, transparent, black), linear-gradient(to left, transparent var(--scrollbar-width), black var(--scrollbar-width));
-  -webkit-mask-size: 100% 20000px;
-  -webkit-mask-position: left bottom;
-  transition: mask-position 0.3s, -webkit-mask-position 0.3s;
+  will-change: mask-position;
+  transition: mask-position 0.3s;
 
   &:hover {
     -webkit-mask-position: left top;
-    mask-position: left-top;
+    mask-position: left top;
   }
 
   &::-webkit-scrollbar {
     display: block !important;
-    width: var(--scrollbar-width); 
+    width: var(--scrollbar-width);
   }
 
   &::-webkit-scrollbar-thumb {
-    background-color: rgba(var(--awe-palette-primary-mainChannel) / 0.5); 
+    cursor: pointer;
+    background-color: rgba(var(--awe-palette-primary-mainChannel) / 0.3);
     transition: background-color 150ms ease;
-    border-radius: 10px; 
+    border-radius: 10px;
   }
 
   &::-webkit-scrollbar-thumb:hover {
-    cursor: grab;
-    background-color: rgba(var(--awe-palette-primary-mainChannel) / 0.9); 
+    background-color: rgba(var(--awe-palette-primary-mainChannel) / 0.9);
   }
 
-  &::-webkit-scrollbar-track {
-    border-radius: 10px; 
+  &::-webkit-scrollbar-track,
+  &::-webkit-scrollbar-corner {
+    border-radius: 10px;
   }
 
   &::-webkit-scrollbar-corner {
-    background-color: transparent; 
+    background-color: transparent;
   }
 }

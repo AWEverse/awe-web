@@ -9,6 +9,7 @@ import ReactDOM from 'react-dom';
 import { TransitionGroup } from 'react-transition-group';
 import Video from '@/shared/ui/Video';
 import TextTimer from '@/shared/ui/TextTimer';
+import TextArea from '@/shared/ui/TextArea';
 
 marked.use({
   breaks: true,
@@ -24,7 +25,11 @@ marked.use({
 const TestPage = () => {
   const [isVisible, setIsVisible] = useState(true);
 
-  return <TextTimer langKey="en" endsAt={266242141} onEnd={() => console.log('Time is up')} />;
+  return (
+    <div style={{ maxHeight: '300px' }}>
+      <TextArea maxLines={6} />
+    </div>
+  );
 
   // #v-ifdef false
   const [markdownContent, setMarkdownContent] = useState('');

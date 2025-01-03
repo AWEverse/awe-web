@@ -195,7 +195,7 @@ select.form-control {
 
 textarea.form-control {
   resize: none;
-  overflow: hidden;
+  
   line-height: 1.3125rem;
   padding-top: calc(0.7125rem - var(--border-width));
   padding-bottom: calc(1rem - var(--border-width));
