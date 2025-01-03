@@ -3,11 +3,13 @@ import buildClassName from '@/shared/lib/buildClassName';
 import { CalendarViewProps } from '../lib/types';
 import { buildCalendarGrid } from '../lib/utils';
 import useLongPress from '@/lib/hooks/events/useLongPress';
+import DayCell from './DayCell';
 
 type TimeLapse = 'prev' | 'current' | 'next';
 
 const WeekView: React.FC<CalendarViewProps> = ({
   date,
+  mode,
   onSelectDate,
   onLongPressEnd,
   onClick,
@@ -33,6 +35,10 @@ const WeekView: React.FC<CalendarViewProps> = ({
     (day: number, isCurrentMonth: boolean): string | undefined => {
       const isCurrentDay = day === currentDay && currentMonth === new Date().getMonth();
       const isCurrentSelectedDay = day === selectedDay && currentMonth === selectedMonth;
+      // Mode-based conditions
+      const isFutureMode = mode === 'future' && day >= currentDay;
+      const isPastMode = mode === 'past' && day <= currentDay;
+      const isAllMode = mode === 'all';
 
       return buildClassName(
         !isCurrentMonth && 'another',
@@ -79,9 +85,8 @@ const WeekView: React.FC<CalendarViewProps> = ({
   const handleRightClick = useCallback(
     (e: React.MouseEvent | React.TouchEvent, day: number) => {
       e.preventDefault();
-      if (onRightClick) {
-        onRightClick({ day, month: currentMonth, year: currentYear });
-      }
+
+      onRightClick?.({ day, month: currentMonth, year: currentYear });
     },
     [currentMonth, currentYear, onRightClick],
   );
@@ -89,7 +94,7 @@ const WeekView: React.FC<CalendarViewProps> = ({
   const renderDays = useCallback(
     (days: number[], type: TimeLapse = 'current') => {
       return days.map(day => (
-        <div
+        <DayCell
           key={day.toString()}
           className={buildClassName(
             'calendarCell',
@@ -101,7 +106,7 @@ const WeekView: React.FC<CalendarViewProps> = ({
           {...longPressListeners}
         >
           {day}
-        </div>
+        </DayCell>
       ));
     },
     [getDayClassName, handleSelectDate, handleRightClick, longPressListeners],

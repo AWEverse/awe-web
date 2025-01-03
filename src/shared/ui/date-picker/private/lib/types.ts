@@ -1,5 +1,9 @@
 import { ZoomLevel } from './constans';
 
+export type CalendarMode = 'future' | 'past' | 'all';
+
+export type CalendarAnimationType = 'LTR' | 'RTL' | 'zoomIn' | 'zoomOut';
+
 export type ISelectDate = Partial<{
   day: number;
   month: number;
@@ -19,6 +23,7 @@ export type DateRange = Partial<{ from: Date; to: Date }>;
 
 export type CalendarViewProps = {
   date: DateRangeData;
+  mode?: CalendarMode;
 
   onClick?: (event: React.MouseEvent | React.TouchEvent) => void;
   onSelectDate?: (date: ISelectDate) => void;

@@ -3,15 +3,24 @@ import buildStyle from '@/shared/lib/buildStyle';
 import { useMemo } from 'react';
 import { ZoomLevel } from '../constans';
 
-const useCalendarStyles = (zoomLevel: ZoomLevel, cellSize: number) => {
-  const className = useMemo(
-    () => buildClassName('calendarGrid', `${String(ZoomLevel[zoomLevel]).toLowerCase()}View`),
+const useCalendarStyles = (
+  className: string | undefined,
+  zoomLevel: ZoomLevel,
+  cellSize: number,
+) => {
+  const classNames = useMemo(
+    () =>
+      buildClassName(
+        'calendarGrid',
+        `${String(ZoomLevel[zoomLevel]).toLowerCase()}View`,
+        className,
+      ),
     [zoomLevel],
   );
 
   const style = useMemo(() => buildStyle(`--cell-size: ${cellSize}px`), [cellSize]);
 
-  return { className, style };
+  return { classNames, style };
 };
 
 export default useCalendarStyles;

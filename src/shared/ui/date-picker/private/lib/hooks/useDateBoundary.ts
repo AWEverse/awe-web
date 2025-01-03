@@ -30,10 +30,6 @@ function calculateBoundaryDate(
         : Math.max(date?.getTime() || safeDate, safeDate),
     );
   } catch (error) {
-    // #v-ifndf DEBUG
-    console.error(`Invalid ${isMax ? 'maxAt' : 'minAt'} date provided:`, error);
-    // #v-endif
-
     onAlways?.();
 
     return new Date(safeDate);
@@ -47,13 +43,16 @@ export default function useDateBoundary({
   maxAt = null,
   onAlways,
 }: UseDateBoundaryParams) {
+  const now = useMemo(() => new Date(), []); // Create the current date once
+
   const minDateFallback = useMemo(
-    () => (isFutureMode ? new Date() : new Date(MIN_SAFE_DATE)),
-    [isFutureMode],
+    () => (isFutureMode ? now : new Date(MIN_SAFE_DATE)),
+    [isFutureMode, now],
   );
+
   const maxDateFallback = useMemo(
-    () => (isPastMode ? new Date() : new Date(MAX_SAFE_DATE)),
-    [isPastMode],
+    () => (isPastMode ? now : new Date(MAX_SAFE_DATE)),
+    [isPastMode, now],
   );
 
   const minDate = useMemo(
@@ -74,8 +73,8 @@ export default function useDateBoundary({
     [isPastMode, maxAt, maxDateFallback, onAlways],
   );
 
-  const isMinInFuture = useMemo(() => minDate.getTime() > new Date().getTime(), [minDate]);
-  const isMaxInPast = useMemo(() => maxDate.getTime() < new Date().getTime(), [maxDate]);
+  const isMinInFuture = useMemo(() => minDate.getTime() > now.getTime(), [minDate, now]);
+  const isMaxInPast = useMemo(() => maxDate.getTime() < now.getTime(), [maxDate, now]);
 
   return {
     minDate,
