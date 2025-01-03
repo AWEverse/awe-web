@@ -2,7 +2,7 @@
  * Enum representing different types of chat.
  */
 export enum EChatType {
-  private = 0x01, // Личный чат
+  private = 0x00, // Личный чат
   group, // Групповой чат
   channel, // Канал
   multiChannel, // Мультиканал
@@ -55,9 +55,32 @@ export enum EMessageType {
 }
 
 /**
- * Enum representing different types of message reactions.
+ * Enum representing different types of emojis.
  */
-export enum EMessageReactionType {
-  emoji = 'emoji', // Эмоджи
-  like = 'like', // Лайк
+export enum EEmojiType {
+  static = 'static', // Статический (standard static emoji)
+  animated = 'animated', // Анимированный (animated emoji)
+  custom = 'custom', // Пользовательский (user-created/custom emoji)
+  recent = 'recent', // Последний (recently used emoji)
+  popular = 'popular', // Популярный (popular emoji)
+
+  trending = 'trending', // В тренде (trending emojis)
+  seasonal = 'seasonal', // Сезонный (seasonal/holiday-specific emojis)
+  premium = 'premium', // Премиум (premium or special access emojis)
+  new = 'new', // Новый (newly added emojis) // For short time
+}
+
+/**
+ * Enum representing different online statuses of a user.
+ */
+export enum EOnlineStatus {
+  offline = 0x00, // User is offline
+  online, // User is online
+  idle, // User is idle
+  busy, // User is busy
+  doNotDisturb, // Do Not Disturb
+  invisible, // User is invisible
+  unknown, // Status unknown
+  away, // User set status to away
+  custom, // Custom status defined by the user
 }
