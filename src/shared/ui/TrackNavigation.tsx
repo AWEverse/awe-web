@@ -2,7 +2,7 @@ import { FC, useRef, useLayoutEffect, memo } from 'react';
 import buildClassName from '../lib/buildClassName';
 import s from './TrackNavigation.module.scss';
 import buildStyle from '../lib/buildStyle';
-import { requestMutation } from '@/lib/modules/fastdom/fastdom';
+import { requestMeasure, requestMutation } from '@/lib/modules/fastdom/fastdom';
 
 type OwnProps = {
   count: number;
@@ -27,29 +27,32 @@ const TrackNavigation: FC<OwnProps> = ({ count, index, visible = 4, size = 'smal
       return;
     }
 
-    const { trackHeight, trackTranslateY, markHeight, markTranslateY, clipPathId, clipPath } = markupParams;
-    const currentElement = containerRef.current;
-    const firstChild = currentElement?.firstElementChild;
+    requestMeasure(() => {
+      const { trackHeight, trackTranslateY, markHeight, markTranslateY, clipPathId, clipPath } =
+        markupParams;
+      const currentElement = containerRef.current!;
+      const firstChild = currentElement?.firstElementChild;
 
-    const svg = currentElement.querySelector('svg');
-    const div = currentElement.querySelector('div');
-    const defs = currentElement.querySelector('defs');
+      const svg = currentElement.querySelector('svg');
+      const div = currentElement.querySelector('div');
+      const defs = currentElement.querySelector('defs');
 
-    requestMutation(() => {
-      currentElement.style.height = `${trackHeight}px`;
-      currentElement.style.transform = `translateY(-${trackTranslateY}px)`;
-      currentElement.style.clipPath = `url("#${clipPathId}")`;
+      requestMutation(() => {
+        currentElement.style.height = `${trackHeight}px`;
+        currentElement.style.transform = `translateY(-${trackTranslateY}px)`;
+        currentElement.style.clipPath = `url("#${clipPathId}")`;
 
-      if (!svg && firstChild) {
-        firstChild.innerHTML = `<svg height="0" width="0"><defs> ${clipPath} </defs></svg>`;
-      }
-      if (defs) {
-        defs.innerHTML = clipPath;
-      }
-      if (div) {
-        div.style.height = `${markHeight}px`;
-        div.style.transform = `translateY(${markTranslateY}px)`;
-      }
+        if (!svg && firstChild) {
+          firstChild.innerHTML = `<svg height="0" width="0"><defs> ${clipPath} </defs></svg>`;
+        }
+        if (defs) {
+          defs.innerHTML = clipPath;
+        }
+        if (div) {
+          div.style.height = `${markHeight}px`;
+          div.style.transform = `translateY(${markTranslateY}px)`;
+        }
+      });
     });
   }, [markupParams]);
 
@@ -67,7 +70,11 @@ const TrackNavigation: FC<OwnProps> = ({ count, index, visible = 4, size = 'smal
 
   return (
     <div
-      className={buildClassName(s.trackNavigationBorder, isBorderMaskInRange && s.trackNavigationBorderMask, s[size])}
+      className={buildClassName(
+        s.trackNavigationBorder,
+        isBorderMaskInRange && s.trackNavigationBorderMask,
+        s[size],
+      )}
       style={buildStyle(`height: ${MASK_HEIGHT}px`)}
     >
       <div
@@ -81,7 +88,8 @@ const TrackNavigation: FC<OwnProps> = ({ count, index, visible = 4, size = 'smal
         <div
           className={s.trackNavigationBorderMark}
           style={buildStyle(
-            `--height: ${markHeight}px; --translate-y: ${markTranslateY}px; ` + `--translate-track: ${trackTranslateY}px;`,
+            `--height: ${markHeight}px; --translate-y: ${markTranslateY}px; ` +
+              `--translate-track: ${trackTranslateY}px;`,
           )}
         />
       </div>
@@ -155,7 +163,13 @@ function getMarkTranslateY(index: number, barHeight: number): number {
   return (barHeight + MASK_GAP) * index;
 }
 
-function getTrackTranslateY(index: number, count: number, visible: number, barHeight: number, trackHeight: number): number {
+function getTrackTranslateY(
+  index: number,
+  count: number,
+  visible: number,
+  barHeight: number,
+  trackHeight: number,
+): number {
   if (index <= 1) {
     return 0;
   }

@@ -8,6 +8,7 @@ import React from 'react';
 import ReactDOM from 'react-dom';
 import { TransitionGroup } from 'react-transition-group';
 import Video from '@/shared/ui/Video';
+import TextTimer from '@/shared/ui/TextTimer';
 
 marked.use({
   breaks: true,
@@ -23,22 +24,7 @@ marked.use({
 const TestPage = () => {
   const [isVisible, setIsVisible] = useState(true);
 
-  return (
-    <div>
-      <Video
-        canPlay
-        controls
-        onReady={() => console.log('Video is ready')}
-        onBroken={() => console.error('Video failed to load')}
-        onTimeUpdate={event => console.log('Time update:', event)}
-      >
-        <source
-          src="http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4"
-          type="video/mp4"
-        />
-      </Video>
-    </div>
-  );
+  return <TextTimer langKey="en" endsAt={266242141} onEnd={() => console.log('Time is up')} />;
 
   // #v-ifdef false
   const [markdownContent, setMarkdownContent] = useState('');
