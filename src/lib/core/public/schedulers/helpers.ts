@@ -9,10 +9,9 @@ export function onIdle(cb: NoneToVoidFunction, timeout?: number) {
   }
 }
 
-export const pause = (ms: number) =>
-  new Promise<void>(resolve => {
-    setTimeout(() => resolve(), ms);
-  });
+export const pause = (ms: number) => {
+  return new Promise<void>(resolve => setTimeout(resolve, ms));
+};
 
 export const rafPromise = () =>
   new Promise<void>(resolve => {

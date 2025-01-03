@@ -67,7 +67,7 @@ export const clampAngle = (x: number): number => {
 
 export const randomInt = (min: number = 0, max: number = 1) =>
   min + Math.floor(Math.random() * (max - min + 1));
-export const randomBool = () => Math.random() > 0.5;
+export const randomBoolean = () => Math.random() > 0.5;
 
 export const randomIndex = <T>(array: T[]) => Math.floor(Math.random() * array.length);
 export const randomElementFromArray = <T>(array: T[]) => array[randomIndex(array)];

@@ -1,3 +1,6 @@
+import { randomInt } from '../math/utils';
+import { pause } from '../schedulers';
+
 interface LoadingProps {
   pending?: number;
   retries?: number;
@@ -9,19 +12,11 @@ const withAsync = (props: LoadingProps): Promise<void> => {
   const { pending = 2000, retries = 3, retryDelay = 1000, timeout = 10000 } = props;
 
   const performAsyncOperation = (): Promise<void> => {
-    return new Promise((resolve, reject) => {
+    return new Promise(resolve => {
       setTimeout(() => {
-        if (Math.random() > 0.5) {
-          resolve();
-        } else {
-          reject(new Error('Something went wrong'));
-        }
+        resolve();
       }, pending);
     });
-  };
-
-  const delay = (ms: number): Promise<void> => {
-    return new Promise(resolve => setTimeout(resolve, ms));
   };
 
   const attemptOperation = async (attemptsLeft: number, delayTime: number): Promise<void> => {
@@ -31,12 +26,15 @@ const withAsync = (props: LoadingProps): Promise<void> => {
       if (attemptsLeft <= 0) {
         throw error;
       }
-      const jitter = Math.random() * 100;
+      const jitter = randomInt(0, 100);
       const nextDelay = delayTime + jitter;
 
-      await delay(nextDelay);
+      await pause(nextDelay);
 
-      return attemptOperation(attemptsLeft - 1, nextDelay * 2);
+      const nextAttempt = attemptsLeft - 1;
+      const nextDelayTime = nextDelay * 2;
+
+      return attemptOperation(nextAttempt, nextDelayTime);
     }
   };
 
@@ -46,6 +44,7 @@ const withAsync = (props: LoadingProps): Promise<void> => {
     }, timeout);
   });
 
+  // Ensure the race between timeout and retry operation
   return Promise.race([timeoutPromise, attemptOperation(retries, retryDelay)]);
 };
 
