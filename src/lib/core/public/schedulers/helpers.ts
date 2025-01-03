@@ -1,7 +1,7 @@
 import fastRaf from './fastRaf';
 import onTickEnd from './onTickEnd';
 
-export function onIdle(cb: NoneToVoidFunction, timeout?: number) {
+export function requestIdleExecution(cb: NoneToVoidFunction, timeout?: number) {
   if (self.requestIdleCallback) {
     self.requestIdleCallback(cb, { timeout });
   } else {
