@@ -14,11 +14,11 @@ export const getIsHeavyAnimating = getIsAnimating;
 export { getIsBlockingAnimating };
 
 export function beginHeavyAnimation(duration = AUTO_END_TIMEOUT, isBlocking = false) {
-  counter++;
+  counter += 1;
   setIsAnimating(counter === 1);
 
   if (isBlocking) {
-    counterBlocking++;
+    counterBlocking += 1;
     setIsBlockingAnimating(counterBlocking === 1);
   }
 
@@ -27,11 +27,11 @@ export function beginHeavyAnimation(duration = AUTO_END_TIMEOUT, isBlocking = fa
   function onEnd() {
     clearTimeout(timeout);
 
-    counter--;
+    counter -= 1;
     setIsAnimating(counter === 0);
 
     if (isBlocking) {
-      counterBlocking--;
+      counterBlocking -= 1;
       setIsBlockingAnimating(counterBlocking === 0);
     }
   }
@@ -39,13 +39,13 @@ export function beginHeavyAnimation(duration = AUTO_END_TIMEOUT, isBlocking = fa
   return onEnd;
 }
 
-export function onIdleComplete(cb: NoneToVoidFunction) {
+export function onIdleComplete(callback: NoneToVoidFunction) {
   requestIdleExecution(() => {
     if (!getIsAnimating()) {
-      cb();
+      callback();
     } else {
       requestMeasure(() => {
-        onIdleComplete(cb);
+        onIdleComplete(callback);
       });
     }
   });

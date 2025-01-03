@@ -1,10 +1,11 @@
+import { onIdleComplete } from '@/lib/core';
 import useEffectSync from '@/lib/hooks/effects/useEffectSync';
 import useLastCallback from '@/lib/hooks/events/useLastCallback';
 import { useStateRef } from '@/lib/hooks/state/useStateRef';
 import useBuffering from '@/lib/hooks/ui/useBuffering';
-import { requestMutation } from '@/lib/modules/fastdom/fastdom';
 import unloadVideo from '@/lib/utils/unloadVideo';
 import { useRef, useMemo, memo, useLayoutEffect } from 'react';
+import useVideoCleanup from '../hooks/useVideoCleanup';
 
 type VideoProps = React.DetailedHTMLProps<
   React.VideoHTMLAttributes<HTMLVideoElement>,
@@ -109,60 +110,6 @@ function Video({
       {children}
     </video>
   );
-}
-
-function useVideoCleanup(
-  videoRef?: React.RefObject<HTMLVideoElement>,
-  handlers?: Record<string, AnyFunction>,
-) {
-  const handlersRef = useStateRef(handlers);
-
-  useLayoutEffect(() => {
-    const videoEl = videoRef?.current;
-    if (!videoEl) return undefined;
-
-    return () => {
-      const handlers2 = handlersRef.current;
-      if (handlers2) {
-        Object.entries(handlers2).forEach(([key, value]) => {
-          videoEl.removeEventListener(resolveEventType(key, videoEl), value, false);
-        });
-      }
-
-      // It may be slow (specifically on iOS), so we postpone it after unmounting
-      requestMutation(() => {
-        unloadVideo(videoEl);
-      });
-    };
-  }, [handlersRef, videoRef]);
-}
-
-export function resolveEventType(propName: string, element: Element) {
-  const eventType = propName
-    .replace(/^on/, '')
-    .replace(/Capture$/, '')
-    .toLowerCase();
-
-  if (eventType === 'change' && element.tagName !== 'SELECT') {
-    // React behavior repeated here.
-    // https://stackoverflow.com/questions/38256332/in-react-whats-the-difference-between-onchange-and-oninput
-    return 'input';
-  }
-
-  if (eventType === 'doubleclick') {
-    return 'dblclick';
-  }
-
-  // Replace focus/blur by their "bubbleable" versions
-  if (eventType === 'focus') {
-    return 'focusin';
-  }
-
-  if (eventType === 'blur') {
-    return 'focusout';
-  }
-
-  return eventType;
 }
 
 export default memo(Video);

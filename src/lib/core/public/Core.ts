@@ -1,4 +1,5 @@
 // export * from './algo';
+export * from './animation';
 export * from './decorators';
 export * from './math';
 export * from './misc';
