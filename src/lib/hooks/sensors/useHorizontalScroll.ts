@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 
 const useHorizontalScroll = (
-  containerRef: React.RefObject<HTMLDivElement>,
+  containerRef: React.RefObject<HTMLElement | null>,
   isDisabled?: boolean,
   shouldPreventDefault = false,
 ) => {

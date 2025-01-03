@@ -8,7 +8,7 @@ const TAB_SCROLL_THRESHOLD_PX = 18;
 const SCROLL_DURATION = IS_IOS ? 450 : IS_ANDROID ? 400 : 300;
 
 const useHorizontalScrollToContanier = (
-  containerRef: React.RefObject<HTMLElement>,
+  containerRef: React.RefObject<HTMLElement | null>,
   activeTab: number,
 ) => {
   useEffect(() => {

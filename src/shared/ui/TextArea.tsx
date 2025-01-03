@@ -77,8 +77,7 @@ const TextArea: FC<OwnProps> = ({
     'input-group',
     isInputFocused && 'touched',
     error ? 'error' : success && 'success',
-    disabled && 'disabled',
-    readOnly && 'disabled',
+    (disabled || readOnly) && 'disabled',
     labelText && 'with-label',
     className,
   );
