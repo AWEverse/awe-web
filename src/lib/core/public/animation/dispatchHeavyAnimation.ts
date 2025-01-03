@@ -10,7 +10,10 @@ let counterBlocking = 0;
 const [getIsAnimating, setIsAnimating] = createSignal(false);
 const [getIsBlockingAnimating, setIsBlockingAnimating] = createSignal(false);
 
-export { getIsAnimating as getIsHeavyAnimating, getIsBlockingAnimating };
+export {
+  getIsAnimating as getIsHeavyAnimating,
+  getIsBlockingAnimating as getIsBlockingHeavyAnimating,
+};
 
 export function dispatchHeavyAnimation(duration = AUTO_END_TIMEOUT, isBlocking = false) {
   counter += 1;
