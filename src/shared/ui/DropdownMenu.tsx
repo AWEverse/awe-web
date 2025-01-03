@@ -8,7 +8,8 @@ import useLastCallback from '@/lib/hooks/events/useLastCallback';
 import captureKeyboardListeners from '@/lib/utils/captureKeyboardListeners';
 import LightEffect from './common/LightEffect';
 import trapFocus from '@/lib/utils/trapFocus';
-import { Vector2, Bounds } from '@/lib/core';
+import useLayoutEffectWithPrevDeps from '@/lib/hooks/effects/useLayoutEffectWithPrevDeps';
+import { dispatchHeavyAnimation } from '@/lib/core';
 
 interface OwnTriggerProps<T = HTMLElement> extends React.HTMLAttributes<T> {
   onTrigger: NoneToVoidFunction;
@@ -141,6 +142,23 @@ const DropdownMenu: FC<OwnProps & OwnSharedProps> = ({
       window.removeEventListener('mousemove', handleMove);
     };
   }, [isOpen, handleClose]);
+
+  useLayoutEffectWithPrevDeps(
+    ([prevIsOpen]) => {
+      document.body.classList.toggle('has-open-dialog', isOpen);
+
+      const isOpened = !isOpen && prevIsOpen !== undefined;
+
+      if (isOpen || isOpened) {
+        dispatchHeavyAnimation(TRANSITION_DURATION);
+      }
+
+      return () => {
+        document.body.classList.remove('has-open-dialog');
+      };
+    },
+    [isOpen],
+  );
 
   return (
     <div className={buildClassName(s.dropdownContainer, containerClass)}>

@@ -1,1 +1,1 @@
-export * from './beginHeavyAnimation';
+export * from './dispatchHeavyAnimation';

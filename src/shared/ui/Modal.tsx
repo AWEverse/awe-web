@@ -17,10 +17,8 @@ import useLastCallback from '@/lib/hooks/events/useLastCallback';
 import { dispatchHeavyAnimationEvent } from '@/lib/hooks/sensors/useHeavyAnimationCheck';
 import useLayoutEffectWithPrevDeps from '@/lib/hooks/effects/useLayoutEffectWithPrevDeps';
 import buildClassName from '../lib/buildClassName';
-import { registerModal, unregisterModal } from '../lib/composers/ModalManager';
 import useUniqueId from '@/lib/hooks/utilities/useUniqueId';
-import { requestMutation } from '@/lib/modules/fastdom/fastdom';
-import { withFreezeWhenClosed } from '@/lib/core';
+import { dispatchHeavyAnimation, withFreezeWhenClosed } from '@/lib/core';
 
 const ANIMATION_DURATION = 300;
 
@@ -81,9 +79,13 @@ const Modal: FC<OwnProps> = ({
   });
 
   const handleEnter = useLastCallback((e: KeyboardEvent) => {
-    e.preventDefault();
+    if (!onEnter) {
+      return false;
+    }
 
-    return onEnter ? (onEnter?.(), true) : false;
+    e.preventDefault();
+    onEnter();
+    return true;
   });
 
   useEffect(() => {
@@ -97,21 +99,9 @@ const Modal: FC<OwnProps> = ({
 
       const trapFocusCleanup = trapFocus(modal);
 
-      const modalRefObject = {
-        onClose,
-        setIsVisible: (visible: boolean) => {
-          requestMutation(() => {
-            modal.style.visibility = visible ? 'visible' : 'hidden';
-          });
-        },
-      };
-
-      registerModal(UUID, modalRefObject);
-
       return () => {
         keyboardListenersCleanup();
         trapFocusCleanup();
-        unregisterModal(UUID);
       };
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -119,12 +109,12 @@ const Modal: FC<OwnProps> = ({
 
   useLayoutEffectWithPrevDeps(
     ([prevIsOpen]) => {
-      document.body.classList.toggle('has-open-dialog', Boolean(isOpen));
+      document.body.classList.toggle('has-open-dialog', isOpen);
 
       const isOpened = !isOpen && prevIsOpen !== undefined;
 
       if (isOpen || isOpened) {
-        dispatchHeavyAnimationEvent(ANIMATION_DURATION);
+        dispatchHeavyAnimation(ANIMATION_DURATION);
       }
 
       return () => {
@@ -158,6 +148,7 @@ const Modal: FC<OwnProps> = ({
         onExited={onCloseAnimationEnd}
       >
         <div
+          id={UUID}
           ref={modalRef}
           aria-modal
           aria-describedby="dialog-description"
@@ -168,6 +159,7 @@ const Modal: FC<OwnProps> = ({
             s.modalBackdrop,
             backdropBlur ? s.backdropBlur : noBackdrop && s.noBackdrop,
           )}
+          tabIndex={-1}
           role="dialog"
           onClick={handleClick}
         >

@@ -12,7 +12,6 @@ const Portal: FC<OwnProps> = ({ containerId = 'modals-root', className, children
     const container = document.querySelector(`#${containerId}`);
 
     if (!container) {
-      console.warn(`Container with id "${containerId}" not found.`);
       return;
     }
 

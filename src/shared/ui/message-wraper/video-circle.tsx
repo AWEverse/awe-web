@@ -3,7 +3,6 @@ import useLastCallback from '@/lib/hooks/events/useLastCallback';
 import { throttle } from '@/lib/utils/schedulers';
 import { Box, Typography } from '@mui/material';
 import { useEffect, useRef } from 'react';
-import VoiceButton from '../VoiceButton';
 import MessageTimeSend from '../MessageTimeSend';
 
 const formatTime = (seconds: number) => {
@@ -104,9 +103,7 @@ const VideoCircle = () => {
           transform: 'translateX(-100px) scale(0.25)',
         }}
       >
-        <Box component={'button'} sx={{ width: '40px', height: '40px' }}>
-          <VoiceButton />
-        </Box>
+        <Box component={'button'} sx={{ width: '40px', height: '40px' }}></Box>
       </Box>
     </Box>
   );

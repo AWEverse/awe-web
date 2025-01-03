@@ -1,5 +1,5 @@
 import { requestMutation, requestForcedReflow } from '@/lib/modules/fastdom/fastdom';
-import { FC, useRef, useLayoutEffect, useEffect } from 'react';
+import { FC, useRef, useLayoutEffect, useEffect, useMemo } from 'react';
 import buildClassName from '../lib/buildClassName';
 import './Tab.scss';
 import { MouseButton } from '@/lib/utils/OS/windowEnviroment';
@@ -113,6 +113,21 @@ const Tab: FC<OwnProps> = ({
     },
   );
 
+  const renderBadge = useMemo(() => {
+    if (badgeCount) {
+      return (
+        <span
+          aria-label={`Notifications: ${badgeCount}`}
+          className={buildClassName('badge', isBadgeActive && classNames.badgeActive)}
+          role="alert"
+        >
+          {badgeCount}
+        </span>
+      );
+    }
+    return null;
+  }, [badgeCount, isBadgeActive]);
+
   return (
     <button
       ref={tabRef}
@@ -126,15 +141,7 @@ const Tab: FC<OwnProps> = ({
     >
       <span className={buildClassName('TabInner', capitalize(variant))} data-active={isActive}>
         {title}
-        {Boolean(badgeCount) && (
-          <span
-            aria-label={`Notifications: ${badgeCount}`}
-            className={buildClassName('badge', isBadgeActive && classNames.badgeActive)}
-            role="alert"
-          >
-            {badgeCount}
-          </span>
-        )}
+        {renderBadge}
         {isBlocked && <i aria-hidden="true" className="icon icon-lock-badge blocked" />}
         <i className={buildClassName('platform', `platform-${variant}`)}>
           <span className="platform-inner-pannels" />

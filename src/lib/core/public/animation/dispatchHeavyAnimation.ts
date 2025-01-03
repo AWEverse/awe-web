@@ -10,10 +10,9 @@ let counterBlocking = 0;
 const [getIsAnimating, setIsAnimating] = createSignal(false);
 const [getIsBlockingAnimating, setIsBlockingAnimating] = createSignal(false);
 
-export const getIsHeavyAnimating = getIsAnimating;
-export { getIsBlockingAnimating };
+export { getIsAnimating as getIsHeavyAnimating, getIsBlockingAnimating };
 
-export function beginHeavyAnimation(duration = AUTO_END_TIMEOUT, isBlocking = false) {
+export function dispatchHeavyAnimation(duration = AUTO_END_TIMEOUT, isBlocking = false) {
   counter += 1;
   setIsAnimating(counter === 1);
 
@@ -51,6 +50,6 @@ export function onIdleComplete(callback: NoneToVoidFunction) {
   });
 }
 
-export function throttleWithFullyIdle<F extends AnyToVoidFunction>(fn: F) {
+export function throttleWithIdleComplete<F extends AnyToVoidFunction>(fn: F) {
   return throttleWith(onIdleComplete, fn);
 }

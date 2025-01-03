@@ -3,7 +3,7 @@ import s from './RegresBar.module.scss';
 import useInterval from '@/lib/hooks/shedulers/useInterval';
 
 interface OwnProps {
-  duration: number; // Duration in milliseconds
+  duration: number;
   onComplete?: () => void;
 }
 
@@ -29,7 +29,10 @@ const RegressBar: React.FC<OwnProps> = ({ duration = 1000, onComplete }) => {
   }, [timeLeft, duration]);
 
   return (
-    <div aria-label={`Time remaining: ${Math.ceil(timeLeft / 1000)} seconds`} className={s.container}>
+    <div
+      aria-label={`Time remaining: ${Math.ceil(timeLeft / 1000)} seconds`}
+      className={s.container}
+    >
       <div className={s.bar} style={{ width: `${width}%` }} />
     </div>
   );
