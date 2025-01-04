@@ -13,10 +13,17 @@ interface ThreadTagsProps {
 type Action = { type: 'toggle'; payload: string };
 function selectionReducer(state: string[], action: Action) {
   switch (action.type) {
-    case 'toggle':
-      return state.includes(action.payload)
-        ? state.filter(item => item !== action.payload)
-        : [...state, action.payload];
+    case 'toggle': {
+      const stateSet = new Set(state);
+
+      if (stateSet.has(action.payload)) {
+        stateSet.delete(action.payload);
+      } else {
+        stateSet.add(action.payload);
+      }
+
+      return Array.from(stateSet);
+    }
     default:
       return state;
   }

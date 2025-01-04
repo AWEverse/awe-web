@@ -76,6 +76,7 @@ export function useIntersectionObserver(
     }
   });
 
+  // if heavy animation is detected, freeze the observer will called when browse idle
   useHeavyAnimationCheck(freeze, unfreeze);
 
   useEffect(() => {

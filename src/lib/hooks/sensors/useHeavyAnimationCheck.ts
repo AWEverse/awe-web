@@ -1,16 +1,19 @@
-import { useEffect } from 'react';
+import { useCallback, useEffect, useMemo, useRef } from 'react';
 
 import { createCallbackManager } from '../../utils/callbacks';
 import useLastCallback from '../events/useLastCallback';
-
-// Make sure to end even if end callback was not called (which was some hardly-reproducible bug)
-const AUTO_END_TIMEOUT = 1000;
+import { getIsHeavyAnimating } from '@/lib/core';
 
 const startCallbacks = createCallbackManager();
 const endCallbacks = createCallbackManager();
 
-let timeout: number | undefined;
-let isAnimating = false;
+getIsHeavyAnimating.onChange(() => {
+  if (getIsHeavyAnimating()) {
+    startCallbacks.runCallbacks();
+  } else {
+    endCallbacks.runCallbacks();
+  }
+});
 
 const useHeavyAnimationCheck = (
   onStart?: AnyToVoidFunction,
@@ -25,7 +28,7 @@ const useHeavyAnimationCheck = (
       return undefined;
     }
 
-    if (isAnimating) {
+    if (getIsHeavyAnimating()) {
       lastOnStart();
     }
 
@@ -39,33 +42,32 @@ const useHeavyAnimationCheck = (
   }, [isDisabled, lastOnEnd, lastOnStart]);
 };
 
-export const isHeavyAnimating = () => isAnimating;
+export function useThrottleForHeavyAnimation<T extends AnyToVoidFunction>(
+  afterHeavyAnimation: T,
+  deps: unknown[],
+) {
+  // eslint-disable-next-line react-hooks-static-deps/exhaustive-deps
+  const fnMemo = useCallback(afterHeavyAnimation, deps);
 
-export function dispatchHeavyAnimationEvent(duration = AUTO_END_TIMEOUT) {
-  if (!isAnimating) {
-    isAnimating = true;
-    startCallbacks.runCallbacks();
-  }
+  const isScheduledRef = useRef(false);
 
-  if (timeout) {
-    clearTimeout(timeout);
-    timeout = undefined;
-  }
+  return useMemo(() => {
+    return (...args: Parameters<T>) => {
+      if (!isScheduledRef.current) {
+        if (!getIsHeavyAnimating()) {
+          fnMemo(...args);
+          return;
+        }
 
-  // Race condition may happen if another `dispatchHeavyAnimationEvent` is called before `onEnd`
-  function onEnd() {
-    if (timeout) {
-      clearTimeout(timeout);
-      timeout = undefined;
-    }
+        isScheduledRef.current = true;
 
-    isAnimating = false;
-    endCallbacks.runCallbacks();
-  }
-
-  timeout = window.setTimeout(onEnd, duration);
-
-  return onEnd;
+        const removeCallback = endCallbacks.addCallback(() => {
+          fnMemo(...args);
+          removeCallback();
+          isScheduledRef.current = false;
+        });
+      }
+    };
+  }, [fnMemo]);
 }
-
 export default useHeavyAnimationCheck;

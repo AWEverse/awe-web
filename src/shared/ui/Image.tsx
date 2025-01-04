@@ -6,14 +6,12 @@ import {
   useOnIntersect,
 } from '@/lib/hooks/sensors/useIntersectionObserver';
 import './Image.scss';
+import useLastCallback from '@/lib/hooks/events/useLastCallback';
 
 interface OwnProps {
   src: string;
   alt: string;
   className?: string;
-  figureClassName?: string;
-  captionClassName?: string;
-  caption?: ReactNode;
   fallbackSrc?: string;
   loading?: 'lazy' | 'eager';
   decoding?: 'async' | 'auto' | 'sync';
@@ -53,18 +51,15 @@ const Image: FC<OwnProps> = ({
   src,
   alt,
   className,
-  caption,
   fallbackSrc = 'https://via.placeholder.com/150',
   loading = 'lazy',
   srcSet,
   sizes,
   decoding = 'async',
-  captionClassName,
-  figureClassName,
-  onError,
-  observeIntersectionForLoading,
   width,
   height,
+  onError,
+  observeIntersectionForLoading,
 }) => {
   const [imgSrc, setImgSrc] = useState<string>(src);
   const [isLoaded, setIsLoaded] = useState<boolean>(false);
@@ -75,9 +70,9 @@ const Image: FC<OwnProps> = ({
     onError?.();
   }, [fallbackSrc, onError]);
 
-  const handleImageLoad = useCallback(() => {
+  const handleImageLoad = useLastCallback(() => {
     setIsLoaded(true);
-  }, []);
+  });
 
   useOnIntersect(imageRef, observeIntersectionForLoading, entry => {
     if (entry.isIntersecting && !isLoaded) {
@@ -86,28 +81,21 @@ const Image: FC<OwnProps> = ({
   });
 
   return (
-    <figure className={buildClassName('ImgContainer', figureClassName)} style={{ width, height }}>
-      <img
-        alt={alt}
-        ref={imageRef}
-        className={buildClassName('Img', className)}
-        decoding={decoding}
-        src={loading === 'lazy' && !isLoaded ? '' : imgSrc}
-        srcSet={srcSet}
-        sizes={sizes}
-        onError={handleError}
-        onLoad={handleImageLoad}
-        style={isLoaded ? {} : { opacity: 0 }}
-        loading={loading === 'lazy' ? 'lazy' : 'eager'}
-        width={width}
-        height={height}
-      />
-      {caption && (
-        <figcaption className={buildClassName('ImgCaption', captionClassName)}>
-          {caption}
-        </figcaption>
-      )}
-    </figure>
+    <img
+      alt={alt}
+      ref={imageRef}
+      className={buildClassName('Img', className)}
+      decoding={decoding}
+      src={loading === 'lazy' && !isLoaded ? '' : imgSrc}
+      srcSet={srcSet}
+      sizes={sizes}
+      onError={handleError}
+      onLoad={handleImageLoad}
+      style={isLoaded ? {} : { opacity: 0 }}
+      loading={loading === 'lazy' ? 'lazy' : 'eager'}
+      width={width}
+      height={height}
+    />
   );
 };
 
