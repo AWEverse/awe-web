@@ -25,7 +25,6 @@ export function dispatchHeavyAnimation(duration = AUTO_END_TIMEOUT, isBlocking =
   }
 
   const timeout = window.setTimeout(onEnd, duration);
-
   function onEnd() {
     clearTimeout(timeout);
 

@@ -1,6 +1,8 @@
-import React, { memo, useCallback } from 'react';
+import React, { memo, useCallback, useReducer, useMemo, useState } from 'react';
 import FlatList from '@/entities/FlatList';
 import TagCheckbox from '@/entities/TagCheckbox';
+import useLastCallback from '@/lib/hooks/events/useLastCallback';
+import { debounce } from '@/lib/core';
 
 interface ThreadTagsProps {
   items: string[];
@@ -8,31 +10,69 @@ interface ThreadTagsProps {
   onChange?: (selected: string[]) => void;
 }
 
-const ThreadTags: React.FC<ThreadTagsProps> = ({ items, selected = [], onChange }) => {
+type Action = { type: 'toggle'; payload: string };
+function selectionReducer(state: string[], action: Action) {
+  switch (action.type) {
+    case 'toggle':
+      return state.includes(action.payload)
+        ? state.filter(item => item !== action.payload)
+        : [...state, action.payload];
+    default:
+      return state;
+  }
+}
+
+const ThreadTags: React.FC<ThreadTagsProps> = ({ items, selected = [], onChange = () => {} }) => {
+  const [searchQuery, setSearchQuery] = useState('');
+  const [state, dispatch] = useReducer(selectionReducer, selected);
+
+  const debouncedOnChange = useMemo(() => debounce(onChange, 300), [onChange]);
+
   const handleCheckboxChange = useCallback(
     (name: string) => {
-      const newSelected = selected.includes(name) ? selected.filter(item => item !== name) : [...selected, name];
-
-      onChange?.(newSelected);
+      dispatch({ type: 'toggle', payload: name });
+      debouncedOnChange(state);
     },
-    [onChange, selected],
+    [debouncedOnChange, state],
+  );
+
+  const filteredItems = useMemo(
+    () => items.filter(item => item.toLowerCase().includes(searchQuery.toLowerCase())),
+    [items, searchQuery],
   );
 
   const renderCheckbox = useCallback(
-    (item: string) => {
-      return <TagCheckbox checked={selected.includes(item)} handleCheckboxChange={handleCheckboxChange} name={item} />;
-    },
-    [selected, handleCheckboxChange],
+    (item: string) => (
+      <TagCheckbox
+        checked={state.includes(item)}
+        handleCheckboxChange={handleCheckboxChange}
+        name={item}
+      />
+    ),
+    [state, handleCheckboxChange],
   );
 
+  const handleSearch = useLastCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchQuery(e.target.value);
+  });
+
   return (
-    <FlatList
-      horizontal
-      ListHeaderComponent={<h1 className="text-2xl font-bold mb-2">Pin on the main thread</h1>}
-      data={items}
-      keyExtractor={item => item}
-      renderItem={renderCheckbox}
-    />
+    <div>
+      <input
+        type="text"
+        placeholder="Search tags..."
+        value={searchQuery}
+        onChange={handleSearch}
+        className="mb-4 p-2 border rounded"
+      />
+      <FlatList
+        horizontal
+        ListHeaderComponent={<h1 className="text-2xl font-bold mb-2">Pin on the main thread</h1>}
+        data={filteredItems}
+        keyExtractor={item => item}
+        renderItem={renderCheckbox}
+      />
+    </div>
   );
 };
 

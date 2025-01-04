@@ -1,15 +1,9 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import './styles.scss';
 import { marked, Tokens } from 'marked';
 import DOMPurify from 'dompurify';
-import Pyramid from '@/entities/album-layout/ui/Pyramid';
-import useValueRef from '@/lib/hooks/state/useValueRef';
-import React from 'react';
-import ReactDOM from 'react-dom';
-import { TransitionGroup } from 'react-transition-group';
-import Video from '@/shared/ui/Video';
-import TextTimer from '@/shared/ui/TextTimer';
-import TextArea from '@/shared/ui/TextArea';
+
+import MoonPhases from '@/shared/common/MoonPhases';
 
 marked.use({
   breaks: true,
@@ -26,8 +20,8 @@ const TestPage = () => {
   const [isVisible, setIsVisible] = useState(true);
 
   return (
-    <div style={{ maxHeight: '300px' }}>
-      <TextArea maxLines={6} />
+    <div style={{ padding: '12rem' }}>
+      <MoonPhases phase={10} />
     </div>
   );
 
