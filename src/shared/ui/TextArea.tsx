@@ -41,6 +41,36 @@ type OwnProps = {
   onPaste?: (e: React.ClipboardEvent<HTMLTextAreaElement>) => void;
 };
 
+/**
+ * TextArea component with customizable properties, including validation and event handling.
+ *
+ * Props:
+ *
+ * | **Property**               | **Example**                                          | **Type**                            | **Status**        |
+ * |----------------------------|-----------------------------------------------------|-------------------------------------|-------------------|
+ * | `ref`                       | `ref={textAreaRef}`                                  | `RefObject<HTMLTextAreaElement>`    | -                 |
+ * | `id`                        | `id="textAreaId"`                                    | String                              | -                 |
+ * | `className`                 | `className="custom-class"`                           | String                              | -                 |
+ * | `value`                     | `value="Some text"`                                  | String                              | -                 |
+ * | `label`                     | `label="Label text"`                                 | String                              | -                 |
+ * | `error`                     | `error="This field is required"`                     | String                              | -                 |
+ * | `success`                   | `success="Valid input"`                              | String                              | -                 |
+ * | `disabled`                  | `disabled={true}`                                    | Boolean                             | -                 |
+ * | `readOnly`                  | `readOnly={true}`                                    | Boolean                             | -                 |
+ * | `placeholder`               | `placeholder="Enter text here"`                      | String                              | -                 |
+ * | `autoComplete`              | `autoComplete="on"`                                  | String                              | -                 |
+ * | `inputMode`                 | `inputMode="text"`                                   | String                              | -                 |
+ * | `maxLength`                 | `maxLength={200}`                                    | Integer                             | -                 |
+ * | `maxLengthIndicator`        | `maxLengthIndicator={true}`                          | Boolean                             | -                 |
+ * | `tabIndex`                  | `tabIndex={0}`                                       | Integer                             | -                 |
+ * | `maxLines`                  | `maxLines={5}`                                       | Integer                             | Default: 1        |
+ * | `onChange`                  | `onChange={event => handleChange(event)}`            | Function                            | -                 |
+ * | `onInput`                   | `onInput={event => handleInput(event)}`              | Function                            | -                 |
+ * | `onKeyDown`                 | `onKeyDown={event => handleKeyDown(event)}`          | Function                            | -                 |
+ * | `onBlur`                    | `onBlur={event => handleBlur(event)}`                | Function                            | -                 |
+ * | `onPaste`                   | `onPaste={event => handlePaste(event)}`              | Function                            | -                 |
+ * | `replaceNewlines`           | `replaceNewlines={true}`                              | Boolean                             | Default: false    |
+ */
 const TextArea: FC<OwnProps> = ({
   ref,
   id,

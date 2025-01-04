@@ -4,7 +4,7 @@ import { Avatar } from '@mui/material';
 import FlatList from '@/entities/FlatList';
 import Linkify from '@/shared/ui/Linkify';
 
-import Img from '@/shared/ui/img';
+import Img from '@/shared/ui/Image';
 
 import s from './CommunityTopic.module.scss';
 
@@ -33,9 +33,18 @@ const AvatarSection: React.FC<AvatarProps> = ({ avatars }) => (
   />
 );
 
-const EndSection: React.FC<ItemProps> = ({ children }) => <div className={s.endSection}>{children}</div>;
+const EndSection: React.FC<ItemProps> = ({ children }) => (
+  <div className={s.endSection}>{children}</div>
+);
 
-const TextSection: React.FC<TextSectionProps> = ({ categoryIcon, question, title, author, topicName, categories }) => (
+const TextSection: React.FC<TextSectionProps> = ({
+  categoryIcon,
+  question,
+  title,
+  author,
+  topicName,
+  categories,
+}) => (
   <div className={s.textSection}>
     <Img
       alt=""
@@ -50,7 +59,9 @@ const TextSection: React.FC<TextSectionProps> = ({ categoryIcon, question, title
     <hr className={s.divider} />
 
     <span className={s.publisher}>
-      <Linkify text={`${author} asked yesterday in ${topicName} usage category: ${categories.join(', ')}`} />
+      <Linkify
+        text={`${author} asked yesterday in ${topicName} usage category: ${categories.join(', ')}`}
+      />
     </span>
 
     <div className={s.metaData} title="29 June 2024, 15:29:48 Edited: 29 June 2024, 15:34:23">

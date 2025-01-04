@@ -1,5 +1,5 @@
 import IconButton from '@/shared/ui/IconButton';
-import Img from '@/shared/ui/img';
+import Img from '@/shared/ui/Image';
 import { CloseRounded } from '@mui/icons-material';
 import { FC, memo, ReactNode } from 'react';
 import s from './CustomTag.module.scss';

@@ -4,7 +4,7 @@ import { FC, useRef, useState, useCallback, useEffect, memo, CSSProperties } fro
 import buildStyle from '@/shared/lib/buildStyle';
 import stopEvent from '@/lib/utils/stopEvent';
 
-import styles from './index.module.scss';
+import styles from './Draggable.module.scss';
 import { requestMeasure } from '@/lib/modules/fastdom/fastdom';
 
 type TPoint = {
@@ -35,7 +35,11 @@ type OwnProps = {
 
 type EventWithClientCoordinates = MouseEvent | TouchEvent | React.MouseEvent | React.TouchEvent;
 
-function getClientCoordinate(e: EventWithClientCoordinates, horizontal: boolean = false, vertical: boolean = false) {
+function getClientCoordinate(
+  e: EventWithClientCoordinates,
+  horizontal: boolean = false,
+  vertical: boolean = false,
+) {
   const { clientX, clientY } = 'touches' in e ? e.touches[0] : e;
 
   return { x: horizontal ? clientX : 0, y: vertical ? clientY : 0 };
@@ -152,10 +156,15 @@ const Draggable: FC<OwnProps> = memo(
       };
     }, [handleMouseMove, handleMouseUp, state.isDragging]);
 
-    const fullClassName = buildClassName(styles.container, state.isDragging && styles.isDragging, className);
+    const fullClassName = buildClassName(
+      styles.container,
+      state.isDragging && styles.isDragging,
+      className,
+    );
 
     const cssStyles = buildStyle(
-      state.isDragging && `transform: translate(${state.translation.x}px, ${state.translation.y}px)`,
+      state.isDragging &&
+        `transform: translate(${state.translation.x}px, ${state.translation.y}px)`,
       state.width ? `width: ${state.width}px` : undefined,
       state.height ? `height: ${state.height}px` : undefined,
       externalStyle,

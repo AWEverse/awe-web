@@ -4,7 +4,7 @@ import useChatStore from '@/pages/chat/store/useChatSelector';
 import TextInput from '@/shared/ui/TextInput';
 
 import s from './EditScreen.module.scss';
-import Img from '@/shared/ui/img';
+import Img from '@/shared/ui/Image';
 import HeaderNavigation from '../../common/HeaderNavigation';
 import buildClassName from '@/shared/lib/buildClassName';
 import TextArea from '@/shared/ui/TextArea';
@@ -19,7 +19,11 @@ const EditScreen: FC<OwnProps> = ({ nodeRef, className }) => {
 
   return (
     <div ref={nodeRef} className={buildClassName(s.EditScreen, className)}>
-      <HeaderNavigation className={'RightHeaderNavigation'} name="Andrii, Edit your profile" onPrevClick={handleClose} />
+      <HeaderNavigation
+        className={'RightHeaderNavigation'}
+        name="Andrii, Edit your profile"
+        onPrevClick={handleClose}
+      />
 
       <Img
         alt=""
@@ -44,8 +48,8 @@ const EditScreen: FC<OwnProps> = ({ nodeRef, className }) => {
 
       <article className={s.EditExplanation}>
         <span className="i18n">
-          Укажите ключевую информацию о себе, такую как интересы, место проживания или профессия. Например: 20 лет, инженер из
-          Англии.
+          Укажите ключевую информацию о себе, такую как интересы, место проживания или профессия.
+          Например: 20 лет, инженер из Англии.
         </span>
       </article>
 
@@ -56,16 +60,16 @@ const EditScreen: FC<OwnProps> = ({ nodeRef, className }) => {
 
       <article className={s.EditExplanation}>
         <span className="i18n">
-          Вы можете установить свое публичное имя пользователя в <b>AWE</b>. Это имя поможет другим пользователям найти вас и
-          связаться с вами, даже если они не знают ваш номер телефона.
+          Вы можете установить свое публичное имя пользователя в <b>AWE</b>. Это имя поможет другим
+          пользователям найти вас и связаться с вами, даже если они не знают ваш номер телефона.
           <br />
           <br />
-          Пожалуйста, используйте только символы <b>a–z</b>, <b>0–9</b> и подчеркивания для создания имени. Имейте в виду, что
-          минимальная длина имени составляет <b>5</b> символов.
+          Пожалуйста, используйте только символы <b>a–z</b>, <b>0–9</b> и подчеркивания для создания
+          имени. Имейте в виду, что минимальная длина имени составляет <b>5</b> символов.
           <br />
           <br />
-          Имя пользователя должно быть уникальным, и вы можете изменить его в любое время через настройки профиля. Выбирайте имя,
-          которое отражает вашу индивидуальность или интересы.
+          Имя пользователя должно быть уникальным, и вы можете изменить его в любое время через
+          настройки профиля. Выбирайте имя, которое отражает вашу индивидуальность или интересы.
         </span>
       </article>
     </div>

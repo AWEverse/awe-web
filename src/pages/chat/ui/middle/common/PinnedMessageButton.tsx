@@ -4,7 +4,7 @@ import { FC, useState, useMemo, memo } from 'react';
 
 import s from './PinnedMessageButton.module.scss';
 import buildClassName from '@/shared/lib/buildClassName';
-import Img from '@/shared/ui/img';
+import Img from '@/shared/ui/Image';
 
 interface OwnProps {
   nodeRef?: React.Ref<HTMLDivElement>;

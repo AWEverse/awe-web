@@ -51,11 +51,11 @@ export function useIntersectionObserver(
   }: useIntersectionObserverProps,
   rootCallback?: RootCallback,
 ): Response {
-  const controllerRef = useRef<IntersectionController>();
+  const controllerRef = useRef<IntersectionController | undefined>(null);
 
-  const rootCallbackRef = useRef<RootCallback>();
+  const rootCallbackRef = useRef<RootCallback | undefined>(null);
   const freezeFlagsRef = useRef(0);
-  const onUnfreezeRef = useRef<NoneToVoidFunction>();
+  const onUnfreezeRef = useRef<NoneToVoidFunction | undefined>(null);
 
   rootCallbackRef.current = rootCallback;
 
@@ -204,21 +204,19 @@ export function useIntersectionObserver(
 }
 
 export function useOnIntersect(
-  targetRef: RefObject<HTMLDivElement>,
+  targetRef: RefObject<HTMLDivElement | null>,
   observe?: ObserveFn,
   callback?: TargetCallback,
 ) {
   const lastCallback = useLastCallback(callback);
 
   useEffect(() => {
-    if (observe) {
-      return observe(targetRef.current!, lastCallback);
-    }
+    return observe?.(targetRef.current!, lastCallback);
   }, [lastCallback, observe, targetRef]);
 }
 
 export function useIsIntersecting(
-  targetRef: RefObject<HTMLDivElement>,
+  targetRef: RefObject<HTMLDivElement | null>,
   observe?: ObserveFn,
   callback?: TargetCallback,
 ) {
@@ -226,10 +224,7 @@ export function useIsIntersecting(
 
   useOnIntersect(targetRef, observe, entry => {
     setIsIntersecting(entry.isIntersecting);
-
-    if (callback) {
-      callback(entry);
-    }
+    callback?.(entry);
   });
 
   return isIntersecting;

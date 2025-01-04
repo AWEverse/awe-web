@@ -21,6 +21,22 @@ type OwnProps = {
   onBroken?: NoneToVoidFunction;
 } & VideoProps;
 
+/**
+ * `Video` component with customizable properties.
+ *
+ * Props:
+ *
+ * | **Property**               | **Example**                                          | **Type**                            | **Status**        |
+ * |----------------------------|-----------------------------------------------------|-------------------------------------|-------------------|
+ * | `ref`                      | `ref={videoRef}`                                    | `React.RefObject<HTMLVideoElement>` | Optional          |
+ * | `isPriority`               | `isPriority={true}`                                 | `boolean`                           | Optional          |
+ * | `canPlay`                  | `canPlay="auto"`                                    | `boolean or string`                  | Optional          |
+ * | `children`                 | `children={<SomeContent />}`                        | `ReactNode`                         | Optional          |
+ * | `onReady`                  | `onReady={() => console.log("Video is ready!")}`    | `() => void`                        | Optional          |
+ * | `onBroken`                 | `onBroken={() => console.log("Video failed!")}`     | `() => void`                        | Optional          |
+ * | `onTimeUpdate`             | `onTimeUpdate={(e) => console.log(e.currentTime)}`  | `(event: React.SyntheticEvent) => void` | Optional        |
+ * | `...restProps`             | `...restProps`                                      | `React.VideoHTMLAttributes<HTMLVideoElement>` | Optional    |
+ */
 function Video({
   ref,
   isPriority,

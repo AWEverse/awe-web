@@ -1,6 +1,6 @@
 import { FC, memo, ReactNode, KeyboardEvent } from 'react';
 import s from './VideoTopic.module.scss';
-import Img from '@/shared/ui/img';
+import Img from '@/shared/ui/Image';
 import buildClassName from '@/shared/lib/buildClassName';
 import RippleEffect from '@/shared/ui/ripple-effect';
 
@@ -62,7 +62,8 @@ const VideoTopic: FC<OwnProps> = ({
     </>
   );
 
-  const renderOriented = () => (direction === 'horizontal' ? renderContent() : <div>{renderContent()}</div>);
+  const renderOriented = () =>
+    direction === 'horizontal' ? renderContent() : <div>{renderContent()}</div>;
 
   return (
     <a
