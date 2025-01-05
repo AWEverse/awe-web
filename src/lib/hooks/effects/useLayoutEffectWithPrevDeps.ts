@@ -4,7 +4,7 @@ const useLayoutEffectWithPrevDeps = <const T extends readonly unknown[]>(
   cb: (args: T | readonly []) => void,
   dependencies: T,
 ) => {
-  const prevDepsRef = useRef<T>();
+  const prevDepsRef = useRef<T>(null);
 
   return useLayoutEffect(() => {
     const prevDeps = prevDepsRef.current;

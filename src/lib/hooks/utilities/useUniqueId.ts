@@ -1,4 +1,4 @@
-import { useRef } from 'react';
+import { useEffect, useRef } from 'react';
 
 function generateUniqueId(prefix: string = '', suffix: string = ''): string {
   const array = new Uint32Array(2);
@@ -12,9 +12,9 @@ function generateUniqueId(prefix: string = '', suffix: string = ''): string {
 function useUniqueId(prefix: string = '', suffix: string = ''): string {
   const idRef = useRef<string>('');
 
-  if (!idRef.current) {
+  useEffect(() => {
     idRef.current = generateUniqueId(prefix, suffix);
-  }
+  }, [prefix, suffix]);
 
   return idRef.current;
 }

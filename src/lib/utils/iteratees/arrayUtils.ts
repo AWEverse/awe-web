@@ -21,11 +21,21 @@ export function chunks<T>(array: T[], chunkSize: number): T[][] {
   return result;
 }
 
-export function partition<T>(array: T[], predicate: (value: T, index: number, array: T[]) => boolean): [T[], T[]] {
-  const pass: T[] = [];
-  const fail: T[] = [];
-  array.forEach((e, idx, arr) => (predicate(e, idx, arr) ? pass : fail).push(e));
-  return [pass, fail];
+export function partition<T>(
+  array: T[],
+  predicate: (value: T, index: number, array: T[]) => boolean,
+): [T[], T[]] {
+  return array.reduce<[T[], T[]]>(
+    (acc, value, index, arr) => {
+      if (predicate(value, index, arr)) {
+        acc[0].push(value);
+      } else {
+        acc[1].push(value);
+      }
+      return acc;
+    },
+    [[], []],
+  );
 }
 
 export function areSortedArraysEqual(array1: any[], array2: any[]) {

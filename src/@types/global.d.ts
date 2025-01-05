@@ -63,6 +63,7 @@ type CommonProperties<T, U> = {
   [K in Union<keyof T, keyof U>]: Union<T[K], U[K]>;
 };
 
+type EventToVoidFunction<T> = (e: T) => void;
 type NoneToVoidFunction = () => void;
 type NoneToUnknownFunction = () => unknown;
 type NoneToAnyFunction = () => any;

@@ -9,7 +9,7 @@ export default function <const T extends readonly any[]>(
   dependencies: T,
 ) {
   const prevDeps = usePrevious<T>(dependencies);
-  const cleanupRef = useRef<NoneToVoidFunction>();
+  const cleanupRef = useRef<NoneToVoidFunction | undefined>(null);
 
   if (!prevDeps || dependencies.some((d, i) => d !== prevDeps[i])) {
     cleanupRef.current?.();

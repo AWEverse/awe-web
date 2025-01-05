@@ -14,17 +14,17 @@ import Portal from './Portal';
 import trapFocus from '@/lib/utils/trapFocus';
 import captureKeyboardListeners from '@/lib/utils/captureKeyboardListeners';
 import useLastCallback from '@/lib/hooks/events/useLastCallback';
-import { dispatchHeavyAnimationEvent } from '@/lib/hooks/sensors/useHeavyAnimationCheck';
 import useLayoutEffectWithPrevDeps from '@/lib/hooks/effects/useLayoutEffectWithPrevDeps';
 import buildClassName from '../lib/buildClassName';
 import useUniqueId from '@/lib/hooks/utilities/useUniqueId';
 import { dispatchHeavyAnimation, withFreezeWhenClosed } from '@/lib/core';
+import useHistoryBack from '@/lib/hooks/history/useHistoryBack';
 
 const ANIMATION_DURATION = 300;
 
 type OwnProps = {
   'aria-label'?: string;
-  dialogRef?: RefObject<HTMLDivElement>;
+  dialogRef?: RefObject<HTMLDivElement | null>;
   title?: string | ReactNode[];
   className?: string;
   contentClassName?: string;
@@ -37,12 +37,37 @@ type OwnProps = {
   children?: ReactNode;
   style?: CSSProperties;
 
-  onClick?: (e: MouseEvent<HTMLDivElement>) => void;
-  onClose: () => void;
-  onCloseAnimationEnd?: () => void;
-  onEnter?: () => void;
+  onClick?: EventToVoidFunction<MouseEvent<HTMLDivElement>>;
+  onClose: NoneToVoidFunction;
+  onCloseAnimationEnd?: NoneToVoidFunction;
+  onEnter?: NoneToVoidFunction;
 };
 
+/**
+ * Modal component with customizable properties for handling display, interaction, and animations.
+ *
+ * Props:
+ *
+ * | **Property**               | **Example**                                          | **Type**                            | **Status**        |
+ * |----------------------------|-----------------------------------------------------|-------------------------------------|-------------------|
+ * | `aria-label`                | `aria-label="Modal window"`                         | String                              | Optional          |
+ * | `dialogRef`                 | `dialogRef={modalRef}`                              | `RefObject<HTMLDivElement \| null>`         | Optional          |
+ * | `title`                     | `title="Modal Title"`                               | String \| ReactNode[]                  | Optional          |
+ * | `className`                 | `className="modal-custom"`                          | String                              | Optional          |
+ * | `contentClassName`          | `contentClassName="modal-content"`                  | String                              | Optional          |
+ * | `isOpen`                    | `isOpen={true}`                                     | Boolean                             | Required          |
+ * | `header`                    | `header={<h2>Header Content</h2>}`                  | ReactNode                           | Optional          |
+ * | `isSlim`                    | `isSlim={true}`                                     | Boolean                             | Optional          |
+ * | `noBackdrop`                | `noBackdrop={true}`                                 | Boolean                             | Optional          |
+ * | `noBackdropClose`           | `noBackdropClose={true}`                            | Boolean                             | Optional          |
+ * | `backdropBlur`              | `backdropBlur={true}`                               | Boolean                             | Optional          |
+ * | `children`                  | `children={<p>Modal body content</p>}`              | ReactNode                           | Optional          |
+ * | `style`                     | `style={{ width: '500px', height: '400px' }}`       | CSSProperties                       | Optional          |
+ * | `onClick`                   | `onClick={e => handleClick(e)}`                     | Function                            | Optional          |
+ * | `onClose`                   | `onClose={handleClose}`                             | Function                            | Required          |
+ * | `onCloseAnimationEnd`       | `onCloseAnimationEnd={handleAnimationEnd}`          | Function                            | Optional          |
+ * | `onEnter`                   | `onEnter={handleEnter}`                             | Function                            | Optional          |
+ */
 const Modal: FC<OwnProps> = ({
   className,
   contentClassName,
@@ -61,7 +86,6 @@ const Modal: FC<OwnProps> = ({
   'aria-label': ariaLabel,
 }) => {
   const UUID = useUniqueId(`modal`, ariaLabel);
-
   const modalRef = useRef<HTMLDivElement>(null);
 
   const handleClick = useLastCallback((e: MouseEvent<HTMLDivElement>) => {
@@ -86,6 +110,11 @@ const Modal: FC<OwnProps> = ({
     e.preventDefault();
     onEnter();
     return true;
+  });
+
+  useHistoryBack({
+    isActive: isOpen,
+    onBack: onClose,
   });
 
   useEffect(() => {

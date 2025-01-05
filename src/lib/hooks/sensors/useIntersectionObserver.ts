@@ -76,8 +76,26 @@ export function useIntersectionObserver(
     }
   });
 
-  // if heavy animation is detected, freeze the observer will called when browse idle
-  useHeavyAnimationCheck(freeze, unfreeze);
+  const observe = useLastCallback((target, targetCallback) => {
+    if (!controllerRef.current) {
+      initController();
+    }
+
+    const controller = controllerRef.current!;
+    controller.observer.observe(target);
+
+    if (targetCallback) {
+      controller.addCallback(target, targetCallback);
+    }
+
+    return () => {
+      if (targetCallback) {
+        controller.removeCallback(target, targetCallback);
+      }
+
+      controller.observer.unobserve(target);
+    };
+  });
 
   useEffect(() => {
     if (isDisabled) {
@@ -92,6 +110,9 @@ export function useIntersectionObserver(
       }
     };
   }, [isDisabled]);
+
+  // if heavy animation is detected, freeze the observer will called when browse idle
+  useHeavyAnimationCheck(freeze, unfreeze);
 
   function initController() {
     const callbacks = new Map<HTMLElement, CallbackManager<TargetCallback>>();
@@ -179,27 +200,6 @@ export function useIntersectionObserver(
       destroy,
     };
   }
-
-  const observe = useLastCallback((target, targetCallback) => {
-    if (!controllerRef.current) {
-      initController();
-    }
-
-    const controller = controllerRef.current!;
-    controller.observer.observe(target);
-
-    if (targetCallback) {
-      controller.addCallback(target, targetCallback);
-    }
-
-    return () => {
-      if (targetCallback) {
-        controller.removeCallback(target, targetCallback);
-      }
-
-      controller.observer.unobserve(target);
-    };
-  });
 
   return { observe, freeze, unfreeze };
 }

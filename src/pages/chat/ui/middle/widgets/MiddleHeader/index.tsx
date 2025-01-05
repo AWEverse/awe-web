@@ -13,13 +13,13 @@ import { TransitionGroup, CSSTransition } from 'react-transition-group';
 import useLastCallback from '@/lib/hooks/events/useLastCallback';
 import Modal from '@/shared/ui/Modal';
 import { createSelectorHooks } from '@/lib/hooks/selectors/createSelectorHooks';
-import { DatePicker } from '@/shared/ui/date-picker';
 import captureKeyboardListeners from '@/lib/utils/captureKeyboardListeners';
 import MiddleHeaderSearch from './MiddleHeaderSearch';
 import useChatStore from '@/pages/chat/store/useChatSelector';
 import useConditionalRef from '@/lib/hooks/utilities/useConditionalRef';
 import buildClassName from '@/shared/lib/buildClassName';
 import useEffectOnce from '@/lib/hooks/effects/useEffectOnce';
+import { DatePicker } from '@/entities/date-picker';
 
 const TRANSITION_DURATION = 300;
 
