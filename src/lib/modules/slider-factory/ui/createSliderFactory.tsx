@@ -1,8 +1,10 @@
-import { FC, cloneElement, useState, useEffect, createRef, Suspense } from 'react';
+import { FC, cloneElement, useState, useEffect, createRef, Suspense, ReactElement } from 'react';
 import { TransitionGroup, CSSTransition } from 'react-transition-group';
 import usePrevious from '@/lib/hooks/state/usePrevious';
 import useLastCallback from '@/lib/hooks/events/useLastCallback';
 import SliderSkeleton from './SliderSkeleton';
+import { CSSTransitionProps } from 'react-transition-group/CSSTransition';
+import { dispatchHeavyAnimation } from '@/lib/core';
 
 const TRANSITION_DURATION = 300;
 
@@ -49,6 +51,10 @@ function createSliderFactory(args: SliderFactoryProps): FC<OwnProps> {
     });
 
     useEffect(() => {
+      dispatchHeavyAnimation(duration);
+    }, [content]);
+
+    useEffect(() => {
       if (currentScreen !== undefined && currentScreen !== content) {
         handleScreenChange(currentScreen);
       }
@@ -70,7 +76,7 @@ function createSliderFactory(args: SliderFactoryProps): FC<OwnProps> {
 
     return (
       <TransitionGroup
-        childFactory={child =>
+        childFactory={(child: ReactElement<CSSTransitionProps<HTMLDivElement>>) =>
           cloneElement(child, {
             classNames: direction ? rightClassNames : leftClassNames,
             timeout: duration,

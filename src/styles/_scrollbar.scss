@@ -9,8 +9,6 @@
   overflow-y: scroll;
   mask-size: 100% 20000px;
   mask-position: left bottom;
-  will-change: mask-position;
-  transition: mask-position 0.3s;
 
   &:hover {
     -webkit-mask-position: left top;

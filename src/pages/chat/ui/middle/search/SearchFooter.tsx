@@ -1,4 +1,4 @@
-import { FC, memo, useMemo, useEffect } from 'react';
+import { FC, memo, useMemo, useEffect, JSX } from 'react';
 import s from './SearchFooter.module.scss';
 import captureKeyboardListeners, {
   CaptureOptions,
@@ -62,6 +62,7 @@ const buildKeyActions = (keys: KeysArray) => {
 const renderFormattedString = (keys: KeysArray, formatString: string) => {
   const stack: JSX.Element[] = [];
   const renderedKeys = new Set<string>();
+
   let textContent = '';
 
   const pushText = (index: number) => {

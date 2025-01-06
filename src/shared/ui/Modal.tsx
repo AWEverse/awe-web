@@ -18,7 +18,6 @@ import useLayoutEffectWithPrevDeps from '@/lib/hooks/effects/useLayoutEffectWith
 import buildClassName from '../lib/buildClassName';
 import useUniqueId from '@/lib/hooks/utilities/useUniqueId';
 import { dispatchHeavyAnimation, withFreezeWhenClosed } from '@/lib/core';
-import useHistoryBack from '@/lib/hooks/history/useHistoryBack';
 
 const ANIMATION_DURATION = 300;
 
@@ -110,11 +109,6 @@ const Modal: FC<OwnProps> = ({
     e.preventDefault();
     onEnter();
     return true;
-  });
-
-  useHistoryBack({
-    isActive: isOpen,
-    onBack: onClose,
   });
 
   useEffect(() => {

@@ -1,10 +1,6 @@
-import { FC, memo, ReactNode, useCallback, useRef, useState, useEffect } from 'react';
+import { FC, memo, useCallback, useRef, useState } from 'react';
 import buildClassName from '@/shared/lib/buildClassName';
-import {
-  ObserveFn,
-  useIsIntersecting,
-  useOnIntersect,
-} from '@/lib/hooks/sensors/useIntersectionObserver';
+import { ObserveFn, useOnIntersect } from '@/lib/hooks/sensors/useIntersectionObserver';
 import './Image.scss';
 import useLastCallback from '@/lib/hooks/events/useLastCallback';
 

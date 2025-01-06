@@ -3,6 +3,7 @@ import useLastCallback from '../events/useLastCallback';
 import { debounce } from '../../utils/schedulers';
 import { isSafariPatchInProgress } from '../../utils/patchSafariProgressiveAudio';
 import { areDeepEqual } from '../../utils/areDeepEqual';
+import { isMediaReadyToPlay } from '@/lib/core/public/misc/SafePlay';
 
 type BufferingEvent = (e: Event | React.SyntheticEvent<HTMLMediaElement>) => void;
 
@@ -26,13 +27,11 @@ const useBuffering = (
   const [bufferedProgress, setBufferedProgress] = useState(0);
   const [bufferedRanges, setBufferedRanges] = useState<BufferedRange[]>([]);
 
-  const setIsBuffered = useMemo(() => {
-    return debounce(_setIsBuffered, DEBOUNCE, false, true);
-  }, []);
+  const setIsBuffered = useMemo(() => debounce(_setIsBuffered, DEBOUNCE, false, true), []);
 
   const handleBuffering = useLastCallback<BufferingEvent>(e => {
     const media = e.currentTarget as HTMLMediaElement;
-    const isMediaReady = media.readyState >= MIN_READY_STATE;
+    const isMediaReady = isMediaReadyToPlay(media);
 
     if (media.duration < MIN_ALLOWED_MEDIA_DURATION) {
       onBroken?.();
@@ -83,7 +82,7 @@ const useBuffering = (
     bufferedRanges,
     bufferingHandlers,
     checkBuffering(element: HTMLMediaElement) {
-      setIsBuffered(element.readyState >= MIN_READY_STATE);
+      setIsBuffered(isMediaReadyToPlay(element));
     },
   };
 };

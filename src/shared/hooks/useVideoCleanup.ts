@@ -4,7 +4,7 @@ import unloadVideo from '@/lib/utils/unloadVideo';
 import { useLayoutEffect } from 'react';
 
 export default function useVideoCleanup(
-  videoRef?: React.RefObject<HTMLVideoElement>,
+  videoRef?: React.RefObject<HTMLVideoElement | null>,
   handlers?: Record<string, AnyFunction>,
 ) {
   const handlersRef = useStateRef(handlers);

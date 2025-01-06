@@ -100,7 +100,7 @@ const [handleTouchStart, handleTouchEnd] = touchRanges();
 window.addEventListener('touchstart', handleTouchStart);
 window.addEventListener('touchend', handleTouchEnd);
 window.addEventListener('popstate', handleTouchEnd);
-// #v-endif
+// #v-endlif
 
 function applyDeferredHistoryOperations() {
   const [goOperations, stateOperations] = partition(
@@ -349,8 +349,9 @@ export default function useHistoryBack({
 
   useEffectSync(
     ([prevIsActive]) => {
-      if (prevIsActive === isActive) return;
-      if (isFirstRender.current && !isActive) return;
+      if (prevIsActive === isActive || (isFirstRender.current && !isActive)) {
+        return;
+      }
 
       if (isActive) {
         pushState();

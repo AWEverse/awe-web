@@ -71,7 +71,7 @@ export function useIntersectionObserver(
     freezeFlagsRef.current--;
 
     if (!freezeFlagsRef.current && onUnfreezeRef.current) {
-      onUnfreezeRef.current();
+      onUnfreezeRef.current?.();
       onUnfreezeRef.current = undefined;
     }
   });

@@ -10,79 +10,83 @@ export enum EMediaReadyState {
   HAVE_ENOUGH_DATA = 4, // Enough data is available—and the download rate is high enough—that the media can be played through to the end without interruption.
 }
 
+export enum EMediaErrorCode {
+  MEDIA_ERR_ABORTED = 1,
+  MEDIA_ERR_NETWORK = 2,
+  MEDIA_ERR_DECODE = 3,
+  MEDIA_ERR_SRC_NOT_SUPPORTED = 4,
+}
+
 /**
- * Attempts to play the video and handles any errors.
- * @param videoEl - The video element to play.
+ * Attempts to play the media element and handles any errors.
+ * @param mediaEl - The media element to play (video or audio).
  */
-export const playVideo = (videoEl: HTMLVideoElement): void => {
-  videoEl.play().catch(err => {
-    // #v-ifdef DEBUG;
-    // eslint-disable-next-line no-console
-    console.warn(err, videoEl);
-    // #v-endif
+export const playMedia = (mediaEl: HTMLMediaElement): void => {
+  mediaEl.play().catch(err => {
+    if (DEBUG) console.error(err);
   });
 };
 
 /**
- * Pauses the video playback.
- * @param videoEl - The video element to pause.
+ * Pauses the media playback.
+ * @param mediaEl - The media element to pause (video or audio).
  */
-export const pauseVideo = (videoEl: HTMLVideoElement): void => {
-  videoEl.pause();
+export const pauseMedia = (mediaEl: HTMLMediaElement): void => {
+  mediaEl.pause();
 };
 
 /**
- * Checks if the video is currently playing.
- * @param videoEl - The video element to check.
- * @returns True if the video is playing, false otherwise.
+ * Checks if the media is currently playing.
+ * @param mediaEl - The media element to check (video or audio).
+ * @returns True if the media is playing, false otherwise.
  */
-export const isVideoPlaying = (videoEl: HTMLVideoElement): boolean => {
+export const isMediaPlaying = (mediaEl: HTMLMediaElement): boolean => {
   return (
-    !videoEl.paused && !videoEl.ended && videoEl.readyState > EMediaReadyState.HAVE_CURRENT_DATA
+    !mediaEl.paused && !mediaEl.ended && mediaEl.readyState > EMediaReadyState.HAVE_CURRENT_DATA
   );
 };
 
 /**
- * Checks if the video has enough data to start playing.
- * @param videoEl - The video element to check.
- * @returns True if the video is ready to play, false otherwise.
+ * Checks if the media has enough data to start playing.
+ * @param mediaEl - The media element to check (video or audio).
+ * @returns True if the media is ready to play, false otherwise.
  */
-export const isVideoReadyToPlay = (videoEl: HTMLVideoElement): boolean => {
-  return videoEl.readyState >= EMediaReadyState.HAVE_FUTURE_DATA;
+export const isMediaReadyToPlay = (mediaEl: HTMLMediaElement): boolean => {
+  return mediaEl.readyState >= EMediaReadyState.HAVE_FUTURE_DATA;
 };
 
 /**
- * Retrieves the total duration of the video.
- * @param videoEl - The video element to check.
- * @returns The duration of the video in seconds.
+ * Retrieves the total duration of the media.
+ * @param mediaEl - The media element to check (video or audio).
+ * @returns The duration of the media in seconds.
  */
-export const getVideoDuration = (videoEl: HTMLVideoElement): number => {
-  return videoEl.duration;
+export const getMediaDuration = (mediaEl: HTMLMediaElement): number => {
+  return mediaEl.duration;
 };
 
 /**
- * Retrieves the current playback time of the video.
- * @param videoEl - The video element to check.
+ * Retrieves the current playback time of the media.
+ * @param mediaEl - The media element to check (video or audio).
  * @returns The current playback time in seconds.
  */
-export const getCurrentPlaybackTime = (videoEl: HTMLVideoElement): number => {
-  return videoEl.currentTime;
+export const getCurrentPlaybackTime = (mediaEl: HTMLMediaElement): number => {
+  return mediaEl.currentTime;
 };
 
 /**
- * Sets the volume of the video.
- * @param videoEl - The video element to adjust.
+ * Sets the volume of the media.
+ * @param mediaEl - The media element to adjust (video or audio).
  * @param volume - The volume level (0.0 to 1.0).
  */
-export const setVideoVolume = (videoEl: HTMLVideoElement, volume: number): void => {
-  videoEl.volume = clamp01(volume); // Ensure volume is between 0 and 1
+export const setMediaVolume = (mediaEl: HTMLMediaElement, volume: number): void => {
+  mediaEl.volume = clamp01(volume); // Ensure volume is between 0 and 1
 };
 
 /**
- * Mutes or unmutes the video.
- * @param videoEl - The video element to adjust.
+ * Mutes or unmutes the media.
+ * @param mediaEl - The media element to adjust (video or audio).
  * @param mute - True to mute, false to unmute.
  */
-export const setVideoMute = (videoEl: HTMLVideoElement, mute: boolean): void => {
-  videoEl.muted = mute;
+export const setMediaMute = (mediaEl: HTMLMediaElement, mute: boolean): void => {
+  mediaEl.muted = mute;
 };

@@ -1,13 +1,8 @@
 import fastRaf from './fastRaf';
 import { default as requestIdleCallbackFallback } from './onTickEnd';
 
-export function requestIdleExecution(cb: NoneToVoidFunction, timeout?: number) {
-  if (self.requestIdleCallback) {
-    self.requestIdleCallback(cb, { timeout });
-  } else {
-    requestIdleCallbackFallback(cb);
-  }
-}
+export const requestIdleExecution = (cb: NoneToVoidFunction, timeout?: number) =>
+  (self.requestIdleCallback || requestIdleCallbackFallback)(cb, { timeout });
 
 export const pause = (ms: number) => {
   return new Promise<void>(resolve => {

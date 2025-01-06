@@ -48,17 +48,6 @@ type PowerSet<T> = {
   [K in keyof T]?: T[K][];
 };
 
-type DeMorgansLaw1<A, B, C> = [
-  Difference<A, Intersection<B, C>>,
-  Difference<A, B>,
-  Difference<A, C>,
-];
-type DeMorgansLaw2<A, B, C> = [
-  Difference<A, Union<B, C>>,
-  Intersection<A, Difference<B, C>>,
-  Intersection<A, Difference<C, B>>,
-];
-
 type CommonProperties<T, U> = {
   [K in Union<keyof T, keyof U>]: Union<T[K], U[K]>;
 };

@@ -1,5 +1,5 @@
 import IconButton from '@/shared/ui/IconButton';
-import Img from '@/shared/ui/Image';
+import Image from '@/shared/ui/Image';
 import { CloseRounded } from '@mui/icons-material';
 import { FC, memo, ReactNode } from 'react';
 import s from './CustomTag.module.scss';
@@ -18,11 +18,11 @@ const CustomTag: FC<OwnProps> = props => {
   return (
     <div className={s.CustomTag} style={{ border: `2px solid ${color}` }}>
       {startDecorator}
-      <Img alt="" figureClassName={s.TagImage} src="https://picsum.photos/200" />
+      <Image alt="" src="https://picsum.photos/200" />
       <p className={s.TagName} style={{ color: color }}>
         {tagName}
       </p>
-      <IconButton className={s.CloseButton} size="small" variant="rounded">
+      <IconButton className={s.CloseButton} size="small">
         <CloseRounded />
       </IconButton>
       {endDecorator}

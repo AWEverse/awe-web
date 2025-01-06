@@ -1,4 +1,4 @@
-import { forwardRef, Fragment, memo, useState } from 'react';
+import { FC, forwardRef, Fragment, memo, useState } from 'react';
 import ChatListItem from './ChatListItem';
 import { ChatAnimationTypes } from './hooks/useChatAnimationType';
 import s from './ChatList.module.scss';
@@ -7,6 +7,7 @@ import TabList from '@/shared/ui/TabList';
 import buildClassName from '@/shared/lib/buildClassName';
 
 interface OwnProps {
+  ref?: React.RefObject<HTMLDivElement | null>;
   className?: string;
 }
 
@@ -19,7 +20,7 @@ const tabsData = [
   { id: 6, title: 'Muted', badgeCount: 0, isBlocked: false, isBadgeActive: false },
 ];
 
-const ChatList = forwardRef<HTMLElement, OwnProps>(({ className }, ref) => {
+const ChatList: FC<OwnProps> = ({ ref, className }) => {
   const [currentIndex, setCurrentIndex] = useState(0);
 
   const handleTabChange = useLastCallback((index: number) => {
@@ -51,6 +52,6 @@ const ChatList = forwardRef<HTMLElement, OwnProps>(({ className }, ref) => {
       </div>
     </section>
   );
-});
+};
 
 export default memo(ChatList);

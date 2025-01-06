@@ -9,13 +9,15 @@ import InteractionSetting from './settings/InteractionSetting';
 import NotificationsSetting from './settings/NotificationsSetting';
 import PersonalizationSetting from './settings/PersonalizationSetting';
 
-import { forwardRef } from 'react';
+import { FC, forwardRef } from 'react';
 import buildClassName from '@/shared/lib/buildClassName';
 import createSliderFactory from '@/lib/modules/slider-factory';
 
 interface OwnProps {
+  ref?: React.Ref<HTMLDivElement | null>;
   className?: string;
 }
+
 const screens = {
   [SettingsScreenType.SettingsNavigation]: SettingsNavigation,
   [SettingsScreenType.Account]: AccountSetting,
@@ -33,14 +35,12 @@ const SettingsScreenFactory = createSliderFactory({
   leftClassNames: 'leftToRight',
 });
 
-const SettingsScreen = forwardRef<HTMLDivElement, OwnProps>((props, ref) => {
-  const { className } = props;
-
+const SettingsScreen: FC<OwnProps> = ({ ref, className }) => {
   return (
     <section ref={ref} aria-label="Settings">
       <SettingsScreenFactory className={buildClassName(s.SliderColumn, className)} />
     </section>
   );
-});
+};
 
 export default SettingsScreen;

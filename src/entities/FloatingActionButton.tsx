@@ -67,16 +67,18 @@ const FloatingActionButton: React.FC<OwnProps> = ({
         shouldClose={!isButtonVisible}
         triggerButton={FloatingTrigger}
       >
-        {actions.map(action => {
+        {actions.map((action, index) => {
+          const key = +action | index;
+
           switch (action) {
             case '-':
-              return <MenuSeparator size="thin" />;
+              return <MenuSeparator key={key} size="thin" />;
             case '=':
-              return <MenuSeparator size="thick" />;
+              return <MenuSeparator key={key} size="thick" />;
             case '==':
-              return <MenuSeparator size="thicker" />;
+              return <MenuSeparator key={key} size="thicker" />;
             default:
-              return <ActionButton key={action.label} {...action} />;
+              return <ActionButton key={key} {...action} />;
           }
         })}
       </DropdownMenu>

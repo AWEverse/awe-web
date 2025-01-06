@@ -1,3 +1,5 @@
+'use precompile';
+
 import {
   RefObject,
   ChangeEvent,
@@ -122,7 +124,7 @@ const TextArea: FC<OwnProps> = ({
 
         return () => {
           element.style.height = `${newHeight}px`;
-          element.style.overflow = maxHeight <= newHeight ? 'auto' : 'hidden';
+          element.style.overflow = maxHeight < newHeight ? 'auto' : 'hidden';
         };
       });
     });

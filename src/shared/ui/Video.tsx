@@ -1,10 +1,7 @@
-import { onIdleComplete } from '@/lib/core';
 import useEffectSync from '@/lib/hooks/effects/useEffectSync';
 import useLastCallback from '@/lib/hooks/events/useLastCallback';
-import { useStateRef } from '@/lib/hooks/state/useStateRef';
 import useBuffering from '@/lib/hooks/ui/useBuffering';
-import unloadVideo from '@/lib/utils/unloadVideo';
-import { useRef, useMemo, memo, useLayoutEffect } from 'react';
+import { useRef, useMemo, memo } from 'react';
 import useVideoCleanup from '../hooks/useVideoCleanup';
 
 type VideoProps = React.DetailedHTMLProps<
@@ -13,7 +10,7 @@ type VideoProps = React.DetailedHTMLProps<
 >;
 
 type OwnProps = {
-  ref?: React.RefObject<HTMLVideoElement>;
+  ref?: React.RefObject<HTMLVideoElement | null>;
   isPriority?: boolean;
   canPlay: boolean;
   children?: React.ReactNode;
@@ -105,8 +102,6 @@ function Video({
         otherBufferingHandlers[key]?.(event);
       };
     });
-
-    console.log(mergedHandlers);
 
     return mergedHandlers;
   }, [otherBufferingHandlers, restProps]);
