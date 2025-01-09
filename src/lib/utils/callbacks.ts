@@ -3,32 +3,43 @@ export function createCallbackManager<T extends AnyToVoidFunction = AnyToVoidFun
   removeCallback: (callback: T) => void;
   runCallbacks: (...args: Parameters<T>) => void;
   hasCallbacks: () => boolean;
+  runCallbacksAsync: (...args: Parameters<T>) => void;
 } {
   const callbacks = new Set<T>();
+  let hasCallbackFlag = false;
 
   const addCallback = (callback: T): (() => void) => {
     callbacks.add(callback);
-
-    return () => {
-      removeCallback(callback);
-    };
+    hasCallbackFlag = true;
+    return () => removeCallback(callback);
   };
 
   const removeCallback = (callback: T): void => {
-    callbacks.delete(callback);
+    if (callbacks.delete(callback)) {
+      hasCallbackFlag = callbacks.size > 0;
+    }
   };
 
   const runCallbacks = (...args: Parameters<T>): void => {
     callbacks.forEach(callback => callback(...args));
   };
 
-  const hasCallbacks = () => Boolean(callbacks.size);
+  // when the callbacks might be time-consuming, and you don't want them to block the main execution thread.
+  // This is how we work with a sequence of macro tasks
+  const runCallbacksAsync = (...args: Parameters<T>): void => {
+    setTimeout(() => {
+      callbacks.forEach(callback => callback(...args));
+    }, 0);
+  };
+
+  const hasCallbacks = () => hasCallbackFlag;
 
   return {
     addCallback,
     removeCallback,
     runCallbacks,
     hasCallbacks,
+    runCallbacksAsync,
   };
 }
 

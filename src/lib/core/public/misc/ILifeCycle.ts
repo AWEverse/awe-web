@@ -1,5 +1,6 @@
 /**
  * Interface for controlling an object's start/stop life cycle.
+ * In the React paradigm, this is a useful way of introducing a lifecycle into a component or related things.
  */
 export interface ILifeCycle {
   /**

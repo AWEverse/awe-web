@@ -163,3 +163,12 @@ export const median = (numbers: number[]): number => {
     return (leftMedian + rightMedian) / 2;
   }
 };
+
+export const mean = (numbers: number[]): number => {
+  if (!numbers.length) {
+    return -1;
+  }
+
+  const sum = numbers.reduce((acc, num) => acc + num, 0);
+  return sum / numbers.length;
+};
