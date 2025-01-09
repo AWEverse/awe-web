@@ -5,7 +5,7 @@ const LayoutOutlet = () => {
   return (
     <div>
       <Outlet />
-    </>>
+    </div>
   );
 };
 
