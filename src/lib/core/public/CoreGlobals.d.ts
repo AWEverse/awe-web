@@ -131,22 +131,27 @@ type CommonProperties<T, U> = {
   [K in keyof T & keyof U]: T[K] | U[K];
 };
 
-type AnyToVoidFunction = (...args: any) => void;
-
-/**
- * A function type that takes no arguments and returns `void`.
- */
 type NoneToVoidFunction = () => void;
-
-/**
- * A function type that takes no arguments and returns `any`.
- */
+type NoneToUnknownFunction = () => unknown;
 type NoneToAnyFunction = () => any;
 
-/**
- * A function type that takes an unknown number of arguments and returns `unknown`.
- */
+type UnknownLiteral = Record<string, unknown>;
+type UnknownClass = new (...args: unknown[]) => unknown;
 type UnknownFunction = (...args: unknown[]) => unknown;
+type UnknownToVoidFunction = (...args: unknown[]) => void;
+type NoneToUnknownFunction = (...args: unknown[]) => unknown;
+
+type AnyToFunctionalComponent = (props: any) => FC<any>;
+type AnyLiteral = Record<string, any>;
+type AnyClass = new (...args: any[]) => any;
+type AnyFunction = (...args: any[]) => any;
+type AnyToVoidFunction = (...args: any[]) => void;
+type NoneToAnyFunction = () => any;
+
+type AnyArray = any[];
+
+type Nullable<T = null> = T | null;
+type NonNullable<T> = T extends null | undefined ? never : T;
 
 /**
  * Represents a fuzzy set, where each element has a membership degree.
@@ -223,6 +228,13 @@ interface Array<T> {
    * @returns A `Map` where keys are selected by the `selector` and values are arrays of matching elements.
    */
   groupBy<K>(keySelector: (item: T) => K): Map<K, T[]>;
+
+  /**
+   * Allow counting element in array by selector.
+   * @param selector A function to select the key for each element.
+   * @returns number.
+   */
+  countBy<T>(keySelector: (item: T) => number): number;
 
   /**
    * Filters out duplicates from the array.

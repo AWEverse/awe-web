@@ -1,8 +1,8 @@
-import { MAX_INT_32 } from '../../constants/numeric';
+import { MAX_INT32 } from '@/lib/core';
 
 // Participants limits
 export const MAX_PARTICIPANTS = 200_000;
-export const MAX_PARTICIPANTS_BROADCAST_GROUP = MAX_INT_32; // Unlimited
+export const MAX_PARTICIPANTS_BROADCAST_GROUP = MAX_INT32; // Unlimited
 
 // Admin limits in groups
 export const MAX_GROUP_ADMINS = 50;
@@ -21,7 +21,7 @@ export const MAX_GROUP_DESCRIPTION_LENGTH = 255;
 
 // Message editing constraints
 export const MESSAGE_EDITING_PERIOD = 48 * 60 * 60; // 48 hours in seconds
-export const MESSAGE_EDITING_SAVED_UNLIMITED = MAX_INT_32; // Unlimited in Saved and for admins with pinning rights
+export const MESSAGE_EDITING_SAVED_UNLIMITED = MAX_INT32; // Unlimited in Saved and for admins with pinning rights
 
 // Photo and video self-destruction
 export const MIN_SELF_DESTRUCTION_TIME = 1; // in seconds
@@ -38,7 +38,7 @@ export const MAX_MENTION_NOTIFICATIONS = 5; // Only first 5 from list will recei
 export const VISIBLE_MESSAGES_IN_GROUP = 1_000_000; // Last messages
 
 // Pinned messages number
-export const MAX_PINNED_MESSAGES = MAX_INT_32; // Unlimited
+export const MAX_PINNED_MESSAGES = MAX_INT32; // Unlimited
 
 // Number of members to see statistics
 export const MIN_MEMBERS_FOR_STATISTICS = 500;

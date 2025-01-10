@@ -1,4 +1,4 @@
-import { MAX_INT_32 } from '../../constants/numeric';
+import { MAX_INT32 } from '@/lib/core';
 
 // Username constraints
 export const MIN_USERNAME_LENGTH = 4; // Minimum for NFT usernames
@@ -19,14 +19,14 @@ export const DEFAULT_SELF_DESTRUCTION_PERIOD = 6;
 
 // Spam ban duration (in days)
 export const MIN_SPAM_BAN_DURATION = 1;
-export const MAX_SPAM_BAN_DURATION = MAX_INT_32; // "Forever" represented by Infinity
+export const MAX_SPAM_BAN_DURATION = MAX_INT32; // "Forever" represented by Infinity
 
 // Channels and supergroups membership limits
 export const MAX_CHANNELS_AND_SUPERGROUPS = 500;
 export const MAX_CHANNELS_AND_SUPERGROUPS_PREMIUM = 1000;
 
 // Geochats membership limit
-export const MAX_GEOCHATS = MAX_INT_32; // Unlimited
+export const MAX_GEOCHATS = MAX_INT32; // Unlimited
 
 // Saved GIFs limit
 export const MAX_SAVED_GIFS = 200;
@@ -43,5 +43,5 @@ export const MAX_ACCOUNTS = 3;
 export const MAX_ACCOUNTS_PREMIUM = 4; // Can be 4-6 depending on the app
 
 // Visible messages limit
-export const VISIBLE_MESSAGES_LIMIT = MAX_INT_32; // Unlimited for accounts created after 2018
+export const VISIBLE_MESSAGES_LIMIT = MAX_INT32; // Unlimited for accounts created after 2018
 export const VISIBLE_MESSAGES_LEGACY_LIMIT = 1_000_000; // For accounts before 2018
