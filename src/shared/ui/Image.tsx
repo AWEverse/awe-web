@@ -71,8 +71,8 @@ const Image: FC<OwnProps> = ({
   });
 
   useOnIntersect(imageRef, observeIntersectionForLoading, entry => {
-    if (entry.isIntersecting && !isLoaded) {
-      imageRef.current?.setAttribute('src', imgSrc);
+    if (entry.isIntersecting) {
+      setImgSrc(src);
     }
   });
 
@@ -82,7 +82,7 @@ const Image: FC<OwnProps> = ({
       ref={imageRef}
       className={buildClassName('Img', className)}
       decoding={decoding}
-      src={loading === 'lazy' && !isLoaded ? '' : imgSrc}
+      src={imgSrc}
       srcSet={srcSet}
       sizes={sizes}
       onError={handleError}

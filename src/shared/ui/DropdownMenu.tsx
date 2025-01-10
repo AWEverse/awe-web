@@ -3,13 +3,12 @@ import { CSSTransition } from 'react-transition-group';
 import s from './DropdownMenu.module.scss';
 import buildClassName from '../lib/buildClassName';
 import useRefInstead from '@/lib/hooks/state/useRefInstead';
-import { throttle } from '@/lib/utils/schedulers';
 import useLastCallback from '@/lib/hooks/events/useLastCallback';
 import captureKeyboardListeners from '@/lib/utils/captureKeyboardListeners';
 import LightEffect from './common/LightEffect';
 import trapFocus from '@/lib/utils/trapFocus';
 import useLayoutEffectWithPrevDeps from '@/lib/hooks/effects/useLayoutEffectWithPrevDeps';
-import { dispatchHeavyAnimation } from '@/lib/core';
+import { dispatchHeavyAnimation, throttle } from '@/lib/core';
 
 interface OwnTriggerProps<T = HTMLElement> extends React.HTMLAttributes<T> {
   onTrigger: NoneToVoidFunction;

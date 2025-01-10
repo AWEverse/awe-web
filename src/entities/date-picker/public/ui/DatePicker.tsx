@@ -11,7 +11,7 @@ import {
 import { CSSTransition, TransitionGroup } from 'react-transition-group';
 import { useIntl } from 'react-intl';
 import useLastCallback from '@/lib/hooks/events/useLastCallback';
-import { throttle } from '@/lib/utils/schedulers';
+import { throttle } from '@/lib/core';
 
 import {
   CalendarAnimationType,

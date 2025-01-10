@@ -1,5 +1,5 @@
 import useLastCallback from '@/lib/hooks/events/useLastCallback';
-import { debounce } from '@/lib/utils/schedulers';
+import { debounce } from '@/lib/core';
 import SearchInput from '@/shared/ui/SearchInput';
 import { FC, memo, useState } from 'react';
 

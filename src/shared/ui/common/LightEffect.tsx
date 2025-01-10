@@ -1,6 +1,6 @@
 import React, { useEffect, useState, FC, memo, useLayoutEffect, useCallback, useMemo } from 'react';
 import buildStyle from '@/shared/lib/buildStyle';
-import { throttle } from '@/lib/utils/schedulers';
+import { throttle } from '@/lib/core';
 import s from './LightEffect.module.css';
 import { IVector2 } from '@/lib/core/public/math/vector2';
 

@@ -1,4 +1,4 @@
-import { clamp } from '@/lib/utils/math';
+import { clamp } from '@/lib/core';
 import { Divider, DividerProps } from '@mui/material';
 import { styled } from '@mui/material/styles';
 

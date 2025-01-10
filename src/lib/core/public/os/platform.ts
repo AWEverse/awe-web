@@ -26,7 +26,7 @@ export function getPlatform(): string | undefined {
   return undefined;
 }
 
-const PLATFORM_ENV = getPlatform();
+export const PLATFORM_ENV = getPlatform();
 const userAgent = navigator.userAgent.toLowerCase();
 
 export const IS_MAC_OS = PLATFORM_ENV === 'macOS';

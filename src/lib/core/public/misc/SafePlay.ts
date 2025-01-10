@@ -1,5 +1,5 @@
 import { DEBUG } from '@/lib/config/dev';
-import { clamp01 } from '@/lib/utils/math';
+import { clamp01 } from '../math';
 
 // Enum representing the readyState property of HTMLMediaElement
 export enum EMediaReadyState {

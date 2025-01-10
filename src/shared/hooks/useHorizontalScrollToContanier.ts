@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import animateHorizontalScroll from '@/lib/utils/animation/animateHorizontalScroll';
-import { IS_IOS, IS_ANDROID } from '@/lib/utils/OS/windowEnviroment';
+import { IS_IOS, IS_ANDROID } from '@/lib/core';
 import { requestMeasure } from '@/lib/modules/fastdom/fastdom';
 
 const TAB_SCROLL_THRESHOLD_PX = 18;

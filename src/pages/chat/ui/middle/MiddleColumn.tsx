@@ -1,6 +1,5 @@
 import { ChatProps, ChatType } from '@/shared/types';
 import { FC, useState, memo } from 'react';
-import { chats } from '../../api/data';
 import ChatLayout from './layout/ChatLayout';
 import MiddleHeader from './widgets/MiddleHeader';
 import MessagesBackdrop from './placeholder/MessagesBackdrop';
@@ -14,11 +13,9 @@ interface OwnProps {}
 interface StateProps {}
 
 const MiddleColumn: FC<OwnProps & StateProps> = () => {
-  const [selectedChat] = useState<ChatProps>(chats[1]);
-
   return (
     <ChatLayout.MainContainer>
-      <MiddleHeader sender={selectedChat.sender} />
+      <MiddleHeader />
       <MessagesBackdrop />
       <EmptyChat className={s.EmptyChats} />
       {/* <MiddleMessageList />

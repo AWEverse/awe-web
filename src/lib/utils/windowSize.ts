@@ -1,6 +1,5 @@
-import { requestMutation } from '../modules/fastdom/fastdom';
-import { IS_IOS } from './OS/windowEnviroment';
-import { throttle } from './schedulers';
+import { throttle, IS_IOS } from '../core';
+import { requestMeasure } from '../modules/fastdom/fastdom';
 
 interface IDimensions {
   height: number;
@@ -40,7 +39,7 @@ if (IS_IOS) {
 export function updateSizes(): IDimensions {
   let height: number;
 
-  requestMutation(() => {
+  requestMeasure(() => {
     if (IS_IOS) {
       height = window.visualViewport!.height + window.visualViewport!.pageTop;
     } else {

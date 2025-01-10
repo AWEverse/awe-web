@@ -1,8 +1,6 @@
-import { IS_IOS } from '@/lib/core';
+import { fastRaf, IS_IOS, median } from '@/lib/core';
 import { requestMutation } from '@/lib/modules/fastdom/fastdom';
 import { animate } from '@/lib/utils/animation/animate';
-import { median } from '@/lib/utils/math';
-import { fastRaf } from '@/lib/utils/schedulers';
 
 const TEST_INTERVAL = 5000; // 5 sec
 const FRAMES_TO_TEST = 10;
@@ -44,6 +42,7 @@ export function optimizeView() {
 
 async function testAndImprove() {
   const fps = await testFps();
+
   if (fps <= REDUCED_FPS) {
     improveView();
   }
@@ -60,9 +59,7 @@ function testFps() {
       lastFrameAt = now;
 
       if (frames.length === FRAMES_TO_TEST) {
-        const mid = median(frames);
-
-        resolve(Math.round(1000 / mid));
+        resolve(Math.round(1000 / median(frames)));
         return false;
       }
 

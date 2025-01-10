@@ -25,7 +25,7 @@ const TRANSITION_DURATION = 300;
 
 const useStore = createSelectorHooks(useChatStore);
 
-const MiddleHeader: React.FC<{ sender: UserProps }> = ({ sender }) => {
+const MiddleHeader: React.FC<{ sender?: UserProps }> = ({ sender }) => {
   const headerRef = useRef<HTMLDivElement>(null);
 
   const isTablet = useMedia('(max-width: 1024px)');
@@ -92,7 +92,7 @@ const MiddleHeader: React.FC<{ sender: UserProps }> = ({ sender }) => {
     return (
       <>
         <div className={'UserDetails'} onClick={openProfileColumn}>
-          <p>{sender.name}</p>
+          <p>Andrii CLiyensa</p>
           <DotAnimation content="Looking" />
         </div>
         <div className={'MiddleHeaderActions'}>
@@ -103,7 +103,7 @@ const MiddleHeader: React.FC<{ sender: UserProps }> = ({ sender }) => {
         </div>
       </>
     );
-  }, [isTablet, sender.name]);
+  }, [isTablet]);
 
   const nodeRef = useConditionalRef<HTMLDivElement>(null, [isChatSearching]);
 
@@ -114,7 +114,7 @@ const MiddleHeader: React.FC<{ sender: UserProps }> = ({ sender }) => {
           <ArrowBackRoundedIcon />
         </IconButton>
 
-        <Avatar className={'UserAvatar'} sizes="medium" src={sender.avatar} />
+        <Avatar className={'UserAvatar'} sizes="medium" src={'https://i.pravatar.cc/300'} />
 
         <TransitionGroup className={'HeaderBodyWrapper'}>
           <CSSTransition

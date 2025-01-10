@@ -2,9 +2,9 @@ import { requestMutation, requestForcedReflow } from '@/lib/modules/fastdom/fast
 import { FC, useRef, useLayoutEffect, useEffect, useMemo } from 'react';
 import buildClassName from '../lib/buildClassName';
 import './Tab.scss';
-import { MouseButton } from '@/lib/utils/OS/windowEnviroment';
 import { useFastClick } from '../hooks/useFastClick';
 import { capitalize } from '@/lib/utils/helpers/string/stringFormaters';
+import { EMouseButton } from '@/lib/core';
 
 type OwnProps = {
   className?: string;
@@ -105,7 +105,7 @@ const Tab: FC<OwnProps> = ({
 
   const { handleClick, handleMouseDown } = useFastClick(
     (e: React.MouseEvent<HTMLButtonElement>) => {
-      if (e.type === 'mousedown' && e.button !== MouseButton.Main) {
+      if (e.type === 'mousedown' && e.button !== EMouseButton.Main) {
         return;
       }
 

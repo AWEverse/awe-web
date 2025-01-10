@@ -9,10 +9,10 @@ import TabList from '@/shared/ui/TabList';
 import Square from '@/entities/album-layout/ui/Square';
 
 import s from './MainScreen.module.scss';
-import { IS_TOUCH_ENV } from '@/lib/utils/OS/windowEnviroment';
 import useFloatingButton from '../../hooks/useFloatingButton';
 import buildClassName from '@/shared/lib/buildClassName';
 import TallyCounter from '@/shared/ui/tally-counter/ui/TallyCounter';
+import { IS_TOUCH_ENV } from '@/lib/core';
 
 interface OwnProps {
   nodeRef?: React.RefObject<HTMLDivElement>;
@@ -49,8 +49,8 @@ const MainScreen: FC<OwnProps> = ({ nodeRef, className }) => {
     <div
       ref={nodeRef}
       className={className}
-      onMouseEnter={!IS_TOUCH_ENV ? handleMouseEnter : undefined}
-      onMouseLeave={!IS_TOUCH_ENV ? handleMouseLeave : undefined}
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
     >
       <div className={s.MainScreenBody}>
         <HeaderNavigation

@@ -1,10 +1,9 @@
 import type { RefObject } from 'react';
 import { useEffect, useRef, useState } from 'react';
-import type { Scheduler } from '../../utils/schedulers';
-import { debounce, throttle, throttleWith } from '../../utils/schedulers';
 import useHeavyAnimationCheck from './useHeavyAnimationCheck';
 import useLastCallback from '../events/useLastCallback';
 import { CallbackManager, createCallbackManager } from '../../utils/callbacks';
+import { type Scheduler, debounce, throttleWith, throttle } from '@/lib/core';
 
 type TargetCallback = (entry: IntersectionObserverEntry) => void;
 type RootCallback = (entries: IntersectionObserverEntry[]) => void;

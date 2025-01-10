@@ -1,4 +1,4 @@
-import { Children, FC, ReactNode, useMemo, createRef, RefObject } from 'react';
+import { Children, FC, ReactNode, useMemo, RefObject } from 'react';
 import s from './Square.module.scss';
 import buildStyle from '@/shared/lib/buildStyle';
 import { TransitionGroup, CSSTransition } from 'react-transition-group';
@@ -7,7 +7,7 @@ import buildClassName from '@/shared/lib/buildClassName';
 import useConditionalRef from '@/lib/hooks/utilities/useConditionalRef';
 
 interface OwnProps {
-  containerRef?: RefObject<HTMLDivElement>;
+  containerRef?: RefObject<HTMLDivElement | null>;
   currentColumn?: number;
   className?: string;
   children: ReactNode;

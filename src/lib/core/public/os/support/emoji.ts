@@ -1,5 +1,4 @@
-import { PLATFORM_ENV } from '@/lib/utils/OS/windowEnviroment';
-import { IS_MAC_OS, IS_IOS } from '../platform';
+import { IS_MAC_OS, IS_IOS, PLATFORM_ENV } from '../platform';
 
 function isLastEmojiVersionSupported() {
   const ALLOWABLE_CALCULATION_ERROR_SIZE = 5;
