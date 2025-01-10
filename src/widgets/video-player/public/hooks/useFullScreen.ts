@@ -1,16 +1,14 @@
 import { IS_IOS } from '@/lib/core';
 import useLastCallback from '@/lib/hooks/events/useLastCallback';
-import { useState, useLayoutEffect, useEffect } from 'react';
+import React, { useState, useLayoutEffect, useEffect } from 'react';
 
-type ElementType = HTMLElement;
-type RefType = { current: ElementType | null };
 type ReturnType = [boolean, () => void, () => void] | [false];
 type CallbackType = (isPlayed: boolean) => void;
 
 const prop = getBrowserFullscreenElementProp();
 
 export default function useFullscreen(
-  elRef: RefType,
+  elRef: React.RefObject<HTMLElement | null>,
   exitCallback?: CallbackType,
   enterCallback?: CallbackType,
 ): ReturnType {
@@ -82,21 +80,20 @@ export const useFullscreenStatus = () => {
   useEffect(() => {
     const handleFullscreenChange = useLastCallback(() => setIsFullscreen(checkIfFullscreen()));
 
-    document.addEventListener('fullscreenchange', handleFullscreenChange);
-    document.addEventListener('webkitfullscreenchange', handleFullscreenChange);
-    document.addEventListener('mozfullscreenchange', handleFullscreenChange);
+    document.addEventListener('fullscreenchange', handleFullscreenChange, false);
+    document.addEventListener('webkitfullscreenchange', handleFullscreenChange, false);
+    document.addEventListener('mozfullscreenchange', handleFullscreenChange, false);
 
     return () => {
-      document.removeEventListener('fullscreenchange', handleFullscreenChange);
-      document.removeEventListener('webkitfullscreenchange', handleFullscreenChange);
-      document.removeEventListener('mozfullscreenchange', handleFullscreenChange);
+      document.removeEventListener('fullscreenchange', handleFullscreenChange, false);
+      document.removeEventListener('webkitfullscreenchange', handleFullscreenChange, false);
+      document.removeEventListener('mozfullscreenchange', handleFullscreenChange, false);
     };
   }, []);
 
   return isFullscreen;
 };
 
-// Оптимизация функции получения свойства fullscreen
 function getBrowserFullscreenElementProp(): string {
   if ('fullscreenElement' in document) return 'fullscreenElement';
   if ('webkitFullscreenElement' in document) return 'webkitFullscreenElement';
@@ -104,22 +101,35 @@ function getBrowserFullscreenElementProp(): string {
   return '';
 }
 
-// Универсальная проверка fullscreen состояния
 export function checkIfFullscreen(): boolean {
   const fullscreenProp = getBrowserFullscreenElementProp();
   return Boolean(fullscreenProp && document[fullscreenProp as keyof Document]);
 }
 
-// Оптимизация запросов fullscreen
-export function safeRequestFullscreen(element: ElementType) {
-  if (element.requestFullscreen) {
-    element.requestFullscreen();
+export function safeRequestFullscreen(element: HTMLElement) {
+  const _requestFullscreen =
+    element.requestFullscreen ??
+    element.webkitRequestFullscreen ??
+    element.webkitEnterFullscreen ??
+    element.mozRequestFullScreen;
+
+  if (_requestFullscreen) {
+    _requestFullscreen.call(element);
+  } else {
+    console.warn('Fullscreen API is not supported by this browser.');
   }
 }
 
-// Оптимизация выхода из fullscreen
 export function safeExitFullscreen() {
-  if (document.exitFullscreen) {
-    document.exitFullscreen();
+  const _exitFullscreen =
+    document.exitFullscreen ??
+    document.mozCancelFullScreen ??
+    document.webkitCancelFullScreen ??
+    document.webkitExitFullscreen;
+
+  if (_exitFullscreen) {
+    _exitFullscreen.call(document);
+  } else {
+    console.warn('Fullscreen exit API is not supported by this browser.');
   }
 }

@@ -42,6 +42,12 @@ interface HTMLElement {
   webkitRequestFullscreen?: () => Promise<void>;
 }
 
+interface Document {
+  mozCancelFullScreen?: () => Promise<void>;
+  webkitCancelFullScreen: () => Promise<void>;
+  webkitExitFullscreen?: () => Promise<void>;
+}
+
 /**
  * Represents the union of two types.
  * @template A - The first type.
