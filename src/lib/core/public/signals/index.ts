@@ -1,6 +1,6 @@
 // An named symbol/brand for detecting Signal instances even when they weren't
 // created using the same signals library version.
-const BRAND_SYMBOL = Symbol.for('preact-signals');
+const BRAND_SYMBOL = Symbol.for('signals');
 
 // Flags for Computed and Effect.
 const RUNNING = 1 << 0; // 1

@@ -1,6 +1,8 @@
 import { IS_IOS } from '@/lib/core';
+import { pipeWithEffect } from '@/lib/core/public/misc/Pipe';
+import useEffectOnce from '@/lib/hooks/effects/useEffectOnce';
 import useLastCallback from '@/lib/hooks/events/useLastCallback';
-import React, { useState, useLayoutEffect, useEffect } from 'react';
+import React, { useState, useLayoutEffect } from 'react';
 
 type ReturnType = [boolean, () => void, () => void] | [false];
 type CallbackType = (isPlayed: boolean) => void;
@@ -77,7 +79,7 @@ export default function useFullscreen(
 export const useFullscreenStatus = () => {
   const [isFullscreen, setIsFullscreen] = useState(checkIfFullscreen());
 
-  useEffect(() => {
+  useEffectOnce(() => {
     const handleFullscreenChange = useLastCallback(() => setIsFullscreen(checkIfFullscreen()));
 
     document.addEventListener('fullscreenchange', handleFullscreenChange, false);
@@ -89,7 +91,7 @@ export const useFullscreenStatus = () => {
       document.removeEventListener('webkitfullscreenchange', handleFullscreenChange, false);
       document.removeEventListener('mozfullscreenchange', handleFullscreenChange, false);
     };
-  }, []);
+  });
 
   return isFullscreen;
 };
@@ -107,11 +109,12 @@ export function checkIfFullscreen(): boolean {
 }
 
 export function safeRequestFullscreen(element: HTMLElement) {
-  const _requestFullscreen =
-    element.requestFullscreen ??
-    element.webkitRequestFullscreen ??
-    element.webkitEnterFullscreen ??
-    element.mozRequestFullScreen;
+  const _requestFullscreen = ensure(
+    element.requestFullscreen,
+    element.webkitRequestFullscreen,
+    element.webkitEnterFullscreen,
+    element.mozRequestFullScreen,
+  );
 
   if (_requestFullscreen) {
     _requestFullscreen.call(element);
@@ -121,11 +124,12 @@ export function safeRequestFullscreen(element: HTMLElement) {
 }
 
 export function safeExitFullscreen() {
-  const _exitFullscreen =
-    document.exitFullscreen ??
-    document.mozCancelFullScreen ??
-    document.webkitCancelFullScreen ??
-    document.webkitExitFullscreen;
+  const _exitFullscreen = ensure(
+    document.exitFullscreen,
+    document.mozCancelFullScreen,
+    document.webkitCancelFullScreen,
+    document.webkitExitFullscreen,
+  );
 
   if (_exitFullscreen) {
     _exitFullscreen.call(document);
@@ -133,3 +137,5 @@ export function safeExitFullscreen() {
     console.warn('Fullscreen exit API is not supported by this browser.');
   }
 }
+
+const ensure = <T>(...args: T[]): T | undefined => args.first(Boolean);
