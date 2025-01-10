@@ -76,7 +76,7 @@ export function useIntersectionObserver(
     }
   });
 
-  const observe = useLastCallback((target, targetCallback) => {
+  const observe: ObserveFn = useLastCallback((target, targetCallback) => {
     if (!controllerRef.current) {
       initController();
     }

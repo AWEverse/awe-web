@@ -1,48 +1,42 @@
-import { createSignal } from '@/lib/modules/signals';
 import { requestIdleExecution, throttleWith } from '../schedulers';
 import { requestMeasure } from '@/lib/modules/fastdom/fastdom';
+import { signal } from '../signals';
 
 const AUTO_END_TIMEOUT = 1000;
 
 let counter = 0;
 let counterBlocking = 0;
 
-const [getIsAnimating, setIsAnimating] = createSignal(false);
-const [getIsBlockingAnimating, setIsBlockingAnimating] = createSignal(false);
+const IsAnimating = signal(false);
+const IsBlockingAnimating = signal(false);
 
-export {
-  getIsAnimating as getIsHeavyAnimating,
-  getIsBlockingAnimating as getIsBlockingHeavyAnimating,
-};
+export { IsAnimating as getIsHeavyAnimating, IsBlockingAnimating as getIsBlockingHeavyAnimating };
 
 export function dispatchHeavyAnimation(duration = AUTO_END_TIMEOUT, isBlocking = false) {
-  counter += 1;
-  setIsAnimating(counter === 1);
+  counter++;
+  IsAnimating.value = true;
 
   if (isBlocking) {
-    counterBlocking += 1;
-    setIsBlockingAnimating(counterBlocking === 1);
+    counterBlocking++;
+    IsBlockingAnimating.value = true;
   }
 
-  const timeout = window.setTimeout(onEnd, duration);
-  function onEnd() {
-    clearTimeout(timeout);
-
-    counter -= 1;
-    setIsAnimating(counter === 0);
+  const timeout = setTimeout(() => {
+    counter--;
+    IsAnimating.value = counter > 0;
 
     if (isBlocking) {
-      counterBlocking -= 1;
-      setIsBlockingAnimating(counterBlocking === 0);
+      counterBlocking--;
+      IsBlockingAnimating.value = counterBlocking > 0;
     }
-  }
+  }, duration);
 
-  return onEnd;
+  return () => clearTimeout(timeout);
 }
 
 export function onIdleComplete(callback: NoneToVoidFunction) {
   requestIdleExecution(() => {
-    if (!getIsAnimating()) {
+    if (!IsAnimating.value) {
       callback();
     } else {
       requestMeasure(() => {

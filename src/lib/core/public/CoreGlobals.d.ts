@@ -131,6 +131,8 @@ type CommonProperties<T, U> = {
   [K in keyof T & keyof U]: T[K] | U[K];
 };
 
+type AnyToVoidFunction = (...args: any) => void;
+
 /**
  * A function type that takes no arguments and returns `void`.
  */

@@ -10,6 +10,11 @@ const DISPOSED = 1 << 3; // 4
 const HAS_ERROR = 1 << 4; // 5
 const TRACKING = 1 << 5; // 6
 
+enum EVersion {
+  NotUsed = -1, // Node is not reused
+  Current = 0, // Current active version
+}
+
 // Узел связанного списка, используемый для отслеживания зависимостей (источников) и зависимостей (целей).
 // Также используется для запоминания последнего номера версии источника, который видела цель.
 type Node = {
@@ -69,9 +74,11 @@ function endBatch() {
           }
         }
       }
+
       effect = next;
     }
   }
+
   batchIteration = 0;
   batchDepth--;
 
@@ -152,7 +159,7 @@ function addDependency(signal: Signal): Node | undefined {
      *              tail (evalContext._sources)
      */
     node = {
-      _version: 0,
+      _version: EVersion.Current,
       _source: signal,
       _prevSource: evalContext._sources,
       _nextSource: undefined,
@@ -175,9 +182,9 @@ function addDependency(signal: Signal): Node | undefined {
       signal._subscribe(node);
     }
     return node;
-  } else if (node._version === -1) {
+  } else if (node._version === EVersion.NotUsed) {
     // `signal` — это существующая зависимость от предыдущей оценки. Используйте ее повторно.
-    node._version = 0;
+    node._version = EVersion.Current;
 
     /**
      * Если `node` еще не является текущим хвостом списка зависимостей (т.е.
@@ -278,7 +285,7 @@ declare class Signal<T = any> {
 // Это позволяет лучше контролировать размер транспилированного вывода.
 function Signal(this: Signal, value?: unknown) {
   this._value = value;
-  this._version = 0;
+  this._version = EVersion.Current;
   this._node = undefined;
   this._targets = undefined;
 }
@@ -441,34 +448,44 @@ function prepareSources(target: Computed | Effect) {
    *                   ↓                  │
    * target._sources = C; (node is tail) ─┘
    */
-  for (let node = target._sources; node !== undefined; node = node._nextSource) {
-    const rollbackNode = node._source._node;
+  let currentNode = target._sources;
 
-    if (rollbackNode !== undefined) {
-      node._rollbackNode = rollbackNode;
+  while (currentNode !== undefined) {
+    const sourceNode = currentNode._source._node;
+
+    if (sourceNode !== undefined) {
+      currentNode._rollbackNode = sourceNode;
     }
 
-    node._source._node = node;
-    node._version = -1;
+    // Mark the source node as the current node
+    currentNode._source._node = currentNode;
 
-    if (node._nextSource === undefined) {
-      target._sources = node;
+    // Mark the node as reusable (version: -1)
+    currentNode._version = EVersion.NotUsed;
+
+    // If the next source node is undefined,
+    // set the target._sources to the current node
+    if (currentNode._nextSource === undefined) {
+      target._sources = currentNode;
       break;
     }
+
+    // Move to the next source node
+    currentNode = currentNode._nextSource;
   }
 }
 
 function cleanupSources(target: Computed | Effect) {
-  let node = target._sources;
-  let head = undefined;
+  let currentNode = target._sources;
+  let newHead = undefined;
 
   /**
    * В этот момент 'target._sources' указывает на хвост двусвязного списка.
    * Он содержит все существующие источники + новые источники в порядке использования.
    * Итерируем в обратном порядке, пока не найдем головной узел, отбрасывая старые зависимости.
    */
-  while (node !== undefined) {
-    const prev = node._prevSource;
+  while (currentNode !== undefined) {
+    const previousNode = currentNode._prevSource;
 
     /**
      * Узел не был повторно использован, отпишитесь от уведомлений об его изменении и удалите себя
@@ -478,15 +495,15 @@ function cleanupSources(target: Computed | Effect) {
      *         ↓
      *    { A <-> C }
      */
-    if (node._version === -1) {
-      node._source._unsubscribe(node);
+    if (currentNode._version === EVersion.NotUsed) {
+      currentNode._source._unsubscribe(currentNode);
 
-      if (prev !== undefined) {
-        prev._nextSource = node._nextSource;
+      if (previousNode !== undefined) {
+        previousNode._nextSource = currentNode._nextSource;
       }
 
-      if (node._nextSource !== undefined) {
-        node._nextSource._prevSource = prev;
+      if (currentNode._nextSource !== undefined) {
+        currentNode._nextSource._prevSource = previousNode;
       }
     } else {
       /**
@@ -495,23 +512,24 @@ function cleanupSources(target: Computed | Effect) {
        *
        * { A <-> B <-> C }
        *   ↑     ↑     ↑
-       *   │     │     └ head = node
-       *   │     └ head = node
-       *   └ head = node
+       *   │     │     └ newHead = currentNode
+       *   │     └ newHead = currentNode
+       *   └ newHead = currentNode
        */
-      head = node;
+      newHead = currentNode;
     }
 
-    node._source._node = node._rollbackNode;
+    currentNode._source._node = currentNode._rollbackNode;
 
-    if (node._rollbackNode !== undefined) {
-      node._rollbackNode = undefined;
+    if (currentNode._rollbackNode !== undefined) {
+      currentNode._rollbackNode = undefined;
     }
 
-    node = prev;
+    // Move to the previous node in the linked list
+    currentNode = previousNode;
   }
 
-  target._sources = head;
+  target._sources = newHead;
 }
 
 declare class Computed<T = any> extends Signal<T> {
@@ -563,7 +581,7 @@ Computed.prototype._refresh = function () {
   // чтобы флаг RUNNING можно было использовать для обнаружения циклических зависимостей.
   this._flags |= RUNNING;
 
-  if (this._version > 0 && !needsToRecompute(this)) {
+  if (this._version > EVersion.Current && !needsToRecompute(this)) {
     this._flags &= ~RUNNING;
     return true;
   }
@@ -576,7 +594,7 @@ Computed.prototype._refresh = function () {
     evalContext = this;
     const value = this._fn();
 
-    if (this._flags & HAS_ERROR || this._value !== value || this._version === 0) {
+    if (this._flags & HAS_ERROR || this._value !== value || this._version === EVersion.Current) {
       this._value = value;
       this._flags &= ~HAS_ERROR;
       this._version++;
