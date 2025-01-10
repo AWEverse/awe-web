@@ -1,6 +1,6 @@
 // An named symbol/brand for detecting Signal instances even when they weren't
 // created using the same signals library version.
-const BRAND_SYMBOL = Symbol.for('signals');
+const SIGNAL_SYMBOL = Symbol.for('signals');
 
 // Flags for Computed and Effect.
 const RUNNING = 1 << 0; // 1
@@ -269,7 +269,7 @@ declare class Signal<T = any> {
 
   peek(): T;
 
-  brand: typeof BRAND_SYMBOL;
+  brand: typeof SIGNAL_SYMBOL;
 
   get value(): T;
   set value(value: T);
@@ -290,7 +290,7 @@ function Signal(this: Signal, value?: unknown) {
   this._targets = undefined;
 }
 
-Signal.prototype.brand = BRAND_SYMBOL;
+Signal.prototype.brand = SIGNAL_SYMBOL;
 
 Signal.prototype._refresh = function () {
   return true;
@@ -388,8 +388,11 @@ Object.defineProperty(Signal.prototype, 'value', {
 
       /**@__INLINE__*/ startBatch();
       try {
-        for (let node = this._targets; node !== undefined; node = node._nextTarget) {
-          node._target._notify();
+        let currentNode = this._targets;
+
+        while (currentNode != undefined) {
+          currentNode._target._notify();
+          currentNode = currentNode._nextTarget;
         }
       } finally {
         endBatch();
@@ -681,7 +684,7 @@ interface ReadonlySignal<T = any> {
   valueOf(): T;
   toString(): string;
   toJSON(): T;
-  brand: typeof BRAND_SYMBOL;
+  brand: typeof SIGNAL_SYMBOL;
 }
 
 /**
@@ -855,10 +858,11 @@ function effect(fn: EffectFn): () => void {
 
 // We may land a more comprehensive "Deep" Reactive in core,
 // since "Shallow" Reactive is trivial to implement atop Signal:
-type IReactive<T> = { [K in keyof T]: Signal<T[K]> };
+type ISignalObject<T> = { [K in keyof T]: Signal<T[K]> };
 
+// Желательно, пока не пихать целые обьекты в сигналы
 export function reactiveObject<T extends object>(obj: T) {
-  let reactive = {} as IReactive<T>;
+  let reactive = {} as ISignalObject<T>;
 
   for (let i in obj) {
     reactive[i] = signal(obj[i]);
@@ -867,4 +871,4 @@ export function reactiveObject<T extends object>(obj: T) {
   return reactive;
 }
 
-export { computed, effect, batch, untracked, Signal, type ReadonlySignal, type IReactive };
+export { computed, effect, batch, untracked, Signal, type ReadonlySignal, type ISignalObject };
