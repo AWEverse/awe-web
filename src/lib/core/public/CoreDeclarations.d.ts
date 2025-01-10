@@ -1,5 +1,6 @@
 declare const APP_VERSION: string;
 declare const APP_REVISION: string;
+declare const process: NodeJS.Process;
 
 // CSS modules
 type CSSModuleClasses = { readonly [key: string]: string };
