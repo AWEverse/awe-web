@@ -30,6 +30,7 @@ const handleOrientationChange = throttle(
 );
 
 window.addEventListener('orientationchange', handleOrientationChange);
+
 if (IS_IOS) {
   window.visualViewport!.addEventListener('resize', handleResize);
 } else {

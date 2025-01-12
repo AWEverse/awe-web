@@ -75,9 +75,8 @@ function improveView() {
   const containerEl = document.createElement('div');
   const boosterEl = document.createElement('div');
 
-  requestMutation(() => {
-    // Apply styles once to reduce layout thrashing
-    containerEl.style.cssText = `
+  // Apply styles once to reduce layout thrashing
+  containerEl.style.cssText = `
       position: absolute;
       top: 0;
       left: 0;
@@ -86,18 +85,17 @@ function improveView() {
       overflow: hidden;
     `;
 
-    const height = window.screen.height * 1.5;
-    boosterEl.style.cssText = `
+  const height = window.screen.height * 1.5;
+  boosterEl.style.cssText = `
       width: 0;
       height: ${height}px;
       transform: translateX(100%);
       transition: transform 100ms;
     `;
-    boosterEl.innerHTML = '&nbsp;';
+  boosterEl.innerHTML = '&nbsp;';
 
-    containerEl.appendChild(boosterEl);
-    document.body.appendChild(containerEl);
-  });
+  containerEl.appendChild(boosterEl);
+  document.body.appendChild(containerEl);
 
   requestAnimationFrame(() => {
     boosterEl.addEventListener('transitionend', () => {

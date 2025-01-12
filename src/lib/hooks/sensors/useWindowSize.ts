@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
-import { throttle } from '../../utils/schedulers';
+import { throttle } from '@/lib/core';
 import windowSize from '../../utils/windowSize';
 import useDebouncedCallback from '../events/useDebouncedCallback';
 

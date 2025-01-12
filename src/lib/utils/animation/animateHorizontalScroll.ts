@@ -3,10 +3,11 @@ import { animate } from './animate';
 
 const DEFAULT_DURATION = 300;
 
+// Using [0, 1] interval
 const START_DURATION = 0;
 const END_DURATION = 1;
 
-const stopById: Map<string, VoidFunction> = new Map();
+const stopById: Map<string, NoneToVoidFunction> = new Map();
 
 export default function animateHorizontalScroll(
   container: HTMLElement,

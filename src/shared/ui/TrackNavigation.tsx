@@ -37,22 +37,20 @@ const TrackNavigation: FC<OwnProps> = ({ count, index, visible = 4, size = 'smal
       const div = currentElement.querySelector('div');
       const defs = currentElement.querySelector('defs');
 
-      requestMutation(() => {
-        currentElement.style.height = `${trackHeight}px`;
-        currentElement.style.transform = `translateY(-${trackTranslateY}px)`;
-        currentElement.style.clipPath = `url("#${clipPathId}")`;
+      currentElement.style.height = `${trackHeight}px`;
+      currentElement.style.transform = `translateY(-${trackTranslateY}px)`;
+      currentElement.style.clipPath = `url("#${clipPathId}")`;
 
-        if (!svg && firstChild) {
-          firstChild.innerHTML = `<svg height="0" width="0"><defs> ${clipPath} </defs></svg>`;
-        }
-        if (defs) {
-          defs.innerHTML = clipPath;
-        }
-        if (div) {
-          div.style.height = `${markHeight}px`;
-          div.style.transform = `translateY(${markTranslateY}px)`;
-        }
-      });
+      if (!svg && firstChild) {
+        firstChild.innerHTML = `<svg height="0" width="0"><defs> ${clipPath} </defs></svg>`;
+      }
+      if (defs) {
+        defs.innerHTML = clipPath;
+      }
+      if (div) {
+        div.style.height = `${markHeight}px`;
+        div.style.transform = `translateY(${markTranslateY}px)`;
+      }
     });
   }, [markupParams]);
 

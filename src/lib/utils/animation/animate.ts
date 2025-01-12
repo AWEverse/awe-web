@@ -1,4 +1,4 @@
-import { Scheduler } from '../schedulers';
+import { Scheduler } from '@/lib/core';
 
 export function animate(schedulerFn: Scheduler, tick: NoneToAnyFunction) {
   schedulerFn(() => {

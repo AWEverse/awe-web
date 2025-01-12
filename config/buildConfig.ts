@@ -14,14 +14,16 @@ export default {
   rollupOptions: {
     treeshake: true,
     output: {
-      sourcemapIgnoreList: serverOptions.sourcemapIgnoreList,
       manualChunks: (id: string) => {
         const is_group_chunk = group_chunks.some(partialPath => id.includes(partialPath));
+
+        console.log(id);
 
         if (is_group_chunk) {
           return 'general';
         }
       },
+      sourcemapIgnoreList: serverOptions.sourcemapIgnoreList,
     },
   },
 } as BuildOptions;

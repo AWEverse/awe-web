@@ -11,7 +11,9 @@ export default function useVideoCleanup(
 
   useLayoutEffect(() => {
     const videoEl = videoRef?.current;
-    if (!videoEl) return undefined;
+    if (!videoEl) {
+      return undefined;
+    }
 
     return () => {
       const handlers = handlersRef.current;
@@ -31,19 +33,29 @@ export default function useVideoCleanup(
 }
 
 export function resolveEventType(propName: string, element: Element) {
-  const eventType = propName.replace(/^on|Capture$/, '').toLowerCase();
+  const eventType = propName
+    .replace(/^on/, '')
+    .replace(/Capture$/, '')
+    .toLowerCase();
 
-  // Map React's 'change' event to 'input' for non-SELECT elements
   if (eventType === 'change' && element.tagName !== 'SELECT') {
+    // React behavior repeated here.
+    // https://stackoverflow.com/questions/38256332/in-react-whats-the-difference-between-onchange-and-oninput
     return 'input';
   }
 
-  // Return specific event types
-  const eventMapping: Record<string, string> = {
-    doubleclick: 'dblclick',
-    focus: 'focusin',
-    blur: 'focusout',
-  };
+  if (eventType === 'doubleclick') {
+    return 'dblclick';
+  }
 
-  return eventMapping[eventType] || eventType;
+  // Replace focus/blur by their "bubbleable" versions
+  if (eventType === 'focus') {
+    return 'focusin';
+  }
+
+  if (eventType === 'blur') {
+    return 'focusout';
+  }
+
+  return eventType;
 }

@@ -10,10 +10,9 @@ import '@/styles/global.scss';
 import '@/styles/index.css';
 import '@/styles/reboot.css';
 
-if (STRICTERDOM_ENABLED) {
-  enableStrict();
-}
-
+// if (STRICTERDOM_ENABLED) {
+//   enableStrict();
+// }
 async function init() {
   const rootElement = document.getElementById('root');
 

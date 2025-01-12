@@ -1,5 +1,5 @@
 import { useState, useRef } from 'react';
-import { throttle } from '../../utils/schedulers';
+import { throttle } from '@/lib/core';
 
 interface IDimensions {
   width: number;

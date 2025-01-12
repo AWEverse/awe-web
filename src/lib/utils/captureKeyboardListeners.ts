@@ -1,4 +1,14 @@
-type IHandlerName = 'Enter' | 'Backspace' | 'Delete' | 'Esc' | 'Up' | 'Down' | 'Left' | 'Right' | 'Tab' | 'Space';
+type IHandlerName =
+  | 'Enter'
+  | 'Backspace'
+  | 'Delete'
+  | 'Esc'
+  | 'Up'
+  | 'Down'
+  | 'Left'
+  | 'Right'
+  | 'Tab'
+  | 'Space';
 
 type HandlerName = `on${IHandlerName}`;
 type Handler = (e: KeyboardEvent) => void | boolean;

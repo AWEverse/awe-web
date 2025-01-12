@@ -63,7 +63,7 @@ const TabList: FC<OwnProps> = props => {
 
           return (
             <Tab
-              key={id ?? title}
+              key={`${id}_${title}`}
               aria-selected={isActive}
               clickArg={index}
               isActive={isActive}

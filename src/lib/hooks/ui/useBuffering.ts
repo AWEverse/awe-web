@@ -1,11 +1,10 @@
 import { useState, useMemo } from 'react';
 import useLastCallback from '../events/useLastCallback';
-import { debounce } from '../../utils/schedulers';
+import { debounce } from '@/lib/core';
 import { isSafariPatchInProgress } from '../../utils/patchSafariProgressiveAudio';
 import { areDeepEqual } from '../../utils/areDeepEqual';
 import { isMediaReadyToPlay } from '@/lib/core/public/misc/SafePlay';
-
-type BufferingEvent = (e: Event | React.SyntheticEvent<HTMLMediaElement>) => void;
+import useDebouncedCallback from '../shedulers/useDebouncedCallback';
 
 const MIN_READY_STATE = 3;
 // Avoid flickering when re-mounting previously buffered video
@@ -15,7 +14,14 @@ const MIN_ALLOWED_MEDIA_DURATION = 0.1; // Some video emojis have weird duration
 /**
  * Time range relative to the duration [0, 1]
  */
+
+export type HTMLMediaBufferedEvent = Event | React.SyntheticEvent<HTMLMediaElement>;
 export type BufferedRange = { start: number; end: number };
+export type BufferingEvent = (e: HTMLMediaBufferedEvent) => void;
+
+export type BufferingPair<T = BufferingEvent> = {
+  [key: string]: T;
+};
 
 const useBuffering = (
   noInitiallyBuffered = false,
@@ -27,7 +33,7 @@ const useBuffering = (
   const [bufferedProgress, setBufferedProgress] = useState(0);
   const [bufferedRanges, setBufferedRanges] = useState<BufferedRange[]>([]);
 
-  const setIsBuffered = useMemo(() => debounce(_setIsBuffered, DEBOUNCE, false, true), []);
+  const setIsBuffered = useDebouncedCallback(_setIsBuffered, [], DEBOUNCE, false, true);
 
   const handleBuffering = useLastCallback<BufferingEvent>(e => {
     const media = e.currentTarget as HTMLMediaElement;

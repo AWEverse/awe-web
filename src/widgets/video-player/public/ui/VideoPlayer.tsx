@@ -3,11 +3,13 @@ import { IS_IOS, IS_TOUCH_ENV } from '@/lib/core';
 import useLastCallback from '@/lib/hooks/events/useLastCallback';
 import { ObserveFn } from '@/lib/hooks/sensors/useIntersectionObserver';
 import useRefInstead from '@/lib/hooks/state/useRefInstead';
-import { memo, useState } from 'react';
+import { memo, useRef, useState } from 'react';
 import useFullscreen from '../hooks/useFullScreen';
 import useAppLayout from '@/lib/hooks/ui/useAppLayout';
 import useUnsupportedMedia from '../hooks/useSupportCheck';
 import Video from '@/shared/ui/Video';
+
+import s from './VideoPlayer.module.scss';
 
 type OwnProps = {
   ref?: React.RefObject<HTMLVideoElement | null>;
@@ -22,11 +24,10 @@ type OwnProps = {
   isContentProtected?: boolean; // means non-available for download
   isViewerOpen?: boolean;
   mediaUrl?: string | string[];
-  observeIntersectionForBottom: ObserveFn;
-  observeIntersectionForLoading: ObserveFn;
-  observeIntersectionForPlaying: ObserveFn;
+  observeIntersectionForBottom?: ObserveFn;
+  observeIntersectionForLoading?: ObserveFn;
+  observeIntersectionForPlaying?: ObserveFn;
   onAdsClick?: (triggeredFromMedia?: boolean) => void;
-  onCloseMediaViewer: (e: React.MouseEvent<HTMLElement, MouseEvent>) => void;
   playbackSpeed: number;
   posterDimensions?: ApiDimensions; // width and height
   posterSource?: string;
@@ -38,13 +39,9 @@ const MAX_LOOP_DURATION = 30; // Seconds
 const MIN_READY_STATE = 4;
 const REWIND_STEP = 5; // Seconds
 
-const VideoPlayer = ({
-  ref,
-  mediaUrl = 'http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4',
-  posterDimensions,
-  forceMobileView,
-}: OwnProps) => {
-  const videoRef = useRefInstead(ref);
+const VideoPlayer = ({ ref, mediaUrl, posterDimensions, forceMobileView }: OwnProps) => {
+  const videoRef = useRef(null);
+  const bottomRef = useRef<HTMLDivElement>(null);
 
   const [isPlaying, setIsPlaying] = useState(!IS_TOUCH_ENV || !IS_IOS);
   const [isFullscreen, setFullscreen, exitFullscreen] = useFullscreen(videoRef, setIsPlaying);
@@ -65,17 +62,22 @@ const VideoPlayer = ({
 
   return (
     <div
-      className="VideoPlayer"
+      className={s.VideoPlayer}
       onMouseMove={shouldToggleControls ? handleVideoMove : undefined}
       onMouseOut={shouldToggleControls ? handleVideoLeave : undefined}
     >
-      <div>
-        <Video
-          src="https://media.w3.org/2010/05/sintel/trailer.mp4"
-          ref={videoRef}
-          canPlay={isPlaying}
-        />
-      </div>
+      <Video
+        src={'http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4'}
+        canPlay
+      />
+
+      <div
+        ref={bottomRef}
+        className="VideoPlayerBottom"
+        role="contentinfo"
+        aria-label="Video Player Bottom"
+        data-in-view={true}
+      />
     </div>
   );
 };

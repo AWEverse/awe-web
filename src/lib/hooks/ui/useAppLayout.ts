@@ -6,7 +6,7 @@ import {
   MIN_SCREEN_WIDTH_FOR_STATIC_LEFT_COLUMN,
 } from '../../config/app';
 import { createCallbackManager } from '../../utils/callbacks';
-import { IS_IOS } from '../../utils/OS/windowEnviroment';
+import { IS_IOS } from '@/lib/core';
 import { updateSizes } from '../../utils/windowSize';
 import useForceUpdate from '../state/useForceUpdate';
 

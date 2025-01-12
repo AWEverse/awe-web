@@ -6,7 +6,7 @@ export function stopVideo(video: HTMLVideoElement) {
   }
 
   video.removeAttribute('src');
-  video.src = '';
+  video.src = 'unloaded';
 
   if ('srcObject' in video) {
     video.srcObject = null;
@@ -28,8 +28,4 @@ export default function unloadVideo(video: HTMLVideoElement) {
 
   stopVideo(video);
   clearVideoElement(video);
-
-  if (video.parentNode) {
-    video.parentNode.removeChild(video);
-  }
 }

@@ -6,7 +6,7 @@ import s from './Collapsible.module.scss';
 import useLastCallback from '@/lib/hooks/events/useLastCallback';
 import { CollapsibleContext, useCollapsible } from '../hooks/useCollapsible';
 import { requestMeasure } from '@/lib/modules/fastdom/fastdom';
-import { clamp } from '@/lib/utils/math';
+import { clamp } from '@/lib/core';
 
 interface ContentProps {
   unmountOnExit?: boolean;

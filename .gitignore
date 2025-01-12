@@ -26,6 +26,8 @@ dist-ssr
 *.sw?
 *.env
 .vite/*
+**/certs/
+
 notes
 bundle-visualization.html
 *storybook.log

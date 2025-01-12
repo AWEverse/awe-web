@@ -12,19 +12,17 @@ const useHorizontalScroll = (
 
     const container = containerRef.current!;
 
-    function handleScroll(e: WheelEvent) {
+    const handleScroll = (e: WheelEvent) => {
       if (e.deltaX !== 0) return;
 
-      const containerRef = container;
-
-      if (containerRef) {
-        containerRef.scrollLeft += e.deltaY;
+      if (container) {
+        container.scrollLeft += e.deltaY;
 
         if (shouldPreventDefault) {
           e.preventDefault();
         }
       }
-    }
+    };
 
     container.addEventListener('wheel', handleScroll, { passive: !shouldPreventDefault });
 

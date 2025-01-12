@@ -1,8 +1,13 @@
 import useEffectSync from '@/lib/hooks/effects/useEffectSync';
 import useLastCallback from '@/lib/hooks/events/useLastCallback';
-import useBuffering from '@/lib/hooks/ui/useBuffering';
+import useBuffering, {
+  BufferingEvent,
+  BufferingPair,
+  HTMLMediaBufferedEvent,
+} from '@/lib/hooks/ui/useBuffering';
 import { useRef, useMemo, memo } from 'react';
 import useVideoCleanup from '../hooks/useVideoCleanup';
+import useRefInstead from '@/lib/hooks/state/useRefInstead';
 
 type VideoProps = React.DetailedHTMLProps<
   React.VideoHTMLAttributes<HTMLVideoElement>,
@@ -44,7 +49,7 @@ function Video({
   onTimeUpdate,
   ...restProps
 }: OwnProps) {
-  const { onPlay, onPlaying } = restProps;
+  const videoRef = useRef<HTMLVideoElement>(null);
 
   const isReadyRef = useRef(false);
 
@@ -73,9 +78,11 @@ function Video({
 
   useEffectSync(
     ([prevIsBuffered]) => {
-      if (!prevIsBuffered) {
-        handleReady();
+      if (prevIsBuffered === undefined) {
+        return;
       }
+
+      handleReady();
     },
     [isBuffered, handleReady],
   );
@@ -83,36 +90,37 @@ function Video({
   const handlePlaying = useLastCallback(e => {
     handlePlayingForBuffering(e);
     handleReady();
-    onPlaying?.(e);
+    restProps.onPlaying?.(e);
   });
 
   const handlePlay = useLastCallback(e => {
     handlePlayForBuffering(e);
-    onPlay?.(e);
+    restProps.onPlay?.(e);
   });
 
   const mergedOtherBufferingHandlers = useMemo(() => {
-    const mergedHandlers: Record<string, AnyFunction> = {};
+    const mergedHandlers: BufferingPair = {};
 
     Object.keys(otherBufferingHandlers).forEach(keyString => {
       const key = keyString as keyof typeof otherBufferingHandlers;
 
-      mergedHandlers[key] = (event: Event) => {
-        restProps[key as keyof typeof restProps]?.(event);
-        otherBufferingHandlers[key]?.(event);
+      mergedHandlers[key] = (e: HTMLMediaBufferedEvent) => {
+        restProps[key as keyof typeof restProps]?.(e);
+        otherBufferingHandlers[key]?.(e);
       };
     });
 
     return mergedHandlers;
   }, [otherBufferingHandlers, restProps]);
 
-  useVideoCleanup(ref, mergedOtherBufferingHandlers);
+  // TODO: Fix cleanup hook
+  // Something went wrong with that hook, actually it immediately unmounts the video after the first render
+  // useVideoCleanup(videoRef, mergedOtherBufferingHandlers);
 
   return (
     // eslint-disable-next-line react/jsx-props-no-spreading
     <video
-      ref={ref}
-      autoPlay
+      ref={videoRef}
       onPlay={handlePlay}
       onPlaying={handlePlaying}
       {...mergedOtherBufferingHandlers}

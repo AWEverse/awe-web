@@ -4,7 +4,7 @@ export default function onTickEnd(callback: NoneToVoidFunction) {
   if (!onTickEndCallbacks) {
     onTickEndCallbacks = [callback];
 
-    queueMicrotask(() => {
+    Promise.resolve().then(() => {
       const currentCallbacks = onTickEndCallbacks!;
       onTickEndCallbacks = undefined;
       currentCallbacks.forEach(cb => cb());

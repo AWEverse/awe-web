@@ -1,4 +1,4 @@
-'use precompile';
+// 'use precompile';
 
 import {
   RefObject,

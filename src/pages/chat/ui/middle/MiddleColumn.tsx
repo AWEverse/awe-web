@@ -1,10 +1,8 @@
-import { ChatProps, ChatType } from '@/shared/types';
-import { FC, useState, memo } from 'react';
+import { FC, memo } from 'react';
 import ChatLayout from './layout/ChatLayout';
 import MiddleHeader from './widgets/MiddleHeader';
 import MessagesBackdrop from './placeholder/MessagesBackdrop';
-import MiddleMessageList from './widgets/MiddleMessageList/MiddleMessageList';
-import MiddleInput from './widgets/MiddleInput';
+
 import EmptyChat from './placeholder/EmptyChat';
 import s from './MiddleColumn.module.scss';
 

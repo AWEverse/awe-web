@@ -26,7 +26,7 @@ export default function useDevicePixelRatio() {
     callbacks.addCallback(updateDpr);
 
     return () => {
-      callbacks.removeCallback(updateDpr); // Clean up the callback on unmount
+      callbacks.removeCallback(updateDpr);
     };
   }, []);
 

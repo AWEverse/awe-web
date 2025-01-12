@@ -1,10 +1,11 @@
 import { ApiDimensions } from '@/@types/api/types/messages';
 import { BufferedRange } from '@/lib/hooks/ui/useBuffering';
-import { FC, memo, useRef } from 'react';
+import { FC, memo, useRef, useState } from 'react';
 import { CSSTransition } from 'react-transition-group';
 
 import s from './SeekLine.module.scss';
 import buildClassName from '@/shared/lib/buildClassName';
+import buildStyle from '@/shared/lib/buildStyle';
 
 interface OwnProps {
   url?: string;
@@ -24,7 +25,7 @@ const SeekLine: FC<OwnProps> = ({
   duration,
   bufferedRanges,
   isReady,
-  posterSize,
+  posterSize = { width: 200, height: 100 },
   playbackRate,
   url,
   isActive,
@@ -33,24 +34,27 @@ const SeekLine: FC<OwnProps> = ({
   onSeek,
   onSeekStart,
 }) => {
-  const seekerRef = useRef<HTMLDivElement>(null);
-  const previewCanvasRef = useRef<HTMLCanvasElement>(null);
-  const previewRef = useRef<HTMLDivElement>(null);
-  const progressRef = useRef<HTMLDivElement>(null);
-  const previewTimeRef = useRef<HTMLDivElement>(null);
+  const seekerRef = useRef<HTMLDivElement | null>(null);
+  const previewCanvasRef = useRef<HTMLCanvasElement | null>(null);
+  const previewRef = useRef<HTMLDivElement | null>(null);
+  const progressRef = useRef<HTMLDivElement | null>(null);
+  const previewTimeRef = useRef<HTMLDivElement | null>(null);
+  const [isSeeking, setSeeking] = useState(false);
 
   return (
     <div className={s.container} ref={seekerRef}>
       {!isPreviewDisabled && (
-        <CSSTransition
-          isOpen
-          className={s.preview}
-          style={`width: ${previewSize.width}px; height: ${previewSize.height}px`}
-          ref={previewRef}
-        >
-          <canvas className={s.previewCanvas} ref={previewCanvasRef} />
-          <div className={s.previewTime}>
-            <span className={s.previewTimeText} ref={previewTimeRef} />
+        <CSSTransition nodeRef={previewRef} in={isReady} timeout={0}>
+          <div ref={previewRef} className={s.preview}>
+            <canvas
+              className={s.previewCanvas}
+              ref={previewCanvasRef}
+              width={posterSize?.width}
+              height={posterSize?.height}
+            />
+            <div className={s.previewTime}>
+              <span className={s.previewTimeText} ref={previewTimeRef} />
+            </div>
           </div>
         </CSSTransition>
       )}
@@ -59,8 +63,7 @@ const SeekLine: FC<OwnProps> = ({
           <div
             key={`${start}-${end}`}
             className={s.buffered}
-            // @ts-ignore
-            style={`left: ${start * 100}%; right: ${100 - end * 100}%`}
+            style={buildStyle(`left: ${start * 100}%;`, `right: ${100 - end * 100}%;`)}
           />
         ))}
       </div>
