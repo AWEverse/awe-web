@@ -6,7 +6,6 @@ import { CSSTransition } from 'react-transition-group';
 import s from './SeekLine.module.scss';
 import buildClassName from '@/shared/lib/buildClassName';
 import buildStyle from '@/shared/lib/buildStyle';
-import useCurrentTimeSignal from '../../private/hooks/useCurrentTimeSignal';
 import { Signal } from '@/lib/core/public/signals';
 import { clamp, IS_TOUCH_ENV, round, throttle } from '@/lib/core';
 import { requestMutation } from '@/lib/modules/fastdom/fastdom';
@@ -93,16 +92,71 @@ const SeekLine: FC<OwnProps> = ({
     const unsubscribe = currentTimeSignal.subscribe(value => {
       requestMutation(() => {
         if (!progressRef.current) return;
-
         progressRef.current.style.width = `${round((value / duration) * 100, 2)}%`;
       });
     });
 
     return () => unsubscribe();
-  }, [currentTimeSignal, duration]);
+  }, [duration]);
+
+  useEffect(() => {
+    if (!seekerRef.current) return undefined;
+    const seeker = seekerRef.current;
+
+    const handleSeek = (e: MouseEvent | TouchEvent) => {
+      setPreviewVisible(true);
+
+      console.log('seek');
+    };
+
+    const handleStartSeek = () => {
+      setIsSeeking(true);
+      onSeekStart?.();
+    };
+
+    const handleStopSeek = () => {
+      isLockedRef.current = true;
+      setPreviewVisible(false);
+      setIsSeeking(false);
+      // Prevent current time updates from overriding the selected time
+      setTimeout(() => {
+        isLockedRef.current = false;
+      }, LOCK_TIMEOUT);
+    };
+
+    const cleanup = captureEvents(seeker, {
+      onCapture: handleStartSeek,
+      onRelease: handleStopSeek,
+      onClick: handleStopSeek,
+      onDrag: handleSeek,
+    });
+
+    if (IS_TOUCH_ENV || isPreviewDisabled) {
+      return cleanup;
+    }
+
+    const handleSeekMouseMove = (e: MouseEvent) => {
+      setPreviewVisible(true);
+    };
+
+    const handleSeekMouseLeave = () => {
+      setPreviewVisible(false);
+    };
+
+    seeker.addEventListener('mousemove', handleSeekMouseMove);
+    seeker.addEventListener('mouseenter', handleSeekMouseMove);
+    seeker.addEventListener('mouseleave', handleSeekMouseLeave);
+
+    return () => {
+      cleanup();
+      seeker.removeEventListener('mousemove', handleSeekMouseMove);
+      seeker.removeEventListener('mouseenter', handleSeekMouseMove);
+      seeker.removeEventListener('mouseleave', handleSeekMouseLeave);
+    };
+  }, [duration, isActive, onSeek, onSeekStart, setIsSeeking, isPreviewDisabled, playbackRate]);
 
   return (
-    <div className={s.container} ref={seekerRef}>
+    <div ref={seekerRef} className={s.container}>
       {/* {!isPreviewDisabled && (
         <CSSTransition nodeRef={previewRef} in={isReady} timeout={0}>
           <div ref={previewRef} className={s.preview}>

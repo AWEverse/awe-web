@@ -12,6 +12,7 @@ import Video from '@/shared/ui/Video';
 import s from './VideoPlayer.module.scss';
 import VideoPlayerControls from './VideoPlayerControls';
 import useCurrentTimeSignal from '../../private/hooks/useCurrentTimeSignal';
+import useContextSignal from '../../private/hooks/useContextSignal';
 
 type OwnProps = {
   ref?: React.RefObject<HTMLVideoElement | null>;
@@ -48,7 +49,8 @@ const VideoPlayer = ({ ref, mediaUrl, posterDimensions, forceMobileView }: OwnPr
   const [isPlaying, setIsPlaying] = useState(false);
   const [duration, setDuration] = useState(0); // Store duration here
 
-  const [currentTime, setCurrentTime] = useCurrentTimeSignal();
+  const [currentTime, setCurrentTime] = useContextSignal(0);
+  const [waitingSignal, setWaiting] = useContextSignal(false);
 
   const handleTimeUpdate = useLastCallback((e: React.SyntheticEvent<HTMLVideoElement>) => {
     const video = e.currentTarget;
@@ -75,6 +77,7 @@ const VideoPlayer = ({ ref, mediaUrl, posterDimensions, forceMobileView }: OwnPr
 
       <div className={s.PlayerControlsWrapper}>
         <VideoPlayerControls
+          waitingSignal={waitingSignal}
           currentTimeSignal={currentTime}
           bufferedRanges={[]}
           bufferedProgress={0}

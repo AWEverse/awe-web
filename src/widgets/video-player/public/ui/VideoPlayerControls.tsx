@@ -49,12 +49,8 @@ const VideoPlayerControls: FC<OwnProps> = ({ currentTimeSignal, waitingSignal, d
         bufferedRanges={[]}
         playbackRate={10}
         isReady={false}
-        onSeek={function (position: number): void {
-          throw new Error('Function not implemented.');
-        }}
-        onSeekStart={function (): void {
-          throw new Error('Function not implemented.');
-        }}
+        onSeek={() => {}}
+        onSeekStart={() => {}}
       />
       dasd
     </section>
