@@ -10,6 +10,8 @@ import useUnsupportedMedia from '../hooks/useSupportCheck';
 import Video from '@/shared/ui/Video';
 
 import s from './VideoPlayer.module.scss';
+import VideoPlayerControls from './VideoPlayerControls';
+import useCurrentTimeSignal from '../../private/hooks/useCurrentTimeSignal';
 
 type OwnProps = {
   ref?: React.RefObject<HTMLVideoElement | null>;
@@ -40,36 +42,73 @@ const MIN_READY_STATE = 4;
 const REWIND_STEP = 5; // Seconds
 
 const VideoPlayer = ({ ref, mediaUrl, posterDimensions, forceMobileView }: OwnProps) => {
-  const videoRef = useRef(null);
+  const videoRef = useRef<HTMLVideoElement>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
 
-  const [isPlaying, setIsPlaying] = useState(!IS_TOUCH_ENV || !IS_IOS);
-  const [isFullscreen, setFullscreen, exitFullscreen] = useFullscreen(videoRef, setIsPlaying);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [duration, setDuration] = useState(0); // Store duration here
 
-  const { isMobile } = useAppLayout();
-  const duration = videoRef.current?.duration || 0;
-  const isLooped = duration <= MAX_LOOP_DURATION;
+  const [currentTime, setCurrentTime] = useCurrentTimeSignal();
 
-  const handleVideoMove = useLastCallback(() => {});
+  const handleTimeUpdate = useLastCallback((e: React.SyntheticEvent<HTMLVideoElement>) => {
+    const video = e.currentTarget;
+    if (video.readyState >= MIN_READY_STATE) {
+      setCurrentTime(video.currentTime);
+    }
+  });
 
-  const handleVideoLeave = useLastCallback(() => {});
-
-  const isUnsupported = useUnsupportedMedia(videoRef, !mediaUrl);
-
-  const wrapperStyle =
-    posterDimensions && `width: ${posterDimensions.width}px; height: ${posterDimensions.height}px`;
-  const shouldToggleControls = !IS_TOUCH_ENV && !forceMobileView;
+  const handleLoadedMetadata = useLastCallback((e: React.SyntheticEvent<HTMLVideoElement>) => {
+    const video = e.currentTarget;
+    setDuration(video.duration);
+  });
 
   return (
-    <div
-      className={s.VideoPlayer}
-      onMouseMove={shouldToggleControls ? handleVideoMove : undefined}
-      onMouseOut={shouldToggleControls ? handleVideoLeave : undefined}
-    >
-      <Video
+    <div className={s.VideoPlayer}>
+      <video
+        ref={videoRef}
+        className={s.Video}
         src={'http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4'}
-        canPlay
+        controls
+        onTimeUpdate={handleTimeUpdate}
+        onLoadedMetadata={handleLoadedMetadata} // Listen to loadedmetadata to get the duration
       />
+
+      <div className={s.PlayerControlsWrapper}>
+        <VideoPlayerControls
+          currentTimeSignal={currentTime}
+          bufferedRanges={[]}
+          bufferedProgress={0}
+          duration={duration} // Pass the correct duration
+          isReady={duration > 0}
+          fileSize={0}
+          isPlaying={false}
+          isFullscreenSupported={false}
+          isPictureInPictureSupported={false}
+          isFullscreen={false}
+          isBuffered={false}
+          volume={0}
+          isMuted={false}
+          playbackRate={0}
+          onChangeFullscreen={function (e: React.MouseEvent<HTMLButtonElement, MouseEvent>): void {
+            throw new Error('Function not implemented.');
+          }}
+          onVolumeClick={function (): void {
+            throw new Error('Function not implemented.');
+          }}
+          onVolumeChange={function (volume: number): void {
+            throw new Error('Function not implemented.');
+          }}
+          onPlaybackRateChange={function (playbackRate: number): void {
+            throw new Error('Function not implemented.');
+          }}
+          onPlayPause={function (e: React.MouseEvent<HTMLButtonElement, MouseEvent>): void {
+            throw new Error('Function not implemented.');
+          }}
+          onSeek={function (position: number): void {
+            throw new Error('Function not implemented.');
+          }}
+        />
+      </div>
 
       <div
         ref={bottomRef}

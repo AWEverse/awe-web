@@ -6,7 +6,6 @@ import DOMPurify from 'dompurify';
 import MoonPhases from '@/shared/common/MoonPhases';
 import VideoPlayer from '@/widgets/video-player/public/ui/VideoPlayer';
 import SeekLine from '@/widgets/video-player/public/ui/SeekLine';
-import MediaPlayer from '@/widgets/video-player/public/ui/MediaPlayer';
 
 marked.use({
   breaks: true,
@@ -22,7 +21,7 @@ marked.use({
 const TestPage = () => {
   return (
     <div className="p-5">
-      <MediaPlayer />
+      <VideoPlayer audioVolume={0} isAudioMuted={false} playbackSpeed={0} totalFileSize={0} />
     </div>
   );
 };

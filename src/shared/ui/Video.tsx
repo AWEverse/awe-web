@@ -49,7 +49,7 @@ function Video({
   onTimeUpdate,
   ...restProps
 }: OwnProps) {
-  const videoRef = useRef<HTMLVideoElement>(null);
+  const videoRef = useRefInstead<HTMLVideoElement>(ref);
 
   const isReadyRef = useRef(false);
 

@@ -1,9 +1,9 @@
 .container {
  --border-radius-default: 0.25rem;
   position: absolute;
-  bottom: 0.25rem;
-  right: 0.5rem;
-  left: 0.5rem;
+  top: 0;
+  right: 1rem;
+  left: 1rem;
   height: 1rem;
   touch-action: none;
   cursor: pointer;
@@ -70,12 +70,14 @@ body:global(.is-touch-env) .preview {
 }
 
 .played {
-  background: var(--color-primary);
+  background: var(--awe-palette-primary-main);
   position: absolute;
   top: 0;
   left: 0;
   height: 100%;
   border-radius: var(--border-radius-default);
+  // transition: width 1s ease;
+  // will-change: width;
 
   &::after {
     content: "";
@@ -88,6 +90,7 @@ body:global(.is-touch-env) .preview {
     top: 50%;
     transform: translate(50%, -50%) scale(1);
     transition: transform 0.2s ease;
+    will-change: transform;
   }
 }
 
