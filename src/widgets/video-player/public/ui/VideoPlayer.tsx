@@ -1,5 +1,13 @@
 import { ApiDimensions } from '@/@types/api/types/messages';
-import { IS_IOS, IS_TOUCH_ENV, playMedia, throttle } from '@/lib/core';
+import {
+  IS_IOS,
+  IS_TOUCH_ENV,
+  pauseMedia,
+  playMedia,
+  setMediaMute,
+  setMediaVolume,
+  throttle,
+} from '@/lib/core';
 import useLastCallback from '@/lib/hooks/events/useLastCallback';
 import { ObserveFn } from '@/lib/hooks/sensors/useIntersectionObserver';
 import useRefInstead from '@/lib/hooks/state/useRefInstead';
@@ -38,6 +46,12 @@ type OwnProps = {
   totalFileSize: number;
 };
 
+const PLAYBACK_RATES_SET = new Set([0.25, 0.5, 1, 1.25, 1.5, 1.75, 2]);
+
+const validatePlaybackSpeed = (playbackSpeed: number) => {
+  return PLAYBACK_RATES_SET.has(playbackSpeed) ? playbackSpeed : 1;
+};
+
 const MAX_LOOP_DURATION = 30; // Seconds
 const MIN_READY_STATE = 4;
 const REWIND_STEP = 5; // Seconds
@@ -47,8 +61,8 @@ const VideoPlayer: React.FC<OwnProps> = ({
   mediaUrl,
   posterDimensions,
   forceMobileView,
-  audioVolume,
-  playbackSpeed,
+  audioVolume = 1,
+  playbackSpeed = 1,
 }) => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
@@ -75,15 +89,21 @@ const VideoPlayer: React.FC<OwnProps> = ({
   });
 
   const togglePlayState = useLastCallback(
-    (e: React.MouseEvent<HTMLElement, MouseEvent> | KeyboardEvent) => {
+    async (e: React.MouseEvent<HTMLElement, MouseEvent> | KeyboardEvent) => {
       e.stopPropagation();
+
+      const videoEl = videoRef.current;
+      if (!videoEl) return;
+
       if (isPlaying) {
-        videoRef.current!.pause();
+        pauseMedia(videoEl);
         setPlaying(false);
       } else {
-        playMedia(videoRef.current!);
+        const playbackSuccess = await playMedia(videoEl);
 
-        setPlaying(true);
+        if (playbackSuccess) {
+          setPlaying(true);
+        }
       }
     },
   );
@@ -102,9 +122,13 @@ const VideoPlayer: React.FC<OwnProps> = ({
     }
   });
 
-  useEffect(() => {
-    videoRef.current!.volume = audioVolume;
-  }, [audioVolume]);
+  const handleVolumeChange = useLastCallback((value: number) => {
+    setMediaVolume(videoRef.current!, value);
+  });
+
+  const handleMuteClick = useLastCallback(() => {
+    setMediaMute(videoRef.current!);
+  });
 
   return (
     <div className={s.VideoPlayer}>
@@ -141,12 +165,8 @@ const VideoPlayer: React.FC<OwnProps> = ({
           onChangeFullscreen={function (e: React.MouseEvent<HTMLButtonElement, MouseEvent>): void {
             throw new Error('Function not implemented.');
           }}
-          onVolumeClick={function (): void {
-            throw new Error('Function not implemented.');
-          }}
-          onVolumeChange={function (volume: number): void {
-            throw new Error('Function not implemented.');
-          }}
+          onVolumeClick={handleMuteClick}
+          onVolumeChange={handleVolumeChange}
           onPlaybackRateChange={function (playbackRate: number): void {
             throw new Error('Function not implemented.');
           }}

@@ -1,6 +1,6 @@
 import { ApiDimensions } from '@/@types/api/types/messages';
 import { BufferedRange } from '@/lib/hooks/ui/useBuffering';
-import { FC, memo, useEffect, useLayoutEffect, useRef } from 'react';
+import React, { FC, memo, useEffect, useLayoutEffect, useRef } from 'react';
 import SeekLine from './SeekLine';
 
 import s from './VideoPlayerControls.module.scss';
@@ -16,6 +16,8 @@ import {
   WidthFullRounded,
 } from '@mui/icons-material';
 import { formatTime } from '../../private/lib/utils';
+import useLastCallback from '@/lib/hooks/events/useLastCallback';
+import { clamp } from '@/lib/core';
 
 type OwnProps = {
   currentTimeSignal: Signal<number>;
@@ -40,6 +42,7 @@ type OwnProps = {
   onChangeFullscreen: (e: React.MouseEvent<HTMLButtonElement, MouseEvent>) => void;
   onPictureInPictureChange?: () => void;
   onVolumeClick: () => void;
+
   onVolumeChange: (volume: number) => void;
   onPlaybackRateChange: (playbackRate: number) => void;
   onPlayPause: (e: React.MouseEvent<HTMLButtonElement, MouseEvent>) => void;
@@ -77,6 +80,10 @@ const VideoPlayerControls: FC<OwnProps> = ({
     };
   }, [currentTimeSignal, isReady]);
 
+  const handleVolumeChange = useLastCallback((e: React.ChangeEvent<HTMLInputElement>) =>
+    onVolumeChange(Number(e.currentTarget.value) / 100),
+  );
+
   return (
     <section className={s.PlayerControls}>
       <SeekLine
@@ -95,9 +102,19 @@ const VideoPlayerControls: FC<OwnProps> = ({
       <IconButton>
         <SkipNextRounded />
       </IconButton>
-      <IconButton>
+      <IconButton onClick={onVolumeClick}>
         <VolumeUpRounded />
       </IconButton>
+      <label className={s.slider}>
+        <input
+          type="range"
+          className={s.level}
+          min={0}
+          max={100}
+          onChange={handleVolumeChange}
+          onClick={onVolumeClick}
+        />
+      </label>
 
       <div className={s.Time}>
         <time ref={timeRef} aria-label="Current time position"></time>
@@ -112,6 +129,7 @@ const VideoPlayerControls: FC<OwnProps> = ({
       <IconButton>
         <SettingsRounded />
       </IconButton>
+
       <IconButton>
         <PictureInPictureAltRounded />
       </IconButton>

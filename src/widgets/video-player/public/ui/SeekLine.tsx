@@ -67,7 +67,8 @@ const SeekLine: FC<OwnProps> = ({
 
       const seeker = seekerRef.current;
       const seekerSize = seeker.getBoundingClientRect();
-      const pageX = e instanceof MouseEvent ? e.pageX : e.touches[0].pageX;
+
+      const pageX = e instanceof MouseEvent ? e.pageX : e.touches?.[0].pageX;
 
       const time = clamp(duration * ((pageX - seekerSize.left) / seekerSize.width), 0, duration);
 

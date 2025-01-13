@@ -18,23 +18,40 @@ export enum EMediaErrorCode {
 }
 
 /**
- * Attempts to play the media element and handles any errors.
+ * Attempts to play the media element, handles errors, and provides more control over playback.
  * @param mediaEl - The media element to play (video or audio).
+ * @param options - Optional settings for playback (e.g., handling errors).
+ * @returns A Promise that resolves to true if playback starts, or false if an error occurs.
  */
-export const playMedia = (mediaEl: HTMLMediaElement): void => {
-  mediaEl.play().catch(err => {
-    if (DEBUG) {
-      console.warn(err, mediaEl);
+export const playMedia = async (
+  mediaEl: HTMLMediaElement,
+  options: { onError?: (err: Error) => void } = {},
+): Promise<boolean> => {
+  if (!mediaEl.paused) {
+    return true;
+  }
+
+  try {
+    await mediaEl.play();
+    return true;
+  } catch (err) {
+    if (options.onError) {
+      options.onError(err instanceof Error ? err : new Error(err as string));
+    } else if (DEBUG) {
+      console.warn('Playback error:', err, mediaEl);
     }
-  });
+    return false;
+  }
 };
 
 /**
- * Pauses the media playback.
+ * Pauses the media playback and ensures it's only paused if currently playing.
  * @param mediaEl - The media element to pause (video or audio).
  */
 export const pauseMedia = (mediaEl: HTMLMediaElement): void => {
-  mediaEl.pause();
+  if (!mediaEl.paused) {
+    mediaEl.pause();
+  }
 };
 
 /**
@@ -76,19 +93,56 @@ export const getCurrentPlaybackTime = (mediaEl: HTMLMediaElement): number => {
 };
 
 /**
- * Sets the volume of the media.
+ * Sets the volume of the media with optional smooth transition.
  * @param mediaEl - The media element to adjust (video or audio).
- * @param volume - The volume level (0.0 to 1.0).
+ * @param volume - The target volume level (0.0 to 1.0).
+ * @param duration - Optional duration (in milliseconds) for a smooth volume transition.
  */
-export const setMediaVolume = (mediaEl: HTMLMediaElement, volume: number): void => {
-  mediaEl.volume = clamp01(volume); // Ensure volume is between 0 and 1
+export const setMediaVolume = (
+  mediaEl: HTMLMediaElement,
+  volume: number = 1,
+  duration: number = 0,
+): void => {
+  const targetVolume = clamp01(volume);
+
+  if (duration > 0) {
+    const startVolume = mediaEl.volume;
+    const delta = targetVolume - startVolume;
+    const stepTime = 50;
+    const steps = Math.ceil(duration / stepTime);
+    let currentStep = 0;
+
+    const intervalId = setInterval(() => {
+      currentStep++;
+      mediaEl.volume = clamp01(startVolume + (delta * currentStep) / steps);
+
+      if (currentStep >= steps) {
+        clearInterval(intervalId);
+      }
+    }, stepTime);
+  } else {
+    mediaEl.volume = targetVolume;
+  }
 };
 
 /**
- * Mutes or unmutes the media.
+ * Mutes or unmutes the media, with optional smooth transition.
  * @param mediaEl - The media element to adjust (video or audio).
  * @param mute - True to mute, false to unmute.
+ * @param fadeDuration - Optional duration (in milliseconds) for smooth fade out or fade in.
  */
-export const setMediaMute = (mediaEl: HTMLMediaElement, mute: boolean): void => {
-  mediaEl.muted = mute;
+export const setMediaMute = (
+  mediaEl: HTMLMediaElement,
+  mute: boolean = true,
+  fadeDuration: number = 0,
+): void => {
+  if (mute) {
+    mediaEl.dataset.previousVolume = String(mediaEl.volume);
+    setMediaVolume(mediaEl, 0, fadeDuration);
+    mediaEl.muted = true;
+  } else {
+    const previousVolume = parseFloat(mediaEl.dataset.previousVolume || '1');
+    mediaEl.muted = false;
+    setMediaVolume(mediaEl, previousVolume, fadeDuration);
+  }
 };
