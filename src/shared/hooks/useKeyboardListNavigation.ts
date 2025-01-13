@@ -1,6 +1,7 @@
+import { EKeyboardKey } from '@/lib/core';
 import useLastCallback from '@/lib/hooks/events/useLastCallback';
 import { requestMutation, requestMeasure } from '@/lib/modules/fastdom/fastdom';
-import { RefObject, useState, useEffect } from 'react';
+import { RefObject, useState, useEffect, useCallback } from 'react';
 
 const useKeyboardListNavigation = (
   elementRef: RefObject<HTMLElement>,
@@ -15,6 +16,7 @@ const useKeyboardListNavigation = (
     setFocusedIndex(-1);
 
     const element = elementRef.current;
+
     if (isOpen && element && !noCaptureFocus) {
       requestMutation(() => {
         element.tabIndex = -1;
@@ -25,45 +27,54 @@ const useKeyboardListNavigation = (
     }
   }, [elementRef, isOpen, noCaptureFocus]);
 
-  return useLastCallback((e: React.KeyboardEvent<HTMLDivElement>) => {
-    const element = elementRef.current;
+  const handleKeyNavigation = useCallback(
+    (e: React.KeyboardEvent<HTMLDivElement>) => {
+      const element = elementRef.current;
 
-    if (!element) {
-      return;
-    }
+      if (!element) {
+        return;
+      }
 
-    if (e.keyCode === 13 && onSelectWithEnter) {
-      onSelectWithEnter(focusedIndex);
-      return;
-    }
+      const { key } = e;
 
-    if (e.keyCode !== 38 && e.keyCode !== 40) {
-      return;
-    }
+      if (key === EKeyboardKey.Enter && onSelectWithEnter) {
+        onSelectWithEnter(focusedIndex);
+        return;
+      }
 
-    const focusedElement = document.activeElement;
-    const elementChildren = Array.from(
-      itemSelector ? element.querySelectorAll(itemSelector) : element.children,
-    );
+      if (key !== EKeyboardKey.ArrowUp && key !== EKeyboardKey.ArrowDown) {
+        return;
+      }
 
-    let newIndex = (focusedElement && elementChildren.indexOf(focusedElement)) || focusedIndex;
+      const focusedElement = document.activeElement;
+      const elementChildren = Array.from(
+        itemSelector ? element.querySelectorAll(itemSelector) : element.children,
+      );
 
-    if (e.keyCode === 38 && newIndex > 0) {
-      newIndex--;
-    } else if (e.keyCode === 40 && newIndex < elementChildren.length - 1) {
-      newIndex++;
-    } else if (elementChildren.length === 1) {
-      newIndex = 0;
-    } else {
-      return;
-    }
+      let newIndex = (focusedElement && elementChildren.indexOf(focusedElement)) || focusedIndex;
 
-    const item = elementChildren[newIndex] as HTMLElement;
-    if (item) {
-      setFocusedIndex(newIndex);
-      item.focus();
-    }
-  });
+      if (key === EKeyboardKey.ArrowUp && newIndex > 0) {
+        newIndex--;
+      } else if (key === EKeyboardKey.ArrowDown && newIndex < elementChildren.length - 1) {
+        newIndex++;
+      } else if (elementChildren.length === 1) {
+        newIndex = 0;
+      } else {
+        return;
+      }
+
+      const item = elementChildren[newIndex] as HTMLElement;
+      if (item) {
+        setFocusedIndex(newIndex);
+        requestMeasure(() => {
+          item.focus();
+        });
+      }
+    },
+    [elementRef, focusedIndex, onSelectWithEnter, itemSelector],
+  );
+
+  return useLastCallback(handleKeyNavigation);
 };
 
 export default useKeyboardListNavigation;

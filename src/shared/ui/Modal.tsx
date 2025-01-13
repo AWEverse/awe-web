@@ -36,7 +36,7 @@ type OwnProps = {
   children?: ReactNode;
   style?: CSSProperties;
 
-  onClick?: EventToVoidFunction<MouseEvent<HTMLDivElement>>;
+  onClick?: (e: MouseEvent<HTMLDivElement>) => void;
   onClose: NoneToVoidFunction;
   onCloseAnimationEnd?: NoneToVoidFunction;
   onEnter?: NoneToVoidFunction;
@@ -134,7 +134,7 @@ const Modal: FC<OwnProps> = ({
     ([prevIsOpen]) => {
       document.body.classList.toggle('has-open-dialog', isOpen);
 
-      const isOpened = !isOpen && prevIsOpen !== undefined;
+      const isOpened = prevIsOpen && !isOpen;
 
       if (isOpen || isOpened) {
         dispatchHeavyAnimation(ANIMATION_DURATION);

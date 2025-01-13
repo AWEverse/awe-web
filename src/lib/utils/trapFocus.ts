@@ -1,6 +1,8 @@
 import { requestMeasure } from '../modules/fastdom/fastdom';
+import stopEvent from './stopEvent';
 
-const SELECTABLE = 'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])';
+const SELECTABLE =
+  'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])' as const;
 
 export default function trapFocus(element: HTMLElement) {
   function handleKeyDown(e: KeyboardEvent) {
@@ -8,8 +10,7 @@ export default function trapFocus(element: HTMLElement) {
       return;
     }
 
-    e.preventDefault();
-    e.stopPropagation();
+    stopEvent(e);
 
     const focusableElements = Array.from(element.querySelectorAll(SELECTABLE)) as HTMLElement[];
 
@@ -22,10 +23,16 @@ export default function trapFocus(element: HTMLElement) {
     );
 
     const getFocusIndex = () => {
-      if (currentFocusedIndex === -1) return 0;
+      if (currentFocusedIndex === -1) {
+        return 0;
+      }
 
       if (e.shiftKey) {
-        return currentFocusedIndex === 0 ? focusableElements.length - 1 : currentFocusedIndex - 1;
+        if (currentFocusedIndex === 0) {
+          return focusableElements.length - 1;
+        }
+
+        return currentFocusedIndex - 1;
       }
 
       return (currentFocusedIndex + 1) % focusableElements.length;
