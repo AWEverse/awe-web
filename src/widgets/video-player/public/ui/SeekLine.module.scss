@@ -76,8 +76,7 @@ body:global(.is-touch-env) .preview {
   left: 0;
   height: 100%;
   border-radius: var(--border-radius-default);
-  // transition: width 1s ease;
-  // will-change: width;
+
 
   &::after {
     content: "";
@@ -93,6 +92,10 @@ body:global(.is-touch-env) .preview {
     will-change: transform;
   }
 }
+
+// .seeking {
+//   transition: none !important;
+// }
 
 body:global(.is-touch-env) .seeking {
   &::after {

@@ -1,4 +1,21 @@
 .PlayerControls {
- position: relative;
- padding-top: 1rem;
+ position: absolute;
+ padding: 1.15rem 1rem 0.15rem 1rem;
+ left: 0;
+ right: 0;
+ bottom: 0;
+ display: flex;
+ align-items: center;
+}
+
+.Time {
+ display: inline;
+ font-size: small;
+}
+
+.divider {
+ margin-left: auto;
+ height: 100%;
+ width: 100%;
+ 
 }

@@ -1,10 +1,21 @@
 import { ApiDimensions } from '@/@types/api/types/messages';
 import { BufferedRange } from '@/lib/hooks/ui/useBuffering';
-import { FC } from 'react';
+import { FC, memo, useEffect, useLayoutEffect, useRef } from 'react';
 import SeekLine from './SeekLine';
 
 import s from './VideoPlayerControls.module.scss';
 import { Signal } from '@/lib/core/public/signals';
+import { IconButton } from '@mui/material';
+import {
+  FullscreenRounded,
+  PauseRounded,
+  PictureInPictureAltRounded,
+  SettingsRounded,
+  SkipNextRounded,
+  VolumeUpRounded,
+  WidthFullRounded,
+} from '@mui/icons-material';
+import { formatTime } from '../../private/lib/utils';
 
 type OwnProps = {
   currentTimeSignal: Signal<number>;
@@ -35,7 +46,7 @@ type OwnProps = {
   onSeek: (position: number) => void;
 };
 
-const PLAYBACK_RATES = [0.5, 1, 1.5, 2];
+const PLAYBACK_RATES = [0.25, 0.5, 1, 1.25, 1.5, 1.75, 1.5, 2];
 
 const HIDE_CONTROLS_TIMEOUT_MS = 3000;
 
@@ -45,7 +56,27 @@ const VideoPlayerControls: FC<OwnProps> = ({
   duration,
   isReady,
   onSeek,
+  onChangeFullscreen,
+  onPlayPause,
+  onPlaybackRateChange,
+  onVolumeChange,
+  onVolumeClick,
+  onPictureInPictureChange,
 }) => {
+  const timeRef = useRef<HTMLTimeElement | null>(null);
+
+  useLayoutEffect(() => {
+    const unsubscribe = currentTimeSignal.subscribe(time => {
+      if (timeRef.current) {
+        timeRef.current.textContent = formatTime(time);
+      }
+    });
+
+    return () => {
+      unsubscribe();
+    };
+  }, [currentTimeSignal, isReady]);
+
   return (
     <section className={s.PlayerControls}>
       <SeekLine
@@ -58,9 +89,40 @@ const VideoPlayerControls: FC<OwnProps> = ({
         onSeek={onSeek}
         onSeekStart={() => {}}
       />
-      dasd
+      <IconButton onClick={onPlayPause}>
+        <PauseRounded />
+      </IconButton>
+      <IconButton>
+        <SkipNextRounded />
+      </IconButton>
+      <IconButton>
+        <VolumeUpRounded />
+      </IconButton>
+
+      <div className={s.Time}>
+        <time ref={timeRef} aria-label="Current time position"></time>
+        <span>&nbsp;/&nbsp;</span>
+        <time aria-label="Total duration" dateTime={formatTime(duration)}>
+          {formatTime(duration)}
+        </time>
+      </div>
+
+      <div className={s.divider} />
+
+      <IconButton>
+        <SettingsRounded />
+      </IconButton>
+      <IconButton>
+        <PictureInPictureAltRounded />
+      </IconButton>
+      <IconButton>
+        <WidthFullRounded />
+      </IconButton>
+      <IconButton>
+        <FullscreenRounded />
+      </IconButton>
     </section>
   );
 };
 
-export default VideoPlayerControls;
+export default memo(VideoPlayerControls);

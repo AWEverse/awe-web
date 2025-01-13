@@ -46,7 +46,6 @@ const SeekLine: FC<OwnProps> = ({
   onSeek,
   onSeekStart,
 }) => {
-  const cancelAnimation = useRef<Function | undefined>(undefined);
   const isLockedRef = useRef<boolean>(false);
 
   const seekerRef = useRef<HTMLDivElement | null>(null);
@@ -59,12 +58,11 @@ const SeekLine: FC<OwnProps> = ({
   const [isSeeking, setIsSeeking] = useState(false);
 
   const previewOffsetSignal = useSignal(0);
-  const selectedTimeSignal = useSignal(0);
 
   const calculatePreviewPosition = useCallback(
     (e: MouseEvent | TouchEvent) => {
       if (!seekerRef.current || !isActive) {
-        return undefined;
+        return [0, 0];
       }
 
       const seeker = seekerRef.current;
@@ -91,7 +89,7 @@ const SeekLine: FC<OwnProps> = ({
   );
 
   useLayoutEffect(() => {
-    const unsubscribe = selectedTimeSignal.subscribe(value => {
+    const unsubscribe = currentTimeSignal.subscribe(value => {
       requestMutation(() => {
         if (!progressRef.current) return;
         progressRef.current.style.width = `${round((value / duration) * 100, 3)}%`;
@@ -99,7 +97,7 @@ const SeekLine: FC<OwnProps> = ({
     });
 
     return () => unsubscribe();
-  }, [duration]);
+  }, [currentTimeSignal, duration]);
 
   useEffect(() => {
     if (!seekerRef.current) return undefined;
@@ -111,11 +109,11 @@ const SeekLine: FC<OwnProps> = ({
     const handleSeek = (e: MouseEvent | TouchEvent) => {
       setPreviewVisible(true);
 
-      [time, offset] = calculatePreviewPosition(e) || [0, 0];
+      [time, offset] = calculatePreviewPosition(e);
 
       onSeek(time);
 
-      selectedTimeSignal.value = time;
+      currentTimeSignal.value = time;
       previewOffsetSignal.value = offset;
     };
 
@@ -124,11 +122,14 @@ const SeekLine: FC<OwnProps> = ({
       onSeekStart?.();
     };
 
-    const handleStopSeek = () => {
+    const handleStopSeek = (e: MouseEvent | TouchEvent) => {
       isLockedRef.current = true;
       setPreviewVisible(false);
       setIsSeeking(false);
-      selectedTimeSignal.value = time;
+
+      [time, offset] = calculatePreviewPosition(e);
+
+      currentTimeSignal.value = time;
       previewOffsetSignal.value = offset;
       onSeek?.(time);
 

@@ -23,7 +23,9 @@ export enum EMediaErrorCode {
  */
 export const playMedia = (mediaEl: HTMLMediaElement): void => {
   mediaEl.play().catch(err => {
-    if (DEBUG) console.error(err);
+    if (DEBUG) {
+      console.warn(err, mediaEl);
+    }
   });
 };
 

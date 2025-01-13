@@ -50,7 +50,7 @@ const useBuffering = (
 
     // Only safari: Safari has a bug where it doesn't update buffered ranges when seeking
     if (!isSafariPatchInProgress(media)) {
-      if (Boolean(media.buffered.length)) {
+      if (media.buffered.length) {
         const ranges = getTimeRanges(media.buffered, media.duration);
 
         const bufferedLength = ranges.sum(range => range.end - range.start);
