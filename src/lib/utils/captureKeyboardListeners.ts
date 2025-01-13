@@ -29,6 +29,8 @@ const keyToHandlerName: Record<string, HandlerName> = {
   Space: 'onSpace',
 };
 
+// space: [effect1, effect2, ...]
+
 const handlers: Record<HandlerName, Handler[]> = {
   onEnter: [],
   onBackspace: [],

@@ -1,6 +1,6 @@
-import useDebouncedCallback from '@/lib/hooks/events/useDebouncedCallback';
 import useLastCallback from '@/lib/hooks/events/useLastCallback';
 import useWindowSize from '@/lib/hooks/sensors/useWindowSize';
+import useDebouncedCallback from '@/lib/hooks/shedulers/useDebouncedCallback';
 import {
   requestMutation,
   requestMeasure,
@@ -11,13 +11,13 @@ import { useEffect, useLayoutEffect, useRef, useState, type RefObject } from 're
 const WINDOW_RESIZE_LINE_RECALC_DEBOUNCE = 200;
 
 export default function useCollapsibleLines<T extends HTMLElement, C extends HTMLElement>(
-  ref: RefObject<T>,
+  ref: RefObject<T | null>,
   maxLinesBeforeCollapse: number,
   cutoutRef?: RefObject<C>,
   isDisabled?: boolean,
 ) {
   const isFirstRenderRef = useRef(true);
-  const cutoutHeightRef = useRef<number | undefined>();
+  const cutoutHeightRef = useRef<number | undefined>(0);
   const [isCollapsible, setIsCollapsible] = useState(!isDisabled);
   const [isCollapsed, setIsCollapsed] = useState(isCollapsible);
 
