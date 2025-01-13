@@ -15,8 +15,9 @@
  * @param tolerance - Prevent small fluctuations from affecting results.
  * Valid values are decimals from 0, but should ideally be between 0.05 and 0.3.
  *
- * Based on https://github.com/d4nyll/lethargy
  */
+
+import { WheelEvent } from 'react';
 
 export type LethargyConfig = {
   stability?: number;
@@ -27,18 +28,14 @@ export type LethargyConfig = {
 
 export class Lethargy {
   stability: number;
-
   sensitivity: number;
-
   tolerance: number;
-
   delay: number;
 
-  lastUpDeltas: Array<number>;
-
-  lastDownDeltas: Array<number>;
-
-  deltasTimestamp: Array<number>;
+  lastUpDelta: number = 0;
+  lastDownDelta: number = 0;
+  lastUpTimestamp: number = 0;
+  lastDownTimestamp: number = 0;
 
   constructor({
     stability = 8,
@@ -50,52 +47,52 @@ export class Lethargy {
     this.sensitivity = sensitivity;
     this.tolerance = tolerance;
     this.delay = delay;
-    this.lastUpDeltas = new Array(this.stability * 2).fill(0);
-    this.lastDownDeltas = new Array(this.stability * 2).fill(0);
-    this.deltasTimestamp = new Array(this.stability * 2).fill(0);
   }
 
-  check(e: any) {
-    let lastDelta;
-    e = e.originalEvent || e;
-    if (e.wheelDelta !== undefined) {
-      lastDelta = e.wheelDelta;
-    } else if (e.deltaY !== undefined) {
-      lastDelta = e.deltaY * -40;
-    } else if (e.detail !== undefined || e.detail === 0) {
-      lastDelta = e.detail * -40;
+  check(e: WheelEvent | Event) {
+    let lastDelta: number = -1;
+    const event = e as WheelEvent;
+
+    if (event.deltaY !== undefined) {
+      lastDelta = event.deltaY * -40;
+    } else if (event.detail !== undefined || event.detail === 0) {
+      lastDelta = event.detail * -40;
     }
-    this.deltasTimestamp.push(Date.now());
-    this.deltasTimestamp.shift();
+
+    const currentTime = Date.now();
+
     if (lastDelta > 0) {
-      this.lastUpDeltas.push(lastDelta);
-      this.lastUpDeltas.shift();
-      return this.isInertia(1);
+      return this.isInertia(1, lastDelta, currentTime);
     } else {
-      this.lastDownDeltas.push(lastDelta);
-      this.lastDownDeltas.shift();
-      return this.isInertia(-1);
+      return this.isInertia(-1, lastDelta, currentTime);
     }
   }
 
-  isInertia(direction: number) {
-    const lastDeltas = direction === -1 ? this.lastDownDeltas : this.lastUpDeltas;
-    if (lastDeltas[0] === undefined) return direction;
-    if (
-      this.deltasTimestamp[this.stability * 2 - 2] + this.delay > Date.now() &&
-      lastDeltas[0] === lastDeltas[this.stability * 2 - 1]
-    ) {
+  isInertia(direction: number, delta: number, currentTime: number) {
+    const lastTimestamp = direction === 1 ? this.lastUpTimestamp : this.lastDownTimestamp;
+    const lastDelta = direction === 1 ? this.lastUpDelta : this.lastDownDelta;
+
+    if (currentTime - lastTimestamp < this.delay && delta === lastDelta) {
       return false;
     }
-    const lastDeltasOld = lastDeltas.slice(0, this.stability);
-    const lastDeltasNew = lastDeltas.slice(this.stability, this.stability * 2);
-    const oldSum = lastDeltasOld.reduce((t, s) => t + s);
-    const newSum = lastDeltasNew.reduce((t, s) => t + s);
-    const oldAverage = oldSum / lastDeltasOld.length;
-    const newAverage = newSum / lastDeltasNew.length;
-    return (
-      Math.abs(oldAverage) <= Math.abs(newAverage * this.tolerance) &&
+
+    const newAverage = delta;
+
+    if (
+      Math.abs(newAverage) <= Math.abs(lastDelta * this.tolerance) &&
       this.sensitivity < Math.abs(newAverage)
-    );
+    ) {
+      return true;
+    }
+
+    if (direction === 1) {
+      this.lastUpDelta = delta;
+      this.lastUpTimestamp = currentTime;
+    } else {
+      this.lastDownDelta = delta;
+      this.lastDownTimestamp = currentTime;
+    }
+
+    return false;
   }
 }

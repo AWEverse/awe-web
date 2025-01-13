@@ -1,5 +1,5 @@
 import { ApiDimensions } from '@/@types/api/types/messages';
-import { IS_IOS, IS_TOUCH_ENV } from '@/lib/core';
+import { IS_IOS, IS_TOUCH_ENV, throttle } from '@/lib/core';
 import useLastCallback from '@/lib/hooks/events/useLastCallback';
 import { ObserveFn } from '@/lib/hooks/sensors/useIntersectionObserver';
 import useRefInstead from '@/lib/hooks/state/useRefInstead';
@@ -42,7 +42,7 @@ const MAX_LOOP_DURATION = 30; // Seconds
 const MIN_READY_STATE = 4;
 const REWIND_STEP = 5; // Seconds
 
-const VideoPlayer = ({ ref, mediaUrl, posterDimensions, forceMobileView }: OwnProps) => {
+const VideoPlayer: React.FC<OwnProps> = ({ ref, mediaUrl, posterDimensions, forceMobileView }) => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
 
@@ -62,6 +62,11 @@ const VideoPlayer = ({ ref, mediaUrl, posterDimensions, forceMobileView }: OwnPr
   const handleLoadedMetadata = useLastCallback((e: React.SyntheticEvent<HTMLVideoElement>) => {
     const video = e.currentTarget;
     setDuration(video.duration);
+  });
+
+  const handleSeek = useLastCallback((position: number) => {
+    console.log('handleSeek', position);
+    videoRef.current!.currentTime = position;
   });
 
   return (
@@ -107,9 +112,7 @@ const VideoPlayer = ({ ref, mediaUrl, posterDimensions, forceMobileView }: OwnPr
           onPlayPause={function (e: React.MouseEvent<HTMLButtonElement, MouseEvent>): void {
             throw new Error('Function not implemented.');
           }}
-          onSeek={function (position: number): void {
-            throw new Error('Function not implemented.');
-          }}
+          onSeek={handleSeek}
         />
       </div>
 

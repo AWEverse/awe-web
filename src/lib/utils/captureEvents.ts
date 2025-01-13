@@ -98,7 +98,7 @@ let lastClickTime = 0;
 const lethargy = new Lethargy({
   stability: 5,
   sensitivity: 25,
-  tolerance: IS_WINDOWS ? 1 : 0.6, // Windows `scrollDelta` does not die down to 0
+  tolerance: IS_WINDOWS ? 1 : 0.6,
   delay: 150,
 });
 

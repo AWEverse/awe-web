@@ -39,7 +39,13 @@ const PLAYBACK_RATES = [0.5, 1, 1.5, 2];
 
 const HIDE_CONTROLS_TIMEOUT_MS = 3000;
 
-const VideoPlayerControls: FC<OwnProps> = ({ currentTimeSignal, waitingSignal, duration }) => {
+const VideoPlayerControls: FC<OwnProps> = ({
+  currentTimeSignal,
+  waitingSignal,
+  duration,
+  isReady,
+  onSeek,
+}) => {
   return (
     <section className={s.PlayerControls}>
       <SeekLine
@@ -49,7 +55,7 @@ const VideoPlayerControls: FC<OwnProps> = ({ currentTimeSignal, waitingSignal, d
         bufferedRanges={[]}
         playbackRate={10}
         isReady={false}
-        onSeek={() => {}}
+        onSeek={onSeek}
         onSeekStart={() => {}}
       />
       dasd

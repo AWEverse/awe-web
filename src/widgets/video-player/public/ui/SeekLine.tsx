@@ -40,9 +40,9 @@ const SeekLine: FC<OwnProps> = ({
   posterSize = { width: 200, height: 100 },
   playbackRate,
   url,
-  isActive,
+  isActive = true,
   isPlaying,
-  isPreviewDisabled,
+  isPreviewDisabled = true,
   onSeek,
   onSeekStart,
 }) => {
@@ -59,11 +59,13 @@ const SeekLine: FC<OwnProps> = ({
   const [isSeeking, setIsSeeking] = useState(false);
 
   const previewOffsetSignal = useSignal(0);
-  const selectedTimeSignal = useSignal(currentTimeSignal.value);
+  const selectedTimeSignal = useSignal(0);
 
   const calculatePreviewPosition = useCallback(
     (e: MouseEvent | TouchEvent) => {
-      if (!seekerRef.current || !isActive) return undefined;
+      if (!seekerRef.current || !isActive) {
+        return undefined;
+      }
 
       const seeker = seekerRef.current;
       const seekerSize = seeker.getBoundingClientRect();
@@ -89,10 +91,10 @@ const SeekLine: FC<OwnProps> = ({
   );
 
   useLayoutEffect(() => {
-    const unsubscribe = currentTimeSignal.subscribe(value => {
+    const unsubscribe = selectedTimeSignal.subscribe(value => {
       requestMutation(() => {
         if (!progressRef.current) return;
-        progressRef.current.style.width = `${round((value / duration) * 100, 2)}%`;
+        progressRef.current.style.width = `${round((value / duration) * 100, 3)}%`;
       });
     });
 
@@ -103,10 +105,18 @@ const SeekLine: FC<OwnProps> = ({
     if (!seekerRef.current) return undefined;
     const seeker = seekerRef.current;
 
+    let time = 0;
+    let offset = 0;
+
     const handleSeek = (e: MouseEvent | TouchEvent) => {
       setPreviewVisible(true);
 
-      console.log('seek');
+      [time, offset] = calculatePreviewPosition(e) || [0, 0];
+
+      onSeek(time);
+
+      selectedTimeSignal.value = time;
+      previewOffsetSignal.value = offset;
     };
 
     const handleStartSeek = () => {
@@ -118,7 +128,10 @@ const SeekLine: FC<OwnProps> = ({
       isLockedRef.current = true;
       setPreviewVisible(false);
       setIsSeeking(false);
-      // Prevent current time updates from overriding the selected time
+      selectedTimeSignal.value = time;
+      previewOffsetSignal.value = offset;
+      onSeek?.(time);
+
       setTimeout(() => {
         isLockedRef.current = false;
       }, LOCK_TIMEOUT);
@@ -157,7 +170,7 @@ const SeekLine: FC<OwnProps> = ({
 
   return (
     <div ref={seekerRef} className={s.container}>
-      {/* {!isPreviewDisabled && (
+      {!isPreviewDisabled && (
         <CSSTransition nodeRef={previewRef} in={isReady} timeout={0}>
           <div ref={previewRef} className={s.preview}>
             <canvas
@@ -171,7 +184,7 @@ const SeekLine: FC<OwnProps> = ({
             </div>
           </div>
         </CSSTransition>
-      )} */}
+      )}
       <div className={s.track}>
         {bufferedRanges.map(({ start, end }) => (
           <div
