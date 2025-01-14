@@ -15,7 +15,7 @@ const ProfilePage: FC<OwnProps & StateProps> = () => {
     <div data-scrollable="true" className={buildClassName(s.ProfileRoot)} id="profile page">
       <HeaderSection />
       <ProfileDescription />
-      <MediaTabs />
+      {/* <MediaTabs /> */}
     </div>
   );
 };

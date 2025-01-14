@@ -25,35 +25,35 @@ import useContextSignal from '../../private/hooks/useContextSignal';
 import useBuffering from '@/lib/hooks/ui/useBuffering';
 import useControlsSignal from '../../private/hooks/useControlsSignal';
 import stopEvent from '@/lib/utils/stopEvent';
+import useAmbilight from '../hooks/useAmbilight';
 
 type OwnProps = {
   ref?: React.RefObject<HTMLVideoElement | null>;
-  audioVolume: number;
   closeOnMediaClick?: boolean;
   disableClickActions?: boolean;
   disablePreview?: boolean;
-  forceMobileView?: boolean;
   hidePlayButton?: boolean;
   isAdsMessage?: boolean;
-  isAudioMuted: boolean;
-  isContentProtected?: boolean; // means non-available for download
   isViewerOpen?: boolean;
+
   mediaUrl?: string | string[];
+  progressPercentage?: number;
+  totalFileSize: number;
+  playbackSpeed: number;
+  audioVolume: number;
+  isAudioMuted: boolean;
+  isContentProtected?: boolean;
+
+  posterDimensions?: ApiDimensions; // width and height
+  posterSource?: string;
+
   observeIntersectionForBottom?: ObserveFn;
   observeIntersectionForLoading?: ObserveFn;
   observeIntersectionForPlaying?: ObserveFn;
+
   onAdsClick?: (triggeredFromMedia?: boolean) => void;
-  playbackSpeed: number;
-  posterDimensions?: ApiDimensions; // width and height
-  posterSource?: string;
-  progressPercentage?: number;
-  totalFileSize: number;
-};
 
-const PLAYBACK_RATES_SET = new Set([0.25, 0.5, 1, 1.25, 1.5, 1.75, 2]);
-
-const validatePlaybackSpeed = (playbackSpeed: number) => {
-  return PLAYBACK_RATES_SET.has(playbackSpeed) ? playbackSpeed : 1;
+  forceMobileView?: boolean;
 };
 
 const MAX_LOOP_DURATION = 30; // Seconds
@@ -71,6 +71,7 @@ const VideoPlayer: React.FC<OwnProps> = ({
   onAdsClick,
 }) => {
   const videoRef = useRef<HTMLVideoElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
 
   const duration = videoRef.current?.duration || 0;
@@ -85,6 +86,8 @@ const VideoPlayer: React.FC<OwnProps> = ({
   const { isReady, isBuffered, bufferedRanges, bufferingHandlers, bufferedProgress } =
     useBuffering();
   const isUnsupported = useUnsupportedMedia(videoRef);
+
+  useAmbilight(videoRef, canvasRef);
 
   const handleTimeUpdate = useLastCallback((e: React.SyntheticEvent<HTMLVideoElement>) => {
     const video = e.currentTarget;
@@ -222,6 +225,7 @@ const VideoPlayer: React.FC<OwnProps> = ({
         />
       </div>
 
+      <canvas id="ambilight" ref={canvasRef} className={s.CinematicLight} />
       <div
         ref={bottomRef}
         className="VideoPlayerBottom"

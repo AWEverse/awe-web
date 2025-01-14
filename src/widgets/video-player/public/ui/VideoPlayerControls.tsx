@@ -55,8 +55,6 @@ type OwnProps = {
   onSeek: (position: number) => void;
 };
 
-const PLAYBACK_RATES = [0.25, 0.5, 1, 1.25, 1.5, 1.75, 1.5, 2];
-
 const HIDE_CONTROLS_TIMEOUT_MS = 3000;
 
 const VideoPlayerControls: FC<OwnProps> = ({
@@ -110,12 +108,14 @@ const VideoPlayerControls: FC<OwnProps> = ({
 
   useLayoutEffect(() => {
     const unsubscribe = currentTimeSignal.subscribe(time => {
-      if (timeRef.current) {
-        timeRef.current.textContent = formatMediaDuration(time, {
-          includeHours: time > 3600,
-          forceTwoDigits: true,
-        });
+      if (!timeRef.current) {
+        return;
       }
+
+      timeRef.current.textContent = formatMediaDuration(time, {
+        includeHours: time > 3600,
+        forceTwoDigits: true,
+      });
     });
 
     return () => {

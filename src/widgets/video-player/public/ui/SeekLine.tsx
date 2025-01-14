@@ -92,7 +92,10 @@ const SeekLine: FC<OwnProps> = ({
   useLayoutEffect(() => {
     const unsubscribe = currentTimeSignal.subscribe(value => {
       requestMutation(() => {
-        if (!progressRef.current) return;
+        if (!progressRef.current) {
+          return;
+        }
+
         progressRef.current.style.width = `${round((value / duration) * 100, 3)}%`;
       });
     });

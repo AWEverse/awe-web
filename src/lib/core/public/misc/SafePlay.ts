@@ -157,11 +157,6 @@ export const setMediaMute = (
 const RATES = [0.25, 0.5, 1, 1.25, 1.5, 1.75, 2];
 
 /**
- * Boolean flag to allow or disallow custom playback rates.
- */
-const CUSTOM_RATE = true;
-
-/**
  * Sets the playback rate of a video element. The rate can be selected from predefined rates or be a custom value.
  *
  * @param {HTMLVideoElement} videoElement - The video element whose playback rate will be adjusted.
@@ -172,12 +167,12 @@ const CUSTOM_RATE = true;
 export const setMediaPlayBackRate = (
   videoElement: HTMLVideoElement,
   rateIndex: number = 1,
-  customRate: number = 1,
+  customRate?: number,
 ) => {
   if (!videoElement) return;
 
-  if (CUSTOM_RATE && customRate) {
-    videoElement.playbackRate = customRate;
+  if (customRate) {
+    videoElement.playbackRate = clamp(customRate, 0.25, 4.0);
     return;
   }
 

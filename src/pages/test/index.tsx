@@ -68,7 +68,7 @@ const ScrollDemo: React.FC = () => {
 
 const TestPage = () => {
   return (
-    <div className="p-5" style={{ height: '300px' }}>
+    <div className="p-20" style={{ height: '300px' }}>
       <VideoPlayer audioVolume={0} isAudioMuted={false} playbackSpeed={0} totalFileSize={0} />
     </div>
   );
