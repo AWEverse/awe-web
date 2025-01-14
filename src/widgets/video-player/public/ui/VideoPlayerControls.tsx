@@ -4,7 +4,7 @@ import React, { FC, memo, useEffect, useLayoutEffect, useRef } from 'react';
 import SeekLine from './SeekLine';
 
 import s from './VideoPlayerControls.module.scss';
-import { Signal } from '@/lib/core/public/signals';
+import { ReadonlySignal, Signal } from '@/lib/core/public/signals';
 import { IconButton } from '@mui/material';
 import {
   FullscreenRounded,
@@ -15,11 +15,17 @@ import {
   VolumeUpRounded,
   WidthFullRounded,
 } from '@mui/icons-material';
-import { formatTime } from '../../private/lib/utils';
 import useLastCallback from '@/lib/hooks/events/useLastCallback';
-import { clamp } from '@/lib/core';
+import { clamp, IS_TOUCH_ENV } from '@/lib/core';
+import { formatMediaDuration } from '../../private/lib/utils';
+import useSignal from '@/lib/hooks/signals/useSignal';
+import useFlag from '@/lib/hooks/state/useFlag';
+import useTimeout from '@/lib/hooks/shedulers/useTimeout';
+import buildClassName from '@/shared/lib/buildClassName';
+import stopEvent from '@/lib/utils/stopEvent';
 
 type OwnProps = {
+  isControlsVisible: boolean;
   currentTimeSignal: Signal<number>;
   waitingSignal: Signal<boolean>;
   url?: string;
@@ -42,7 +48,7 @@ type OwnProps = {
   onChangeFullscreen: (e: React.MouseEvent<HTMLButtonElement, MouseEvent>) => void;
   onPictureInPictureChange?: () => void;
   onVolumeClick: () => void;
-
+  onToggleControls: (flag: boolean) => void;
   onVolumeChange: (volume: number) => void;
   onPlaybackRateChange: (playbackRate: number) => void;
   onPlayPause: (e: React.MouseEvent<HTMLButtonElement, MouseEvent>) => void;
@@ -54,10 +60,14 @@ const PLAYBACK_RATES = [0.25, 0.5, 1, 1.25, 1.5, 1.75, 1.5, 2];
 const HIDE_CONTROLS_TIMEOUT_MS = 3000;
 
 const VideoPlayerControls: FC<OwnProps> = ({
+  isControlsVisible,
   currentTimeSignal,
   waitingSignal,
   duration,
   isReady,
+  isForceMobileVersion,
+  isPlaying,
+  onToggleControls,
   onSeek,
   onChangeFullscreen,
   onPlayPause,
@@ -68,10 +78,43 @@ const VideoPlayerControls: FC<OwnProps> = ({
 }) => {
   const timeRef = useRef<HTMLTimeElement | null>(null);
 
+  const [isPlaybackMenuOpen, openPlaybackMenu, closePlaybackMenu] = useFlag();
+  const isSeeking = useRef(false);
+
+  useEffect(() => {
+    if (!IS_TOUCH_ENV && !isForceMobileVersion) {
+      return;
+    }
+
+    const _isSeeking = isSeeking.current;
+
+    const shouldClose = !isControlsVisible && !isPlaying && !isPlaybackMenuOpen && _isSeeking;
+
+    if (shouldClose) {
+      return;
+    }
+
+    const timeoutId = setTimeout(() => {
+      onToggleControls(false);
+    }, HIDE_CONTROLS_TIMEOUT_MS);
+
+    return () => clearTimeout(timeoutId);
+  }, [
+    isPlaying,
+    isControlsVisible,
+    isForceMobileVersion,
+    isPlaybackMenuOpen,
+    isSeeking,
+    onToggleControls,
+  ]);
+
   useLayoutEffect(() => {
     const unsubscribe = currentTimeSignal.subscribe(time => {
       if (timeRef.current) {
-        timeRef.current.textContent = formatTime(time);
+        timeRef.current.textContent = formatMediaDuration(time, {
+          includeHours: time > 3600,
+          forceTwoDigits: true,
+        });
       }
     });
 
@@ -80,12 +123,40 @@ const VideoPlayerControls: FC<OwnProps> = ({
     };
   }, [currentTimeSignal, isReady]);
 
+  useLayoutEffect(() => {
+    if (isControlsVisible) {
+      document.body.classList.add('video-controls-visible');
+    } else {
+      document.body.classList.remove('video-controls-visible');
+    }
+
+    return () => {
+      document.body.classList.remove('video-controls-visible');
+    };
+  }, [isControlsVisible]);
+
   const handleVolumeChange = useLastCallback((e: React.ChangeEvent<HTMLInputElement>) =>
     onVolumeChange(Number(e.currentTarget.value) / 100),
   );
 
+  const handleSeek = useLastCallback((position: number) => {
+    isSeeking.current = false;
+    onSeek?.(position);
+  });
+
+  const handleStartSeek = useLastCallback(() => {
+    isSeeking.current = true;
+  });
+
   return (
-    <section className={s.PlayerControls}>
+    <section
+      className={buildClassName(
+        s.PlayerControls,
+        isForceMobileVersion && s.ForceMobile,
+        isControlsVisible && s.active,
+      )}
+      onClick={stopEvent}
+    >
       <SeekLine
         waitingSignal={waitingSignal}
         currentTimeSignal={currentTimeSignal}
@@ -93,8 +164,8 @@ const VideoPlayerControls: FC<OwnProps> = ({
         bufferedRanges={[]}
         playbackRate={10}
         isReady={false}
-        onSeek={onSeek}
-        onSeekStart={() => {}}
+        onSeek={handleSeek}
+        onSeekStart={handleStartSeek}
       />
       <IconButton onClick={onPlayPause}>
         <PauseRounded />
@@ -106,21 +177,17 @@ const VideoPlayerControls: FC<OwnProps> = ({
         <VolumeUpRounded />
       </IconButton>
       <label className={s.slider}>
-        <input
-          type="range"
-          className={s.level}
-          min={0}
-          max={100}
-          onChange={handleVolumeChange}
-          onClick={onVolumeClick}
-        />
+        <input type="range" className={s.level} min={0} max={100} onChange={handleVolumeChange} />
       </label>
 
       <div className={s.Time}>
         <time ref={timeRef} aria-label="Current time position"></time>
         <span>&nbsp;/&nbsp;</span>
-        <time aria-label="Total duration" dateTime={formatTime(duration)}>
-          {formatTime(duration)}
+        <time aria-label="Total duration">
+          {formatMediaDuration(duration, {
+            includeHours: duration > 3600,
+            forceTwoDigits: true,
+          })}
         </time>
       </div>
 

@@ -1,5 +1,5 @@
 import { DEBUG } from '@/lib/config/dev';
-import { clamp01 } from '../math';
+import { clamp, clamp01 } from '../math';
 
 // Enum representing the readyState property of HTMLMediaElement
 export enum EMediaReadyState {
@@ -27,7 +27,9 @@ export const playMedia = async (
   mediaEl: HTMLMediaElement,
   options: { onError?: (err: Error) => void } = {},
 ): Promise<boolean> => {
-  if (!mediaEl.paused) {
+  const isPlaying = !mediaEl.paused && !mediaEl.ended;
+
+  if (isPlaying) {
     return true;
   }
 
@@ -49,7 +51,9 @@ export const playMedia = async (
  * @param mediaEl - The media element to pause (video or audio).
  */
 export const pauseMedia = (mediaEl: HTMLMediaElement): void => {
-  if (!mediaEl.paused) {
+  const isPlaying = !mediaEl.paused && !mediaEl.ended;
+
+  if (isPlaying) {
     mediaEl.pause();
   }
 };
@@ -108,7 +112,7 @@ export const setMediaVolume = (
   if (duration > 0) {
     const startVolume = mediaEl.volume;
     const delta = targetVolume - startVolume;
-    const stepTime = 50;
+    const stepTime = 100;
     const steps = Math.ceil(duration / stepTime);
     let currentStep = 0;
 
@@ -145,4 +149,40 @@ export const setMediaMute = (
     mediaEl.muted = false;
     setMediaVolume(mediaEl, previousVolume, fadeDuration);
   }
+};
+
+/**
+ * List of predefined playback rates.
+ */
+const RATES = [0.25, 0.5, 1, 1.25, 1.5, 1.75, 2];
+
+/**
+ * Boolean flag to allow or disallow custom playback rates.
+ */
+const CUSTOM_RATE = true;
+
+/**
+ * Sets the playback rate of a video element. The rate can be selected from predefined rates or be a custom value.
+ *
+ * @param {HTMLVideoElement} videoElement - The video element whose playback rate will be adjusted.
+ * @param {number} rateIndex - Index of the playback rate from the `RATES` array. If `-1`, the customRate will be used.
+ * @param {number} [customRate] - Optional custom rate to set if `CUSTOM_RATE` is true.
+ * @returns {void}
+ */
+export const setMediaPlayBackRate = (
+  videoElement: HTMLVideoElement,
+  rateIndex: number = 1,
+  customRate: number = 1,
+) => {
+  if (!videoElement) return;
+
+  if (CUSTOM_RATE && customRate) {
+    videoElement.playbackRate = customRate;
+    return;
+  }
+
+  const validRateIndex = clamp(rateIndex, 0, RATES.length - 1);
+  const selectedRate = RATES[validRateIndex];
+
+  videoElement.playbackRate = selectedRate;
 };

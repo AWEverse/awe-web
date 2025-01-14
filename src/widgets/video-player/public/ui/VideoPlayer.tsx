@@ -1,10 +1,12 @@
 import { ApiDimensions } from '@/@types/api/types/messages';
 import {
+  clamp,
   IS_IOS,
   IS_TOUCH_ENV,
   pauseMedia,
   playMedia,
   setMediaMute,
+  setMediaPlayBackRate,
   setMediaVolume,
   throttle,
 } from '@/lib/core';
@@ -21,6 +23,8 @@ import s from './VideoPlayer.module.scss';
 import VideoPlayerControls from './VideoPlayerControls';
 import useContextSignal from '../../private/hooks/useContextSignal';
 import useBuffering from '@/lib/hooks/ui/useBuffering';
+import useControlsSignal from '../../private/hooks/useControlsSignal';
+import stopEvent from '@/lib/utils/stopEvent';
 
 type OwnProps = {
   ref?: React.RefObject<HTMLVideoElement | null>;
@@ -57,23 +61,30 @@ const MIN_READY_STATE = 4;
 const REWIND_STEP = 5; // Seconds
 
 const VideoPlayer: React.FC<OwnProps> = ({
-  ref,
-  mediaUrl,
+  mediaUrl = 'http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4',
   posterDimensions,
   forceMobileView,
   audioVolume = 1,
   playbackSpeed = 1,
+  isAdsMessage,
+  disableClickActions,
+  onAdsClick,
 }) => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
 
-  const [controls, toggleControls] = useState(false);
   const duration = videoRef.current?.duration || 0;
 
   const [isPlaying, setPlaying] = useState(!IS_TOUCH_ENV || !IS_IOS);
 
   const [currentTime, setCurrentTime] = useContextSignal(0);
   const [waitingSignal, setWaiting] = useContextSignal(false);
+  const [isControlsVisible, toggleControls, lockControls] = useControlsSignal();
+
+  const [isFullscreen, enterFullscreen, exitFullscreen] = useFullscreen(videoRef, setPlaying);
+  const { isReady, isBuffered, bufferedRanges, bufferingHandlers, bufferedProgress } =
+    useBuffering();
+  const isUnsupported = useUnsupportedMedia(videoRef);
 
   const handleTimeUpdate = useLastCallback((e: React.SyntheticEvent<HTMLVideoElement>) => {
     const video = e.currentTarget;
@@ -85,7 +96,7 @@ const VideoPlayer: React.FC<OwnProps> = ({
   });
 
   const handleSeek = useLastCallback((position: number) => {
-    videoRef.current!.currentTime = position;
+    videoRef.current!.currentTime = clamp(position, 0, duration);
   });
 
   const togglePlayState = useLastCallback(
@@ -108,6 +119,16 @@ const VideoPlayer: React.FC<OwnProps> = ({
     },
   );
 
+  const handleClick = useLastCallback(async (e: React.MouseEvent<HTMLVideoElement, MouseEvent>) => {
+    if (isAdsMessage) {
+      onAdsClick?.(true);
+    }
+
+    if (disableClickActions) {
+      return;
+    }
+  });
+
   const handleVideoLeave = useLastCallback(e => {
     const bounds = videoRef.current?.getBoundingClientRect();
 
@@ -127,8 +148,34 @@ const VideoPlayer: React.FC<OwnProps> = ({
   });
 
   const handleMuteClick = useLastCallback(() => {
-    setMediaMute(videoRef.current!);
+    setMediaMute(videoRef.current!, !videoRef.current!.muted);
   });
+
+  const handlePlaybackRateChange = useLastCallback((value: number) => {
+    setMediaPlayBackRate(videoRef.current!, value);
+  });
+
+  const handlePlay = useLastCallback(() => {
+    setPlaying(true);
+  });
+
+  const handleWaiting = useLastCallback(() => {
+    setWaiting(true);
+  });
+
+  const handleFullscreenChange = useLastCallback(() => {
+    if (isFullscreen && exitFullscreen) exitFullscreen();
+    else if (!isFullscreen && enterFullscreen) enterFullscreen();
+  });
+
+  useEffect(() => {
+    const isMobile = !IS_TOUCH_ENV && !forceMobileView;
+    const videoElement = videoRef.current;
+
+    if (videoElement && !isMobile) {
+      playMedia(videoElement);
+    }
+  }, [mediaUrl, isUnsupported]);
 
   return (
     <div className={s.VideoPlayer}>
@@ -136,23 +183,25 @@ const VideoPlayer: React.FC<OwnProps> = ({
         id="media-viewer-video"
         ref={videoRef}
         className={s.Video}
-        src={'http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4'}
+        src={mediaUrl as string}
         controls={false}
         controlsList="nodownload"
         playsInline
-        onPlay={() => setPlaying(true)}
-        onWaiting={() => setWaiting(true)}
+        onPlay={handlePlay}
+        onWaiting={handleWaiting}
         onTimeUpdate={handleTimeUpdate}
+        onContextMenu={stopEvent}
       />
 
       <div className={s.PlayerControlsWrapper}>
         <VideoPlayerControls
+          isControlsVisible={isControlsVisible}
           waitingSignal={waitingSignal}
           currentTimeSignal={currentTime}
           bufferedRanges={[]}
           bufferedProgress={0}
           duration={duration} // Pass the correct duration
-          isReady={duration > 0}
+          isReady={isReady}
           fileSize={0}
           isPlaying={false}
           isFullscreenSupported={false}
@@ -162,14 +211,12 @@ const VideoPlayer: React.FC<OwnProps> = ({
           volume={0}
           isMuted={false}
           playbackRate={0}
-          onChangeFullscreen={function (e: React.MouseEvent<HTMLButtonElement, MouseEvent>): void {
-            throw new Error('Function not implemented.');
-          }}
+          isForceMobileVersion={forceMobileView}
+          onChangeFullscreen={handleFullscreenChange}
           onVolumeClick={handleMuteClick}
           onVolumeChange={handleVolumeChange}
-          onPlaybackRateChange={function (playbackRate: number): void {
-            throw new Error('Function not implemented.');
-          }}
+          onPlaybackRateChange={handlePlaybackRateChange}
+          onToggleControls={toggleControls}
           onPlayPause={togglePlayState}
           onSeek={handleSeek}
         />

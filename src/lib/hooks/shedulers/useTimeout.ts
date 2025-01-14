@@ -11,8 +11,9 @@ function useTimeout(callback: NoneToVoidFunction, delay?: number) {
     }
 
     const id = setTimeout(() => savedCallback(), delay);
-    return () => clearTimeout(id);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    return () => {
+      clearTimeout(id);
+    };
   }, [delay]);
 }
 
