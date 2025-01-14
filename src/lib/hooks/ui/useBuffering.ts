@@ -24,7 +24,7 @@ export type BufferingPair<T = BufferingEvent> = {
 const useBuffering = (
   noInitiallyBuffered = false,
   onTimeUpdate?: AnyToVoidFunction,
-  onBroken?: AnyToVoidFunction,
+  onBroken?: (errMessage?: string) => void,
 ) => {
   const [isBuffered, _setIsBuffered] = useState(!noInitiallyBuffered);
   const [isReady, setIsReady] = useState(false);
@@ -38,7 +38,7 @@ const useBuffering = (
     const isMediaReady = isMediaReadyToPlay(media);
 
     if (media.duration < MIN_ALLOWED_MEDIA_DURATION) {
-      onBroken?.();
+      onBroken?.('Video duration is too short duration!');
       return;
     }
 
