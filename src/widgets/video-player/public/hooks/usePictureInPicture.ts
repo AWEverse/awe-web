@@ -1,6 +1,5 @@
 import { DEBUG } from '@/lib/config/dev';
 import { IS_IOS, IS_PWA, isMediaPlaying, playMedia } from '@/lib/core';
-import { createSignal } from '@/lib/modules/signals';
 import { useState, useLayoutEffect, useCallback } from 'react';
 
 type RefType = {
@@ -10,13 +9,6 @@ type RefType = {
 type ReturnType = [boolean, () => void, boolean] | [false];
 type CallbackType = () => void;
 
-const signal = createSignal(false);
-const setIsPictureInPicture = signal[1];
-
-export function usePictureInPictureSignal() {
-  return signal;
-}
-
 export default function usePictureInPicture(
   elRef: RefType,
   onEnter: CallbackType,
@@ -24,6 +16,8 @@ export default function usePictureInPicture(
 ): ReturnType {
   const [isSupported, setIsSupported] = useState(false);
   const [isActive, setIsActive] = useState(false);
+
+  // const IsPictureInPicture = useSignal();
 
   useLayoutEffect(() => {
     // PIP is not supported in PWA on iOS, despite being detected
@@ -36,17 +30,21 @@ export default function usePictureInPicture(
     if (!isEnabled) return undefined;
     // @ts-ignore
     video.autoPictureInPicture = true;
+
     setIsSupported(true);
+
     const onEnterInternal = () => {
       onEnter();
       setIsActive(true);
-      setIsPictureInPicture(true);
+      // setIsPictureInPicture(true); - signal
     };
+
     const onLeaveInternal = () => {
-      setIsPictureInPicture(false);
+      // setIsPictureInPicture(false); - signal
       setIsActive(false);
       onLeave();
     };
+
     video.addEventListener('enterpictureinpicture', onEnterInternal);
     video.addEventListener('leavepictureinpicture', onLeaveInternal);
     return () => {

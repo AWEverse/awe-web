@@ -8,6 +8,18 @@
  border-radius: 0.25rem;
  height: 100%;
  width: 100%;
+
+ &::-webkit-media-controls {
+  display:none !important;
+ }
+
+ &::-webkit-media-controls-enclosure {
+  display:none !important;
+ }
+
+ &::-webkit-media-controls-panel {
+  display:none !important;
+ }
 }
 
 .CinematicLight {

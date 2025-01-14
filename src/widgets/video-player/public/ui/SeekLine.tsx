@@ -201,6 +201,7 @@ const SeekLine: FC<OwnProps> = ({
       </div>
       <div className={s.track}>
         <div ref={progressRef} className={buildClassName(s.played, isSeeking && s.seeking)} />
+        <div className={s.trackBg} />
       </div>
     </div>
   );

@@ -48,6 +48,7 @@ const ScrollDemo: React.FC = () => {
         style={{
           width: '100%',
           height: '400px',
+          maxWidth: '600px',
           overflowY: 'auto',
           border: '2px solid black',
           padding: '10px',
@@ -68,7 +69,7 @@ const ScrollDemo: React.FC = () => {
 
 const TestPage = () => {
   return (
-    <div className="p-20" style={{ height: '300px' }}>
+    <div className="p-20" style={{ height: '300px', maxWidth: '1000px' }}>
       <VideoPlayer audioVolume={0} isAudioMuted={false} playbackSpeed={0} totalFileSize={0} />
     </div>
   );

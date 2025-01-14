@@ -23,35 +23,45 @@ import useFlag from '@/lib/hooks/state/useFlag';
 import useTimeout from '@/lib/hooks/shedulers/useTimeout';
 import buildClassName from '@/shared/lib/buildClassName';
 import stopEvent from '@/lib/utils/stopEvent';
+import useBodyClass from '@/shared/hooks/useBodyClass';
 
 type OwnProps = {
-  isControlsVisible: boolean;
+  // Playback Control
+  isPlaying: boolean;
   currentTimeSignal: Signal<number>;
-  waitingSignal: Signal<boolean>;
-  url?: string;
+  volumeSignal: Signal<number>;
+  duration: number;
+  playbackRate: number;
+  isMuted: boolean;
+
+  // Buffered Media Info
   bufferedRanges: BufferedRange[];
   bufferedProgress: number;
-  duration: number;
+  isBuffered: boolean;
   isReady: boolean;
+
+  // Media Properties
+  url?: string;
   fileSize: number;
+  posterSize?: ApiDimensions;
+
+  // UI State
+  isControlsVisible: boolean;
+  waitingSignal: Signal<boolean>;
   isForceMobileVersion?: boolean;
-  isPlaying: boolean;
+  isFullscreen: boolean;
   isFullscreenSupported: boolean;
   isPictureInPictureSupported: boolean;
-  isFullscreen: boolean;
   isPreviewDisabled?: boolean;
-  isBuffered: boolean;
-  volume: number;
-  isMuted: boolean;
-  playbackRate: number;
-  posterSize?: ApiDimensions;
+
+  // Event Handlers
   onChangeFullscreen: (e: React.MouseEvent<HTMLButtonElement, MouseEvent>) => void;
   onPictureInPictureChange?: () => void;
+  onPlayPause: (e: React.MouseEvent<HTMLButtonElement, MouseEvent>) => void;
   onVolumeClick: () => void;
-  onToggleControls: (flag: boolean) => void;
   onVolumeChange: (volume: number) => void;
   onPlaybackRateChange: (playbackRate: number) => void;
-  onPlayPause: (e: React.MouseEvent<HTMLButtonElement, MouseEvent>) => void;
+  onToggleControls: (flag: boolean) => void;
   onSeek: (position: number) => void;
 };
 
@@ -60,6 +70,7 @@ const HIDE_CONTROLS_TIMEOUT_MS = 3000;
 const VideoPlayerControls: FC<OwnProps> = ({
   isControlsVisible,
   currentTimeSignal,
+  volumeSignal,
   waitingSignal,
   duration,
   isReady,
@@ -74,7 +85,8 @@ const VideoPlayerControls: FC<OwnProps> = ({
   onVolumeClick,
   onPictureInPictureChange,
 }) => {
-  const timeRef = useRef<HTMLTimeElement | null>(null);
+  const timeRef = useRef<HTMLTimeElement>(null);
+  const volumeRef = useRef<HTMLSpanElement>(null);
 
   const [isPlaybackMenuOpen, openPlaybackMenu, closePlaybackMenu] = useFlag();
   const isSeeking = useRef(false);
@@ -124,16 +136,20 @@ const VideoPlayerControls: FC<OwnProps> = ({
   }, [currentTimeSignal, isReady]);
 
   useLayoutEffect(() => {
-    if (isControlsVisible) {
-      document.body.classList.add('video-controls-visible');
-    } else {
-      document.body.classList.remove('video-controls-visible');
-    }
+    const unsubscribe = volumeSignal.subscribe(volume => {
+      if (!volumeRef.current) {
+        return;
+      }
+
+      volumeRef.current.textContent = `${Math.round(volume * 100)}%`;
+    });
 
     return () => {
-      document.body.classList.remove('video-controls-visible');
+      unsubscribe();
     };
-  }, [isControlsVisible]);
+  }, [volumeSignal]);
+
+  useBodyClass('video-controls-visible', isControlsVisible);
 
   const handleVolumeChange = useLastCallback((e: React.ChangeEvent<HTMLInputElement>) =>
     onVolumeChange(Number(e.currentTarget.value) / 100),
@@ -167,20 +183,21 @@ const VideoPlayerControls: FC<OwnProps> = ({
         onSeek={handleSeek}
         onSeekStart={handleStartSeek}
       />
-      <IconButton onClick={onPlayPause}>
+      <IconButton className={s.blendMode} onClick={onPlayPause}>
         <PauseRounded />
       </IconButton>
-      <IconButton>
+      <IconButton className={s.blendMode}>
         <SkipNextRounded />
       </IconButton>
-      <IconButton onClick={onVolumeClick}>
+      <IconButton className={s.blendMode} onClick={onVolumeClick}>
         <VolumeUpRounded />
       </IconButton>
       <label className={s.slider}>
         <input type="range" className={s.level} min={0} max={100} onChange={handleVolumeChange} />
+        <span ref={volumeRef} className={s.value}></span>
       </label>
 
-      <div className={s.Time}>
+      <div className={buildClassName(s.Time, s.blendMode)}>
         <time ref={timeRef} aria-label="Current time position"></time>
         <span>&nbsp;/&nbsp;</span>
         <time aria-label="Total duration">
@@ -193,17 +210,17 @@ const VideoPlayerControls: FC<OwnProps> = ({
 
       <div className={s.divider} />
 
-      <IconButton>
+      <IconButton className={s.blendMode}>
         <SettingsRounded />
       </IconButton>
 
-      <IconButton>
+      <IconButton className={s.blendMode}>
         <PictureInPictureAltRounded />
       </IconButton>
-      <IconButton>
+      <IconButton className={s.blendMode}>
         <WidthFullRounded />
       </IconButton>
-      <IconButton>
+      <IconButton className={s.blendMode}>
         <FullscreenRounded />
       </IconButton>
     </section>

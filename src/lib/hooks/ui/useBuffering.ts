@@ -1,12 +1,10 @@
-import { useState, useMemo } from 'react';
+import { useState } from 'react';
 import useLastCallback from '../events/useLastCallback';
-import { debounce } from '@/lib/core';
 import { isSafariPatchInProgress } from '../../utils/patchSafariProgressiveAudio';
 import { areDeepEqual } from '../../utils/areDeepEqual';
 import { isMediaReadyToPlay } from '@/lib/core/public/misc/SafePlay';
 import useDebouncedCallback from '../shedulers/useDebouncedCallback';
 
-const MIN_READY_STATE = 3;
 // Avoid flickering when re-mounting previously buffered video
 const DEBOUNCE = 200;
 const MIN_ALLOWED_MEDIA_DURATION = 0.1; // Some video emojis have weird duration of 0.04 causing extreme amount of events
@@ -72,7 +70,7 @@ const useBuffering = (
   });
 
   const bufferingHandlers = {
-    onPLay: handleBuffering,
+    onPlay: handleBuffering,
     onLoadedData: handleBuffering,
     onPlaying: handleBuffering,
     onLoadStart: handleBuffering, // Needed for Safari to start
