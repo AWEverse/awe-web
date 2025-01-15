@@ -1,4 +1,4 @@
-import { memo, useEffect, useRef, useState } from 'react';
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   clamp,
   clamp01,
@@ -30,6 +30,8 @@ import { ApiDimensions } from '@/@types/api/types/messages';
 import useVideoCleanup from '@/shared/hooks/useVideoCleanup';
 import useAppLayout from '@/lib/hooks/ui/useAppLayout';
 import usePictureInPicture from '../hooks/usePictureInPicture';
+import useThrottledCallback from '@/lib/hooks/shedulers/useThrottledCallback';
+import buildClassName from '@/shared/lib/buildClassName';
 
 type OwnProps = {
   ref?: React.RefObject<HTMLVideoElement | null>;
@@ -67,7 +69,7 @@ const MIN_READY_STATE = 4;
 const REWIND_STEP = 5; // Seconds
 
 const VideoPlayer: React.FC<OwnProps> = ({
-  mediaUrl = 'http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4',
+  mediaUrl = 'public\\video\\got.mp4',
   posterDimensions,
   forceMobileView,
   audioVolume = 1,
@@ -84,8 +86,8 @@ const VideoPlayer: React.FC<OwnProps> = ({
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
-  const duration = videoRef.current?.duration || 0;
 
+  const duration = videoRef.current?.duration || 0;
   const isLooped = isGif || duration <= MAX_LOOP_DURATION;
 
   const [isPlaying, setPlaying] = useState(false);
@@ -107,7 +109,6 @@ const VideoPlayer: React.FC<OwnProps> = ({
 
   useAmbilight(videoRef, canvasRef);
 
-  // Handlers
   const handleTimeUpdate = useLastCallback((e: React.SyntheticEvent<HTMLVideoElement>) => {
     const { currentTime, duration, readyState } = e.currentTarget;
 
@@ -212,14 +213,21 @@ const VideoPlayer: React.FC<OwnProps> = ({
   });
 
   useEffect(() => {
-    const isMobile = !IS_TOUCH_ENV && !forceMobileView;
     const videoElement = videoRef.current;
+    if (!videoElement) {
+      return;
+    }
 
-    if (videoElement && !isMobile) {
+    if (isUnsupported) {
+      pauseMedia(videoElement);
+    } else if (mediaUrl && !IS_TOUCH_ENV) {
       // Chrome does not automatically start playing when `url` becomes available (even with `autoPlay`),
       // so we force it here. Contrary, iOS does not allow to call `play` without mouse event,
       // so we need to use `autoPlay` instead to allow pre-buffering.
-      playMedia(videoElement);
+      playMedia(videoElement).then(() => {
+        // If the video is already paused, we need to resume it.
+        pauseMedia(videoElement);
+      });
     }
   }, [mediaUrl, isUnsupported]);
 
@@ -282,9 +290,25 @@ const VideoPlayer: React.FC<OwnProps> = ({
 
   const shouldToggleControls = !IS_TOUCH_ENV && !forceMobileView;
 
+  // useEffect(() => {
+  //   console.log('bufferedRanges changed:', bufferedRanges);
+  // }, [bufferedRanges]);
+
+  // useEffect(() => {
+  //   console.log('bufferedProgress changed:', bufferedProgress);
+  // }, [bufferedProgress]);
+
+  // useEffect(() => {
+  //   console.log('isBuffered changed:', isBuffered);
+  // }, [isBuffered]);
+
+  // useEffect(() => {
+  //   console.log('isReady changed:', isReady);
+  // }, [isReady]);
+
   return (
     <div
-      className={s.VideoPlayer}
+      className={buildClassName(s.VideoPlayer, isFullscreen && s.FullscreenMode)}
       ref={containerRef}
       onMouseMove={shouldToggleControls ? handleVideoMove : undefined}
       onMouseOut={shouldToggleControls ? handleVideoLeave : undefined}

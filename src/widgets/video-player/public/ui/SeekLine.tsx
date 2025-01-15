@@ -193,7 +193,7 @@ const SeekLine: FC<OwnProps> = ({
       <div className={s.track}>
         {bufferedRanges.map(({ start, end }) => (
           <div
-            key={`${start}-${end}`}
+            key={generateUniqueId(start, end)}
             className={s.buffered}
             style={buildStyle(`left: ${start * 100}%;`, `right: ${100 - end * 100}%;`)}
           />
@@ -206,5 +206,9 @@ const SeekLine: FC<OwnProps> = ({
     </div>
   );
 };
+
+function generateUniqueId(start: number, end: number) {
+  return `${start}-${end}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+}
 
 export default memo(SeekLine);

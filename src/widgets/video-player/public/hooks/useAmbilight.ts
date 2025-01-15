@@ -1,14 +1,14 @@
-import { requestMeasure, requestMutation } from '@/lib/modules/fastdom/fastdom';
+import { requestMeasure } from '@/lib/modules/fastdom/fastdom';
 import { useRef, useEffect } from 'react';
 
 const useAmbilight = (
   videoRef: React.RefObject<HTMLVideoElement | null>,
   canvasRef: React.RefObject<HTMLCanvasElement | null>,
 ) => {
-  const previousTimeRef = useRef(0);
   const fps = 30;
   const intervalMs = 1000 / fps;
-  let animationFrameId: number | undefined = undefined;
+  const previousTimeRef = useRef(0);
+  const animationFrameId = useRef<number | undefined>(undefined);
 
   useEffect(() => {
     const canvasElement = canvasRef.current!;
@@ -27,17 +27,17 @@ const useAmbilight = (
         });
       }
 
-      animationFrameId = window.requestAnimationFrame(repaintAmbilight);
+      animationFrameId.current = window.requestAnimationFrame(repaintAmbilight);
     };
 
     const startAmbilightRepaint = () => {
-      animationFrameId = window.requestAnimationFrame(repaintAmbilight);
+      animationFrameId.current = window.requestAnimationFrame(repaintAmbilight);
     };
 
     const stopAmbilightRepaint = () => {
-      if (animationFrameId !== undefined) {
-        cancelAnimationFrame(animationFrameId);
-        animationFrameId = undefined;
+      if (animationFrameId.current !== undefined) {
+        cancelAnimationFrame(animationFrameId.current);
+        animationFrameId.current = undefined;
       }
     };
 

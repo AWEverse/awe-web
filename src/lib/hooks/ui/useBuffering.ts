@@ -4,6 +4,7 @@ import { isSafariPatchInProgress } from '../../utils/patchSafariProgressiveAudio
 import { areDeepEqual } from '../../utils/areDeepEqual';
 import { isMediaReadyToPlay } from '@/lib/core/public/misc/SafePlay';
 import useDebouncedCallback from '../shedulers/useDebouncedCallback';
+import { round } from '@/lib/core';
 
 // Avoid flickering when re-mounting previously buffered video
 const DEBOUNCE = 200;
@@ -16,6 +17,15 @@ const MIN_ALLOWED_MEDIA_DURATION = 0.1; // Some video emojis have weird duration
 export type HTMLMediaBufferedEvent = Event | React.SyntheticEvent<HTMLMediaElement>;
 export type BufferedRange = { start: number; end: number };
 export type BufferingEvent = (e: HTMLMediaBufferedEvent) => void;
+
+export type BufferedCallback = {
+  isReady: boolean;
+  isBuffered: boolean;
+  bufferedProgress: number;
+  bufferedRanges: BufferedRange[];
+  bufferingHandlers: BufferingPair<BufferingEvent>;
+  checkBuffering(element: HTMLMediaElement): void;
+};
 
 export type BufferingPair<T = BufferingEvent> = {
   [key: string]: T;
@@ -95,10 +105,15 @@ function getTimeRanges(ranges: TimeRanges, duration: number) {
   const result: BufferedRange[] = [];
 
   for (let i = 0; i < ranges.length; i++) {
-    result.push({
-      start: ranges.start(i) / duration,
-      end: ranges.end(i) / duration,
-    });
+    const start = ranges.start(i) / duration;
+    const end = ranges.end(i) / duration;
+
+    if (start !== end) {
+      result.push({
+        start,
+        end,
+      });
+    }
   }
 
   return result;

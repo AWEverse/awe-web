@@ -11,7 +11,6 @@ export default function useUnsupportedMedia(
 ) {
   const [isUnsupported, setIsUnsupported] = useState(false);
 
-  // Memoize the callback functions to avoid unnecessary re-creations
   const handleUnsupported = useCallback(() => {
     if (!isUnsupported) {
       setIsUnsupported(true);

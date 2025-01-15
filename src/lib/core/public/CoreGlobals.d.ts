@@ -105,7 +105,7 @@ type ModifyFunctionsToAsync<T> = {
  * //   age: number;
  * // }
  */
-export type Mutable<T> = {
+type Mutable<T> = {
   -readonly [K in keyof T]: T[K];
 };
 
@@ -139,7 +139,7 @@ export type Mutable<T> = {
  * //   address?: string;
  * // }
  */
-export type PickByType<T, Value> = {
+type PickByType<T, Value> = {
   [P in keyof T as T[P] extends Value | undefined ? P : never]: T[P];
 };
 
@@ -167,7 +167,7 @@ export type PickByType<T, Value> = {
  * // The resulting type `EmptyArray` will be:
  * // []
  */
-export type FixedSizeArray<T, N extends number> = N extends 0
+type FixedSizeArray<T, N extends number> = N extends 0
   ? []
   : N extends 1
     ? [T]
@@ -293,11 +293,6 @@ type CommonProperties<T, U> = {
 };
 
 /**
- * A function type that takes no arguments and returns `void`.
- */
-type NoneToVoidFunction = function;
-
-/**
  * @returns {void}
  */
 type NoneToVoidFunction = () => void;
@@ -336,11 +331,9 @@ type AnyClass = new (...args: any[]) => any;
 /**
  * A type for a function that accepts any number of arguments and returns any value of any type.
  */
-type AnyFunction = function;
 
 /**
  * @param {...any[]} args - The arguments of the function.
- * @returns {any} - The return value of the function.
  */
 type AnyFunction = (...args: any[]) => any;
 
@@ -383,7 +376,7 @@ type NonNullable<T> = T extends null | undefined ? never : T;
  * type Args = ArgumentTypes<(a: string, b: number) => void>;
  * // Resulting type: [string, number]
  */
-export type ArgumentTypes<F extends Function> = F extends (...args: infer A) => any ? A : never;
+type ArgumentTypes<F extends Function> = F extends (...args: infer A) => any ? A : never;
 
 /**
  * `SuperReturnType` extracts the return type of a function `F`.
@@ -397,9 +390,7 @@ export type ArgumentTypes<F extends Function> = F extends (...args: infer A) => 
  * type ReturnT = SuperReturnType<(a: string, b: number) => string>;
  * // Resulting type: string
  */
-export type SuperReturnType<F extends Function> = F extends (...args: any) => any
-  ? ReturnType<F>
-  : never;
+type SuperReturnType<F extends Function> = F extends (...args: any) => any ? ReturnType<F> : never;
 
 /**
  * `assumeType` is a type guard function that asserts that the given value `x` is of type `T`.
@@ -415,7 +406,7 @@ export type SuperReturnType<F extends Function> = F extends (...args: any) => an
  * let x: unknown = "hello";
  * assumeType<string>(x); // `x` is now treated as a `string` within this scope.
  */
-export declare function assumeType<T>(x: unknown): asserts x is T;
+declare function assumeType<T>(x: unknown): asserts x is T;
 
 /**
  * Represents a fuzzy set, where each element has a membership degree.

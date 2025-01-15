@@ -7,9 +7,20 @@
   height: 1rem;
   touch-action: none;
   cursor: pointer;
+  border-radius: var(--border-radius-default);
 
   :global(body.is-electron) & {
     cursor: auto;
+  }
+
+  &:hover {
+    .track {
+      height: 8px;
+    }
+
+    .played::after {
+      transform:  translate(50%, -50%) scale(1);
+    }
   }
 }
 
@@ -18,7 +29,7 @@
   left: 0;
   z-index: 1;
   bottom: calc(100% + 0.5rem);
-  border-radius: 0.25rem;
+  border-radius: var(--border-radius-default);
   overflow: hidden;
   background: #000;
 }
@@ -52,12 +63,17 @@ body:global(.is-touch-env) .preview {
 .track {
   position: absolute;
   top: 50%;
-  height: 5px;
+  height: 2px;
   transform: translateY(-50%);
   background-color: rgba(255, 255, 255, 0.16);
   border-radius: var(--border-radius-default);
   left: 0;
   right: 0;
+  transition: height 0.1s ease;
+
+  &:first-of-type {
+    overflow: hidden;
+  }
 }
 
 .buffered {
@@ -77,7 +93,6 @@ body:global(.is-touch-env) .preview {
   height: 100%;
   border-radius: var(--border-radius-default);
 
-
   &::after {
     content: "";
     position: absolute;
@@ -87,9 +102,10 @@ body:global(.is-touch-env) .preview {
     background-color: var(--awe-palette-primary-main);
     right: 0;
     top: 50%;
-    transform: translate(50%, -50%) scale(1);
+    transform: translate(50%, -50%) scale(0);
     transition: transform 0.2s ease;
     will-change: transform;
+    border: 1px solid rgba(var(--awe-palette-primary-mainChannel) / 0.9);
   }
 }
 

@@ -1,35 +1,43 @@
+import { useEffect } from 'react';
 import { onIdleComplete } from '@/lib/core';
-import { useStateRef } from '@/lib/hooks/state/useStateRef';
 import unloadVideo from '@/lib/utils/unloadVideo';
-import { useLayoutEffect } from 'react';
 
+/**
+ * Custom hook to manage video cleanup by removing event listeners and unloading video resources.
+ * @param {React.RefObject<HTMLVideoElement | null>} videoRef - Reference to the video element.
+ * @param {Record<string, Function>} handlers - Optional event handlers to be attached to the video element.
+ */
 export default function useVideoCleanup(
   videoRef?: React.RefObject<HTMLVideoElement | null>,
   handlers?: Record<string, AnyFunction>,
 ) {
-  const handlersRef = useStateRef(handlers);
-
-  useLayoutEffect(() => {
+  useEffect(() => {
     const videoEl = videoRef?.current;
     if (!videoEl) {
       return undefined;
     }
 
-    return () => {
-      const handlers = handlersRef.current;
+    if (handlers) {
+      Object.entries(handlers).forEach(([eventName, handler]) => {
+        const eventType = resolveEventType(eventName, videoEl);
+        videoEl.addEventListener(eventType, handler, false);
+      });
+    }
 
+    return () => {
       if (handlers) {
         Object.entries(handlers).forEach(([eventName, handler]) => {
-          videoEl.removeEventListener(resolveEventType(eventName, videoEl), handler, false);
+          const eventType = resolveEventType(eventName, videoEl);
+          videoEl.removeEventListener(eventType, handler, false);
         });
       }
 
-      // specifically on iOS, we postpone it after unmounting
+      // Postpone unloading the video until idle
       onIdleComplete(() => {
         unloadVideo(videoEl);
       });
     };
-  }, [handlersRef, videoRef]);
+  }, [handlers, videoRef]);
 }
 
 export function resolveEventType(propName: string, element: Element) {

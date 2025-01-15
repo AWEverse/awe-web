@@ -1,5 +1,5 @@
 import { ApiDimensions } from '@/@types/api/types/messages';
-import { BufferedRange } from '@/lib/hooks/ui/useBuffering';
+import { BufferedCallback, BufferedRange } from '@/lib/hooks/ui/useBuffering';
 import React, { FC, memo, useEffect, useLayoutEffect, useRef } from 'react';
 import SeekLine from './SeekLine';
 
@@ -7,9 +7,11 @@ import s from './VideoPlayerControls.module.scss';
 import { ReadonlySignal, Signal } from '@/lib/core/public/signals';
 import { IconButton } from '@mui/material';
 import {
+  FullscreenExitRounded,
   FullscreenRounded,
   PauseRounded,
   PictureInPictureAltRounded,
+  PlayArrowRounded,
   SettingsRounded,
   SkipNextRounded,
   VolumeUpRounded,
@@ -26,6 +28,8 @@ import stopEvent from '@/lib/utils/stopEvent';
 import useBodyClass from '@/shared/hooks/useBodyClass';
 import RangeSlider from '@/shared/ui/RangeSlider';
 import { requestMeasure, requestMutation } from '@/lib/modules/fastdom/fastdom';
+import { buffer } from 'stream/consumers';
+import useLongPress from '@/lib/hooks/events/useLongPress';
 
 type OwnProps = {
   // Playback Control
@@ -79,6 +83,9 @@ const VideoPlayerControls: FC<OwnProps> = ({
   isForceMobileVersion,
   isPlaying,
   isMuted,
+  bufferedRanges,
+  bufferedProgress,
+  isFullscreen,
   onToggleControls,
   onSeek,
   onChangeFullscreen,
@@ -182,20 +189,20 @@ const VideoPlayerControls: FC<OwnProps> = ({
         waitingSignal={waitingSignal}
         currentTimeSignal={currentTimeSignal}
         duration={duration}
-        bufferedRanges={[]}
+        bufferedRanges={bufferedRanges}
         playbackRate={10}
-        isReady={false}
+        isReady={isReady}
         onSeek={handleSeek}
         onSeekStart={handleStartSeek}
       />
-      <IconButton className={s.blendMode} onClick={onPlayPause}>
-        <PauseRounded />
+      <IconButton className={buildClassName(s.control, s.blendMode)} onClick={onPlayPause}>
+        {isPlaying ? <PauseRounded className={s.icon} /> : <PlayArrowRounded className={s.icon} />}
       </IconButton>
-      <IconButton className={s.blendMode}>
-        <SkipNextRounded />
+      <IconButton className={buildClassName(s.control, s.blendMode)}>
+        <SkipNextRounded className={s.icon} />
       </IconButton>
-      <IconButton className={s.blendMode} onClick={onVolumeClick}>
-        <VolumeUpRounded />
+      <IconButton className={buildClassName(s.control, s.blendMode)} onClick={onVolumeClick}>
+        <VolumeUpRounded className={s.icon} />
       </IconButton>
       <label className={s.slider}>
         <input
@@ -222,18 +229,25 @@ const VideoPlayerControls: FC<OwnProps> = ({
 
       <div className={s.divider} />
 
-      <IconButton className={s.blendMode}>
-        <SettingsRounded />
+      <IconButton className={buildClassName(s.control, s.blendMode)}>
+        <SettingsRounded className={s.icon} />
       </IconButton>
 
-      <IconButton className={s.blendMode}>
-        <PictureInPictureAltRounded />
+      <IconButton
+        className={buildClassName(s.control, s.blendMode)}
+        onClick={onPictureInPictureChange}
+      >
+        <PictureInPictureAltRounded className={s.icon} />
       </IconButton>
-      <IconButton className={s.blendMode}>
-        <WidthFullRounded />
+      <IconButton className={buildClassName(s.control, s.blendMode)}>
+        <WidthFullRounded className={s.icon} />
       </IconButton>
-      <IconButton className={s.blendMode}>
-        <FullscreenRounded />
+      <IconButton className={buildClassName(s.control, s.blendMode)} onClick={onChangeFullscreen}>
+        {isFullscreen ? (
+          <FullscreenExitRounded className={s.icon} />
+        ) : (
+          <FullscreenRounded className={s.icon} />
+        )}
       </IconButton>
     </section>
   );
