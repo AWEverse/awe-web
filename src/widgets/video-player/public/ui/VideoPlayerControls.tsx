@@ -24,6 +24,8 @@ import useTimeout from '@/lib/hooks/shedulers/useTimeout';
 import buildClassName from '@/shared/lib/buildClassName';
 import stopEvent from '@/lib/utils/stopEvent';
 import useBodyClass from '@/shared/hooks/useBodyClass';
+import RangeSlider from '@/shared/ui/RangeSlider';
+import { requestMeasure, requestMutation } from '@/lib/modules/fastdom/fastdom';
 
 type OwnProps = {
   // Playback Control
@@ -76,6 +78,7 @@ const VideoPlayerControls: FC<OwnProps> = ({
   isReady,
   isForceMobileVersion,
   isPlaying,
+  isMuted,
   onToggleControls,
   onSeek,
   onChangeFullscreen,
@@ -85,6 +88,7 @@ const VideoPlayerControls: FC<OwnProps> = ({
   onVolumeClick,
   onPictureInPictureChange,
 }) => {
+  const inputRef = useRef<HTMLInputElement>(null);
   const timeRef = useRef<HTMLTimeElement>(null);
   const volumeRef = useRef<HTMLSpanElement>(null);
 
@@ -133,20 +137,21 @@ const VideoPlayerControls: FC<OwnProps> = ({
     return () => {
       unsubscribe();
     };
-  }, [currentTimeSignal, isReady]);
+  }, [currentTimeSignal]);
 
   useLayoutEffect(() => {
-    const unsubscribe = volumeSignal.subscribe(volume => {
-      if (!volumeRef.current) {
-        return;
-      }
+    if (!volumeRef.current || !inputRef.current) return;
 
-      volumeRef.current.textContent = `${Math.round(volume * 100)}%`;
+    const unsubscribe = volumeSignal.subscribe((volume: number) => {
+      const percentage = Math.round(volume * 100);
+
+      requestMutation(() => {
+        volumeRef.current!.textContent = `${percentage}%`;
+        inputRef.current!.value = percentage.toString();
+      });
     });
 
-    return () => {
-      unsubscribe();
-    };
+    return unsubscribe;
   }, [volumeSignal]);
 
   useBodyClass('video-controls-visible', isControlsVisible);
@@ -193,7 +198,14 @@ const VideoPlayerControls: FC<OwnProps> = ({
         <VolumeUpRounded />
       </IconButton>
       <label className={s.slider}>
-        <input type="range" className={s.level} min={0} max={100} onChange={handleVolumeChange} />
+        <input
+          ref={inputRef}
+          type="range"
+          className={s.level}
+          min={0}
+          max={100}
+          onChange={handleVolumeChange}
+        />
         <span ref={volumeRef} className={s.value}></span>
       </label>
 

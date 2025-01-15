@@ -1,6 +1,8 @@
 import { memo, useEffect, useRef, useState } from 'react';
 import {
   clamp,
+  clamp01,
+  EKeyboardKey,
   EMediaReadyState,
   IS_IOS,
   IS_TOUCH_ENV,
@@ -9,6 +11,7 @@ import {
   setMediaMute,
   setMediaPlayBackRate,
   setMediaVolume,
+  throttle,
 } from '@/lib/core';
 import useLastCallback from '@/lib/hooks/events/useLastCallback';
 import useFullscreen from '../hooks/useFullScreen';
@@ -106,24 +109,23 @@ const VideoPlayer: React.FC<OwnProps> = ({
 
   // Handlers
   const handleTimeUpdate = useLastCallback((e: React.SyntheticEvent<HTMLVideoElement>) => {
-    const video = e.currentTarget;
-    if (video.readyState >= EMediaReadyState.HAVE_ENOUGH_DATA) {
+    const { currentTime, duration, readyState } = e.currentTarget;
+
+    if (readyState >= EMediaReadyState.HAVE_ENOUGH_DATA) {
       setWaiting(false);
-      setCurrentTime(video.currentTime);
+      setCurrentTime(currentTime);
     }
 
-    if (!isLooped && video.currentTime === video.duration) {
+    if (!isLooped && currentTime === duration) {
       setCurrentTime(0);
       setPlaying(false);
     }
   });
 
   const handleEnded = useLastCallback(() => {
-    if (!isLooped) {
-      setCurrentTime(0);
-      setPlaying(false);
-      toggleControls(true);
-    }
+    setCurrentTime(0);
+    setPlaying(!isLooped);
+    toggleControls(isLooped);
   });
 
   const handleSeek = useLastCallback((position: number) => {
@@ -134,17 +136,10 @@ const VideoPlayer: React.FC<OwnProps> = ({
     async (e: React.MouseEvent<HTMLElement, MouseEvent> | KeyboardEvent) => {
       e.stopPropagation();
 
-      console.log(isPlaying);
+      const video = videoRef.current!;
+      setPlaying(!isPlaying);
 
-      if (isPlaying) {
-        videoRef.current!.pause();
-        setPlaying(false);
-        console.log('not play');
-      } else {
-        console.log('play');
-        await playMedia(videoRef.current!);
-        setPlaying(true);
-      }
+      isPlaying ? pauseMedia(video) : await playMedia(video);
     },
   );
 
@@ -160,9 +155,12 @@ const VideoPlayer: React.FC<OwnProps> = ({
     await togglePlayState(e);
   });
 
-  const handleVideoLeave = useLastCallback(e => {
+  const handleVideoLeave = useLastCallback((e: React.MouseEvent<HTMLDivElement>) => {
     const bounds = videoRef.current?.getBoundingClientRect();
-    if (!bounds) return;
+    if (!bounds) {
+      return;
+    }
+
     if (
       e.clientX < bounds.left ||
       e.clientX > bounds.right ||
@@ -173,13 +171,21 @@ const VideoPlayer: React.FC<OwnProps> = ({
     }
   });
 
-  const handleVolumeChange = useLastCallback((value: number) => {
-    setMediaVolume(videoRef.current!, value);
-    setVolume(value);
+  const handleVideoMove = useLastCallback(() => {
+    toggleControls(true);
   });
 
+  const handleVolumeChange = useLastCallback(
+    throttle((value: number) => {
+      setMediaVolume(videoRef.current!, value);
+      setVolume(value);
+    }, 100),
+  );
+
   const handleMuteClick = useLastCallback(() => {
-    setMediaMute(videoRef.current!, !videoRef.current!.muted);
+    const video = videoRef.current!;
+
+    setMediaMute(video, !video.muted);
     setVolume(0);
   });
 
@@ -188,8 +194,11 @@ const VideoPlayer: React.FC<OwnProps> = ({
   });
 
   const handleFullscreenChange = useLastCallback(() => {
-    if (isFullscreen) exitFullscreen?.();
-    else enterFullscreen?.();
+    if (isFullscreen) {
+      exitFullscreen?.();
+    } else {
+      enterFullscreen?.();
+    }
   });
 
   const handlePlay = useLastCallback((e: React.SyntheticEvent<HTMLVideoElement>) => {
@@ -205,13 +214,81 @@ const VideoPlayer: React.FC<OwnProps> = ({
   useEffect(() => {
     const isMobile = !IS_TOUCH_ENV && !forceMobileView;
     const videoElement = videoRef.current;
+
     if (videoElement && !isMobile) {
+      // Chrome does not automatically start playing when `url` becomes available (even with `autoPlay`),
+      // so we force it here. Contrary, iOS does not allow to call `play` without mouse event,
+      // so we need to use `autoPlay` instead to allow pre-buffering.
       playMedia(videoElement);
     }
   }, [mediaUrl, isUnsupported]);
 
+  useEffect(() => {
+    const rewind = (dir: number) => {
+      const video = videoRef.current!;
+
+      const newTime = clamp(video.currentTime + dir * REWIND_STEP, 0, video.duration);
+
+      if (Number.isFinite(newTime)) {
+        video.currentTime = newTime;
+      }
+    };
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (isInPictureInPicture) {
+        return;
+      }
+
+      const key = e.key || e.code;
+
+      switch (key) {
+        case EKeyboardKey.Space:
+        case EKeyboardKey.Enter:
+          e.preventDefault();
+          togglePlayState(e);
+          break;
+        case EKeyboardKey.ArrowLeft:
+        case 'Left': // IE/Edge specific
+          e.preventDefault();
+          rewind(-1);
+          break;
+        case EKeyboardKey.ArrowRight:
+        case 'Right': // IE/Edge specific
+          e.preventDefault();
+          rewind(1);
+          break;
+        case EKeyboardKey.ArrowUp:
+        case EKeyboardKey.ArrowDown:
+          e.preventDefault();
+          handleVolumeChange(clamp01(volume.value + (e.key === EKeyboardKey.ArrowUp ? 0.1 : -0.1)));
+          break;
+        case EKeyboardKey.M:
+          e.preventDefault();
+          handleMuteClick();
+          break;
+        case EKeyboardKey.F:
+          e.preventDefault();
+          handleFullscreenChange();
+          break;
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [togglePlayState, isFullscreen, isInPictureInPicture]);
+
+  const shouldToggleControls = !IS_TOUCH_ENV && !forceMobileView;
+
   return (
-    <div className={s.VideoPlayer} ref={containerRef}>
+    <div
+      className={s.VideoPlayer}
+      ref={containerRef}
+      onMouseMove={shouldToggleControls ? handleVideoMove : undefined}
+      onMouseOut={shouldToggleControls ? handleVideoLeave : undefined}
+    >
       <video
         id="media-viewer-video"
         autoPlay={IS_TOUCH_ENV}

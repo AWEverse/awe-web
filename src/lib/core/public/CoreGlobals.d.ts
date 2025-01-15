@@ -13,6 +13,167 @@ type Partial<T> = { [K in keyof T]?: T[K] };
 type Undefined<T> = { [K in keyof T]: undefined };
 
 /**
+ * The `Impossible<T>` type maps over the properties of `T` (if any) and transforms them all into `never`.
+ * It effectively renders any valid key in `T` impossible to use in actual code by assigning it the `never` type.
+ *
+ * This utility is often used in scenarios where certain states or cases are logically unreachable,
+ * and we want to prevent any attempt to access those keys at compile-time.
+ *
+ * @example
+ * type Example = Impossible<{ a: string, b: number }>;
+ * // The resulting type `Example` will be:
+ * // { a: never; b: never }
+ *
+ * @template T - The type whose keys will be transformed to `never`.
+ */
+type Impossible<T> = { [P in keyof T]: never };
+
+/**
+ * The `NoExtraProperties<T, U>` type ensures that `U` can only have properties that exist on `T`
+ * and disallows any extra properties. If `U` contains additional keys that are not present in `T`,
+ * they will be marked as `never` by using the `Impossible` type, effectively preventing extra properties from being assigned.
+ *
+ * This type is useful for enforcing strict type checks where only a defined set of properties is allowed,
+ * and any other properties would result in a compile-time error.
+ *
+ * @template T - The base type that defines the allowed properties.
+ * @template U - The type to check against `T`. This type should either match `T` or have a subset of its properties.
+ *
+ * @example
+ * type Base = { a: string, b: number };
+ *
+ * // Valid usage:
+ * const valid: NoExtraProperties<Base, { a: string, b: number }> = { a: "hello", b: 42 };
+ *
+ * // Error: Type '{ a: string; b: number; c: boolean; }' is not assignable
+ * // to type 'NoExtraProperties<Base, { a: string; b: number; c: boolean; }>'
+ * const invalid: NoExtraProperties<Base, { a: string, b: number, c: boolean }> = { a: "hello", b: 42, c: true };
+ */
+type NoExtraProperties<T, U extends T = T> = U & Impossible<Exclude<keyof U, keyof T>>;
+
+/**
+ * The `ModifyFunctionsToAsync<T>` type recursively modifies the function types in `T` by ensuring that
+ * the return type of each function is wrapped in a `Promise`. If the return type of a function is already
+ * a `Promise` (or a `PromiseLike`), the function signature remains unchanged; otherwise, it will be converted
+ * to return a `Promise` of the original return type.
+ *
+ * This is useful for situations where you need to convert all functions in an interface or type to async functions,
+ * allowing you to handle their results as `Promises` consistently.
+ *
+ * @template T - The type where each function's return type will be modified to a `Promise`.
+ *
+ * @example
+ * type SyncMethods = {
+ *   syncFunc: (x: number) => string;
+ *   alreadyAsyncFunc: (x: number) => Promise<string>;
+ * };
+ *
+ * type AsyncMethods = ModifyFunctionsToAsync<SyncMethods>;
+ *
+ * // The resulting `AsyncMethods` type will be:
+ * // {
+ * //   syncFunc: (x: number) => Promise<string>;
+ * //   alreadyAsyncFunc: (x: number) => Promise<string>;
+ * // }
+ */
+type ModifyFunctionsToAsync<T> = {
+  [key in keyof T]: T[key] extends (...args: infer A) => infer R
+    ? R extends PromiseLike<infer O>
+      ? T[key]
+      : (...args: A) => Promise<Awaited<R>>
+    : T[key];
+};
+
+/**
+ * The `Mutable<T>` type removes the `readonly` modifier from all properties in a given type `T`,
+ * making them mutable (i.e., allowing them to be reassigned).
+ *
+ * This is useful when you want to convert a type with readonly properties into a type where the properties can be modified.
+ *
+ * @template T - The type whose properties should be made mutable.
+ *
+ * @example
+ * type ReadonlyPerson = {
+ *   readonly name: string;
+ *   readonly age: number;
+ * };
+ *
+ * type MutablePerson = Mutable<ReadonlyPerson>;
+ * // The resulting type `MutablePerson` will be:
+ * // {
+ * //   name: string;
+ * //   age: number;
+ * // }
+ */
+export type Mutable<T> = {
+  -readonly [K in keyof T]: T[K];
+};
+
+/**
+ * The `PickByType<T, Value>` type creates a new type by picking only the properties from `T` whose values are assignable
+ * to the type `Value`. If the value type of a property is `Value` (or `undefined`), that property is included in the new type.
+ *
+ * This is useful when you want to extract specific properties from a type based on their value type.
+ *
+ * @template T - The type from which to pick properties.
+ * @template Value - The type that the property values should match in order to be included.
+ *
+ * @example
+ * type Person = {
+ *   name: string;
+ *   age: number;
+ *   isActive: boolean;
+ *   address?: string;
+ * };
+ *
+ * type StringProperties = PickByType<Person, string>;
+ * // The resulting type `StringProperties` will be:
+ * // {
+ * //   name: string;
+ * //   address?: string;
+ * }
+ *
+ * type OptionalProperties = PickByType<Person, undefined>;
+ * // The resulting type `OptionalProperties` will be:
+ * // {
+ * //   address?: string;
+ * // }
+ */
+export type PickByType<T, Value> = {
+  [P in keyof T as T[P] extends Value | undefined ? P : never]: T[P];
+};
+
+/**
+ * The `FixedSizeArray<T, N>` type creates a tuple type of a fixed size `N` where each element is of type `T`.
+ *
+ * This type ensures that the resulting array (or tuple) has exactly `N` elements, all of type `T`, and it will not accept arrays
+ * with a different size or different types of elements.
+ *
+ * This type is recursive and uses two helper types (`GrowExp` and `GrowExpRev`) to efficiently generate arrays of the desired size.
+ *
+ * @template T - The type of each element in the array.
+ * @template N - The desired length of the array.
+ *
+ * @example
+ * type ThreeNumbers = FixedSizeArray<number, 3>;
+ * // The resulting type `ThreeNumbers` will be:
+ * // [number, number, number]
+ *
+ * type StringArray = FixedSizeArray<string, 5>;
+ * // The resulting type `StringArray` will be:
+ * // [string, string, string, string, string]
+ *
+ * type EmptyArray = FixedSizeArray<number, 0>;
+ * // The resulting type `EmptyArray` will be:
+ * // []
+ */
+export type FixedSizeArray<T, N extends number> = N extends 0
+  ? []
+  : N extends 1
+    ? [T]
+    : GrowExp<[T, T], N, [[T]]>;
+
+/**
  * Represents types that are considered "falsy".
  */
 type Falsy = false | 0 | '' | null | undefined;
@@ -131,27 +292,130 @@ type CommonProperties<T, U> = {
   [K in keyof T & keyof U]: T[K] | U[K];
 };
 
+/**
+ * A function type that takes no arguments and returns `void`.
+ */
+type NoneToVoidFunction = function;
+
+/**
+ * @returns {void}
+ */
 type NoneToVoidFunction = () => void;
-type NoneToUnknownFunction = () => unknown;
+
+/**
+ * A function type that takes no arguments and returns any value of any type (`any`).
+ */
+type NoneToAnyFunction = function;
+
+/**
+ * @returns {any}
+ */
 type NoneToAnyFunction = () => any;
 
-type UnknownLiteral = Record<string, unknown>;
-type UnknownClass = new (...args: unknown[]) => unknown;
-type UnknownFunction = (...args: unknown[]) => unknown;
-type UnknownToVoidFunction = (...args: unknown[]) => void;
-type NoneToUnknownFunction = (...args: unknown[]) => unknown;
+/**
+ * A function type that accepts `any` as props and returns a React functional component (`FC`) with props of any type.
+ */
+type AnyToFunctionalComponent = function;
 
+/**
+ * @param {any} props - The props of the component.
+ * @returns {FC<any>} - A React functional component.
+ */
 type AnyToFunctionalComponent = (props: any) => FC<any>;
-type AnyLiteral = Record<string, any>;
-type AnyClass = new (...args: any[]) => any;
-type AnyFunction = (...args: any[]) => any;
-type AnyToVoidFunction = (...args: any[]) => void;
-type NoneToAnyFunction = () => any;
 
+/**
+ * A type for an object with string keys and values of any type.
+ */
+type AnyLiteral = Record<string, any>;
+
+/**
+ * A type for a class constructor function that can accept any number of arguments and return an instance of any class.
+ */
+type AnyClass = new (...args: any[]) => any;
+
+/**
+ * A type for a function that accepts any number of arguments and returns any value of any type.
+ */
+type AnyFunction = function;
+
+/**
+ * @param {...any[]} args - The arguments of the function.
+ * @returns {any} - The return value of the function.
+ */
+type AnyFunction = (...args: any[]) => any;
+
+/**
+ * A function type that accepts any number of arguments but returns `void`.
+ */
+type AnyToVoidFunction = function;
+
+/**
+ * @param {...any[]} args - The arguments of the function.
+ * @returns {void}
+ */
+type AnyToVoidFunction = (...args: any[]) => void;
+
+/**
+ * A type for an array that can contain elements of any type.
+ */
 type AnyArray = any[];
 
+/**
+ * A type that represents either a given type `T` or `null`. By default, `T` is set to `null`.
+ * @template T
+ */
 type Nullable<T = null> = T | null;
+
+/**
+ * A type that excludes `null` and `undefined` from type `T`.
+ * @template T
+ */
 type NonNullable<T> = T extends null | undefined ? never : T;
+
+/**
+ * `ArgumentTypes` extracts the argument types of a function type `F` as a tuple.
+ *
+ * @template F - The function type from which to extract the argument types.
+ *
+ * This type infers and returns the types of the parameters of the function `F`. If `F` is not a function, it will result in `never`.
+ *
+ * @example
+ * type Args = ArgumentTypes<(a: string, b: number) => void>;
+ * // Resulting type: [string, number]
+ */
+export type ArgumentTypes<F extends Function> = F extends (...args: infer A) => any ? A : never;
+
+/**
+ * `SuperReturnType` extracts the return type of a function `F`.
+ * If the function `F` does not match the expected function shape, it will result in `never`.
+ *
+ * @template F - The function type from which to extract the return type.
+ *
+ * This type ensures that you get the return type of `F`, or `never` if `F` is not a function.
+ *
+ * @example
+ * type ReturnT = SuperReturnType<(a: string, b: number) => string>;
+ * // Resulting type: string
+ */
+export type SuperReturnType<F extends Function> = F extends (...args: any) => any
+  ? ReturnType<F>
+  : never;
+
+/**
+ * `assumeType` is a type guard function that asserts that the given value `x` is of type `T`.
+ * It helps to narrow down the type of `x` within a given block, making the compiler treat `x` as type `T` afterward.
+ *
+ * @template T - The type to which `x` is assumed to belong.
+ * @param x - The value to assert as type `T`.
+ *
+ * This function is useful when you are certain that a value has a certain type but TypeScript's type inference is unable to determine it.
+ * It is especially helpful in scenarios where you're working with values of unknown type.
+ *
+ * @example
+ * let x: unknown = "hello";
+ * assumeType<string>(x); // `x` is now treated as a `string` within this scope.
+ */
+export declare function assumeType<T>(x: unknown): asserts x is T;
 
 /**
  * Represents a fuzzy set, where each element has a membership degree.
@@ -185,6 +449,61 @@ interface Graph<T extends Vertex = Vertex> {
   edges: Set<Edge<T>>;
   adjacencyList: AdjacencyList<T>;
 }
+
+/**
+ * The `ExpandArrayUntilLengthReached` type recursively expands the given array (`CurrentArray`) until its length matches the target length (`TargetLength`).
+ * It uses the provided `Buffers` (which are arrays) to grow the array until the desired length is achieved.
+ *
+ * @template CurrentArray - The array that is currently being expanded.
+ * @template TargetLength - The length the array should reach.
+ * @template Buffers - An array of additional arrays that are used to grow the array step by step.
+ *
+ * This type is used to gradually expand an array by appending values from the `Buffers` until the array's length matches `TargetLength`.
+ *
+ * @example
+ * type ExpandedArray = ExpandArrayUntilLengthReached<[1, 2], 5, [[3], [4], [5]]>;
+ * // Resulting type: [1, 2, 3, 4, 5]
+ */
+type ExpandArrayUntilLengthReached<
+  CurrentArray extends Array<any>,
+  TargetLength extends number,
+  Buffers extends Array<Array<any>>,
+> = CurrentArray['length'] extends TargetLength
+  ? CurrentArray
+  : {
+      0: ExpandArrayUntilLengthReached<[...CurrentArray, ...Buffers[0]], TargetLength, Buffers>;
+      1: ExpandArrayUntilLengthReached<CurrentArray, TargetLength, ShiftArray<Buffers>>;
+    }[[...CurrentArray, ...Buffers[0]][TargetLength] extends undefined ? 0 : 1];
+
+/**
+ * The `ExponentiallyExpandArray` type exponentially doubles the current array (`CurrentArray`) until its length reaches the target length (`TargetLength`).
+ * It also uses the `Buffers` to achieve the final length. This type is more efficient when doubling the array size in each recursion step.
+ *
+ * @template CurrentArray - The array that is currently being expanded.
+ * @template TargetLength - The length the array should reach.
+ * @template Buffers - An array of additional arrays used to help expand the array.
+ *
+ * This type is particularly useful for cases where you want to double the array size efficiently while growing towards a target length.
+ * It combines exponential growth with the use of buffers to reach the target length more efficiently.
+ *
+ * @example
+ * type ExponentiallyExpandedArray = ExponentiallyExpandArray<[1], 8, [[2]]>;
+ * // Resulting type: [1, 1, 1, 1, 1, 1, 1, 1]
+ */
+type ExponentiallyExpandArray<
+  CurrentArray extends Array<any>,
+  TargetLength extends number,
+  Buffers extends Array<Array<any>>,
+> = CurrentArray['length'] extends TargetLength
+  ? CurrentArray
+  : {
+      0: ExponentiallyExpandArray<
+        [...CurrentArray, ...CurrentArray],
+        TargetLength,
+        [CurrentArray, ...Buffers]
+      >;
+      1: ExpandArrayUntilLengthReached<CurrentArray, TargetLength, Buffers>;
+    }[[...CurrentArray, ...CurrentArray][TargetLength] extends undefined ? 0 : 1];
 
 /**
  * Array extensions for common functional programming operations.

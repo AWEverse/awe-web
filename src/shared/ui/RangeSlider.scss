@@ -1,5 +1,5 @@
 @mixin thumb-styles() {
-  background: var(--awe-palette-primary-500);
+  background: var(--awe-palette-primary-main);
   border: none;
   height: 0.75rem;
   width: 0.75rem;
@@ -14,13 +14,13 @@
 }
 
 .RangeSlider {
-  --slider-color: var(--awe-palette-primary-500);
+  --slider-color: var(--awe-palette-primary-main);
 
   margin-bottom: 1rem;
 
   &.disabled {
     pointer-events: none;
-    --slider-color: var(--awe-palette-secondary-300);
+    --slider-color: var(--awe-palette-secondary-main);
   }
 
   .slider-top-row {
@@ -31,7 +31,7 @@
     .value {
       flex-shrink: 0;
       margin-left: 1rem;
-      color: var(--awe-palette-primary-500);
+      color: var(--awe-palette-primary-main);
     }
 
     &[dir='rtl'] {
@@ -53,7 +53,7 @@
       left: 0;
       top: 0.3125rem;
       height: 0.125rem;
-      background-color: var(--awe-palette-primary-500);
+      background-color: var(--awe-palette-primary-main);
       border-radius: 0.125rem;
       opacity: 0.5;
       z-index: -1;
@@ -66,7 +66,7 @@
     left: 0;
     top: 0.3125rem;
     height: 0.125rem;
-    background-color: var(--awe-palette-secondary-300);
+    background-color: var(--awe-palette-secondary-main);
     border-radius: 0.125rem;
     pointer-events: none;
   }
@@ -111,12 +111,12 @@
     font-size: 0.8125rem;
     text-align: center;
     cursor: var(--custom-cursor, pointer);
-    color: var(--awe-palette-secondary-300);
+    color: var(--awe-palette-secondary-main);
     transition: color 0.2s ease;
 
     &:hover,
     &.active {
-      color: var(--awe-palette-secondary-300);
+      color: var(--awe-palette-secondary-main);
     }
 
     &.active {

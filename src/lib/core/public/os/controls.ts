@@ -21,7 +21,7 @@ export enum EKeyboardKey {
   // Special keys
   Enter = 'Enter',
   Escape = 'Escape',
-  Space = 'Space',
+  Space = ' ',
   Backspace = 'Backspace',
   Tab = 'Tab',
   CapsLock = 'CapsLock',
