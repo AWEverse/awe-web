@@ -56,7 +56,6 @@ type OwnProps = {
   posterSize?: ApiDimensions;
 
   // UI State
-  isVisible: boolean;
   waitingSignal: Signal<boolean>;
   isForceMobileVersion?: boolean;
   isFullscreen: boolean;

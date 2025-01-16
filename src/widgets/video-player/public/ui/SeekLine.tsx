@@ -231,10 +231,6 @@ const SeekLine: FC<OwnProps> = ({
   );
 };
 
-function generateUniqueId(start: number, end: number) {
-  return `${start}-${end}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-}
-
 const moveX = (value: number, duration: number) =>
   `translateX(${round((value / duration) * 100, 1)}%)`;
 

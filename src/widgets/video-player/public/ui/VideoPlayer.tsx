@@ -87,6 +87,7 @@ const VideoPlayer: React.FC<OwnProps> = ({
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
+  const volumeRef = useRef(1);
 
   const duration = videoRef.current?.duration || 0;
   const isLooped = isGif || duration <= MAX_LOOP_DURATION;
@@ -185,14 +186,14 @@ const VideoPlayer: React.FC<OwnProps> = ({
     throttle((value: number) => {
       setMediaVolume(videoRef.current!, value);
       setVolume(value);
+      volumeRef.current = value;
     }, 100),
   );
 
   const handleMuteClick = useLastCallback(() => {
     const video = videoRef.current!;
-
     setMediaMute(video, !video.muted);
-    setVolume(0);
+    setVolume(!video.muted ? volumeRef.current : 0);
   });
 
   const handlePlaybackRateChange = useLastCallback((value: number) => {
@@ -394,7 +395,7 @@ const VideoPlayer: React.FC<OwnProps> = ({
         />
       </div>
 
-      <canvas id="ambilight" ref={canvasRef} className={s.CinematicLight} />
+      <canvas id="ambilight" ref={canvasRef} className={'CinematicLight'} />
       <div
         ref={bottomRef}
         className="VideoPlayerBottom"

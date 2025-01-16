@@ -1,0 +1,105 @@
+.PlayerControls {
+  position: absolute;
+  padding: 1rem 1rem 0.15rem 1rem;
+  left: 0;
+  right: 0;
+  bottom: 0; 
+  display: flex;
+  align-items: center;
+}
+
+.Time {
+  display: inline;
+  font-size: small;  
+  font-family: 'Orbitron', sans-serif;
+  font-weight: bold;
+}
+
+.slider .value {
+  font-size: small;
+  color: white;
+  mix-blend-mode: difference;
+  will-change: mix-blend-mode;  
+}
+
+.divider {
+ margin-left: auto;
+ height: 100%;
+ width: 100%;
+}
+
+.active {
+  display: flex;
+}
+
+.blendMode {
+  mix-blend-mode: difference;
+  will-change: mix-blend-mode;
+}
+
+.control {
+  &:hover .icon{  
+    transform: scale(1.3);
+  }
+}
+
+.icon {      
+  transition: transform 100ms ease-in-out, fill 300ms cubic-bezier(0.4, 0, 0.2, 1) 0ms !important;
+  transform: scale(1);
+}
+
+// Variables
+$slider-width: 60px;
+$slider-height: 6px;
+$slider-bg: var(--awe-palette-secondary-main);
+$slider-border-radius: 999px;
+$level-color: #fff;
+$level-transition-duration: 0.1s;
+$icon-margin: 15px;
+$icon-color: $slider-bg;
+$icon-size: 25px;
+
+.slider {
+  z-index: 1;
+  position: relative;
+  padding-inline: 0.25rem;
+  gap: 0.25rem;
+  mix-blend-mode: difference;
+  will-change: mix-blend-mode;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+
+  .volume {
+    display: inline-block;
+    vertical-align: top;
+    margin-right: $icon-margin;
+    color: $icon-color;
+    width: $icon-size;
+    height: auto;
+  }
+
+  .level {
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+    width: $slider-width;
+    height: $slider-height;
+    background: $slider-bg;
+    overflow: hidden;
+    border-radius: $slider-border-radius;
+    transition: height $level-transition-duration;
+    cursor: inherit;
+
+    &::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 0;
+      height: 0;
+      box-shadow: -200px 0 0 200px $level-color;
+    }
+
+    &:hover {
+      height: calc($slider-height * 2);
+    }
+  }
+}
