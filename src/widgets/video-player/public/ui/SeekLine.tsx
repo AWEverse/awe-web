@@ -18,7 +18,7 @@ interface OwnProps {
   currentTimeSignal: Signal<number>;
   url?: string;
   duration: number;
-  bufferedRanges: BufferedRange[];
+  bufferedRangesSignal: Signal<BufferedRange[]>;
   playbackRate: number;
   isActive?: boolean;
   isPlaying?: boolean;
@@ -35,7 +35,7 @@ const SeekLine: FC<OwnProps> = ({
   waitingSignal,
   currentTimeSignal,
   duration,
-  bufferedRanges,
+  bufferedRangesSignal,
   isReady,
   posterSize = { width: 200, height: 100 },
   playbackRate,
@@ -47,6 +47,7 @@ const SeekLine: FC<OwnProps> = ({
   onSeekStart,
 }) => {
   const isLockedRef = useRef<boolean>(false);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
 
   const seekerRef = useRef<HTMLDivElement | null>(null);
   const previewCanvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -89,19 +90,29 @@ const SeekLine: FC<OwnProps> = ({
     [seekerRef, isActive, isPreviewDisabled, duration],
   );
 
-  useLayoutEffect(() => {
-    const unsubscribe = currentTimeSignal.subscribe(value => {
-      requestMutation(() => {
-        if (!progressRef.current) {
-          return;
-        }
+  useEffect(() => {
+    const unsb = bufferedRangesSignal.subscribe(value => {
+      console.log(value);
+    });
 
-        progressRef.current.style.width = `${round((value / duration) * 100, 3)}%`;
-      });
+    return () => {
+      unsb();
+    };
+  }, [bufferedRangesSignal]);
+
+  useEffect(() => {
+    const progressEl = progressRef.current;
+
+    if (!progressEl) {
+      return;
+    }
+
+    const unsubscribe = currentTimeSignal.subscribe((value: number) => {
+      progressEl.style.transform = `translateX(${round((value / duration) * 100, 3)}%)`;
     });
 
     return () => unsubscribe();
-  }, [currentTimeSignal, duration]);
+  }, [isSeeking, currentTimeSignal, duration]);
 
   useEffect(() => {
     if (!seekerRef.current) return undefined;
@@ -191,15 +202,17 @@ const SeekLine: FC<OwnProps> = ({
         </CSSTransition>
       )}
       <div className={s.track}>
-        {bufferedRanges.map(({ start, end }) => (
-          <div
-            key={generateUniqueId(start, end)}
-            className={s.buffered}
-            style={buildStyle(`left: ${start * 100}%;`, `right: ${100 - end * 100}%;`)}
-          />
-        ))}
+        <canvas ref={canvasRef} className={s.buffered} width="500" height="20" />
       </div>
-      <div className={s.track}>
+      <div
+        className={s.track}
+        tabIndex={0}
+        role="slider"
+        aria-label="Seek slider"
+        aria-valuemin={0}
+        aria-valuemax={duration}
+        draggable={true}
+      >
         <div ref={progressRef} className={buildClassName(s.played, isSeeking && s.seeking)} />
         <div className={s.trackBg} />
       </div>

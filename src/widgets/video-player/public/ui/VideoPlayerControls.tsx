@@ -41,7 +41,7 @@ type OwnProps = {
   isMuted: boolean;
 
   // Buffered Media Info
-  bufferedRanges: BufferedRange[];
+  bufferedRangesSignal: Signal<BufferedRange[]>;
   bufferedProgress: number;
   isBuffered: boolean;
   isReady: boolean;
@@ -83,7 +83,7 @@ const VideoPlayerControls: FC<OwnProps> = ({
   isForceMobileVersion,
   isPlaying,
   isMuted,
-  bufferedRanges,
+  bufferedRangesSignal,
   bufferedProgress,
   isFullscreen,
   onToggleControls,
@@ -189,7 +189,7 @@ const VideoPlayerControls: FC<OwnProps> = ({
         waitingSignal={waitingSignal}
         currentTimeSignal={currentTimeSignal}
         duration={duration}
-        bufferedRanges={bufferedRanges}
+        bufferedRangesSignal={bufferedRangesSignal}
         playbackRate={10}
         isReady={isReady}
         onSeek={handleSeek}

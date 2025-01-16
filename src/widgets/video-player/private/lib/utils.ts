@@ -33,3 +33,19 @@ export function formatMediaDuration(
 
   return timeString;
 }
+
+export const getPageX = (e: MouseEvent | TouchEvent | PointerEvent): number | null => {
+  if (window.PointerEvent && e instanceof PointerEvent) {
+    return e.pageX || 0;
+  }
+
+  if (e instanceof MouseEvent) {
+    return e.pageX || 0;
+  }
+
+  if (e instanceof TouchEvent && e.touches?.[0]) {
+    return e.touches[0].pageX || 0;
+  }
+
+  return 0;
+};

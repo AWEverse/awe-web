@@ -6,6 +6,7 @@ import {
   EMediaReadyState,
   IS_IOS,
   IS_TOUCH_ENV,
+  isMediaReadyToPlay,
   pauseMedia,
   playMedia,
   setMediaMute,
@@ -17,7 +18,7 @@ import useLastCallback from '@/lib/hooks/events/useLastCallback';
 import useFullscreen from '../hooks/useFullScreen';
 import useUnsupportedMedia from '../hooks/useSupportCheck';
 import useContextSignal from '../../private/hooks/useContextSignal';
-import useBuffering from '@/lib/hooks/ui/useBuffering';
+import useBuffering, { BufferedRange } from '@/lib/hooks/ui/useBuffering';
 import useControlsSignal from '../../private/hooks/useControlsSignal';
 import stopEvent from '@/lib/utils/stopEvent';
 import useAmbilight from '../hooks/useAmbilight';
@@ -69,7 +70,7 @@ const MIN_READY_STATE = 4;
 const REWIND_STEP = 5; // Seconds
 
 const VideoPlayer: React.FC<OwnProps> = ({
-  mediaUrl = 'public\\video\\got.mp4',
+  mediaUrl = 'public\\video_test\\got.mp4',
   posterDimensions,
   forceMobileView,
   audioVolume = 1,
@@ -90,10 +91,14 @@ const VideoPlayer: React.FC<OwnProps> = ({
   const duration = videoRef.current?.duration || 0;
   const isLooped = isGif || duration <= MAX_LOOP_DURATION;
 
+  const [isReady, setReady] = useState(false);
   const [isPlaying, setPlaying] = useState(false);
+
   const [currentTime, setCurrentTime] = useContextSignal(0);
   const [volume, setVolume] = useContextSignal(1);
   const [waitingSignal, setWaiting] = useContextSignal(false);
+
+  const [bufferedSingal, setBuffered] = useContextSignal<BufferedRange[]>([]);
   const [isControlsVisible, toggleControls, lockControls] = useControlsSignal();
 
   const { isMobile } = useAppLayout();
@@ -101,8 +106,8 @@ const VideoPlayer: React.FC<OwnProps> = ({
   const [isPictureInPictureSupported, enterPictureInPicture, isInPictureInPicture] =
     usePictureInPicture(videoRef, enterFullscreen!, exitFullscreen!);
 
-  const { isReady, isBuffered, bufferedRanges, bufferingHandlers, bufferedProgress } =
-    useBuffering();
+  // const { isReady, isBuffered, bufferedRanges, bufferingHandlers, bufferedProgress } =
+  useBuffering();
   // useVideoCleanup(videoRef, bufferingHandlers);
 
   const isUnsupported = useUnsupportedMedia(videoRef);
@@ -204,12 +209,10 @@ const VideoPlayer: React.FC<OwnProps> = ({
 
   const handlePlay = useLastCallback((e: React.SyntheticEvent<HTMLVideoElement>) => {
     setPlaying(true);
-    bufferingHandlers.onPlay(e);
   });
 
   const handlePauseChange = useLastCallback((e: React.SyntheticEvent<HTMLVideoElement>) => {
     setPlaying(false);
-    bufferingHandlers.onPause(e);
   });
 
   useEffect(() => {
@@ -306,6 +309,35 @@ const VideoPlayer: React.FC<OwnProps> = ({
   //   console.log('isReady changed:', isReady);
   // }, [isReady]);
 
+  const handlersBuffering = useMemo(() => {
+    const handleBuffering = (e: Event | React.SyntheticEvent<HTMLMediaElement>) => {
+      const media = e.currentTarget as HTMLMediaElement;
+      const ranges = media.buffered;
+
+      const result: BufferedRange[] = [];
+
+      for (let i = 0; i < ranges.length; i++) {
+        result.push({
+          start: ranges.start(i) / duration,
+          end: ranges.end(i) / duration,
+        });
+      }
+
+      setBuffered(result);
+      setReady(current => current || isMediaReadyToPlay(media));
+    };
+
+    return {
+      onPlay: handleBuffering,
+      onLoadedData: handleBuffering,
+      onPlaying: handleBuffering,
+      onLoadStart: handleBuffering, // Needed for Safari to start
+      onPause: handleBuffering, // Needed for Chrome when seeking
+      onTimeUpdate: handleBuffering, // Needed for audio buffering progress
+      onProgress: handleBuffering, // Needed for video buffering progress
+    };
+  }, [duration, setBuffered]);
+
   return (
     <div
       className={buildClassName(s.VideoPlayer, isFullscreen && s.FullscreenMode)}
@@ -322,7 +354,7 @@ const VideoPlayer: React.FC<OwnProps> = ({
         controlsList="nodownload"
         playsInline
         muted={isGif || isAudioMuted}
-        {...bufferingHandlers}
+        {...handlersBuffering}
         onWaiting={() => setWaiting(true)}
         onContextMenu={stopEvent}
         onEnded={handleEnded}
@@ -344,9 +376,8 @@ const VideoPlayer: React.FC<OwnProps> = ({
           playbackRate={playbackSpeed}
           isMuted={Boolean(videoRef.current?.muted)}
           // Buffered Media Info
-          bufferedRanges={bufferedRanges}
-          bufferedProgress={bufferedProgress}
-          isBuffered={isBuffered}
+          bufferedRangesSignal={bufferedSingal}
+          bufferedProgress={0}
           isReady={isReady}
           fileSize={totalFileSize}
           // UI State

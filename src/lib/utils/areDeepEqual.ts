@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 export function areDeepEqual<T>(value1: T, value2: T): boolean {
   const type1 = typeof value1;
   const type2 = typeof value2;
@@ -18,23 +17,22 @@ export function areDeepEqual<T>(value1: T, value2: T): boolean {
     return false;
   }
 
-  if (isArray1) {
-    const array1 = value1 as any[];
-    const array2 = value2 as any[];
-
-    if (array1.length !== array2.length) {
-      return false;
-    }
-
-    return array1.every((member1, i) => areDeepEqual(member1, array2[i]));
+  if (isArray1 && Array.isArray(value1) && Array.isArray(value2)) {
+    return (
+      value1.length === value2.length &&
+      value1.every((member1, i) => areDeepEqual(member1, value2[i]))
+    );
   }
 
-  const object1 = value1 as AnyLiteral;
-  const object2 = value2 as AnyLiteral;
-  const keys1 = Object.keys(object1);
+  const object1 = value1 as Record<string, unknown>;
+  const object2 = value2 as Record<string, unknown>;
 
-  return (
-    keys1.length === Object.keys(object2).length &&
-    keys1.every(key1 => areDeepEqual(object1[key1], object2[key1]))
-  );
+  const keys1 = Object.keys(object1);
+  const keys2 = Object.keys(object2);
+
+  if (keys1.length !== keys2.length) {
+    return false;
+  }
+
+  return keys1.every(key1 => areDeepEqual(object1[key1], object2[key1]));
 }

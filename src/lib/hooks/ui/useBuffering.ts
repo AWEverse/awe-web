@@ -4,7 +4,6 @@ import { isSafariPatchInProgress } from '../../utils/patchSafariProgressiveAudio
 import { areDeepEqual } from '../../utils/areDeepEqual';
 import { isMediaReadyToPlay } from '@/lib/core/public/misc/SafePlay';
 import useDebouncedCallback from '../shedulers/useDebouncedCallback';
-import { round } from '@/lib/core';
 
 // Avoid flickering when re-mounting previously buffered video
 const DEBOUNCE = 200;
@@ -108,12 +107,10 @@ function getTimeRanges(ranges: TimeRanges, duration: number) {
     const start = ranges.start(i) / duration;
     const end = ranges.end(i) / duration;
 
-    if (start !== end) {
-      result.push({
-        start,
-        end,
-      });
-    }
+    result.push({
+      start,
+      end,
+    });
   }
 
   return result;
