@@ -21,13 +21,18 @@ export default function usePictureInPicture(
 
   useLayoutEffect(() => {
     // PIP is not supported in PWA on iOS, despite being detected
-    if ((IS_IOS && IS_PWA) || !elRef.current) return undefined;
+    if ((IS_IOS && IS_PWA) || !elRef.current) {
+      return undefined;
+    }
     const video = elRef.current;
     const setMode = getSetPresentationMode(video);
     const isEnabled =
       (document.pictureInPictureEnabled && !elRef.current?.disablePictureInPicture) ||
       setMode !== undefined;
-    if (!isEnabled) return undefined;
+
+    if (!isEnabled) {
+      return undefined;
+    }
     // @ts-ignore
     video.autoPictureInPicture = true;
 
@@ -47,6 +52,7 @@ export default function usePictureInPicture(
 
     video.addEventListener('enterpictureinpicture', onEnterInternal);
     video.addEventListener('leavepictureinpicture', onLeaveInternal);
+
     return () => {
       video.removeEventListener('enterpictureinpicture', onEnterInternal);
       video.removeEventListener('leavepictureinpicture', onLeaveInternal);
@@ -54,9 +60,13 @@ export default function usePictureInPicture(
   }, [elRef, onEnter, onLeave]);
 
   const exitPictureInPicture = useCallback(() => {
-    if (!elRef.current) return;
+    if (!elRef.current) {
+      return;
+    }
+
     const video = elRef.current;
     const setMode = getSetPresentationMode(video);
+
     if (setMode) {
       setMode('inline');
     } else {
@@ -65,17 +75,22 @@ export default function usePictureInPicture(
   }, [elRef]);
 
   const enterPictureInPicture = useCallback(() => {
-    if (!elRef.current) return;
+    if (!elRef.current) {
+      return;
+    }
+
     exitPictureInPicture();
+
     const video = elRef.current;
     const isPlaying = isMediaPlaying(video);
     const setMode = getSetPresentationMode(video);
+
     if (setMode) {
       setMode('picture-in-picture');
     } else {
       requestPictureInPicture(video);
     }
-    // Muted video stops in PiP mode, so we need to play it again
+
     if (isPlaying) {
       playMedia(video);
     }

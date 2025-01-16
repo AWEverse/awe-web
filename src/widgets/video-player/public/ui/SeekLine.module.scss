@@ -72,11 +72,7 @@ body:global(.is-touch-env) .preview {
   transition: height 0.1s ease;
   touch-action: none;
   outline: none;
-  overflow-x: hidden;
-
-  &:first-of-type {
-    overflow: hidden;
-  }
+  overflow: hidden;
 }
 
 .buffered {
@@ -84,9 +80,7 @@ body:global(.is-touch-env) .preview {
   background-color: rgba(255, 255, 255, 0.5);
   top: 0;
   left: 0;
-  right: 0;
   height: 100%;
-  width: 100%;
   border-radius: var(--border-radius-default);
 }
 

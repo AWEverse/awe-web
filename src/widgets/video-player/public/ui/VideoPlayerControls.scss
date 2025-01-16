@@ -10,7 +10,9 @@
 
 .Time {
   display: inline;
-  font-size: small; 
+  font-size: small;  
+  font-family: 'Orbitron', sans-serif;
+  font-weight: bold;
 }
 
 .slider .value {
@@ -34,10 +36,9 @@
   mix-blend-mode: difference;
   will-change: mix-blend-mode;
 }
+
 .control {
-
   &:hover .icon{  
-
     transform: scale(1.3);
   }
 }

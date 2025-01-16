@@ -35,8 +35,8 @@ const useBuffering = (
   onTimeUpdate?: AnyToVoidFunction,
   onBroken?: (errMessage?: string) => void,
 ) => {
-  const [isBuffered, _setIsBuffered] = useState(!noInitiallyBuffered);
   const [isReady, setIsReady] = useState(false);
+  const [isBuffered, _setIsBuffered] = useState(!noInitiallyBuffered);
   const [bufferedProgress, setBufferedProgress] = useState(0);
   const [bufferedRanges, setBufferedRanges] = useState<BufferedRange[]>([]);
 

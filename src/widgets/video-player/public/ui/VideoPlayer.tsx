@@ -26,7 +26,7 @@ import { ObserveFn } from '@/lib/hooks/sensors/useIntersectionObserver';
 
 import VideoPlayerControls from './VideoPlayerControls';
 
-import s from './VideoPlayer.module.scss';
+import './VideoPlayer.scss';
 import { ApiDimensions } from '@/@types/api/types/messages';
 import useVideoCleanup from '@/shared/hooks/useVideoCleanup';
 import useAppLayout from '@/lib/hooks/ui/useAppLayout';
@@ -99,7 +99,7 @@ const VideoPlayer: React.FC<OwnProps> = ({
   const [waitingSignal, setWaiting] = useContextSignal(false);
 
   const [bufferedSingal, setBuffered] = useContextSignal<BufferedRange[]>([]);
-  const [isControlsVisible, toggleControls, lockControls] = useControlsSignal();
+  const [controlsSignal, toggleControls, lockControls] = useControlsSignal();
 
   const { isMobile } = useAppLayout();
   const [isFullscreen, enterFullscreen, exitFullscreen] = useFullscreen(containerRef, setPlaying);
@@ -227,10 +227,7 @@ const VideoPlayer: React.FC<OwnProps> = ({
       // Chrome does not automatically start playing when `url` becomes available (even with `autoPlay`),
       // so we force it here. Contrary, iOS does not allow to call `play` without mouse event,
       // so we need to use `autoPlay` instead to allow pre-buffering.
-      playMedia(videoElement).then(() => {
-        // If the video is already paused, we need to resume it.
-        pauseMedia(videoElement);
-      });
+      playMedia(videoElement);
     }
   }, [mediaUrl, isUnsupported]);
 
@@ -340,7 +337,7 @@ const VideoPlayer: React.FC<OwnProps> = ({
 
   return (
     <div
-      className={buildClassName(s.VideoPlayer, isFullscreen && s.FullscreenMode)}
+      className={buildClassName('VideoPlayer', isFullscreen && 'FullscreenMode')}
       ref={containerRef}
       onMouseMove={shouldToggleControls ? handleVideoMove : undefined}
       onMouseOut={shouldToggleControls ? handleVideoLeave : undefined}
@@ -349,7 +346,7 @@ const VideoPlayer: React.FC<OwnProps> = ({
         id="media-viewer-video"
         autoPlay={IS_TOUCH_ENV}
         ref={videoRef}
-        className={s.Video}
+        className={'Video'}
         controls={false}
         controlsList="nodownload"
         playsInline
@@ -366,7 +363,7 @@ const VideoPlayer: React.FC<OwnProps> = ({
         src={mediaUrl as string}
       />
 
-      <div className={s.PlayerControlsWrapper}>
+      <div className={'PlayerControlsWrapper'}>
         <VideoPlayerControls
           // Playback Control
           isPlaying={isPlaying}
@@ -377,17 +374,16 @@ const VideoPlayer: React.FC<OwnProps> = ({
           isMuted={Boolean(videoRef.current?.muted)}
           // Buffered Media Info
           bufferedRangesSignal={bufferedSingal}
-          bufferedProgress={0}
           isReady={isReady}
           fileSize={totalFileSize}
           // UI State
-          isControlsVisible={isControlsVisible}
           waitingSignal={waitingSignal}
           isForceMobileVersion={forceMobileView}
           isFullscreen={isFullscreen}
           isFullscreenSupported={Boolean(enterFullscreen)}
           isPictureInPictureSupported={isPictureInPictureSupported}
           // Event Handlers
+          onPictureInPictureChange={enterPictureInPicture}
           onChangeFullscreen={handleFullscreenChange}
           onVolumeClick={handleMuteClick}
           onVolumeChange={handleVolumeChange}

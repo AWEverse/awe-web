@@ -12,13 +12,16 @@ import { requestMutation } from '@/lib/modules/fastdom/fastdom';
 import { animateNumber } from '@/lib/utils/animation/animateNumber';
 import useSignal from '@/lib/hooks/signals/useSignal';
 import { captureEvents } from '@/lib/utils/captureEvents';
+import { useSignalEffect } from '@/lib/hooks/signals/useSignalEffect';
+import useDebouncedCallback from '@/lib/hooks/shedulers/useDebouncedCallback';
+import { areDeepEqual } from '@/lib/utils/areDeepEqual';
 
 interface OwnProps {
   waitingSignal: Signal<boolean>;
   currentTimeSignal: Signal<number>;
+  bufferedRangesSignal: Signal<BufferedRange[]>;
   url?: string;
   duration: number;
-  bufferedRangesSignal: Signal<BufferedRange[]>;
   playbackRate: number;
   isActive?: boolean;
   isPlaying?: boolean;
@@ -30,19 +33,20 @@ interface OwnProps {
 }
 
 const LOCK_TIMEOUT = 250;
+const DEBOUNCE = 200;
 
 const SeekLine: FC<OwnProps> = ({
   waitingSignal,
   currentTimeSignal,
-  duration,
   bufferedRangesSignal,
-  isReady,
-  posterSize = { width: 200, height: 100 },
-  playbackRate,
   url,
-  isActive = true,
+  duration,
+  playbackRate,
+  isActive,
   isPlaying,
   isPreviewDisabled = true,
+  isReady,
+  posterSize,
   onSeek,
   onSeekStart,
 }) => {
@@ -57,62 +61,26 @@ const SeekLine: FC<OwnProps> = ({
 
   const [previewVisibleSignal, setPreviewVisible] = useState(false);
   const [isSeeking, setIsSeeking] = useState(false);
+  const [bufferedRanges, setBufferedRanges] = useState<BufferedRange[]>([]);
 
   const previewOffsetSignal = useSignal(0);
 
-  const calculatePreviewPosition = useCallback(
-    (e: MouseEvent | TouchEvent) => {
-      if (!seekerRef.current || !isActive) {
-        return [0, 0];
+  useSignalEffect(bufferedRangesSignal, value => {
+    setBufferedRanges(current => (areDeepEqual(current, value) ? current : value));
+  });
+
+  useSignalEffect(
+    currentTimeSignal,
+    value => {
+      const progressEl = progressRef.current;
+
+      if (progressEl) {
+        progressEl.style.transform = moveX(value, duration);
+        progressEl.setAttribute('aria-valuenow', round(value) + '');
       }
-
-      const seeker = seekerRef.current;
-      const seekerSize = seeker.getBoundingClientRect();
-
-      const pageX = e instanceof MouseEvent ? e.pageX : e.touches?.[0].pageX;
-
-      const time = clamp(duration * ((pageX - seekerSize.left) / seekerSize.width), 0, duration);
-
-      if (isPreviewDisabled) {
-        return [time, 0];
-      }
-
-      const preview = previewRef.current!;
-
-      const previewOffset = clamp(
-        pageX - seekerSize.left - preview.clientWidth / 2,
-        -4,
-        seekerSize.width - preview.clientWidth + 4,
-      );
-
-      return [time, previewOffset];
     },
-    [seekerRef, isActive, isPreviewDisabled, duration],
+    [isSeeking, duration],
   );
-
-  useEffect(() => {
-    const unsb = bufferedRangesSignal.subscribe(value => {
-      console.log(value);
-    });
-
-    return () => {
-      unsb();
-    };
-  }, [bufferedRangesSignal]);
-
-  useEffect(() => {
-    const progressEl = progressRef.current;
-
-    if (!progressEl) {
-      return;
-    }
-
-    const unsubscribe = currentTimeSignal.subscribe((value: number) => {
-      progressEl.style.transform = `translateX(${round((value / duration) * 100, 3)}%)`;
-    });
-
-    return () => unsubscribe();
-  }, [isSeeking, currentTimeSignal, duration]);
 
   useEffect(() => {
     if (!seekerRef.current) return undefined;
@@ -143,6 +111,7 @@ const SeekLine: FC<OwnProps> = ({
       setIsSeeking(false);
 
       [time, offset] = calculatePreviewPosition(e);
+      console.log(time);
 
       currentTimeSignal.value = time;
       previewOffsetSignal.value = offset;
@@ -184,6 +153,38 @@ const SeekLine: FC<OwnProps> = ({
     };
   }, [duration, isActive, onSeek, onSeekStart, setIsSeeking, isPreviewDisabled, playbackRate]);
 
+  const calculatePreviewPosition = useCallback(
+    (e: MouseEvent | TouchEvent) => {
+      if (!seekerRef.current || !isActive) {
+        console.log('fskafkas');
+
+        return [0, 0];
+      }
+
+      const seeker = seekerRef.current;
+      const seekerSize = seeker.getBoundingClientRect();
+
+      const pageX = e instanceof MouseEvent ? e.pageX : e.touches?.[0].pageX;
+
+      const time = clamp(duration * ((pageX - seekerSize.left) / seekerSize.width), 0, duration);
+
+      if (isPreviewDisabled) {
+        return [time, 0];
+      }
+
+      const preview = previewRef.current!;
+
+      const previewOffset = clamp(
+        pageX - seekerSize.left - preview.clientWidth / 2,
+        -4,
+        seekerSize.width - preview.clientWidth + 4,
+      );
+
+      return [time, previewOffset];
+    },
+    [seekerRef, isActive, isPreviewDisabled, duration],
+  );
+
   return (
     <div ref={seekerRef} className={s.container}>
       {!isPreviewDisabled && (
@@ -202,7 +203,13 @@ const SeekLine: FC<OwnProps> = ({
         </CSSTransition>
       )}
       <div className={s.track}>
-        <canvas ref={canvasRef} className={s.buffered} width="500" height="20" />
+        {bufferedRanges.map(({ start, end }) => (
+          <div
+            key={`${start}-${end}`}
+            className={s.buffered}
+            style={buildStyle(`left: ${start * 100}%;`, `right: ${100 - end * 100}%;`)}
+          />
+        ))}
       </div>
       <div
         className={s.track}
@@ -213,7 +220,11 @@ const SeekLine: FC<OwnProps> = ({
         aria-valuemax={duration}
         draggable={true}
       >
-        <div ref={progressRef} className={buildClassName(s.played, isSeeking && s.seeking)} />
+        <div
+          ref={progressRef}
+          className={buildClassName(s.played, isSeeking && s.seeking)}
+          role="presentation"
+        />
         <div className={s.trackBg} />
       </div>
     </div>
@@ -223,5 +234,8 @@ const SeekLine: FC<OwnProps> = ({
 function generateUniqueId(start: number, end: number) {
   return `${start}-${end}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
 }
+
+const moveX = (value: number, duration: number) =>
+  `translateX(${round((value / duration) * 100, 1)}%)`;
 
 export default memo(SeekLine);

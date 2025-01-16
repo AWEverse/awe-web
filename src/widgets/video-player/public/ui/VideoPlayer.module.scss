@@ -1,11 +1,15 @@
 .VideoPlayer  {
  position: relative;
-
+ 
  z-index: 10;
 }
 
 .FullscreenMode > .Video{
  border-radius: 0 !important;
+}
+
+.PlayerControlsWrapper {
+ width: 100%;; 
 }
 
 .Video {

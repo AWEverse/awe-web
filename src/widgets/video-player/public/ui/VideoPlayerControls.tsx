@@ -1,6 +1,6 @@
 import { ApiDimensions } from '@/@types/api/types/messages';
 import { BufferedCallback, BufferedRange } from '@/lib/hooks/ui/useBuffering';
-import React, { FC, memo, useEffect, useLayoutEffect, useRef } from 'react';
+import React, { FC, memo, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import SeekLine from './SeekLine';
 
 import s from './VideoPlayerControls.module.scss';
@@ -27,9 +27,15 @@ import buildClassName from '@/shared/lib/buildClassName';
 import stopEvent from '@/lib/utils/stopEvent';
 import useBodyClass from '@/shared/hooks/useBodyClass';
 import RangeSlider from '@/shared/ui/RangeSlider';
-import { requestMeasure, requestMutation } from '@/lib/modules/fastdom/fastdom';
+import {
+  requestForcedReflow,
+  requestMeasure,
+  requestMutation,
+} from '@/lib/modules/fastdom/fastdom';
 import { buffer } from 'stream/consumers';
 import useLongPress from '@/lib/hooks/events/useLongPress';
+import { useSignalEffect, useSignalLayoutEffect } from '@/lib/hooks/signals/useSignalEffect';
+import useDebouncedCallback from '@/lib/hooks/shedulers/useDebouncedCallback';
 
 type OwnProps = {
   // Playback Control
@@ -42,8 +48,6 @@ type OwnProps = {
 
   // Buffered Media Info
   bufferedRangesSignal: Signal<BufferedRange[]>;
-  bufferedProgress: number;
-  isBuffered: boolean;
   isReady: boolean;
 
   // Media Properties
@@ -52,7 +56,7 @@ type OwnProps = {
   posterSize?: ApiDimensions;
 
   // UI State
-  isControlsVisible: boolean;
+  isVisible: boolean;
   waitingSignal: Signal<boolean>;
   isForceMobileVersion?: boolean;
   isFullscreen: boolean;
@@ -72,35 +76,45 @@ type OwnProps = {
 };
 
 const HIDE_CONTROLS_TIMEOUT_MS = 3000;
+const DEBOUNCE = 200;
 
 const VideoPlayerControls: FC<OwnProps> = ({
-  isControlsVisible,
+  isPlaying,
   currentTimeSignal,
   volumeSignal,
-  waitingSignal,
   duration,
-  isReady,
-  isForceMobileVersion,
-  isPlaying,
+  playbackRate,
   isMuted,
   bufferedRangesSignal,
-  bufferedProgress,
+  isReady,
+  url,
+  fileSize,
+  posterSize,
+  waitingSignal,
+  isForceMobileVersion,
   isFullscreen,
-  onToggleControls,
-  onSeek,
+  isFullscreenSupported,
+  isPictureInPictureSupported,
+  isPreviewDisabled,
   onChangeFullscreen,
-  onPlayPause,
-  onPlaybackRateChange,
-  onVolumeChange,
-  onVolumeClick,
   onPictureInPictureChange,
+  onPlayPause,
+  onVolumeChange,
+  onPlaybackRateChange,
+  onSeek,
+  onToggleControls,
+  onVolumeClick,
 }) => {
   const inputRef = useRef<HTMLInputElement>(null);
   const timeRef = useRef<HTMLTimeElement>(null);
   const volumeRef = useRef<HTMLSpanElement>(null);
 
+  const [isVisible, setVisibillity] = useState(true);
   const [isPlaybackMenuOpen, openPlaybackMenu, closePlaybackMenu] = useFlag();
   const isSeeking = useRef(false);
+  const [isBuffered, _setIsBuffered] = useState(true);
+  const [bufferedProgress, setBufferedProgress] = useState(0);
+  const setIsBuffered = useDebouncedCallback(_setIsBuffered, [], DEBOUNCE, false, true);
 
   useEffect(() => {
     if (!IS_TOUCH_ENV && !isForceMobileVersion) {
@@ -109,7 +123,7 @@ const VideoPlayerControls: FC<OwnProps> = ({
 
     const _isSeeking = isSeeking.current;
 
-    const shouldClose = !isControlsVisible && !isPlaying && !isPlaybackMenuOpen && _isSeeking;
+    const shouldClose = !isVisible && !isPlaying && !isPlaybackMenuOpen && _isSeeking;
 
     if (shouldClose) {
       return;
@@ -120,48 +134,42 @@ const VideoPlayerControls: FC<OwnProps> = ({
     }, HIDE_CONTROLS_TIMEOUT_MS);
 
     return () => clearTimeout(timeoutId);
-  }, [
-    isPlaying,
-    isControlsVisible,
-    isForceMobileVersion,
-    isPlaybackMenuOpen,
-    isSeeking,
-    onToggleControls,
-  ]);
+  }, [isPlaying, isVisible, isForceMobileVersion, isPlaybackMenuOpen, isSeeking, onToggleControls]);
 
-  useLayoutEffect(() => {
-    const unsubscribe = currentTimeSignal.subscribe(time => {
-      if (!timeRef.current) {
-        return;
-      }
+  useSignalEffect(
+    bufferedRangesSignal,
+    ranges => {
+      const bufferedLength = ranges.sum(range => range.end - range.start);
 
-      timeRef.current.textContent = formatMediaDuration(time, {
-        includeHours: time > 3600,
-        forceTwoDigits: true,
-      });
+      setBufferedProgress(bufferedLength / duration);
+    },
+    [duration],
+  );
+
+  useSignalEffect(currentTimeSignal, time => {
+    const currentTime = formatMediaDuration(time, {
+      includeHours: time > 3600,
+      forceTwoDigits: true,
     });
 
-    return () => {
-      unsubscribe();
-    };
-  }, [currentTimeSignal]);
+    if (timeRef.current) {
+      timeRef.current.textContent = currentTime;
+    }
+  });
 
-  useLayoutEffect(() => {
-    if (!volumeRef.current || !inputRef.current) return;
+  useSignalLayoutEffect(volumeSignal, volume => {
+    const percentage = Math.round(volume * 100);
 
-    const unsubscribe = volumeSignal.subscribe((volume: number) => {
-      const percentage = Math.round(volume * 100);
+    if (volumeRef.current) {
+      volumeRef.current!.textContent = `${percentage}%`;
+    }
 
-      requestMutation(() => {
-        volumeRef.current!.textContent = `${percentage}%`;
-        inputRef.current!.value = percentage.toString();
-      });
-    });
+    if (inputRef.current) {
+      inputRef.current!.valueAsNumber = percentage;
+    }
+  });
 
-    return unsubscribe;
-  }, [volumeSignal]);
-
-  useBodyClass('video-controls-visible', isControlsVisible);
+  useBodyClass('video-controls-visible', isVisible);
 
   const handleVolumeChange = useLastCallback((e: React.ChangeEvent<HTMLInputElement>) =>
     onVolumeChange(Number(e.currentTarget.value) / 100),
@@ -181,7 +189,7 @@ const VideoPlayerControls: FC<OwnProps> = ({
       className={buildClassName(
         s.PlayerControls,
         isForceMobileVersion && s.ForceMobile,
-        isControlsVisible && s.active,
+        isVisible && s.active,
       )}
       onClick={stopEvent}
     >
@@ -192,6 +200,7 @@ const VideoPlayerControls: FC<OwnProps> = ({
         bufferedRangesSignal={bufferedRangesSignal}
         playbackRate={10}
         isReady={isReady}
+        isActive={isVisible}
         onSeek={handleSeek}
         onSeekStart={handleStartSeek}
       />
@@ -213,7 +222,6 @@ const VideoPlayerControls: FC<OwnProps> = ({
           max={100}
           onChange={handleVolumeChange}
         />
-        <span ref={volumeRef} className={s.value}></span>
       </label>
 
       <div className={buildClassName(s.Time, s.blendMode)}>
@@ -233,24 +241,36 @@ const VideoPlayerControls: FC<OwnProps> = ({
         <SettingsRounded className={s.icon} />
       </IconButton>
 
-      <IconButton
-        className={buildClassName(s.control, s.blendMode)}
-        onClick={onPictureInPictureChange}
-      >
-        <PictureInPictureAltRounded className={s.icon} />
-      </IconButton>
+      {isPictureInPictureSupported && (
+        <IconButton
+          className={buildClassName(s.control, s.blendMode)}
+          onClick={onPictureInPictureChange}
+        >
+          <PictureInPictureAltRounded className={s.icon} />
+        </IconButton>
+      )}
       <IconButton className={buildClassName(s.control, s.blendMode)}>
         <WidthFullRounded className={s.icon} />
       </IconButton>
-      <IconButton className={buildClassName(s.control, s.blendMode)} onClick={onChangeFullscreen}>
-        {isFullscreen ? (
-          <FullscreenExitRounded className={s.icon} />
-        ) : (
-          <FullscreenRounded className={s.icon} />
-        )}
-      </IconButton>
+      {isFullscreenSupported && (
+        <IconButton className={buildClassName(s.control, s.blendMode)} onClick={onChangeFullscreen}>
+          {isFullscreen ? (
+            <FullscreenExitRounded className={s.icon} />
+          ) : (
+            <FullscreenRounded className={s.icon} />
+          )}
+        </IconButton>
+      )}
     </section>
   );
 };
+
+function renderTime(currentTime: number, duration: number) {
+  return (
+    <div className="player-time">
+      {`${formatMediaDuration(currentTime)} / ${formatMediaDuration(duration)}`}
+    </div>
+  );
+}
 
 export default memo(VideoPlayerControls);
