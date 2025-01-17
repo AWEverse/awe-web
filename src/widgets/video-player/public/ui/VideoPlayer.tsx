@@ -131,7 +131,7 @@ const VideoPlayer: React.FC<OwnProps> = ({
 
   const handleEnded = useLastCallback(() => {
     setCurrentTime(0);
-    setPlaying(!isLooped);
+    setPlaying(!isLooped && isPlaying);
     toggleControls(isLooped);
   });
 

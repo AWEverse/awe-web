@@ -15,6 +15,7 @@ import { captureEvents } from '@/lib/utils/captureEvents';
 import { useSignalEffect } from '@/lib/hooks/signals/useSignalEffect';
 import useDebouncedCallback from '@/lib/hooks/shedulers/useDebouncedCallback';
 import { areDeepEqual } from '@/lib/utils/areDeepEqual';
+import useLastCallback from '@/lib/hooks/events/useLastCallback';
 
 interface OwnProps {
   waitingSignal: Signal<boolean>;
@@ -65,6 +66,14 @@ const SeekLine: FC<OwnProps> = ({
 
   const previewOffsetSignal = useSignal(0);
 
+  const setTimeOffset = useCallback(
+    (time: number, offset: number) => {
+      currentTimeSignal.value = time;
+      previewOffsetSignal.value = offset;
+    },
+    [currentTimeSignal, previewOffsetSignal],
+  );
+
   useSignalEffect(bufferedRangesSignal, value => {
     setBufferedRanges(current => (areDeepEqual(current, value) ? current : value));
   });
@@ -93,11 +102,8 @@ const SeekLine: FC<OwnProps> = ({
       setPreviewVisible(true);
 
       [time, offset] = calculatePreviewPosition(e);
-
       onSeek(time);
-
-      currentTimeSignal.value = time;
-      previewOffsetSignal.value = offset;
+      setTimeOffset(time, offset);
     };
 
     const handleStartSeek = () => {
@@ -111,10 +117,8 @@ const SeekLine: FC<OwnProps> = ({
       setIsSeeking(false);
 
       [time, offset] = calculatePreviewPosition(e);
-      console.log(time);
+      setTimeOffset(time, offset);
 
-      currentTimeSignal.value = time;
-      previewOffsetSignal.value = offset;
       onSeek?.(time);
 
       setTimeout(() => {
@@ -151,13 +155,20 @@ const SeekLine: FC<OwnProps> = ({
       seeker.removeEventListener('mouseenter', handleSeekMouseMove);
       seeker.removeEventListener('mouseleave', handleSeekMouseLeave);
     };
-  }, [duration, isActive, onSeek, onSeekStart, setIsSeeking, isPreviewDisabled, playbackRate]);
+  }, [
+    duration,
+    isActive,
+    onSeek,
+    onSeekStart,
+    setIsSeeking,
+    isPreviewDisabled,
+    playbackRate,
+    setTimeOffset,
+  ]);
 
   const calculatePreviewPosition = useCallback(
     (e: MouseEvent | TouchEvent) => {
       if (!seekerRef.current || !isActive) {
-        console.log('fskafkas');
-
         return [0, 0];
       }
 
@@ -203,9 +214,9 @@ const SeekLine: FC<OwnProps> = ({
         </CSSTransition>
       )}
       <div className={s.track}>
-        {bufferedRanges.map(({ start, end }) => (
+        {bufferedRanges.map(({ start, end }, index) => (
           <div
-            key={`${start}-${end}`}
+            key={`${index}_${start}_${end}`}
             className={s.buffered}
             style={buildStyle(`left: ${start * 100}%;`, `right: ${100 - end * 100}%;`)}
           />

@@ -8,7 +8,8 @@ import captureKeyboardListeners from '@/lib/utils/captureKeyboardListeners';
 import LightEffect from './common/LightEffect';
 import trapFocus from '@/lib/utils/trapFocus';
 import useLayoutEffectWithPrevDeps from '@/lib/hooks/effects/useLayoutEffectWithPrevDeps';
-import { dispatchHeavyAnimation, throttle } from '@/lib/core';
+import { dispatchHeavyAnimation, throttle, withFreezeWhenClosed } from '@/lib/core';
+import { pipe } from '@/lib/core/public/misc/Pipe';
 
 interface OwnTriggerProps<T = HTMLElement> extends React.HTMLAttributes<T> {
   onTrigger: NoneToVoidFunction;
@@ -194,5 +195,5 @@ const DropdownMenu: FC<OwnProps & OwnSharedProps> = ({
   );
 };
 
-export default memo(DropdownMenu);
+export default pipe(withFreezeWhenClosed, memo)(DropdownMenu);
 export type { OwnTriggerProps as TriggerProps, OwnSharedProps as DropdopwnSharedProps };

@@ -8,35 +8,24 @@ const SCROLL_DURATION = IS_IOS ? 450 : IS_ANDROID ? 400 : 300;
 
 const useHorizontalScrollToContanier = (
   containerRef: React.RefObject<HTMLElement | null>,
-  activeTab: number,
+  activeEl: number,
 ) => {
-  const containerDimensions = useMemo(() => {
-    const container = containerRef.current!;
-
-    return {
-      scrollWidth: container.scrollWidth,
-      offsetWidth: container.offsetWidth,
-      scrollLeft: container.scrollLeft,
-    };
-  }, [containerRef.current]);
-
   useEffect(() => {
     const container = containerRef.current!;
 
     requestMeasure(() => {
-      const { scrollWidth, offsetWidth, scrollLeft } = containerDimensions;
+      const { scrollWidth, offsetWidth, scrollLeft } = container;
 
       if (scrollWidth <= offsetWidth) {
         return;
       }
 
-      const activeTabElement = container.childNodes[activeTab] as HTMLElement | null;
+      const activeElement = container.childNodes[activeEl] as HTMLElement | null;
 
-      if (activeTabElement) {
-        const { offsetLeft: activeTabOffsetLeft, offsetWidth: activeTabOffsetWidth } =
-          activeTabElement;
+      if (activeElement) {
+        const { offsetLeft: activeElOffsetLeft, offsetWidth: activeElOffsetWidth } = activeElement;
 
-        const newLeft = activeTabOffsetLeft - offsetWidth / 2 + activeTabOffsetWidth / 2;
+        const newLeft = activeElOffsetLeft - offsetWidth / 2 + activeElOffsetWidth / 2;
 
         if (Math.abs(newLeft - scrollLeft) < TAB_SCROLL_THRESHOLD_PX) {
           return;
@@ -46,7 +35,7 @@ const useHorizontalScrollToContanier = (
         animateHorizontalScroll(container, newLeft, SCROLL_DURATION);
       }
     });
-  }, [activeTab, containerDimensions]);
+  }, [activeEl]);
 };
 
 export default useHorizontalScrollToContanier;

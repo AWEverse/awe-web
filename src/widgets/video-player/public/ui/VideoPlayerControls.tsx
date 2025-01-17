@@ -1,10 +1,10 @@
 import { ApiDimensions } from '@/@types/api/types/messages';
-import { BufferedCallback, BufferedRange } from '@/lib/hooks/ui/useBuffering';
-import React, { FC, memo, useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { BufferedRange } from '@/lib/hooks/ui/useBuffering';
+import React, { FC, memo, useEffect, useRef, useState } from 'react';
 import SeekLine from './SeekLine';
 
 import s from './VideoPlayerControls.module.scss';
-import { ReadonlySignal, Signal } from '@/lib/core/public/signals';
+import { Signal } from '@/lib/core/public/signals';
 import { IconButton } from '@mui/material';
 import {
   FullscreenExitRounded,
@@ -18,24 +18,16 @@ import {
   WidthFullRounded,
 } from '@mui/icons-material';
 import useLastCallback from '@/lib/hooks/events/useLastCallback';
-import { clamp, IS_TOUCH_ENV } from '@/lib/core';
+import { IS_TOUCH_ENV } from '@/lib/core';
 import { formatMediaDuration } from '../../private/lib/utils';
-import useSignal from '@/lib/hooks/signals/useSignal';
 import useFlag from '@/lib/hooks/state/useFlag';
-import useTimeout from '@/lib/hooks/shedulers/useTimeout';
 import buildClassName from '@/shared/lib/buildClassName';
 import stopEvent from '@/lib/utils/stopEvent';
 import useBodyClass from '@/shared/hooks/useBodyClass';
-import RangeSlider from '@/shared/ui/RangeSlider';
-import {
-  requestForcedReflow,
-  requestMeasure,
-  requestMutation,
-} from '@/lib/modules/fastdom/fastdom';
-import { buffer } from 'stream/consumers';
-import useLongPress from '@/lib/hooks/events/useLongPress';
 import { useSignalEffect, useSignalLayoutEffect } from '@/lib/hooks/signals/useSignalEffect';
 import useDebouncedCallback from '@/lib/hooks/shedulers/useDebouncedCallback';
+import SettingsDropdown from '../../private/ui/SettingsDropdown';
+import { TriggerProps } from '@/shared/ui/DropdownMenu';
 
 type OwnProps = {
   // Playback Control
@@ -76,6 +68,12 @@ type OwnProps = {
 
 const HIDE_CONTROLS_TIMEOUT_MS = 3000;
 const DEBOUNCE = 200;
+
+const TriggerButton: FC<TriggerProps> = ({ onTrigger }) => (
+  <IconButton onClick={onTrigger} className={buildClassName(s.control, s.blendMode)}>
+    <SettingsRounded className={s.icon} />
+  </IconButton>
+);
 
 const VideoPlayerControls: FC<OwnProps> = ({
   isPlaying,
@@ -200,6 +198,8 @@ const VideoPlayerControls: FC<OwnProps> = ({
         playbackRate={10}
         isReady={isReady}
         isActive={isVisible}
+        isPreviewDisabled={isPreviewDisabled}
+        isPlaying={isPlaying}
         onSeek={handleSeek}
         onSeekStart={handleStartSeek}
       />
@@ -236,9 +236,7 @@ const VideoPlayerControls: FC<OwnProps> = ({
 
       <div className={s.divider} />
 
-      <IconButton className={buildClassName(s.control, s.blendMode)}>
-        <SettingsRounded className={s.icon} />
-      </IconButton>
+      <SettingsDropdown triggerButton={TriggerButton} />
 
       {isPictureInPictureSupported && (
         <IconButton

@@ -1,13 +1,14 @@
+import { EMouseButton } from '@/lib/core';
 import stopEvent from '@/lib/utils/stopEvent';
 import { RefObject, useEffect } from 'react';
 
-const BACKDROP_CLASSNAME = 'backdrop';
+export const BACKDROP_CLASSNAME = 'backdrop';
 
 // This effect implements closing menus by clicking outside of them
 // without adding extra elements to the DOM
 export default function useVirtualBackdrop(
   isOpen: boolean,
-  menuRef: RefObject<HTMLElement>,
+  menuRef: RefObject<HTMLElement | null>,
   onClose?: () => void | undefined,
   ignoreRightClick?: boolean,
   excludedClosestSelector?: string,
@@ -20,7 +21,8 @@ export default function useVirtualBackdrop(
     const handleEvent = (e: MouseEvent) => {
       const menu = menuRef.current;
       const target = e.target as HTMLElement | null;
-      if (!menu || !target || (ignoreRightClick && e.button === 2)) {
+
+      if (!menu || !target || (ignoreRightClick && e.button === EMouseButton.Secondary)) {
         return;
       }
 

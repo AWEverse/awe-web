@@ -4,6 +4,7 @@ import { useRef, useEffect } from 'react';
 const useAmbilight = (
   videoRef: React.RefObject<HTMLVideoElement | null>,
   canvasRef: React.RefObject<HTMLCanvasElement | null>,
+  isDisabled: boolean = false,
 ) => {
   const fps = 30;
   const intervalMs = 1000 / fps;
@@ -11,6 +12,10 @@ const useAmbilight = (
   const animationFrameId = useRef<number | undefined>(undefined);
 
   useEffect(() => {
+    if (isDisabled) {
+      return;
+    }
+
     const canvasElement = canvasRef.current!;
     const context = canvasElement?.getContext('2d');
     const videoElement = videoRef.current!;
@@ -66,11 +71,20 @@ const useAmbilight = (
         videoElement.removeEventListener('play', startAmbilightRepaint);
         videoElement.removeEventListener('pause', stopAmbilightRepaint);
         videoElement.removeEventListener('ended', stopAmbilightRepaint);
-        videoElement.removeEventListener('seeked', handleLoadedData);
+        videoElement.removeEventListener('seeked', handleSeeked);
         videoElement.removeEventListener('loadeddata', handleLoadedData);
       }
     };
-  }, [videoRef, canvasRef, fps, intervalMs]);
+  }, [videoRef, canvasRef, isDisabled, fps, intervalMs]);
+
+  useEffect(() => {
+    if (isDisabled) {
+      if (animationFrameId.current !== undefined) {
+        cancelAnimationFrame(animationFrameId.current);
+        animationFrameId.current = undefined;
+      }
+    }
+  }, [isDisabled]);
 };
 
 export default useAmbilight;

@@ -12,7 +12,7 @@
   position: relative;
   max-height: calc(100 * var(--vh) - 4.375rem);
   z-index: 100;
-  min-width: 15rem;
+  min-width: 1rem;
   max-width: 19rem;
   background-color: rgba(var(--awe-palette-background-paperChannel) / 0.875);
   backdrop-filter: blur(1rem);
