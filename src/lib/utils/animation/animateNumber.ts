@@ -1,16 +1,8 @@
 import { requestMeasure } from '@/lib/modules/fastdom/fastdom';
 import { animateInstantly } from './animate';
+import { derivative } from '@/lib/core';
 
 type TimingFn = (t: number) => number;
-
-type AnimateNumberProps<T extends number | number[]> = {
-  to: T;
-  from: T;
-  duration: number;
-  onUpdate: (value: T) => void;
-  timing?: TimingFn;
-  onEnd?: (isCanceled?: boolean) => void;
-};
 
 export const timingFunctions = {
   linear: (t: number) => t,
@@ -31,6 +23,37 @@ export const timingFunctions = {
   easeInOutQuint: (t: number) => (t < 0.5 ? 16 * t ** 5 : 1 + 16 * --t * t ** 4),
 };
 
+type AnimateNumberProps<T extends number | number[]> = {
+  to: T;
+  from: T;
+  duration: number;
+  onUpdate: (value: T) => void;
+  timing?: TimingFn;
+  onEnd?: (isCanceled?: boolean) => void;
+};
+
+function updateNumber(
+  from: number,
+  to: number,
+  progress: number,
+  onUpdate: (value: number) => void,
+) {
+  const updatedValue = from + (to - from) * progress;
+  onUpdate(updatedValue);
+}
+
+function updateArray(
+  from: number[],
+  to: number[],
+  progress: number,
+  onUpdate: (value: number[]) => void,
+) {
+  const updatedValues = from.map((startValue, index) => {
+    return startValue + (to[index] - startValue) * progress;
+  });
+  onUpdate(updatedValues);
+}
+
 export function animateNumber<T extends number | number[]>({
   timing = timingFunctions.linear,
   onUpdate,
@@ -48,16 +71,12 @@ export function animateNumber<T extends number | number[]>({
     const currentTime = Date.now();
     const elapsedTime = Math.min((currentTime - startTime) / duration, 1);
 
-    const progress = timing(elapsedTime);
+    const progress = derivative(timing, elapsedTime);
 
     if (typeof from === 'number' && typeof to === 'number') {
-      onUpdate((from + (to - from) * progress) as T);
+      updateNumber(from, to, progress, onUpdate as (value: number) => void);
     } else if (Array.isArray(from) && Array.isArray(to)) {
-      const updatedValues = from.map((startValue, index) => {
-        return startValue + (to[index] - startValue) * progress;
-      });
-
-      onUpdate(updatedValues as T);
+      updateArray(from, to, progress, onUpdate as (value: number[]) => void);
     }
 
     if (elapsedTime === 1) {
