@@ -85,6 +85,8 @@ const TriggerButton: FC<TriggerProps> = ({ onTrigger }) => (
   </IconButton>
 );
 
+// Signals only change values ​​in the root component in the input file. Revised the ability to switch to a read-only signal
+
 const VideoPlayerControls: FC<OwnProps> = ({
   isPlaying,
   currentTimeSignal,

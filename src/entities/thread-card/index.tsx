@@ -1,8 +1,8 @@
-import React, { FC } from 'react';
-import { Avatar, Typography } from '@mui/material';
-import { VerticalDivider } from '@/shared/ui/Divider';
-import Linkify from '@/shared/ui/Linkify';
-import s from './index.module.scss';
+import React, { FC } from "react";
+import { Avatar, Typography } from "@mui/material";
+import { VerticalDivider } from "@/shared/ui/Divider";
+import Linkify from "@/shared/ui/Linkify";
+import s from "./index.module.scss";
 
 interface ThreadCardProps {
   userAvatarSrc: string;
@@ -18,7 +18,7 @@ interface ThreadCardProps {
 
 const ThreadCard: FC<ThreadCardProps> = ({
   userAvatarSrc,
-  userAvatarAlt = 'User avatar',
+  userAvatarAlt = "User avatar",
   userName,
   userTitle,
   userSubtitle,
@@ -47,7 +47,7 @@ const ThreadCard: FC<ThreadCardProps> = ({
                   alt={alt}
                   className={s.partition}
                   src={src}
-                  sx={{ width: '24px', height: '24px' }}
+                  sx={{ width: "24px", height: "24px" }}
                 />
               ))}
             </div>
@@ -65,14 +65,20 @@ const ThreadCard: FC<ThreadCardProps> = ({
                 {userTitle}
               </Typography>
 
-              {moreDecorator && <div className={s.moreDecorator}>{moreDecorator}</div>}
+              {moreDecorator && (
+                <div className={s.moreDecorator}>{moreDecorator}</div>
+              )}
             </div>
           </header>
 
           <section className={s.body}>
-            {userSubtitle && <Typography component="p">{userSubtitle}</Typography>}
+            {userSubtitle && (
+              <Typography component="p">{userSubtitle}</Typography>
+            )}
 
-            {actionDecorator && <div className={s.actionDecorator}>{actionDecorator}</div>}
+            {actionDecorator && (
+              <div className={s.actionDecorator}>{actionDecorator}</div>
+            )}
 
             {metaText && (
               <Typography className={s.metaContent}>

@@ -34,42 +34,46 @@
 // - `*` — 404 Not Found page
 
 export const ROUTES = {
-  MAIN: '/',
+  MAIN: "/",
+
+  HOME: {
+    BASE: "",
+  },
 
   USER_PROFILE: {
-    BASE: '/:username',
-    FOLLOWERS: '/:username/followers',
-    FOLLOWING: '/:username/following',
+    BASE: "/:username",
+    FOLLOWERS: "/:username/followers",
+    FOLLOWING: "/:username/following",
   },
 
   CHAT: {
-    BASE: '/chat',
-    THREAD: '/chat/:id',
-    NEW: '/chat/new',
-    SEARCH: '/chat/search',
+    BASE: "/chat",
+    THREAD: "/chat/:id",
+    NEW: "/chat/new",
+    SEARCH: "/chat/search",
   },
 
   DIALOGS: {
-    BASE: '/dialogs',
-    THREAD: '/dialogs/:id',
+    BASE: "/dialogs",
+    THREAD: "/dialogs/:id",
   },
 
   DISCUS: {
-    BASE: '/d',
-    THREAD: ':id',
-    OVERVIEW: 'overview',
-    DISSCUSIONS: 'disscusions',
-    MEMBERS: 'members',
+    BASE: "/d",
+    THREAD: ":id",
+    OVERVIEW: "overview",
+    DISSCUSIONS: "disscusions",
+    MEMBERS: "members",
   },
 
   REELS: {
-    BASE: '/reels',
-    THREAD: '/reels/:id',
+    BASE: "/reels",
+    THREAD: "/reels/:id",
   },
 
   VIDEO: {
-    BASE: '/video',
-    THREAD: '/video/thread',
-    THREAD_ID: '/video/thread/:id',
+    BASE: "/video",
+    THREAD: "/video/thread",
+    THREAD_ID: "/video/thread/:id",
   },
 };

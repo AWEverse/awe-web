@@ -1,31 +1,34 @@
-import { Route, Routes } from 'react-router-dom';
-import { lazy, Suspense } from 'react';
+import { Route, Routes } from "react-router-dom";
+import { lazy, Suspense } from "react";
 
 // Lazy-loaded pages
-const TestPage = lazy(() => import('@/pages/test'));
-const OverviewPage = lazy(() => import('@/pages/d/subpages/overview'));
-const ThreadsPage = lazy(() => import('@/pages/threds'));
-const DisscusionsPage = lazy(() => import('@/pages/d/subpages/disscusions'));
-const CommunityPeoplePage = lazy(() => import('@/pages/d/subpages/people'));
-const ChatPage = lazy(() => import('@/pages/chat'));
-const ThreadPage = lazy(() => import('@/pages/thread'));
-const NotFoundPage = lazy(() => import('@/pages/not-found'));
-const RedditPage = lazy(() => import('@/pages/d'));
-const SubRedditPage = lazy(() => import('@/pages/d/subreddit'));
-const ProfilePage = lazy(() => import('@/pages/profile'));
-const VideoPage = lazy(() => import('@/pages/video'));
+const TestPage = lazy(() => import("@/pages/test"));
+const OverviewPage = lazy(() => import("@/pages/d/subpages/overview"));
+const ThreadsPage = lazy(() => import("@/pages/threds"));
+const DisscusionsPage = lazy(() => import("@/pages/d/subpages/disscusions"));
+const CommunityPeoplePage = lazy(() => import("@/pages/d/subpages/people"));
+const ChatPage = lazy(() => import("@/pages/chat"));
+const ThreadPage = lazy(() => import("@/pages/thread"));
+const NotFoundPage = lazy(() => import("@/pages/not-found"));
+const RedditPage = lazy(() => import("@/pages/d"));
+const SubRedditPage = lazy(() => import("@/pages/d/subreddit"));
+const ProfilePage = lazy(() => import("@/pages/profile"));
+const VideoPage = lazy(() => import("@/pages/video"));
 
-import { SingleThread } from '@/pages/threds/';
-import { ROUTES } from './constants';
-import RouteFallback from './ui/RouteFallback';
+import { SingleThread } from "@/pages/threds/";
+import { ROUTES } from "./constants";
+import RouteFallback from "./ui/RouteFallback";
+import HomePage from "@/pages/home/ui/HomePage";
 
 // Loading fallback component
 const LoadingFallback = () => <div>Loading...</div>;
 
-const { MAIN, USER_PROFILE, CHAT, DIALOGS, DISCUS, VIDEO } = ROUTES;
+const { HOME, MAIN, USER_PROFILE, CHAT, DIALOGS, DISCUS, VIDEO } = ROUTES;
 
 const renderRoutes = () => (
   <>
+    <Route element={<HomePage />} path={HOME.BASE} />
+
     <Route element={<ThreadPage />} path={MAIN} />
     <Route element={<ProfilePage />} path={USER_PROFILE.BASE} />
 

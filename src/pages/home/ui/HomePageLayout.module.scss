@@ -1,0 +1,24 @@
+.HomePageLayout {
+  display: grid;
+  height: 100dvh;
+  width: 100dvw;
+  grid-template-columns: 50% 50%;
+  grid-template-rows: 40% 60%;
+  padding: 0.25rem;
+  grid-template-areas:
+    "a b"
+    "a c";
+
+  & > :nth-child(1) {
+    grid-area: a;
+  }
+
+  & > :nth-child(2) {
+    grid-area: b;
+  }
+
+  & > :nth-child(3) {
+    grid-area: c;
+  }
+
+}
