@@ -78,11 +78,9 @@ const useAmbilight = (
   }, [videoRef, canvasRef, isDisabled, fps, intervalMs]);
 
   useEffect(() => {
-    if (isDisabled) {
-      if (animationFrameId.current !== undefined) {
-        cancelAnimationFrame(animationFrameId.current);
-        animationFrameId.current = undefined;
-      }
+    if (isDisabled && animationFrameId.current !== undefined) {
+      cancelAnimationFrame(animationFrameId.current);
+      animationFrameId.current = undefined;
     }
   }, [isDisabled]);
 };

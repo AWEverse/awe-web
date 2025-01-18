@@ -4,7 +4,7 @@ import { requestMutation, requestMeasure } from '@/lib/modules/fastdom/fastdom';
 import { RefObject, useState, useEffect, useCallback } from 'react';
 
 const useKeyboardListNavigation = (
-  elementRef: RefObject<HTMLElement>,
+  elementRef: RefObject<HTMLElement | null>,
   isOpen: boolean,
   onSelectWithEnter?: (index: number) => void,
   itemSelector?: string,

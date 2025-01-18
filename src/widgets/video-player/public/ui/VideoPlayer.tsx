@@ -1,7 +1,8 @@
-import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   clamp,
   clamp01,
+  derivative,
   EKeyboardKey,
   EMediaReadyState,
   IS_IOS,
@@ -13,26 +14,31 @@ import {
   setMediaPlayBackRate,
   setMediaVolume,
   throttle,
-} from '@/lib/core';
-import useLastCallback from '@/lib/hooks/events/useLastCallback';
-import useFullscreen from '../hooks/useFullScreen';
-import useUnsupportedMedia from '../hooks/useSupportCheck';
-import useContextSignal from '../../private/hooks/useContextSignal';
-import useBuffering, { BufferedRange } from '@/lib/hooks/ui/useBuffering';
-import useControlsSignal from '../../private/hooks/useControlsSignal';
-import stopEvent from '@/lib/utils/stopEvent';
-import useAmbilight from '../hooks/useAmbilight';
-import { ObserveFn } from '@/lib/hooks/sensors/useIntersectionObserver';
+} from "@/lib/core";
+import useLastCallback from "@/lib/hooks/events/useLastCallback";
+import useFullscreen from "../hooks/useFullScreen";
+import useUnsupportedMedia from "../hooks/useSupportCheck";
+import useContextSignal from "../../private/hooks/useContextSignal";
+import useBuffering, {
+  BufferedRange,
+  getTimeRanges,
+} from "@/lib/hooks/ui/useBuffering";
+import useControlsSignal from "../../private/hooks/useControlsSignal";
+import stopEvent from "@/lib/utils/stopEvent";
+import useAmbilight from "../hooks/useAmbilight";
+import { ObserveFn } from "@/lib/hooks/sensors/useIntersectionObserver";
 
-import VideoPlayerControls from './VideoPlayerControls';
+import VideoPlayerControls from "./VideoPlayerControls";
 
-import './VideoPlayer.scss';
-import { ApiDimensions } from '@/@types/api/types/messages';
-import useVideoCleanup from '@/shared/hooks/useVideoCleanup';
-import useAppLayout from '@/lib/hooks/ui/useAppLayout';
-import usePictureInPicture from '../hooks/usePictureInPicture';
-import useThrottledCallback from '@/lib/hooks/shedulers/useThrottledCallback';
-import buildClassName from '@/shared/lib/buildClassName';
+import "./VideoPlayer.scss";
+import { ApiDimensions } from "@/@types/api/types/messages";
+import useVideoCleanup from "@/shared/hooks/useVideoCleanup";
+import useAppLayout from "@/lib/hooks/ui/useAppLayout";
+import usePictureInPicture from "../hooks/usePictureInPicture";
+import useThrottledCallback from "@/lib/hooks/shedulers/useThrottledCallback";
+import buildClassName from "@/shared/lib/buildClassName";
+import { areDeepEqual } from "@/lib/utils/areDeepEqual";
+import useFlag from "@/lib/hooks/state/useFlag";
 
 type OwnProps = {
   ref?: React.RefObject<HTMLVideoElement | null>;
@@ -70,7 +76,7 @@ const MIN_READY_STATE = 4;
 const REWIND_STEP = 5; // Seconds
 
 const VideoPlayer: React.FC<OwnProps> = ({
-  mediaUrl = 'public\\video_test\\got.mp4',
+  mediaUrl = "public\\video_test\\got.mp4",
   posterDimensions,
   forceMobileView,
   audioVolume = 1,
@@ -94,6 +100,7 @@ const VideoPlayer: React.FC<OwnProps> = ({
 
   const [isReady, setReady] = useState(false);
   const [isPlaying, setPlaying] = useState(false);
+  const [isAmbient, markAmbientOn, markAmbientOff] = useFlag();
 
   const [currentTime, setCurrentTime] = useContextSignal(0);
   const [volume, setVolume] = useContextSignal(1);
@@ -103,31 +110,47 @@ const VideoPlayer: React.FC<OwnProps> = ({
   const [controlsSignal, toggleControls, lockControls] = useControlsSignal();
 
   const { isMobile } = useAppLayout();
-  const [isFullscreen, enterFullscreen, exitFullscreen] = useFullscreen(containerRef, setPlaying);
-  const [isPictureInPictureSupported, enterPictureInPicture, isInPictureInPicture] =
-    usePictureInPicture(videoRef, enterFullscreen!, exitFullscreen!);
+  const [isFullscreen, enterFullscreen, exitFullscreen] = useFullscreen(
+    containerRef,
+    setPlaying,
+  );
 
-  // const { isReady, isBuffered, bufferedRanges, bufferingHandlers, bufferedProgress } =
-  useBuffering();
+  const handleEnterFullscreen = useLastCallback(() => {});
+
+  const handleLeaveFullscreen = useLastCallback(() => {});
+
+  const [
+    isPictureInPictureSupported,
+    enterPictureInPicture,
+    isInPictureInPicture,
+  ] = usePictureInPicture(
+    videoRef,
+    handleEnterFullscreen,
+    handleLeaveFullscreen,
+  );
+
+  // const { isReady, isBuffered, bufferedRanges, bufferingHandlers, bufferedProgress } = useBuffering();
   // useVideoCleanup(videoRef, bufferingHandlers);
 
   const isUnsupported = useUnsupportedMedia(videoRef);
 
   useAmbilight(videoRef, canvasRef);
 
-  const handleTimeUpdate = useLastCallback((e: React.SyntheticEvent<HTMLVideoElement>) => {
-    const { currentTime, duration, readyState } = e.currentTarget;
+  const handleTimeUpdate = useLastCallback(
+    (e: React.SyntheticEvent<HTMLVideoElement>) => {
+      const { currentTime, duration, readyState } = e.currentTarget;
 
-    if (readyState >= EMediaReadyState.HAVE_ENOUGH_DATA) {
-      setWaiting(false);
-      setCurrentTime(currentTime);
-    }
+      if (readyState >= EMediaReadyState.HAVE_ENOUGH_DATA) {
+        setWaiting(false);
+        setCurrentTime(currentTime);
+      }
 
-    if (!isLooped && currentTime === duration) {
-      setCurrentTime(0);
-      setPlaying(false);
-    }
-  });
+      if (!isLooped && currentTime === duration) {
+        setCurrentTime(0);
+        setPlaying(false);
+      }
+    },
+  );
 
   const handleEnded = useLastCallback(() => {
     setCurrentTime(0);
@@ -138,6 +161,10 @@ const VideoPlayer: React.FC<OwnProps> = ({
   const handleSeek = useLastCallback((position: number) => {
     videoRef.current!.currentTime = clamp(position, 0, duration);
   });
+
+  const handleSeekStart = useLastCallback(() => {});
+
+  const handleSeekEnd = useLastCallback(() => {});
 
   const togglePlayState = useLastCallback(
     async (e: React.MouseEvent<HTMLElement, MouseEvent> | KeyboardEvent) => {
@@ -150,33 +177,37 @@ const VideoPlayer: React.FC<OwnProps> = ({
     },
   );
 
-  const handleClick = useLastCallback(async (e: React.MouseEvent<HTMLVideoElement, MouseEvent>) => {
-    if (isAdsMessage) {
-      onAdsClick?.(true);
-    }
+  const handleClick = useLastCallback(
+    async (e: React.MouseEvent<HTMLVideoElement, MouseEvent>) => {
+      if (isAdsMessage) {
+        onAdsClick?.(true);
+      }
 
-    if (disableClickActions) {
-      return;
-    }
+      if (disableClickActions) {
+        return;
+      }
 
-    await togglePlayState(e);
-  });
+      await togglePlayState(e);
+    },
+  );
 
-  const handleVideoLeave = useLastCallback((e: React.MouseEvent<HTMLDivElement>) => {
-    const bounds = videoRef.current?.getBoundingClientRect();
-    if (!bounds) {
-      return;
-    }
+  const handleVideoLeave = useLastCallback(
+    (e: React.MouseEvent<HTMLDivElement>) => {
+      const bounds = videoRef.current?.getBoundingClientRect();
+      if (!bounds) {
+        return;
+      }
 
-    if (
-      e.clientX < bounds.left ||
-      e.clientX > bounds.right ||
-      e.clientY < bounds.top ||
-      e.clientY > bounds.bottom
-    ) {
-      toggleControls(false);
-    }
-  });
+      if (
+        e.clientX < bounds.left ||
+        e.clientX > bounds.right ||
+        e.clientY < bounds.top ||
+        e.clientY > bounds.bottom
+      ) {
+        toggleControls(false);
+      }
+    },
+  );
 
   const handleVideoMove = useLastCallback(() => {
     toggleControls(true);
@@ -208,13 +239,17 @@ const VideoPlayer: React.FC<OwnProps> = ({
     }
   });
 
-  const handlePlay = useLastCallback((e: React.SyntheticEvent<HTMLVideoElement>) => {
-    setPlaying(true);
-  });
+  const handlePlay = useLastCallback(
+    (e: React.SyntheticEvent<HTMLVideoElement>) => {
+      setPlaying(true);
+    },
+  );
 
-  const handlePauseChange = useLastCallback((e: React.SyntheticEvent<HTMLVideoElement>) => {
-    setPlaying(false);
-  });
+  const handlePauseChange = useLastCallback(
+    (e: React.SyntheticEvent<HTMLVideoElement>) => {
+      setPlaying(false);
+    },
+  );
 
   useEffect(() => {
     const videoElement = videoRef.current;
@@ -236,7 +271,11 @@ const VideoPlayer: React.FC<OwnProps> = ({
     const rewind = (dir: number) => {
       const video = videoRef.current!;
 
-      const newTime = clamp(video.currentTime + dir * REWIND_STEP, 0, video.duration);
+      const newTime = clamp(
+        video.currentTime + dir * REWIND_STEP,
+        0,
+        video.duration,
+      );
 
       if (Number.isFinite(newTime)) {
         video.currentTime = newTime;
@@ -257,19 +296,23 @@ const VideoPlayer: React.FC<OwnProps> = ({
           togglePlayState(e);
           break;
         case EKeyboardKey.ArrowLeft:
-        case 'Left': // IE/Edge specific
+        case "Left": // IE/Edge specific
           e.preventDefault();
           rewind(-1);
           break;
         case EKeyboardKey.ArrowRight:
-        case 'Right': // IE/Edge specific
+        case "Right": // IE/Edge specific
           e.preventDefault();
           rewind(1);
           break;
         case EKeyboardKey.ArrowUp:
         case EKeyboardKey.ArrowDown:
           e.preventDefault();
-          handleVolumeChange(clamp01(volume.value + (e.key === EKeyboardKey.ArrowUp ? 0.1 : -0.1)));
+          handleVolumeChange(
+            clamp01(
+              volume.value + (e.key === EKeyboardKey.ArrowUp ? 0.1 : -0.1),
+            ),
+          );
           break;
         case EKeyboardKey.M:
           e.preventDefault();
@@ -282,10 +325,10 @@ const VideoPlayer: React.FC<OwnProps> = ({
       }
     };
 
-    document.addEventListener('keydown', handleKeyDown);
+    document.addEventListener("keydown", handleKeyDown);
 
     return () => {
-      document.removeEventListener('keydown', handleKeyDown);
+      document.removeEventListener("keydown", handleKeyDown);
     };
   }, [togglePlayState, isFullscreen, isInPictureInPicture]);
 
@@ -308,21 +351,14 @@ const VideoPlayer: React.FC<OwnProps> = ({
   // }, [isReady]);
 
   const handlersBuffering = useMemo(() => {
-    const handleBuffering = (e: Event | React.SyntheticEvent<HTMLMediaElement>) => {
+    const handleBuffering = (
+      e: Event | React.SyntheticEvent<HTMLMediaElement>,
+    ) => {
       const media = e.currentTarget as HTMLMediaElement;
-      const ranges = media.buffered;
+      const ranges = getTimeRanges(media.buffered, media.duration);
 
-      const result: BufferedRange[] = [];
-
-      for (let i = 0; i < ranges.length; i++) {
-        result.push({
-          start: ranges.start(i) / duration,
-          end: ranges.end(i) / duration,
-        });
-      }
-
-      setBuffered(result);
-      setReady(current => current || isMediaReadyToPlay(media));
+      setBuffered(ranges);
+      setReady((current) => current || isMediaReadyToPlay(media));
     };
 
     return {
@@ -338,7 +374,10 @@ const VideoPlayer: React.FC<OwnProps> = ({
 
   return (
     <div
-      className={buildClassName('VideoPlayer', isFullscreen && 'FullscreenMode')}
+      className={buildClassName(
+        "VideoPlayer",
+        isFullscreen && "FullscreenMode",
+      )}
       ref={containerRef}
       onMouseMove={shouldToggleControls ? handleVideoMove : undefined}
       onMouseOut={shouldToggleControls ? handleVideoLeave : undefined}
@@ -347,7 +386,7 @@ const VideoPlayer: React.FC<OwnProps> = ({
         id="media-viewer-video"
         autoPlay={IS_TOUCH_ENV}
         ref={videoRef}
-        className={'Video'}
+        className={buildClassName("Video", IS_TOUCH_ENV && "is-touch-env")}
         controls={false}
         controlsList="nodownload"
         playsInline
@@ -364,7 +403,7 @@ const VideoPlayer: React.FC<OwnProps> = ({
         src={mediaUrl as string}
       />
 
-      <div className={'PlayerControlsWrapper'}>
+      <div className={"PlayerControlsWrapper"}>
         <VideoPlayerControls
           // Playback Control
           isPlaying={isPlaying}
@@ -392,10 +431,12 @@ const VideoPlayer: React.FC<OwnProps> = ({
           onToggleControls={toggleControls}
           onPlayPause={togglePlayState}
           onSeek={handleSeek}
+          onSeekStart={handleSeekStart}
+          onSeekEnd={handleSeekEnd}
         />
       </div>
 
-      <canvas id="ambilight" ref={canvasRef} className={'CinematicLight'} />
+      <canvas id="ambilight" ref={canvasRef} className={"CinematicLight"} />
       <div
         ref={bottomRef}
         className="VideoPlayerBottom"

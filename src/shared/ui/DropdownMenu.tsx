@@ -3,7 +3,6 @@ import { CSSTransition } from 'react-transition-group';
 import s from './DropdownMenu.module.scss';
 import buildClassName from '../lib/buildClassName';
 import useRefInstead from '@/lib/hooks/state/useRefInstead';
-import useLastCallback from '@/lib/hooks/events/useLastCallback';
 import captureKeyboardListeners from '@/lib/utils/captureKeyboardListeners';
 import LightEffect from './common/LightEffect';
 import trapFocus from '@/lib/utils/trapFocus';
@@ -40,7 +39,7 @@ interface OwnProps {
 
 const OUTBOX_SIZE = 60; //px
 const SCALE_FACTOR = 0.85; //%
-const THROTTLE_INTERVAL = 250; //1/4 of a second
+const THROTTLE_INTERVAL = 250; //1/4 per second
 const TRANSITION_DURATION = 250;
 
 const DropdownMenu: FC<OwnProps & OwnSharedProps> = ({
@@ -71,16 +70,16 @@ const DropdownMenu: FC<OwnProps & OwnSharedProps> = ({
     isOpen ? onOpen?.() : onClose?.();
   };
 
-  const handleClose = useLastCallback(() => {
+  const handleClose = () => {
     setIsOpen(false);
     onClose?.();
-  });
+  };
 
-  const handleEnter = useLastCallback((e: KeyboardEvent) => {
+  const handleEnter = (e: KeyboardEvent) => {
     e.preventDefault();
 
     return onEnter ? (onEnter?.(), true) : false;
-  });
+  };
 
   useEffect(() => {
     if (shouldClose) {
@@ -89,16 +88,12 @@ const DropdownMenu: FC<OwnProps & OwnSharedProps> = ({
     }
 
     if (isOpen) {
-      const releaseListeners = captureKeyboardListeners({
+      return captureKeyboardListeners({
         onEsc: handleClose,
         onEnter: handleEnter,
       });
-
-      return () => {
-        releaseListeners();
-      };
     }
-  }, [shouldClose, isOpen, handleEnter, handleClose]);
+  }, [shouldClose, isOpen]);
 
   useEffect(() => {
     const menu = dropdownRef.current;

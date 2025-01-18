@@ -1,4 +1,5 @@
 type MathFunction = (x: number) => number;
+
 /**
  * Calculates the numerical derivative of a given function at a specific point using central difference.
  *
@@ -7,7 +8,11 @@ type MathFunction = (x: number) => number;
  * @param {number} [h=1e-5] - The step size used for numerical differentiation (default is 1e-5).
  * @returns {number} The approximate value of the derivative at the point x.
  */
-export const derivative = (fn: MathFunction, x: number, h: number = 1e-5): number => {
+export const derivative = (
+  fn: MathFunction,
+  x: number,
+  h: number = 1e-5,
+): number => {
   return (fn(x + h) - fn(x)) / h;
 };
 
@@ -90,7 +95,12 @@ export const median = (numbers: number[]): number => {
     }
   };
 
-  const partition = (arr: number[], left: number, right: number, pivotIndex: number): number => {
+  const partition = (
+    arr: number[],
+    left: number,
+    right: number,
+    pivotIndex: number,
+  ): number => {
     let storeIndex = left;
     const pivotValue = arr[pivotIndex];
 
@@ -108,7 +118,12 @@ export const median = (numbers: number[]): number => {
     return storeIndex;
   };
 
-  const quickSelect = (arr: number[], left: number, right: number, k: number): number => {
+  const quickSelect = (
+    arr: number[],
+    left: number,
+    right: number,
+    k: number,
+  ): number => {
     if (left === right) {
       return arr[left];
     }

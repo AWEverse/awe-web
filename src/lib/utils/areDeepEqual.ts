@@ -6,7 +6,7 @@ export function areDeepEqual<T>(value1: T, value2: T): boolean {
     return false;
   }
 
-  if (type1 !== 'object' || value1 === null || value2 === null) {
+  if (type1 !== "object" || value1 === null || value2 === null) {
     return value1 === value2;
   }
 
@@ -34,5 +34,5 @@ export function areDeepEqual<T>(value1: T, value2: T): boolean {
     return false;
   }
 
-  return keys1.every(key1 => areDeepEqual(object1[key1], object2[key1]));
+  return keys1.every((key1) => areDeepEqual(object1[key1], object2[key1]));
 }

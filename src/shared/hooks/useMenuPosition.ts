@@ -96,29 +96,27 @@ function applyStaticOptions(
   const containerEl = containerRef.current!;
   const bubbleEl = bubbleRef.current!;
 
-  requestMutation(() => {
-    if (style) {
-      containerEl.style.cssText = style;
-    }
+  if (style) {
+    containerEl.style.cssText = style;
+  }
 
-    if (heightStyle) {
-      bubbleEl.style.cssText = heightStyle;
-    }
+  if (heightStyle) {
+    bubbleEl.style.cssText = heightStyle;
+  }
 
-    if (positionX) {
-      addExtraClass(bubbleEl, positionX);
-    }
+  if (positionX) {
+    addExtraClass(bubbleEl, positionX);
+  }
 
-    if (positionY) {
-      addExtraClass(bubbleEl, positionY);
-    }
+  if (positionY) {
+    addExtraClass(bubbleEl, positionY);
+  }
 
-    setExtraStyles(bubbleEl, {
-      transformOrigin: [
-        transformOriginX ? `${transformOriginX}px` : positionX,
-        transformOriginY ? `${transformOriginY}px` : positionY,
-      ].join(' '),
-    });
+  setExtraStyles(bubbleEl, {
+    transformOrigin: [
+      transformOriginX ? `${transformOriginX}px` : positionX,
+      transformOriginY ? `${transformOriginY}px` : positionY,
+    ].join(' '),
   });
 }
 

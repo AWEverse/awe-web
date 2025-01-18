@@ -26,11 +26,23 @@ export const MAX_DBL: number = 1.7976931348623158e308;
 
 // TypeScript numeric limits using a generic base class
 
-export interface NumericLimits<T> {
+export interface NumericLimits<T = number> {
   min: T;
   max: T;
   lowest?: T;
 }
+
+export type NumericLimitsType =
+  | 'uint8'
+  | 'uint16'
+  | 'uint32'
+  | 'uint64'
+  | 'int8'
+  | 'int16'
+  | 'int32'
+  | 'int64'
+  | 'float'
+  | 'double';
 
 class NumericLimitsBase<T> implements NumericLimits<T> {
   constructor(

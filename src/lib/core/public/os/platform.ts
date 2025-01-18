@@ -37,6 +37,7 @@ export const IS_ANDROID = PLATFORM_ENV === 'Android';
 export const IS_MOBILE = IS_IOS || IS_ANDROID;
 
 export const IS_SAFARI = /safari/i.test(userAgent) && !/chrome|android/i.test(userAgent);
+// Specifically to exclude support
 export const IS_YA_BROWSER = userAgent.includes('yabrowser');
 export const IS_FIREFOX =
   userAgent.includes('firefox') || userAgent.includes('iceweasel') || userAgent.includes('icecat');

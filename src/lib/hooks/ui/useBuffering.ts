@@ -1,9 +1,9 @@
-import { useState } from 'react';
-import useLastCallback from '../events/useLastCallback';
-import { isSafariPatchInProgress } from '../../utils/patchSafariProgressiveAudio';
-import { areDeepEqual } from '../../utils/areDeepEqual';
-import { isMediaReadyToPlay } from '@/lib/core/public/misc/SafePlay';
-import useDebouncedCallback from '../shedulers/useDebouncedCallback';
+import { useState } from "react";
+import useLastCallback from "../events/useLastCallback";
+import { isSafariPatchInProgress } from "../../utils/patchSafariProgressiveAudio";
+import { areDeepEqual } from "../../utils/areDeepEqual";
+import { isMediaReadyToPlay } from "@/lib/core/public/misc/SafePlay";
+import useDebouncedCallback from "../shedulers/useDebouncedCallback";
 
 // Avoid flickering when re-mounting previously buffered video
 const DEBOUNCE = 200;
@@ -13,7 +13,9 @@ const MIN_ALLOWED_MEDIA_DURATION = 0.1; // Some video emojis have weird duration
  * Time range relative to the duration [0, 1]
  */
 
-export type HTMLMediaBufferedEvent = Event | React.SyntheticEvent<HTMLMediaElement>;
+export type HTMLMediaBufferedEvent =
+  | Event
+  | React.SyntheticEvent<HTMLMediaElement>;
 export type BufferedRange = { start: number; end: number };
 export type BufferingEvent = (e: HTMLMediaBufferedEvent) => void;
 
@@ -40,18 +42,24 @@ const useBuffering = (
   const [bufferedProgress, setBufferedProgress] = useState(0);
   const [bufferedRanges, setBufferedRanges] = useState<BufferedRange[]>([]);
 
-  const setIsBuffered = useDebouncedCallback(_setIsBuffered, [], DEBOUNCE, false, true);
+  const setIsBuffered = useDebouncedCallback(
+    _setIsBuffered,
+    [],
+    DEBOUNCE,
+    false,
+    true,
+  );
 
-  const handleBuffering = useLastCallback<BufferingEvent>(e => {
+  const handleBuffering = useLastCallback<BufferingEvent>((e) => {
     const media = e.currentTarget as HTMLMediaElement;
     const isMediaReady = isMediaReadyToPlay(media);
 
     if (media.duration < MIN_ALLOWED_MEDIA_DURATION) {
-      onBroken?.('Video duration is too short duration!');
+      onBroken?.("Video duration is too short duration!");
       return;
     }
 
-    if (e.type === 'timeupdate') {
+    if (e.type === "timeupdate") {
       onTimeUpdate?.(e);
     }
 
@@ -60,11 +68,11 @@ const useBuffering = (
       if (media.buffered.length) {
         const ranges = getTimeRanges(media.buffered, media.duration);
 
-        const bufferedLength = ranges.sum(range => range.end - range.start);
+        const bufferedLength = ranges.sum((range) => range.end - range.start);
 
         setBufferedProgress(bufferedLength / media.duration);
 
-        setBufferedRanges(currentRanges => {
+        setBufferedRanges((currentRanges) => {
           if (areDeepEqual(currentRanges, ranges)) {
             return currentRanges;
           }
@@ -74,7 +82,7 @@ const useBuffering = (
       }
 
       setIsBuffered(isMediaReady || media.currentTime > 0);
-      setIsReady(current => current || isMediaReady);
+      setIsReady((current) => current || isMediaReady);
     }
   });
 
@@ -100,16 +108,13 @@ const useBuffering = (
   };
 };
 
-function getTimeRanges(ranges: TimeRanges, duration: number) {
+export function getTimeRanges(ranges: TimeRanges, duration: number) {
   const result: BufferedRange[] = [];
 
   for (let i = 0; i < ranges.length; i++) {
-    const start = ranges.start(i) / duration;
-    const end = ranges.end(i) / duration;
-
     result.push({
-      start,
-      end,
+      start: ranges.start(i) / duration,
+      end: ranges.end(i) / duration,
     });
   }
 

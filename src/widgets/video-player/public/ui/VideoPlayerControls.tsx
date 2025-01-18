@@ -1,11 +1,11 @@
-import { ApiDimensions } from '@/@types/api/types/messages';
-import { BufferedRange } from '@/lib/hooks/ui/useBuffering';
-import React, { FC, memo, useEffect, useRef, useState } from 'react';
-import SeekLine from './SeekLine';
+import { ApiDimensions } from "@/@types/api/types/messages";
+import { BufferedRange } from "@/lib/hooks/ui/useBuffering";
+import React, { FC, memo, useEffect, useRef, useState } from "react";
+import SeekLine from "./SeekLine";
 
-import s from './VideoPlayerControls.module.scss';
-import { Signal } from '@/lib/core/public/signals';
-import { IconButton } from '@mui/material';
+import s from "./VideoPlayerControls.module.scss";
+import { Signal } from "@/lib/core/public/signals";
+import { IconButton } from "@mui/material";
 import {
   FullscreenExitRounded,
   FullscreenRounded,
@@ -16,18 +16,21 @@ import {
   SkipNextRounded,
   VolumeUpRounded,
   WidthFullRounded,
-} from '@mui/icons-material';
-import useLastCallback from '@/lib/hooks/events/useLastCallback';
-import { IS_TOUCH_ENV } from '@/lib/core';
-import { formatMediaDuration } from '../../private/lib/utils';
-import useFlag from '@/lib/hooks/state/useFlag';
-import buildClassName from '@/shared/lib/buildClassName';
-import stopEvent from '@/lib/utils/stopEvent';
-import useBodyClass from '@/shared/hooks/useBodyClass';
-import { useSignalEffect, useSignalLayoutEffect } from '@/lib/hooks/signals/useSignalEffect';
-import useDebouncedCallback from '@/lib/hooks/shedulers/useDebouncedCallback';
-import SettingsDropdown from '../../private/ui/SettingsDropdown';
-import { TriggerProps } from '@/shared/ui/DropdownMenu';
+} from "@mui/icons-material";
+import useLastCallback from "@/lib/hooks/events/useLastCallback";
+import { IS_TOUCH_ENV } from "@/lib/core";
+import { formatMediaDuration } from "../../private/lib/utils";
+import useFlag from "@/lib/hooks/state/useFlag";
+import buildClassName from "@/shared/lib/buildClassName";
+import stopEvent from "@/lib/utils/stopEvent";
+import useBodyClass from "@/shared/hooks/useBodyClass";
+import {
+  useSignalEffect,
+  useSignalLayoutEffect,
+} from "@/lib/hooks/signals/useSignalEffect";
+import useDebouncedCallback from "@/lib/hooks/shedulers/useDebouncedCallback";
+import SettingsDropdown from "../../private/ui/SettingsDropdown";
+import { TriggerProps } from "@/shared/ui/DropdownMenu";
 
 type OwnProps = {
   // Playback Control
@@ -56,7 +59,9 @@ type OwnProps = {
   isPreviewDisabled?: boolean;
 
   // Event Handlers
-  onChangeFullscreen: (e: React.MouseEvent<HTMLButtonElement, MouseEvent>) => void;
+  onChangeFullscreen: (
+    e: React.MouseEvent<HTMLButtonElement, MouseEvent>,
+  ) => void;
   onPictureInPictureChange?: () => void;
   onPlayPause: (e: React.MouseEvent<HTMLButtonElement, MouseEvent>) => void;
   onVolumeClick: () => void;
@@ -64,13 +69,18 @@ type OwnProps = {
   onPlaybackRateChange: (playbackRate: number) => void;
   onToggleControls: (flag: boolean) => void;
   onSeek: (position: number) => void;
+  onSeekStart: () => void;
+  onSeekEnd: () => void;
 };
 
 const HIDE_CONTROLS_TIMEOUT_MS = 3000;
 const DEBOUNCE = 200;
 
 const TriggerButton: FC<TriggerProps> = ({ onTrigger }) => (
-  <IconButton onClick={onTrigger} className={buildClassName(s.control, s.blendMode)}>
+  <IconButton
+    onClick={onTrigger}
+    className={buildClassName(s.control, s.blendMode)}
+  >
     <SettingsRounded className={s.icon} />
   </IconButton>
 );
@@ -101,6 +111,8 @@ const VideoPlayerControls: FC<OwnProps> = ({
   onSeek,
   onToggleControls,
   onVolumeClick,
+  onSeekStart,
+  onSeekEnd,
 }) => {
   const inputRef = useRef<HTMLInputElement>(null);
   const timeRef = useRef<HTMLTimeElement>(null);
@@ -111,7 +123,13 @@ const VideoPlayerControls: FC<OwnProps> = ({
   const isSeeking = useRef(false);
   const [isBuffered, _setIsBuffered] = useState(true);
   const [bufferedProgress, setBufferedProgress] = useState(0);
-  const setIsBuffered = useDebouncedCallback(_setIsBuffered, [], DEBOUNCE, false, true);
+  const setIsBuffered = useDebouncedCallback(
+    _setIsBuffered,
+    [],
+    DEBOUNCE,
+    false,
+    true,
+  );
 
   useEffect(() => {
     if (!IS_TOUCH_ENV && !isForceMobileVersion) {
@@ -120,7 +138,8 @@ const VideoPlayerControls: FC<OwnProps> = ({
 
     const _isSeeking = isSeeking.current;
 
-    const shouldClose = !isVisible && !isPlaying && !isPlaybackMenuOpen && _isSeeking;
+    const shouldClose =
+      !isVisible && !isPlaying && !isPlaybackMenuOpen && _isSeeking;
 
     if (shouldClose) {
       return;
@@ -131,19 +150,26 @@ const VideoPlayerControls: FC<OwnProps> = ({
     }, HIDE_CONTROLS_TIMEOUT_MS);
 
     return () => clearTimeout(timeoutId);
-  }, [isPlaying, isVisible, isForceMobileVersion, isPlaybackMenuOpen, isSeeking, onToggleControls]);
+  }, [
+    isPlaying,
+    isVisible,
+    isForceMobileVersion,
+    isPlaybackMenuOpen,
+    isSeeking,
+    onToggleControls,
+  ]);
 
   useSignalEffect(
     bufferedRangesSignal,
-    ranges => {
-      const bufferedLength = ranges.sum(range => range.end - range.start);
+    (ranges) => {
+      const bufferedLength = ranges.sum((range) => range.end - range.start);
 
       setBufferedProgress(bufferedLength / duration);
     },
     [duration],
   );
 
-  useSignalEffect(currentTimeSignal, time => {
+  useSignalEffect(currentTimeSignal, (time) => {
     const currentTime = formatMediaDuration(time, {
       includeHours: time > 3600,
       forceTwoDigits: true,
@@ -154,7 +180,7 @@ const VideoPlayerControls: FC<OwnProps> = ({
     }
   });
 
-  useSignalLayoutEffect(volumeSignal, volume => {
+  useSignalLayoutEffect(volumeSignal, (volume) => {
     const percentage = Math.round(volume * 100);
 
     if (volumeRef.current) {
@@ -166,10 +192,11 @@ const VideoPlayerControls: FC<OwnProps> = ({
     }
   });
 
-  useBodyClass('video-controls-visible', isVisible);
+  useBodyClass("video-controls-visible", isVisible);
 
-  const handleVolumeChange = useLastCallback((e: React.ChangeEvent<HTMLInputElement>) =>
-    onVolumeChange(Number(e.currentTarget.value) / 100),
+  const handleVolumeChange = useLastCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) =>
+      onVolumeChange(Number(e.currentTarget.value) / 100),
   );
 
   const handleSeek = useLastCallback((position: number) => {
@@ -179,6 +206,7 @@ const VideoPlayerControls: FC<OwnProps> = ({
 
   const handleStartSeek = useLastCallback(() => {
     isSeeking.current = true;
+    onSeekStart?.();
   });
 
   return (
@@ -202,14 +230,25 @@ const VideoPlayerControls: FC<OwnProps> = ({
         isPlaying={isPlaying}
         onSeek={handleSeek}
         onSeekStart={handleStartSeek}
+        onSeekEnd={onSeekEnd}
       />
-      <IconButton className={buildClassName(s.control, s.blendMode)} onClick={onPlayPause}>
-        {isPlaying ? <PauseRounded className={s.icon} /> : <PlayArrowRounded className={s.icon} />}
+      <IconButton
+        className={buildClassName(s.control, s.blendMode)}
+        onClick={onPlayPause}
+      >
+        {isPlaying ? (
+          <PauseRounded className={s.icon} />
+        ) : (
+          <PlayArrowRounded className={s.icon} />
+        )}
       </IconButton>
       <IconButton className={buildClassName(s.control, s.blendMode)}>
         <SkipNextRounded className={s.icon} />
       </IconButton>
-      <IconButton className={buildClassName(s.control, s.blendMode)} onClick={onVolumeClick}>
+      <IconButton
+        className={buildClassName(s.control, s.blendMode)}
+        onClick={onVolumeClick}
+      >
         <VolumeUpRounded className={s.icon} />
       </IconButton>
       <label className={s.slider}>
@@ -250,7 +289,10 @@ const VideoPlayerControls: FC<OwnProps> = ({
         <WidthFullRounded className={s.icon} />
       </IconButton>
       {isFullscreenSupported && (
-        <IconButton className={buildClassName(s.control, s.blendMode)} onClick={onChangeFullscreen}>
+        <IconButton
+          className={buildClassName(s.control, s.blendMode)}
+          onClick={onChangeFullscreen}
+        >
           {isFullscreen ? (
             <FullscreenExitRounded className={s.icon} />
           ) : (

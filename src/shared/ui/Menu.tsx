@@ -1,7 +1,7 @@
 import Portal from './Portal';
 
 import './Menu.scss';
-import { IS_BACKDROP_BLUR_SUPPORTED } from '@/lib/core';
+import { dispatchHeavyAnimation, IS_BACKDROP_BLUR_SUPPORTED } from '@/lib/core';
 import useEffectWithPrevDeps from '@/lib/hooks/effects/useEffectWithPrevDeps';
 import useLastCallback from '@/lib/hooks/events/useLastCallback';
 import useHistoryBack from '@/lib/hooks/history/useHistoryBack';
@@ -64,7 +64,7 @@ const Menu: FC<OwnProps> = ({
 
   // eslint-disable-next-line no-null/no-null
   const containerRef = useRef<HTMLDivElement | null>(null);
-  const bubbleRef = usRef<HTMLDivElement | null>(null);
+  const bubbleRef = useRef<HTMLDivElement | null>(null);
 
   useMenuPosition(isOpen, containerRef, bubbleRef, positionOptions);
 
@@ -82,7 +82,7 @@ const Menu: FC<OwnProps> = ({
   useEffectWithPrevDeps(
     ([prevIsOpen]) => {
       if (isOpen || (!isOpen && prevIsOpen === true)) {
-        beginHeavyAnimation(ANIMATION_DURATION);
+        dispatchHeavyAnimation(ANIMATION_DURATION);
       }
     },
     [isOpen],

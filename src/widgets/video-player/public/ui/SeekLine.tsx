@@ -1,21 +1,30 @@
-import { ApiDimensions } from '@/@types/api/types/messages';
-import { BufferedRange } from '@/lib/hooks/ui/useBuffering';
-import { FC, memo, use, useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
-import { CSSTransition } from 'react-transition-group';
+import { ApiDimensions } from "@/@types/api/types/messages";
+import { BufferedRange } from "@/lib/hooks/ui/useBuffering";
+import {
+  FC,
+  memo,
+  use,
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+} from "react";
+import { CSSTransition } from "react-transition-group";
 
-import s from './SeekLine.module.scss';
-import buildClassName from '@/shared/lib/buildClassName';
-import buildStyle from '@/shared/lib/buildStyle';
-import { Signal } from '@/lib/core/public/signals';
-import { clamp, IS_TOUCH_ENV, round, throttle } from '@/lib/core';
-import { requestMutation } from '@/lib/modules/fastdom/fastdom';
-import { animateNumber } from '@/lib/utils/animation/animateNumber';
-import useSignal from '@/lib/hooks/signals/useSignal';
-import { captureEvents } from '@/lib/utils/captureEvents';
-import { useSignalEffect } from '@/lib/hooks/signals/useSignalEffect';
-import useDebouncedCallback from '@/lib/hooks/shedulers/useDebouncedCallback';
-import { areDeepEqual } from '@/lib/utils/areDeepEqual';
-import useLastCallback from '@/lib/hooks/events/useLastCallback';
+import s from "./SeekLine.module.scss";
+import buildClassName from "@/shared/lib/buildClassName";
+import buildStyle from "@/shared/lib/buildStyle";
+import { Signal } from "@/lib/core/public/signals";
+import { clamp, IS_TOUCH_ENV, round, throttle } from "@/lib/core";
+import { requestMutation } from "@/lib/modules/fastdom/fastdom";
+import { animateNumber } from "@/lib/utils/animation/animateNumber";
+import useSignal from "@/lib/hooks/signals/useSignal";
+import { captureEvents } from "@/lib/utils/captureEvents";
+import { useSignalEffect } from "@/lib/hooks/signals/useSignalEffect";
+import useDebouncedCallback from "@/lib/hooks/shedulers/useDebouncedCallback";
+import { areDeepEqual } from "@/lib/utils/areDeepEqual";
+import useLastCallback from "@/lib/hooks/events/useLastCallback";
 
 interface OwnProps {
   waitingSignal: Signal<boolean>;
@@ -31,6 +40,7 @@ interface OwnProps {
   posterSize?: ApiDimensions;
   onSeek: (position: number) => void;
   onSeekStart: () => void;
+  onSeekEnd: () => void;
 }
 
 const LOCK_TIMEOUT = 250;
@@ -50,6 +60,7 @@ const SeekLine: FC<OwnProps> = ({
   posterSize,
   onSeek,
   onSeekStart,
+  onSeekEnd,
 }) => {
   const isLockedRef = useRef<boolean>(false);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -74,18 +85,20 @@ const SeekLine: FC<OwnProps> = ({
     [currentTimeSignal, previewOffsetSignal],
   );
 
-  useSignalEffect(bufferedRangesSignal, value => {
-    setBufferedRanges(current => (areDeepEqual(current, value) ? current : value));
+  useSignalEffect(bufferedRangesSignal, (ranges) => {
+    console.log(ranges);
+
+    setBufferedRanges(ranges);
   });
 
   useSignalEffect(
     currentTimeSignal,
-    value => {
+    (time) => {
       const progressEl = progressRef.current;
 
       if (progressEl) {
-        progressEl.style.transform = moveX(value, duration);
-        progressEl.setAttribute('aria-valuenow', round(value) + '');
+        progressEl.style.transform = moveX(time, duration);
+        progressEl.setAttribute("aria-valuenow", `${round(time)}`);
       }
     },
     [isSeeking, duration],
@@ -120,6 +133,7 @@ const SeekLine: FC<OwnProps> = ({
       setTimeOffset(time, offset);
 
       onSeek?.(time);
+      onSeekEnd?.();
 
       setTimeout(() => {
         isLockedRef.current = false;
@@ -145,15 +159,15 @@ const SeekLine: FC<OwnProps> = ({
       setPreviewVisible(false);
     };
 
-    seeker.addEventListener('mousemove', handleSeekMouseMove);
-    seeker.addEventListener('mouseenter', handleSeekMouseMove);
-    seeker.addEventListener('mouseleave', handleSeekMouseLeave);
+    seeker.addEventListener("mousemove", handleSeekMouseMove);
+    seeker.addEventListener("mouseenter", handleSeekMouseMove);
+    seeker.addEventListener("mouseleave", handleSeekMouseLeave);
 
     return () => {
       cleanup();
-      seeker.removeEventListener('mousemove', handleSeekMouseMove);
-      seeker.removeEventListener('mouseenter', handleSeekMouseMove);
-      seeker.removeEventListener('mouseleave', handleSeekMouseLeave);
+      seeker.removeEventListener("mousemove", handleSeekMouseMove);
+      seeker.removeEventListener("mouseenter", handleSeekMouseMove);
+      seeker.removeEventListener("mouseleave", handleSeekMouseLeave);
     };
   }, [
     duration,
@@ -177,7 +191,11 @@ const SeekLine: FC<OwnProps> = ({
 
       const pageX = e instanceof MouseEvent ? e.pageX : e.touches?.[0].pageX;
 
-      const time = clamp(duration * ((pageX - seekerSize.left) / seekerSize.width), 0, duration);
+      const time = clamp(
+        duration * ((pageX - seekerSize.left) / seekerSize.width),
+        0,
+        duration,
+      );
 
       if (isPreviewDisabled) {
         return [time, 0];
@@ -218,7 +236,10 @@ const SeekLine: FC<OwnProps> = ({
           <div
             key={`${index}_${start}_${end}`}
             className={s.buffered}
-            style={buildStyle(`left: ${start * 100}%;`, `right: ${100 - end * 100}%;`)}
+            style={buildStyle(
+              `left: ${start * 100}%;`,
+              `right: ${100 - end * 100}%;`,
+            )}
           />
         ))}
       </div>
