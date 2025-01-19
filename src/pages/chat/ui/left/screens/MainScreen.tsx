@@ -14,7 +14,7 @@ import FloatingActionButton, {
 import useFloatingButton from "../../hooks/useFloatingButton";
 import useConditionalRef from "@/lib/hooks/utilities/useConditionalRef";
 import useChatStore from "@/pages/chat/store/useChatSelector";
-import useLastCallback from "@/lib/hooks/callbacks/useLastCallback";
+import useStableCallback from "@/lib/hooks/callbacks/useStableCallback";
 
 interface OwnProps {
   className?: string;
@@ -71,7 +71,7 @@ const MainScreen = forwardRef<HTMLDivElement, OwnProps>(
       [],
     );
 
-    const handleSwitchSearch = useLastCallback(() => {
+    const handleSwitchSearch = useStableCallback(() => {
       setContent("search");
     });
 

@@ -1,5 +1,5 @@
 import { EKeyboardKey } from "@/lib/core";
-import useLastCallback from "@/lib/hooks/callbacks/useLastCallback";
+import useStableCallback from "@/lib/hooks/callbacks/useStableCallback";
 import { requestMutation, requestMeasure } from "@/lib/modules/fastdom/fastdom";
 import { RefObject, useState, useEffect, useCallback } from "react";
 
@@ -81,7 +81,7 @@ const useKeyboardListNavigation = (
     [elementRef, focusedIndex, onSelectWithEnter, itemSelector],
   );
 
-  return useLastCallback(handleKeyNavigation);
+  return useStableCallback(handleKeyNavigation);
 };
 
 export default useKeyboardListNavigation;

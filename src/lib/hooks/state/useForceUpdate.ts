@@ -1,5 +1,5 @@
 import { useState, useRef } from "react";
-import useLastCallback from "../callbacks/useLastCallback";
+import useStableCallback from "../callbacks/useStableCallback";
 
 interface ForceUpdateOptions {
   callback?: () => void;
@@ -21,7 +21,7 @@ const useForceUpdate = ({
   const [, setTick] = useState<number>(0);
   const lastCallRef = useRef<number>(0);
 
-  const forceUpdate = useLastCallback((): void => {
+  const forceUpdate = useStableCallback((): void => {
     const now = Date.now();
 
     if (throttleInterval && now - lastCallRef.current < throttleInterval) {

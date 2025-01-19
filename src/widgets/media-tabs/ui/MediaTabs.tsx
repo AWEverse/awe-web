@@ -1,4 +1,4 @@
-import useLastCallback from "@/lib/hooks/callbacks/useLastCallback";
+import useStableCallback from "@/lib/hooks/callbacks/useStableCallback";
 import TabList from "@/shared/ui/TabList";
 import { FC, memo, ReactNode, useState } from "react";
 
@@ -15,7 +15,7 @@ const DEFAULT_TABS = [
 const MediaTabs: FC<OwnProps> = () => {
   const [activeTab, setActiveTab] = useState(0);
 
-  const handleSwitchTab = useLastCallback((index: number) => {
+  const handleSwitchTab = useStableCallback((index: number) => {
     setActiveTab(index);
   });
 

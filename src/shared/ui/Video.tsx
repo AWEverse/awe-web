@@ -1,5 +1,5 @@
 import useEffectSync from "@/lib/hooks/effects/useEffectSync";
-import useLastCallback from "@/lib/hooks/callbacks/useLastCallback";
+import useStableCallback from "@/lib/hooks/callbacks/useStableCallback";
 import useBuffering, {
   BufferingEvent,
   BufferingPair,
@@ -53,7 +53,7 @@ function Video({
 
   const isReadyRef = useRef(false);
 
-  const handleReady = useLastCallback(() => {
+  const handleReady = useStableCallback(() => {
     if (!isReadyRef.current) {
       onReady?.();
       isReadyRef.current = true;
@@ -91,13 +91,13 @@ function Video({
     [isBuffered, handleReady],
   );
 
-  const handlePlaying = useLastCallback((e) => {
+  const handlePlaying = useStableCallback((e) => {
     handlePlayingForBuffering(e);
     handleReady();
     restProps.onPlaying?.(e);
   });
 
-  const handlePlay = useLastCallback((e) => {
+  const handlePlay = useStableCallback((e) => {
     handlePlayForBuffering(e);
     restProps.onPlay?.(e);
   });

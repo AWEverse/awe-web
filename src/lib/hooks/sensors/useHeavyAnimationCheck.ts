@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef } from "react";
 import { createCallbackManager } from "../../utils/callbacks";
-import useLastCallback from "../callbacks/useLastCallback";
+import useStableCallback from "../callbacks/useStableCallback";
 import { getIsHeavyAnimating } from "@/lib/core";
 
 const startCallbacks = createCallbackManager();
@@ -15,8 +15,8 @@ const useHeavyAnimationCheck = (
   onEnd?: AnyToVoidFunction,
   isDisabled = false,
 ) => {
-  const lastOnStart = useLastCallback(onStart);
-  const lastOnEnd = useLastCallback(onEnd);
+  const lastOnStart = useStableCallback(onStart);
+  const lastOnEnd = useStableCallback(onEnd);
 
   useEffect(() => {
     if (isDisabled) return;

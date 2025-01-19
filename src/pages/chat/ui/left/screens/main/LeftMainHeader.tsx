@@ -1,7 +1,7 @@
 import { FC, useState, memo } from "react";
 import s from "./LeftMainHeader.module.scss";
 import SearchInput from "@/shared/ui/SearchInput";
-import { useEvent } from "@/lib/hooks/callbacks/useLastCallbackSync";
+import { useEvent } from "@/lib/hooks/callbacks/useStableCallbackSync";
 import { ArrowForwardRounded } from "@mui/icons-material";
 import useChatStore from "@/pages/chat/store/useChatSelector";
 import IconButton from "@/shared/ui/IconButton";

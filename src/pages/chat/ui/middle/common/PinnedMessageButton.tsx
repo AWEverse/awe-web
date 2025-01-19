@@ -1,4 +1,4 @@
-import useLastCallback from "@/lib/hooks/callbacks/useLastCallback";
+import useStableCallback from "@/lib/hooks/callbacks/useStableCallback";
 import RippleEffect from "@/shared/ui/ripple-effect";
 import { FC, useState, useMemo, memo } from "react";
 
@@ -31,7 +31,7 @@ const PinnedMessageButton: FC<OwnProps & StateProps> = (props) => {
 
   const [activeIndex, setActiveIndex] = useState(0);
 
-  const handleClick = useLastCallback(() => {
+  const handleClick = useStableCallback(() => {
     setActiveIndex((prev) => (prev + 1) % segmentCount);
     onClick?.(activeIndex);
   });

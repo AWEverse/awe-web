@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { cloneElement, useState, ReactElement } from "react";
 import { noop } from "../../utils/listener";
-import useLastCallback from "../callbacks/useLastCallback";
+import useStableCallback from "../callbacks/useStableCallback";
 
 export type Element =
   | ((state: boolean) => ReactElement<any>)
@@ -10,7 +10,7 @@ export type Element =
 const useHover = (element: Element): [ReactElement<any>, boolean] => {
   const [state, setState] = useState<boolean>(false);
 
-  const onMouseEnter = useLastCallback(
+  const onMouseEnter = useStableCallback(
     (originalOnMouseEnter?: (event: React.MouseEvent<HTMLElement>) => void) =>
       (event: React.MouseEvent<HTMLElement>) => {
         (originalOnMouseEnter || noop)(event);
@@ -18,7 +18,7 @@ const useHover = (element: Element): [ReactElement<any>, boolean] => {
       },
   );
 
-  const onMouseLeave = useLastCallback(
+  const onMouseLeave = useStableCallback(
     (originalOnMouseLeave?: (event: React.MouseEvent<HTMLElement>) => void) =>
       (event: React.MouseEvent<HTMLElement>) => {
         (originalOnMouseLeave || noop)(event);

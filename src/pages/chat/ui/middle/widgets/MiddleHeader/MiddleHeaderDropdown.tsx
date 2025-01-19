@@ -1,5 +1,5 @@
 import { FC, memo, useState } from "react";
-import useLastCallback from "@/lib/hooks/callbacks/useLastCallback";
+import useStableCallback from "@/lib/hooks/callbacks/useStableCallback";
 import {
   MoreVert,
   VolumeDown,
@@ -61,12 +61,12 @@ const MiddleHeaderDropdown: FC<OwnProps & StateProps> = ({
 }) => {
   const [currentModal, setModal] = useState<ModalAction>("none");
 
-  const closeModal = useLastCallback(() => setModal("none"));
+  const closeModal = useStableCallback(() => setModal("none"));
   const toggleChatSearching = useChatStore(
     (state) => state.toggleChatSearching,
   );
 
-  const handleAction = useLastCallback((action: ModalAction) => () => {
+  const handleAction = useStableCallback((action: ModalAction) => () => {
     setModal(action);
   });
 

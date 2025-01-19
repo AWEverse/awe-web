@@ -3,7 +3,7 @@ import SortByDown02Icon from "@/shared/common/icons/SortByDown02Icon";
 import SortByUp02Icon from "@/shared/common/icons/SortByUp02Icon";
 
 import s from "./SortActions.module.scss";
-import useLastCallback from "@/lib/hooks/callbacks/useLastCallback";
+import useStableCallback from "@/lib/hooks/callbacks/useStableCallback";
 import DropdownMenu, { TriggerProps } from "@/shared/ui/DropdownMenu";
 import IconButton from "@/shared/ui/IconButton";
 import ActionButton from "@/shared/ui/ActionButton";
@@ -23,11 +23,11 @@ const SortActions: FC<OwnProps> = (props) => {
 
   const [order, setOrder] = useState<Order>("desc");
 
-  const handleOrderChange = useLastCallback(() => {
+  const handleOrderChange = useStableCallback(() => {
     setOrder((prev) => reverseOrder(prev));
   });
 
-  const renderIcon = useLastCallback(() =>
+  const renderIcon = useStableCallback(() =>
     order === "desc" ? <SortByDown02Icon /> : <SortByUp02Icon />,
   );
 

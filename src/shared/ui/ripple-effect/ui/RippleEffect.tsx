@@ -1,6 +1,6 @@
 import { useState, useMemo, memo } from "react";
 
-import useLastCallback from "@/lib/hooks/callbacks/useLastCallback";
+import useStableCallback from "@/lib/hooks/callbacks/useStableCallback";
 
 import { requestMeasure } from "@/lib/modules/fastdom/fastdom";
 import buildClassName from "@/shared/lib/buildClassName";
@@ -49,7 +49,7 @@ const RippleEffect: React.FC<OwnProps> = memo((props) => {
     );
   }, [duration]);
 
-  const handleMouseDown = useLastCallback(
+  const handleMouseDown = useStableCallback(
     (e: React.MouseEvent<HTMLDivElement, MouseEvent>) => {
       if (e.button !== 0) {
         return;

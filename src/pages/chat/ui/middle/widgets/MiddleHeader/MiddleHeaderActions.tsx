@@ -9,7 +9,7 @@ import {
 import buildClassName from "@/shared/lib/buildClassName";
 import { withStateProps } from "@/lib/core";
 import MiddleHeaderDropdown from "./MiddleHeaderDropdown";
-import useLastCallback from "@/lib/hooks/callbacks/useLastCallback";
+import useStableCallback from "@/lib/hooks/callbacks/useStableCallback";
 import IconButton from "@/shared/ui/IconButton";
 import useChatStore from "@/pages/chat/store/useChatSelector";
 import CallModal from "../../call/CallModal";
@@ -66,11 +66,11 @@ const MiddleHeaderActions: FC<OwnProps & StateProps> = (props) => {
     (state) => state.toggleChatSearching,
   );
 
-  const handleOpenCallModal = useLastCallback(() => {
+  const handleOpenCallModal = useStableCallback(() => {
     setOpenCallModal(true);
   });
 
-  const handleCloseCallModal = useLastCallback(() => {
+  const handleCloseCallModal = useStableCallback(() => {
     setOpenCallModal(false);
   });
 

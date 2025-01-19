@@ -1,5 +1,5 @@
 import React, { useState, useRef, useMemo, useLayoutEffect, memo } from "react";
-import useLastCallback from "@/lib/hooks/callbacks/useLastCallback";
+import useStableCallback from "@/lib/hooks/callbacks/useStableCallback";
 import { requestMeasure } from "@/lib/modules/fastdom/fastdom";
 import { pipe } from "@/lib/core/public/misc/Pipe";
 import { withFreezeWhenClosed } from "@/lib/core";
@@ -38,7 +38,7 @@ const withTooltip = <P extends object>(
     const tooltipRef = useRef<HTMLDivElement>(null);
 
     // Callback to calculate and set the tooltip tPosition
-    const updateTooltipPosition = useLastCallback(() => {
+    const updateTooltipPosition = useStableCallback(() => {
       requestMeasure(() => {
         if (componentRef.current && tooltipRef.current) {
           const rect = componentRef.current.getBoundingClientRect();
@@ -57,7 +57,7 @@ const withTooltip = <P extends object>(
       });
     });
 
-    const handleMouseEnter = useLastCallback(() => {
+    const handleMouseEnter = useStableCallback(() => {
       setTooltipState((prevState) => ({
         ...prevState,
         tIsVisible: true,
@@ -65,7 +65,7 @@ const withTooltip = <P extends object>(
       updateTooltipPosition();
     });
 
-    const handleMouseLeave = useLastCallback(() => {
+    const handleMouseLeave = useStableCallback(() => {
       setTooltipState((prevState) => ({
         ...prevState,
         tIsVisible: false,

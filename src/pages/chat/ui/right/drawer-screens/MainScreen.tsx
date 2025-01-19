@@ -4,7 +4,7 @@ import HeaderNavigation from "../../common/HeaderNavigation";
 import useChatStore from "@/pages/chat/store/useChatSelector";
 import IconButton from "@/shared/ui/IconButton";
 import { EditRounded } from "@mui/icons-material";
-import useLastCallback from "@/lib/hooks/callbacks/useLastCallback";
+import useStableCallback from "@/lib/hooks/callbacks/useStableCallback";
 import TabList from "@/shared/ui/TabList";
 import Square from "@/entities/album-layout/ui/Square";
 
@@ -28,13 +28,13 @@ const MainScreen: FC<OwnProps> = ({ nodeRef, className }) => {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [columnsCount, setColumnsCount] = useState(1);
 
-  const handleTabChange = useLastCallback((index: number) => {
+  const handleTabChange = useStableCallback((index: number) => {
     if (index !== currentIndex) {
       setCurrentIndex(index);
     }
   });
 
-  const handleColumnsChange = useLastCallback((index: number) => {
+  const handleColumnsChange = useStableCallback((index: number) => {
     if (index !== columnsCount) {
       setColumnsCount(index);
     }

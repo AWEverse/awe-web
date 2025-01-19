@@ -4,7 +4,7 @@ import buildClassName from "@/shared/lib/buildClassName";
 import "./TallyCounter.scss";
 import { AddRounded, RemoveRounded } from "@mui/icons-material";
 import useLongPress from "@/lib/hooks/events/useLongPress";
-import useLastCallback from "@/lib/hooks/callbacks/useLastCallback";
+import useStableCallback from "@/lib/hooks/callbacks/useStableCallback";
 import useInterval from "@/lib/hooks/shedulers/useInterval";
 
 interface OwnProps {
@@ -50,7 +50,7 @@ const TallyCounter: FC<OwnProps> = ({
     setIntervalActive(true);
   }, []);
 
-  const stopInterval = useLastCallback(() => {
+  const stopInterval = useStableCallback(() => {
     setIntervalActive(false);
   });
 

@@ -3,7 +3,7 @@ import DropdownMenu, { TriggerProps } from "@/shared/ui/DropdownMenu";
 import { FC, memo, useState } from "react";
 import s from "./SettingsDropdown.module.scss";
 import { NumericLimits } from "@/lib/core";
-import useLastCallback from "@/lib/hooks/callbacks/useLastCallback";
+import useStableCallback from "@/lib/hooks/callbacks/useStableCallback";
 
 interface OwnProps<T extends Record<string, unknown> = {}> {
   triggerButton: FC<T & TriggerProps>;
@@ -25,24 +25,24 @@ const SettingsDropdown: FC<OwnProps> = ({
   const [quality, setQuality] = useState<string>("Auto (1080p)");
   const [playbackSpeed, setPlaybackSpeed] = useState<number>(1.0);
 
-  const handleStableVolumeClick = useLastCallback(() => {
+  const handleStableVolumeClick = useStableCallback(() => {
     onStableVolumeClick?.(true); // You can adjust the flag based on the toggle.
   });
 
-  const handleAmbientModeClick = useLastCallback(() => {
+  const handleAmbientModeClick = useStableCallback(() => {
     onAmbientModeClick?.(true); // Toggle ambient mode
   });
 
-  const handlePlaybackSpeedClick = useLastCallback((value: number) => {
+  const handlePlaybackSpeedClick = useStableCallback((value: number) => {
     setPlaybackSpeed(value);
     onPlaybackSpeedClick?.(value);
   });
 
-  const handleSpeedTimerClick = useLastCallback((value: number) => {
+  const handleSpeedTimerClick = useStableCallback((value: number) => {
     onSpeedTimerClick?.(value);
   });
 
-  const handleQualityClick = useLastCallback((value: string) => {
+  const handleQualityClick = useStableCallback((value: string) => {
     setQuality(value);
     onQualityClick?.(value);
   });

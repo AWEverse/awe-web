@@ -1,4 +1,4 @@
-import useLastCallback from "@/lib/hooks/callbacks/useLastCallback";
+import useStableCallback from "@/lib/hooks/callbacks/useStableCallback";
 import useRefInstead from "@/lib/hooks/state/useRefInstead";
 import { IVector2D } from "@/lib/utils/data-structures/Vector2d";
 import { throttle } from "@/lib/utils/schedulers";
@@ -120,13 +120,13 @@ const ContextMenuComponent: FC<OwnProps> = ({
     y: "top",
   });
 
-  const handleOutsideClick = useLastCallback((e: MouseEvent) => {
+  const handleOutsideClick = useStableCallback((e: MouseEvent) => {
     if (cntxRef.current && !cntxRef.current.contains(e.target as Node)) {
       onClose();
     }
   });
 
-  const handleKeyDown = useLastCallback((e: KeyboardEvent) => {
+  const handleKeyDown = useStableCallback((e: KeyboardEvent) => {
     if (e.key === "Escape") {
       onClose();
     }
@@ -162,7 +162,7 @@ const ContextMenuComponent: FC<OwnProps> = ({
     `border: 1px solid red`,
   );
 
-  const onMouseMove = useLastCallback(
+  const onMouseMove = useStableCallback(
     throttle((e: React.MouseEvent<HTMLDivElement, MouseEvent>) => {
       const menu = cntxRef.current;
 

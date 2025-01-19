@@ -3,7 +3,7 @@ import Portal from "./Portal";
 import "./Menu.scss";
 import { dispatchHeavyAnimation, IS_BACKDROP_BLUR_SUPPORTED } from "@/lib/core";
 import useEffectWithPrevDeps from "@/lib/hooks/effects/useEffectWithPrevDeps";
-import useLastCallback from "@/lib/hooks/callbacks/useLastCallback";
+import useStableCallback from "@/lib/hooks/callbacks/useStableCallback";
 import useHistoryBack from "@/lib/hooks/history/useHistoryBack";
 import useAppLayout from "@/lib/hooks/ui/useAppLayout";
 import { FC, useRef, useEffect, memo } from "react";
@@ -115,12 +115,14 @@ const Menu: FC<OwnProps> = ({
     shouldCloseFast && "close-fast",
   );
 
-  const handleClick = useLastCallback((e: React.MouseEvent<HTMLDivElement>) => {
-    e.stopPropagation();
-    if (autoClose) {
-      onClose();
-    }
-  });
+  const handleClick = useStableCallback(
+    (e: React.MouseEvent<HTMLDivElement>) => {
+      e.stopPropagation();
+      if (autoClose) {
+        onClose();
+      }
+    },
+  );
 
   const menu = (
     <div

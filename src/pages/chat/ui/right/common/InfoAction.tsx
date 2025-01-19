@@ -1,7 +1,7 @@
 import { FC, memo, ReactNode, useState } from "react";
 import s from "./InfoAction.module.scss";
 import buildClassName from "@/shared/lib/buildClassName";
-import useLastCallback from "@/lib/hooks/callbacks/useLastCallback";
+import useStableCallback from "@/lib/hooks/callbacks/useStableCallback";
 import { Snackbar, SnackbarCloseReason, Alert } from "@mui/material";
 
 interface OwnProps {
@@ -23,11 +23,11 @@ const InfoAction: FC<OwnProps> = ({
 }) => {
   const [open, setOpen] = useState(false);
 
-  const handleCopyClick = useLastCallback(() => {
+  const handleCopyClick = useStableCallback(() => {
     setOpen(true);
   });
 
-  const handleClose = useLastCallback(
+  const handleClose = useStableCallback(
     (_event?: React.SyntheticEvent | Event, reason?: SnackbarCloseReason) => {
       if (reason === "clickaway") {
         return;

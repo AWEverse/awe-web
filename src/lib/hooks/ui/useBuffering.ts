@@ -1,5 +1,5 @@
 import { useState } from "react";
-import useLastCallback from "../callbacks/useLastCallback";
+import useStableCallback from "../callbacks/useStableCallback";
 import { isSafariPatchInProgress } from "../../utils/patchSafariProgressiveAudio";
 import { areDeepEqual } from "../../utils/areDeepEqual";
 import { isMediaReadyToPlay } from "@/lib/core/public/misc/SafePlay";
@@ -50,7 +50,7 @@ const useBuffering = (
     true,
   );
 
-  const handleBuffering = useLastCallback<BufferingEvent>((e) => {
+  const handleBuffering = useStableCallback<BufferingEvent>((e) => {
     const media = e.currentTarget as HTMLMediaElement;
     const isMediaReady = isMediaReadyToPlay(media);
 

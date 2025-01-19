@@ -4,7 +4,7 @@ import IconButton from "@/shared/ui/IconButton";
 import { SortByAlpha } from "@mui/icons-material";
 import { FC, memo, useState } from "react";
 import s from "./ContactsSortDropdown.module.scss";
-import useLastCallback from "@/lib/hooks/callbacks/useLastCallback";
+import useStableCallback from "@/lib/hooks/callbacks/useStableCallback";
 
 interface OwnProps {
   onChange?: (sortType: SortTypes) => void;
@@ -32,7 +32,7 @@ const ContactsSortDropdown: FC<OwnProps> = (props) => {
 
   const [sortType, setSortType] = useState<SortTypes>("name");
 
-  const handleSortTypeChange = useLastCallback((type: SortTypes) => {
+  const handleSortTypeChange = useStableCallback((type: SortTypes) => {
     setSortType(type);
     onChange?.(type);
   });

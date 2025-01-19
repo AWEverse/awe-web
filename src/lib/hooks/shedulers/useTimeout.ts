@@ -1,9 +1,9 @@
 import { useEffect } from "react";
 
-import useLastCallback from "@/lib/hooks/callbacks/useLastCallback";
+import useStableCallback from "@/lib/hooks/callbacks/useStableCallback";
 
 function useTimeout(callback: NoneToVoidFunction, delay?: number) {
-  const savedCallback = useLastCallback(callback);
+  const savedCallback = useStableCallback(callback);
 
   useEffect(() => {
     if (typeof delay !== "number") {

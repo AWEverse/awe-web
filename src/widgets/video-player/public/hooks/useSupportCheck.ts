@@ -1,5 +1,5 @@
 import { EMediaErrorCode } from "@/lib/core";
-import useLastCallback from "@/lib/hooks/callbacks/useLastCallback";
+import useStableCallback from "@/lib/hooks/callbacks/useStableCallback";
 import { useState, useEffect, useCallback } from "react";
 
 const NOTIFICATION_DURATION = 8000;

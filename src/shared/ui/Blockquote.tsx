@@ -1,5 +1,5 @@
 import { ApiMessageEntityTypes } from "@/@types/api/types/messages";
-import useLastCallback from "@/lib/hooks/callbacks/useLastCallback";
+import useStableCallback from "@/lib/hooks/callbacks/useStableCallback";
 import { ReactNode, useRef } from "react";
 import useCollapsibleLines from "../hooks/useCollapsible";
 import buildClassName from "../lib/buildClassName";
@@ -30,11 +30,11 @@ const Blockquote = ({
 
   const canExpand = !isToggleDisabled && isCollapsed;
 
-  const handleExpand = useLastCallback(() => {
+  const handleExpand = useStableCallback(() => {
     setIsCollapsed(false);
   });
 
-  const handleToggle = useLastCallback(() => {
+  const handleToggle = useStableCallback(() => {
     setIsCollapsed((prev) => !prev);
   });
 

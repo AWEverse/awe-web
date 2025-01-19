@@ -21,7 +21,7 @@ import s from "./SettingsNavigation.module.scss";
 import { SettingsScreenType } from "./types";
 import { useIntl } from "react-intl";
 import IconButton from "@/shared/ui/IconButton";
-import useLastCallback from "@/lib/hooks/callbacks/useLastCallback";
+import useStableCallback from "@/lib/hooks/callbacks/useStableCallback";
 import ConfirmActionModal from "@/entities/ConfirmActionModal";
 import buildClassName from "@/shared/lib/buildClassName";
 
@@ -39,15 +39,15 @@ const SettingsNavigation = forwardRef<HTMLDivElement, OwnProps>(
 
     const setScreen = useChatStore((store) => store.setScreen);
 
-    const handleSearchClose = useLastCallback(() => {
+    const handleSearchClose = useStableCallback(() => {
       setScreen(LeftColumnScreenType.Main);
     });
 
-    const handleOpenExitAccountModal = useLastCallback(() => {
+    const handleOpenExitAccountModal = useStableCallback(() => {
       setShowExitAccountModal(true);
     });
 
-    const handleCloseExitAccountModal = useLastCallback(() => {
+    const handleCloseExitAccountModal = useStableCallback(() => {
       setShowExitAccountModal(false);
     });
 

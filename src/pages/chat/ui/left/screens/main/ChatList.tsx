@@ -2,7 +2,7 @@ import { FC, forwardRef, Fragment, memo, useState } from "react";
 import ChatListItem from "./ChatListItem";
 import { ChatAnimationTypes } from "./hooks/useChatAnimationType";
 import s from "./ChatList.module.scss";
-import useLastCallback from "@/lib/hooks/callbacks/useLastCallback";
+import useStableCallback from "@/lib/hooks/callbacks/useStableCallback";
 import TabList from "@/shared/ui/TabList";
 import buildClassName from "@/shared/lib/buildClassName";
 
@@ -53,7 +53,7 @@ const tabsData = [
 const ChatList: FC<OwnProps> = ({ ref, className }) => {
   const [currentIndex, setCurrentIndex] = useState(0);
 
-  const handleTabChange = useLastCallback((index: number) => {
+  const handleTabChange = useStableCallback((index: number) => {
     setCurrentIndex(index);
   });
 

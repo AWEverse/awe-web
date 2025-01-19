@@ -1,4 +1,4 @@
-import useLastCallback from "@/lib/hooks/callbacks/useLastCallback";
+import useStableCallback from "@/lib/hooks/callbacks/useStableCallback";
 import { debounce } from "@/lib/core";
 import SearchInput from "@/shared/ui/SearchInput";
 import { FC, memo, useState } from "react";
@@ -17,25 +17,25 @@ const MiddleHeaderSearch: FC<OwnProps & StateProps> = () => {
 
   const hasValue = Boolean(value);
 
-  const handleChange = useLastCallback(
+  const handleChange = useStableCallback(
     debounce((e: React.ChangeEvent<HTMLInputElement>) => {
       setValue(e.target.value);
     }, 500),
   );
 
-  const handleFocus = useLastCallback(
+  const handleFocus = useStableCallback(
     debounce(() => {
       setIsFocus(true);
     }, 250),
   );
 
-  const handleBlur = useLastCallback(
+  const handleBlur = useStableCallback(
     debounce(() => {
       setIsFocus(false);
     }, 250),
   );
 
-  const handleReset = useLastCallback(() => {
+  const handleReset = useStableCallback(() => {
     setValue("");
   });
 

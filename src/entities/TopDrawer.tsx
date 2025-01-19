@@ -8,7 +8,7 @@ import {
   Sheet,
 } from "@mui/material";
 import useMedia from "@/lib/hooks/ui/useMedia";
-import useLastCallback from "@/lib/hooks/callbacks/useLastCallback";
+import useStableCallback from "@/lib/hooks/callbacks/useStableCallback";
 
 interface CustomDrawerProps {
   children: React.ReactNode;
@@ -24,7 +24,9 @@ const DrawerBasic: React.FC<CustomDrawerProps> = ({
   const [open, setOpen] = useState<boolean>(false);
   const isMobile = useMedia("(max-width: 600px)");
 
-  const toggleDrawer = useLastCallback(() => setOpen((prevOpen) => !prevOpen));
+  const toggleDrawer = useStableCallback(() =>
+    setOpen((prevOpen) => !prevOpen),
+  );
 
   const drawerContentStyles = {
     height: isMobile ? "100vh" : "100%",

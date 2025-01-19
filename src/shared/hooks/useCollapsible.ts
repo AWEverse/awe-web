@@ -1,4 +1,4 @@
-import useLastCallback from "@/lib/hooks/callbacks/useLastCallback";
+import useStableCallback from "@/lib/hooks/callbacks/useStableCallback";
 import useWindowSize from "@/lib/hooks/sensors/useWindowSize";
 import useDebouncedCallback from "@/lib/hooks/shedulers/useDebouncedCallback";
 import {
@@ -41,7 +41,7 @@ export default function useCollapsibleLines<
     });
   }, [cutoutRef, isCollapsed, isDisabled, ref]);
 
-  const recalculateTextLines = useLastCallback(() => {
+  const recalculateTextLines = useStableCallback(() => {
     if (isDisabled || !ref.current) {
       return;
     }

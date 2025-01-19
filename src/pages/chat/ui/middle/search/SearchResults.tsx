@@ -6,7 +6,7 @@ import SearchFooter from "./SearchFooter";
 import { CSSTransition } from "react-transition-group";
 
 import s from "./SearchResults.module.scss";
-import useLastCallback from "@/lib/hooks/callbacks/useLastCallback";
+import useStableCallback from "@/lib/hooks/callbacks/useStableCallback";
 import { HandlerName } from "@/lib/utils/captureKeyboardListeners";
 import LastRequest from "./LastRequest";
 import SearchHistoryDropdown from "./SearchHistoryDropdown";
@@ -75,7 +75,7 @@ const SearchResults: FC<SearchResultsProps> = ({
   const [activeTabIndex, setActiveTabIndex] = useState(0);
   const searchResultsRef = createRef<HTMLDivElement>();
 
-  const handleTabChange = useLastCallback(setActiveTabIndex);
+  const handleTabChange = useStableCallback(setActiveTabIndex);
 
   const isLoading = false;
 

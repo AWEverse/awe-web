@@ -4,7 +4,7 @@ import captureKeyboardListeners, {
   ReleaseListeners,
 } from "../../utils/captureKeyboardListeners";
 import { debounce, throttle } from "../../utils/schedulers";
-import useLastCallback from "../callbacks/useLastCallback";
+import useStableCallback from "../callbacks/useStableCallback";
 
 interface UseKeyboardListenersOptions extends CaptureOptions {
   throttle?: number;
@@ -17,7 +17,7 @@ export default function useKeyboardListeners(
   const releaseRef = useRef<ReleaseListeners | null>(null);
   const isPausedRef = useRef(false);
 
-  const enhanceHandlers = useLastCallback(
+  const enhanceHandlers = useStableCallback(
     (options: UseKeyboardListenersOptions) => {
       const enhancedOptions: CaptureOptions = { ...options };
 
@@ -53,7 +53,7 @@ export default function useKeyboardListeners(
     };
   }, [options, enhanceHandlers]);
 
-  const pauseListeners = useLastCallback(() => {
+  const pauseListeners = useStableCallback(() => {
     if (releaseRef.current) {
       releaseRef.current();
       isPausedRef.current = true;
@@ -67,7 +67,7 @@ export default function useKeyboardListeners(
     }
   }, [options, enhanceHandlers]);
 
-  const releaseListeners = useLastCallback(() => {
+  const releaseListeners = useStableCallback(() => {
     if (releaseRef.current) {
       releaseRef.current();
       releaseRef.current = null;

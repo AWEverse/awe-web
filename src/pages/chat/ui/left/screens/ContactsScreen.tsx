@@ -3,7 +3,7 @@ import s from "./ContactsScreen.module.scss";
 import buildClassName from "@/shared/lib/buildClassName";
 import HeaderNavigation from "../../common/HeaderNavigation";
 import useChatStore from "@/pages/chat/store/useChatSelector";
-import useLastCallback from "@/lib/hooks/callbacks/useLastCallback";
+import useStableCallback from "@/lib/hooks/callbacks/useStableCallback";
 import { LeftColumnScreenType } from "@/pages/chat/types/LeftColumn";
 import ContactResult from "./search/results/ContactResult";
 import ActionButton from "@/shared/ui/ActionButton";
@@ -37,11 +37,11 @@ const ContactsScreen = forwardRef<HTMLDivElement, OwnProps & StateProps>(
 
     const isChanged = prevSortType !== sortType;
 
-    const handlePrevClick = useLastCallback(() => {
+    const handlePrevClick = useStableCallback(() => {
       setScreen(LeftColumnScreenType.Main);
     });
 
-    const handleSortTypeChange = useLastCallback((type: string) => {
+    const handleSortTypeChange = useStableCallback((type: string) => {
       setSortType(type);
     });
 

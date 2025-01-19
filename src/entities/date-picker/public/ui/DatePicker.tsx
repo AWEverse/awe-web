@@ -10,7 +10,7 @@ import {
 } from "react";
 import { CSSTransition, TransitionGroup } from "react-transition-group";
 import { useIntl } from "react-intl";
-import useLastCallback from "@/lib/hooks/callbacks/useLastCallback";
+import useStableCallback from "@/lib/hooks/callbacks/useStableCallback";
 import { throttle } from "@/lib/core";
 
 import {
@@ -168,20 +168,20 @@ const DatePicker: FC<OwnProps> = ({
     date.currentSystemDate,
   );
 
-  const handlePrevMonth = useLastCallback(() => updateMonth(PREVIOUS_MONTH));
-  const handleNextMonth = useLastCallback(() => updateMonth(NEXT_MONTH));
+  const handlePrevMonth = useStableCallback(() => updateMonth(PREVIOUS_MONTH));
+  const handleNextMonth = useStableCallback(() => updateMonth(NEXT_MONTH));
 
-  const setAnimationDirection = useLastCallback(
+  const setAnimationDirection = useStableCallback(
     (_direction: CalendarAnimationType) => {
       direction.current = _direction;
     },
   );
 
-  const setLongPressActive = useLastCallback((value?: boolean) => {
+  const setLongPressActive = useStableCallback((value?: boolean) => {
     isLongPressActive.current = value ?? !isLongPressActive.current;
   });
 
-  const updateMonth = useLastCallback((increment: number) => {
+  const updateMonth = useStableCallback((increment: number) => {
     setAnimationDirection(increment > 0 ? "RTL" : "LTR");
 
     setDate((p) => {
@@ -209,7 +209,7 @@ const DatePicker: FC<OwnProps> = ({
     });
   });
 
-  const handleSelectDate = useLastCallback(
+  const handleSelectDate = useStableCallback(
     ({ day = 1, month = 0, year = 0, level = zoomLevel }: ISelectDate = {}) => {
       const newDateCopy = new Date(year, month, day);
 
@@ -274,11 +274,11 @@ const DatePicker: FC<OwnProps> = ({
     },
   );
 
-  const handleLongPress = useLastCallback(() => {
+  const handleLongPress = useStableCallback(() => {
     setLongPressActive(!isDisabledSelectionRange);
   });
 
-  const handleMouseOver = useLastCallback(
+  const handleMouseOver = useStableCallback(
     throttle((e: React.MouseEvent<HTMLDivElement>) => {
       if (isDisabledSelectionRange) return;
 
@@ -305,7 +305,7 @@ const DatePicker: FC<OwnProps> = ({
     ? handleMouseOver
     : undefined;
 
-  const handleSwitchZoom = useLastCallback(() => {
+  const handleSwitchZoom = useStableCallback(() => {
     setAnimationDirection("zoomIn");
     setZoomLevel((prev) => LEVELS[(prev + 1) % LEVELS.length]);
   });

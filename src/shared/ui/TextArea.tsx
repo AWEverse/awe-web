@@ -16,7 +16,7 @@ import {
   requestMutation,
   requestForcedReflow,
 } from "@/lib/modules/fastdom/fastdom";
-import useLastCallback from "@/lib/hooks/callbacks/useLastCallback";
+import useStableCallback from "@/lib/hooks/callbacks/useStableCallback";
 import { generateUniqueId } from "@/lib/hooks/utilities/useUniqueId";
 
 import s from "./TextArea.module.scss";
@@ -125,7 +125,7 @@ const TextArea: FC<OwnProps> = ({
     className,
   );
 
-  const resizeHeight = useLastCallback((element: HTMLTextAreaElement) => {
+  const resizeHeight = useStableCallback((element: HTMLTextAreaElement) => {
     requestMutation(() => {
       element.style.height = "0";
 
@@ -151,7 +151,7 @@ const TextArea: FC<OwnProps> = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [maxLines]);
 
-  const handleChange = useLastCallback(
+  const handleChange = useStableCallback(
     (e: ChangeEvent<HTMLTextAreaElement>) => {
       const target = e.currentTarget;
       const { value } = target;

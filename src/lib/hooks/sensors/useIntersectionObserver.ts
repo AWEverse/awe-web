@@ -1,7 +1,7 @@
 import type { RefObject } from "react";
 import { useEffect, useRef, useState } from "react";
 import useHeavyAnimationCheck from "./useHeavyAnimationCheck";
-import useLastCallback from "../callbacks/useLastCallback";
+import useStableCallback from "../callbacks/useStableCallback";
 import { CallbackManager, createCallbackManager } from "../../utils/callbacks";
 import { type Scheduler, debounce, throttleWith, throttle } from "@/lib/core";
 
@@ -58,11 +58,11 @@ export function useIntersectionObserver(
 
   rootCallbackRef.current = rootCallback;
 
-  const freeze = useLastCallback(() => {
+  const freeze = useStableCallback(() => {
     freezeFlagsRef.current++;
   });
 
-  const unfreeze = useLastCallback(() => {
+  const unfreeze = useStableCallback(() => {
     if (!freezeFlagsRef.current) {
       return;
     }
@@ -75,7 +75,7 @@ export function useIntersectionObserver(
     }
   });
 
-  const observe: ObserveFn = useLastCallback((target, targetCallback) => {
+  const observe: ObserveFn = useStableCallback((target, targetCallback) => {
     if (!controllerRef.current) {
       initController();
     }
@@ -216,7 +216,7 @@ export function useOnIntersect(
   observe?: ObserveFn,
   callback?: TargetCallback,
 ) {
-  const lastCallback = useLastCallback(callback);
+  const lastCallback = useStableCallback(callback);
 
   useEffect(() => {
     return observe?.(targetRef.current!, lastCallback);

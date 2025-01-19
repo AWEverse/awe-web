@@ -17,7 +17,7 @@ import {
   VolumeUpRounded,
   WidthFullRounded,
 } from "@mui/icons-material";
-import useLastCallback from "@/lib/hooks/callbacks/useLastCallback";
+import useStableCallback from "@/lib/hooks/callbacks/useStableCallback";
 import { IS_TOUCH_ENV } from "@/lib/core";
 import { formatMediaDuration } from "../../private/lib/utils";
 import useFlag from "@/lib/hooks/state/useFlag";
@@ -193,17 +193,17 @@ const VideoPlayerControls: FC<OwnProps> = ({
 
   useBodyClass("video-controls-visible", isVisible);
 
-  const handleVolumeChange = useLastCallback(
+  const handleVolumeChange = useStableCallback(
     (e: React.ChangeEvent<HTMLInputElement>) =>
       onVolumeChange(Number(e.currentTarget.value) / 100),
   );
 
-  const handleSeek = useLastCallback((position: number) => {
+  const handleSeek = useStableCallback((position: number) => {
     isSeeking.current = false;
     onSeek?.(position);
   });
 
-  const handleStartSeek = useLastCallback(() => {
+  const handleStartSeek = useStableCallback(() => {
     isSeeking.current = true;
     onSeekStart?.();
   });

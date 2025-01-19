@@ -19,7 +19,7 @@ import {
 import ActionButton from "@/shared/ui/ActionButton";
 
 import s from "./LeftHeaderDropdownMenu.module.scss";
-import useLastCallback from "@/lib/hooks/callbacks/useLastCallback";
+import useStableCallback from "@/lib/hooks/callbacks/useStableCallback";
 import useChatStore from "@/pages/chat/store/useChatSelector";
 import { LeftColumnScreenType } from "@/pages/chat/types/LeftColumn";
 import { useColorScheme } from "@mui/material/styles";
@@ -48,15 +48,15 @@ const LeftHeaderDropdownMenu: FC<OwnProps & StateProps> = () => {
     </IconButton>
   );
 
-  const handleSettingClick = useLastCallback(() => {
+  const handleSettingClick = useStableCallback(() => {
     setScreen(LeftColumnScreenType.Settings);
   });
 
-  const handleContactsClick = useLastCallback(() => {
+  const handleContactsClick = useStableCallback(() => {
     setScreen(LeftColumnScreenType.Contacts);
   });
 
-  const handleThemeClick = useLastCallback(() => {
+  const handleThemeClick = useStableCallback(() => {
     setMode(mode === "light" ? "dark" : "light");
   });
 

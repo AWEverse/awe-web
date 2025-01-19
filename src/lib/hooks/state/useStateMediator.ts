@@ -1,5 +1,5 @@
 import { Dispatch, SetStateAction, useRef, useState } from "react";
-import useLastCallback from "../callbacks/useLastCallback";
+import useStableCallback from "../callbacks/useStableCallback";
 
 export interface StateMediator<S = unknown> {
   (newState: unknown): S;
@@ -25,7 +25,7 @@ export function useMediatedState<S = unknown>(
 
   const [state, setMediatedState] = useState<S>(initialState!);
 
-  const setState = useLastCallback((newState: unknown) => {
+  const setState = useStableCallback((newState: unknown) => {
     if (mediatorFn.current.length === 2) {
       mediatorFn.current(newState, setMediatedState);
     } else {

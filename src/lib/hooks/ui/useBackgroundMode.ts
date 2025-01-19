@@ -1,6 +1,6 @@
 import { createCallbackManager } from "@/lib/utils/callbacks";
 import { useEffect } from "react";
-import useLastCallback from "../callbacks/useLastCallback";
+import useStableCallback from "../callbacks/useStableCallback";
 
 const blurCallbacks = createCallbackManager();
 const focusCallbacks = createCallbackManager();
@@ -26,8 +26,8 @@ export default function useBackgroundMode(
   onFocus?: AnyToVoidFunction,
   isDisabled = false,
 ) {
-  const handleBlur = useLastCallback(onBlur);
-  const handleFocus = useLastCallback(onFocus);
+  const handleBlur = useStableCallback(onBlur);
+  const handleFocus = useStableCallback(onFocus);
 
   useEffect(() => {
     if (isDisabled) {

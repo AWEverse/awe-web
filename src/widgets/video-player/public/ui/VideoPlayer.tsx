@@ -14,7 +14,7 @@ import {
   setMediaVolume,
   throttle,
 } from "@/lib/core";
-import useLastCallback from "@/lib/hooks/callbacks/useLastCallback";
+import useStableCallback from "@/lib/hooks/callbacks/useStableCallback";
 import useFullscreen from "../hooks/useFullScreen";
 import useUnsupportedMedia from "../hooks/useSupportCheck";
 import { BufferedRange, getTimeRanges } from "@/lib/hooks/ui/useBuffering";
@@ -109,9 +109,9 @@ const VideoPlayer: React.FC<OwnProps> = ({
     setPlaying,
   );
 
-  const handleEnterFullscreen = useLastCallback(() => {});
+  const handleEnterFullscreen = useStableCallback(() => {});
 
-  const handleLeaveFullscreen = useLastCallback(() => {});
+  const handleLeaveFullscreen = useStableCallback(() => {});
 
   const [
     isPictureInPictureSupported,
@@ -130,7 +130,7 @@ const VideoPlayer: React.FC<OwnProps> = ({
 
   useAmbilight(videoRef, canvasRef);
 
-  const handleTimeUpdate = useLastCallback(
+  const handleTimeUpdate = useStableCallback(
     (e: React.SyntheticEvent<HTMLVideoElement>) => {
       const { currentTime, duration, readyState } = e.currentTarget;
 
@@ -146,22 +146,22 @@ const VideoPlayer: React.FC<OwnProps> = ({
     },
   );
 
-  const handleEnded = useLastCallback(() => {
+  const handleEnded = useStableCallback(() => {
     setCurrentTime(0);
     setPlaying(!isLooped && isPlaying);
     toggleControls(isLooped);
   });
 
-  const handleSeek = useLastCallback((position: number) => {
+  const handleSeek = useStableCallback((position: number) => {
     videoRef.current!.currentTime = clamp(position, 0, duration);
     setCurrentTime(position);
   });
 
-  const handleSeekStart = useLastCallback(() => {});
+  const handleSeekStart = useStableCallback(() => {});
 
-  const handleSeekEnd = useLastCallback(() => {});
+  const handleSeekEnd = useStableCallback(() => {});
 
-  const togglePlayState = useLastCallback(
+  const togglePlayState = useStableCallback(
     async (e: React.MouseEvent<HTMLElement, MouseEvent> | KeyboardEvent) => {
       e.stopPropagation();
 
@@ -172,7 +172,7 @@ const VideoPlayer: React.FC<OwnProps> = ({
     },
   );
 
-  const handleClick = useLastCallback(
+  const handleClick = useStableCallback(
     async (e: React.MouseEvent<HTMLVideoElement, MouseEvent>) => {
       if (isAdsMessage) {
         onAdsClick?.(true);
@@ -186,17 +186,17 @@ const VideoPlayer: React.FC<OwnProps> = ({
     },
   );
 
-  const handleVideoEnter = useLastCallback(() => {
+  const handleVideoEnter = useStableCallback(() => {
     toggleControls(true);
   });
 
-  const handleVideoLeave = useLastCallback(() => {
+  const handleVideoLeave = useStableCallback(() => {
     toggleControls(!isPlaying);
   });
 
-  const handleVideoMove = useLastCallback(() => {});
+  const handleVideoMove = useStableCallback(() => {});
 
-  const handleVolumeChange = useLastCallback(
+  const handleVolumeChange = useStableCallback(
     throttle((value: number) => {
       setMediaVolume(videoRef.current!, value);
       setVolume(value);
@@ -204,17 +204,17 @@ const VideoPlayer: React.FC<OwnProps> = ({
     }, 100),
   );
 
-  const handleMuteClick = useLastCallback(() => {
+  const handleMuteClick = useStableCallback(() => {
     const video = videoRef.current!;
     setMediaMute(video, !video.muted);
     setVolume(!video.muted ? volumeRef.current : 0);
   });
 
-  const handlePlaybackRateChange = useLastCallback((value: number) => {
+  const handlePlaybackRateChange = useStableCallback((value: number) => {
     setMediaPlayBackRate(videoRef.current!, value);
   });
 
-  const handleFullscreenChange = useLastCallback(() => {
+  const handleFullscreenChange = useStableCallback(() => {
     if (isFullscreen) {
       exitFullscreen?.();
     } else {
@@ -222,13 +222,13 @@ const VideoPlayer: React.FC<OwnProps> = ({
     }
   });
 
-  const handlePlay = useLastCallback(
+  const handlePlay = useStableCallback(
     (e: React.SyntheticEvent<HTMLVideoElement>) => {
       setPlaying(true);
     },
   );
 
-  const handlePauseChange = useLastCallback(
+  const handlePauseChange = useStableCallback(
     (e: React.SyntheticEvent<HTMLVideoElement>) => {
       setPlaying(false);
     },

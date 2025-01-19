@@ -9,7 +9,7 @@ import {
 } from "react";
 import { TransitionGroup, CSSTransition } from "react-transition-group";
 import usePrevious from "@/lib/hooks/state/usePrevious";
-import useLastCallback from "@/lib/hooks/callbacks/useLastCallback";
+import useStableCallback from "@/lib/hooks/callbacks/useStableCallback";
 import SliderSkeleton from "./SliderSkeleton";
 import { CSSTransitionProps } from "react-transition-group/CSSTransition";
 import { dispatchHeavyAnimation } from "@/lib/core";
@@ -58,7 +58,7 @@ function createSliderFactory(args: SliderFactoryProps): FC<OwnProps> {
 
     const CurrentScreen = screens[content];
 
-    const handleScreenChange = useLastCallback((screen: number) => {
+    const handleScreenChange = useStableCallback((screen: number) => {
       setContent(screen);
       onScreenChange?.(screen);
     });

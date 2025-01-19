@@ -2,7 +2,7 @@ import { DEBUG } from "@/lib/config/dev";
 import { ReadonlySignal, Signal, signal } from "@/lib/core/public/signals";
 import { areDeepEqual } from "@/lib/utils/areDeepEqual";
 import { useRef } from "react";
-import useLastCallback from "../callbacks/useLastCallback";
+import useStableCallback from "../callbacks/useStableCallback";
 
 type SignalSetter<T> = (value: T | ((prevValue: T | undefined) => T)) => void;
 
@@ -15,7 +15,7 @@ export default function useStateSignal<T = null>(
   const _signal = useRef(signal<T | undefined>(initialValue));
   const _previous = useRef<T | undefined>(initialValue);
 
-  const setSignal: SignalSetter<T> = useLastCallback((value) => {
+  const setSignal: SignalSetter<T> = useStableCallback((value) => {
     const prevValue = _signal.current.value;
     _previous.current = prevValue;
 

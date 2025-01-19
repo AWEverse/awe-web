@@ -14,7 +14,7 @@ import CircularProgress from "@mui/material/CircularProgress";
 import { CloseRounded, SearchRounded } from "@mui/icons-material";
 import useRefInstead from "@/lib/hooks/state/useRefInstead";
 import { useIntl } from "react-intl";
-import useLastCallback from "@/lib/hooks/callbacks/useLastCallback";
+import useStableCallback from "@/lib/hooks/callbacks/useStableCallback";
 import buildClassName from "../lib/buildClassName";
 import { requestMeasure } from "@/lib/modules/fastdom/fastdom";
 
@@ -113,7 +113,7 @@ const SearchInput: FC<OwnProps> = ({
     onReset?.();
   }, [onReset]);
 
-  const handleKeyDown = useLastCallback(
+  const handleKeyDown = useStableCallback(
     (e: React.KeyboardEvent<HTMLInputElement>) => {
       if (!resultsItemSelector) {
         return;

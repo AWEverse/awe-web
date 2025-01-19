@@ -1,7 +1,7 @@
 import { requestMeasure } from "@/lib/modules/fastdom/fastdom";
 import { useRef, useCallback } from "react";
 import useEffectOnce from "../effects/useEffectOnce";
-import useLastCallback from "../callbacks/useLastCallback";
+import useStableCallback from "../callbacks/useStableCallback";
 import useEffectSync from "../effects/useEffectSync";
 import { IS_TEST } from "@/lib/config/dev";
 import { IS_IOS } from "@/lib/core";
@@ -286,7 +286,7 @@ export default function useHistoryBack({
   hash,
   onBack,
 }: OwnProps) {
-  const lastOnBack = useLastCallback(onBack);
+  const lastOnBack = useStableCallback(onBack);
 
   // Active index of the record
   const indexRef = useRef<number>(0);

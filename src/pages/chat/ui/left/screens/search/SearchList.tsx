@@ -2,7 +2,7 @@ import React, { FC, memo, useState } from "react";
 import s from "./SearchList.module.scss";
 import buildClassName from "@/shared/lib/buildClassName";
 import TabList from "@/shared/ui/TabList";
-import useLastCallback from "@/lib/hooks/callbacks/useLastCallback";
+import useStableCallback from "@/lib/hooks/callbacks/useStableCallback";
 
 interface OwnProps {
   ref?: React.RefObject<HTMLDivElement | null>;
@@ -57,7 +57,7 @@ const tabsData = [
 const SearchList: FC<OwnProps> = ({ ref, className }) => {
   const [currentIndex, setCurrentIndex] = useState(0);
 
-  const handleTabChange = useLastCallback((index: number) => {
+  const handleTabChange = useStableCallback((index: number) => {
     setCurrentIndex(index);
   });
 

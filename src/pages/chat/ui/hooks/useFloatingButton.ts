@@ -1,5 +1,5 @@
 import { useState, useRef } from "react";
-import useLastCallback from "@/lib/hooks/callbacks/useLastCallback";
+import useStableCallback from "@/lib/hooks/callbacks/useStableCallback";
 
 const BUTTON_CLOSE_DELAY_MS = 250;
 
@@ -18,7 +18,7 @@ export default function useFloatingButton(
     isMouseInsideRef.current = value;
   };
 
-  const _handleMouseEnter = useLastCallback(() => {
+  const _handleMouseEnter = useStableCallback(() => {
     if (isTouchEnv) return;
     setIsMouseInside(true);
     setIsButtonVisible(true);
@@ -28,7 +28,7 @@ export default function useFloatingButton(
     }
   });
 
-  const _handleMouseLeave = useLastCallback(() => {
+  const _handleMouseLeave = useStableCallback(() => {
     if (isTouchEnv) {
       return;
     }

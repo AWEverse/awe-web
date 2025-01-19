@@ -1,5 +1,5 @@
 import { FC, memo, useState } from "react";
-import useLastCallback from "@/lib/hooks/callbacks/useLastCallback";
+import useStableCallback from "@/lib/hooks/callbacks/useStableCallback";
 import styles from "./TagCheckbox.module.scss";
 import RippleEffect from "@/shared/ui/ripple-effect";
 import CheckIcon from "@mui/icons-material/Check";
@@ -14,7 +14,7 @@ const TagCheckbox: FC<TagCheckboxProps> = memo((props) => {
   const { name, checked = false, handleCheckboxChange } = props;
   const [isChecked, setIsChecked] = useState(checked);
 
-  const toggleCheckbox = useLastCallback(() => {
+  const toggleCheckbox = useStableCallback(() => {
     const newChecked = !isChecked;
     setIsChecked(newChecked);
     handleCheckboxChange(name, newChecked);

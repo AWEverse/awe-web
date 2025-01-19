@@ -17,7 +17,7 @@ import useMedia from "@/lib/hooks/ui/useMedia";
 import { CalendarMonthRounded, CloseRounded } from "@mui/icons-material";
 import IconButton from "@/shared/ui/IconButton";
 import { TransitionGroup, CSSTransition } from "react-transition-group";
-import useLastCallback from "@/lib/hooks/callbacks/useLastCallback";
+import useStableCallback from "@/lib/hooks/callbacks/useStableCallback";
 import Modal from "@/shared/ui/Modal";
 import { createSelectorHooks } from "@/lib/hooks/selectors/createSelectorHooks";
 import captureKeyboardListeners from "@/lib/utils/captureKeyboardListeners";
@@ -45,19 +45,19 @@ const MiddleHeader: React.FC<{ sender?: UserProps }> = ({ sender }) => {
   const openProfileColumn = useStore.openProfileColumn();
   const toggleChatList = useStore.toggleChatList();
 
-  const onTransitionStart = useLastCallback(() => {
+  const onTransitionStart = useStableCallback(() => {
     if (headerRef.current) {
       headerRef.current.style.overflow = "hidden";
     }
   });
 
-  const onTransitionEnd = useLastCallback(() => {
+  const onTransitionEnd = useStableCallback(() => {
     if (headerRef.current) {
       headerRef.current.style.overflow = "visible";
     }
   });
 
-  const handleEscListener = useLastCallback(() => {
+  const handleEscListener = useStableCallback(() => {
     if (isChatSearching) {
       toggleChatSearching();
     }
@@ -73,11 +73,11 @@ const MiddleHeader: React.FC<{ sender?: UserProps }> = ({ sender }) => {
     };
   });
 
-  const handleDateModalOpen = useLastCallback(() => {
+  const handleDateModalOpen = useStableCallback(() => {
     setOpenDateModal(true);
   });
 
-  const handleDateModalClose = useLastCallback(() => {
+  const handleDateModalClose = useStableCallback(() => {
     setOpenDateModal(false);
   });
 

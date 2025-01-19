@@ -1,5 +1,5 @@
 import { useState } from "react";
-import useLastCallback from "../callbacks/useLastCallback";
+import useStableCallback from "../callbacks/useStableCallback";
 
 /**
  * Custom hook that returns a boolean flag and two functions to set or unset the flag.
@@ -12,8 +12,8 @@ const useFlag = (
 ): [boolean, () => void, () => void] => {
   const [value, setValue] = useState<boolean>(initial);
 
-  const setTrue = useLastCallback(() => setValue(true));
-  const setFalse = useLastCallback(() => setValue(false));
+  const setTrue = useStableCallback(() => setValue(true));
+  const setFalse = useStableCallback(() => setValue(false));
 
   return [value, setTrue, setFalse];
 };

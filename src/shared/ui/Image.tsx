@@ -5,7 +5,7 @@ import {
   useOnIntersect,
 } from "@/lib/hooks/sensors/useIntersectionObserver";
 import "./Image.scss";
-import useLastCallback from "@/lib/hooks/callbacks/useLastCallback";
+import useStableCallback from "@/lib/hooks/callbacks/useStableCallback";
 
 interface OwnProps {
   src: string;
@@ -69,7 +69,7 @@ const Image: FC<OwnProps> = ({
     onError?.();
   }, [fallbackSrc, onError]);
 
-  const handleImageLoad = useLastCallback(() => {
+  const handleImageLoad = useStableCallback(() => {
     setIsLoaded(true);
   });
 

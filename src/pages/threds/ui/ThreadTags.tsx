@@ -1,7 +1,7 @@
 import React, { memo, useCallback, useReducer, useMemo, useState } from "react";
 import FlatList from "@/entities/FlatList";
 import TagCheckbox from "@/entities/TagCheckbox";
-import useLastCallback from "@/lib/hooks/callbacks/useLastCallback";
+import useStableCallback from "@/lib/hooks/callbacks/useStableCallback";
 import { debounce } from "@/lib/core";
 
 interface ThreadTagsProps {
@@ -66,7 +66,7 @@ const ThreadTags: React.FC<ThreadTagsProps> = ({
     [state, handleCheckboxChange],
   );
 
-  const handleSearch = useLastCallback(
+  const handleSearch = useStableCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
       setSearchQuery(e.target.value);
     },

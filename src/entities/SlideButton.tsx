@@ -1,7 +1,7 @@
 import { Children, createRef, FC, memo, ReactNode, useState } from "react";
 import { CSSTransition, TransitionGroup } from "react-transition-group";
 import ActionButton from "@/shared/ui/ActionButton"; // Assuming you have this component
-import useLastCallback from "@/lib/hooks/callbacks/useLastCallback";
+import useStableCallback from "@/lib/hooks/callbacks/useStableCallback";
 
 import s from "./SlideButton.module.scss";
 
@@ -15,7 +15,7 @@ const SlideButton: FC<OwnProps> = ({ children }) => {
   const totalSlides = Children.count(children);
   const currentRef = createRef<HTMLDivElement>();
 
-  const handleNextSlide = useLastCallback((e: React.MouseEvent) => {
+  const handleNextSlide = useStableCallback((e: React.MouseEvent) => {
     e.stopPropagation();
 
     setSlideIndex((prevIndex) => (prevIndex + 1) % totalSlides);

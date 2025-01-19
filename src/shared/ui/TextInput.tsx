@@ -9,7 +9,7 @@ import {
 } from "react";
 import buildClassName from "../lib/buildClassName";
 import useRefInstead from "@/lib/hooks/state/useRefInstead";
-import useLastCallback from "@/lib/hooks/callbacks/useLastCallback";
+import useStableCallback from "@/lib/hooks/callbacks/useStableCallback";
 import { generateUniqueId } from "@/lib/hooks/utilities/useUniqueId";
 
 interface OwnProps extends InputHTMLAttributes<HTMLInputElement> {
@@ -44,7 +44,7 @@ const TextInput: FC<OwnProps> = ({
   const inputRef = useRefInstead<HTMLInputElement>(ref);
   const [isInputFocused, setFocused] = useState(focused);
 
-  const handleChange = useLastCallback((e: ChangeEvent<HTMLInputElement>) => {
+  const handleChange = useStableCallback((e: ChangeEvent<HTMLInputElement>) => {
     const { value } = e.currentTarget;
 
     if (/^\s/.test(value)) {

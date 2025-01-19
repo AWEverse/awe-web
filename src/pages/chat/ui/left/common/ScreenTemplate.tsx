@@ -1,7 +1,7 @@
 import { FC, ReactNode } from "react";
 import HeaderNavigation from "../../common/HeaderNavigation";
 import { SettingsScreenType } from "../screens/settings/types";
-import useLastCallback from "@/lib/hooks/callbacks/useLastCallback";
+import useStableCallback from "@/lib/hooks/callbacks/useStableCallback";
 
 interface OwnProps {
   ref?: React.RefObject<HTMLDivElement>;
@@ -22,7 +22,7 @@ const ScreenTemplate: FC<OwnProps> = (props) => {
     children,
   } = props;
 
-  const handleScreenChange = useLastCallback(() => {
+  const handleScreenChange = useStableCallback(() => {
     onScreenChange?.(defaultScreen);
   });
 

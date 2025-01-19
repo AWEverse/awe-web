@@ -13,7 +13,7 @@ import s from "./Modal.module.scss";
 import Portal from "./Portal";
 import trapFocus from "@/lib/utils/trapFocus";
 import captureKeyboardListeners from "@/lib/utils/captureKeyboardListeners";
-import useLastCallback from "@/lib/hooks/callbacks/useLastCallback";
+import useStableCallback from "@/lib/hooks/callbacks/useStableCallback";
 import useLayoutEffectWithPrevDeps from "@/lib/hooks/effects/useLayoutEffectWithPrevDeps";
 import buildClassName from "../lib/buildClassName";
 import useUniqueId from "@/lib/hooks/utilities/useUniqueId";
@@ -87,7 +87,7 @@ const Modal: FC<OwnProps> = ({
   const UUID = useUniqueId(`modal`, ariaLabel);
   const modalRef = useRef<HTMLDivElement>(null);
 
-  const handleClick = useLastCallback((e: MouseEvent<HTMLDivElement>) => {
+  const handleClick = useStableCallback((e: MouseEvent<HTMLDivElement>) => {
     e.stopPropagation();
 
     if (!noBackdropClose) {
@@ -95,13 +95,15 @@ const Modal: FC<OwnProps> = ({
     }
   });
 
-  const handleModalClick = useLastCallback((e: MouseEvent<HTMLDivElement>) => {
-    e.stopPropagation();
+  const handleModalClick = useStableCallback(
+    (e: MouseEvent<HTMLDivElement>) => {
+      e.stopPropagation();
 
-    onClick?.(e);
-  });
+      onClick?.(e);
+    },
+  );
 
-  const handleEnter = useLastCallback((e: KeyboardEvent) => {
+  const handleEnter = useStableCallback((e: KeyboardEvent) => {
     if (!onEnter) {
       return false;
     }

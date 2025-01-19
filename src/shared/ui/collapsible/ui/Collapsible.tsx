@@ -11,7 +11,7 @@ import { CSSTransition } from "react-transition-group";
 import buildClassName from "@/shared/lib/buildClassName";
 
 import s from "./Collapsible.module.scss";
-import useLastCallback from "@/lib/hooks/callbacks/useLastCallback";
+import useStableCallback from "@/lib/hooks/callbacks/useStableCallback";
 import { CollapsibleContext, useCollapsible } from "../hooks/useCollapsible";
 import { requestMeasure } from "@/lib/modules/fastdom/fastdom";
 import { clamp } from "@/lib/core";
@@ -117,7 +117,7 @@ const Trigger: FC<TriggerProps & ButtonProps> = ({
 }) => {
   const { isOpen, toggleCollapse } = useCollapsible();
 
-  const handleClick = useLastCallback(
+  const handleClick = useStableCallback(
     (e: React.MouseEvent<HTMLButtonElement>) => {
       toggleCollapse();
       onClick?.(e);
@@ -152,7 +152,7 @@ const Root: FC<RootProps & DivProps> = ({
 }) => {
   const [isOpen, setIsOpen] = useState(false);
 
-  const toggleCollapse = useLastCallback(() => {
+  const toggleCollapse = useStableCallback(() => {
     setIsOpen((prev) => !prev);
   });
 

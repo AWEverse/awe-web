@@ -1,16 +1,16 @@
 import { useRef } from "react";
-import useLastCallback from "@/lib/hooks/callbacks/useLastCallback";
+import useStableCallback from "@/lib/hooks/callbacks/useStableCallback";
 import useStateSignal from "@/lib/hooks/signals/useStateSignal";
 
 const useControlsSignal = () => {
   const lockedRef = useRef(false);
   const [visibilitySignal, setVisibilitySignal] = useStateSignal(false);
 
-  const setControlsVisible = useLastCallback((value: boolean) => {
+  const setControlsVisible = useStableCallback((value: boolean) => {
     setVisibilitySignal(value);
   });
 
-  const setIsLocked = useLastCallback((value: boolean) => {
+  const setIsLocked = useStableCallback((value: boolean) => {
     lockedRef.current = value;
   });
 
