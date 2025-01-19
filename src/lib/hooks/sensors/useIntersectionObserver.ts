@@ -1,7 +1,7 @@
 import type { RefObject } from "react";
 import { useEffect, useRef, useState } from "react";
 import useHeavyAnimationCheck from "./useHeavyAnimationCheck";
-import useStableCallback from "../callbacks/useStableCallback";
+import { useStableCallback } from "@/shared/hooks/base";
 import { CallbackManager, createCallbackManager } from "../../utils/callbacks";
 import { type Scheduler, debounce, throttleWith, throttle } from "@/lib/core";
 

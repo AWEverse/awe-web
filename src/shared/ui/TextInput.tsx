@@ -9,7 +9,7 @@ import {
 } from "react";
 import buildClassName from "../lib/buildClassName";
 import useRefInstead from "@/lib/hooks/state/useRefInstead";
-import useStableCallback from "@/lib/hooks/callbacks/useStableCallback";
+import { useStableCallback } from "@/shared/hooks/base";
 import { generateUniqueId } from "@/lib/hooks/utilities/useUniqueId";
 
 interface OwnProps extends InputHTMLAttributes<HTMLInputElement> {

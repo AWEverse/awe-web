@@ -1,6 +1,6 @@
 import { createCallbackManager } from "@/lib/utils/callbacks";
 import { useEffect } from "react";
-import useStableCallback from "../callbacks/useStableCallback";
+import { useStableCallback } from "@/shared/hooks/base";
 
 const blurCallbacks = createCallbackManager();
 const focusCallbacks = createCallbackManager();

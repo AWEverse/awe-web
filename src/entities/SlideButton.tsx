@@ -1,7 +1,7 @@
 import { Children, createRef, FC, memo, ReactNode, useState } from "react";
 import { CSSTransition, TransitionGroup } from "react-transition-group";
 import ActionButton from "@/shared/ui/ActionButton"; // Assuming you have this component
-import useStableCallback from "@/lib/hooks/callbacks/useStableCallback";
+import { useStableCallback } from "@/shared/hooks/base";
 
 import s from "./SlideButton.module.scss";
 

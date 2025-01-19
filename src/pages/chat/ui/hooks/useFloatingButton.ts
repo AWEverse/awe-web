@@ -1,5 +1,5 @@
 import { useState, useRef } from "react";
-import useStableCallback from "@/lib/hooks/callbacks/useStableCallback";
+import { useStableCallback } from "@/shared/hooks/base";
 
 const BUTTON_CLOSE_DELAY_MS = 250;
 

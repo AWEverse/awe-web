@@ -1,10 +1,7 @@
-import { useStateRef } from "@/lib/hooks/state/useStateRef";
-import {
-  requestForcedReflow,
-  requestMutation,
-} from "@/lib/modules/fastdom/fastdom";
+import { requestForcedReflow } from "@/lib/modules/fastdom/fastdom";
 import { useCallback, useLayoutEffect } from "react";
 import { addExtraClass, setExtraStyles } from "../../lib/extraClassHelpers";
+import { useStateRef } from "../base";
 
 type IAnchorPosition = {
   x: number;

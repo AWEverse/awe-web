@@ -73,6 +73,7 @@ const useKeyboardListNavigation = (
       const item = elementChildren[newIndex] as HTMLElement;
       if (item) {
         setFocusedIndex(newIndex);
+
         requestMeasure(() => {
           item.focus();
         });

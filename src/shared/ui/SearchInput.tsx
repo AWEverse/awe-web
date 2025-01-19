@@ -9,12 +9,12 @@ import {
 } from "react";
 
 import s from "./SearchInput.module.scss";
-import useFlag from "@/lib/hooks/state/useFlag";
+import { useBooleanState } from "@/shared/hooks/state";
 import CircularProgress from "@mui/material/CircularProgress";
 import { CloseRounded, SearchRounded } from "@mui/icons-material";
 import useRefInstead from "@/lib/hooks/state/useRefInstead";
 import { useIntl } from "react-intl";
-import useStableCallback from "@/lib/hooks/callbacks/useStableCallback";
+import { useStableCallback } from "@/shared/hooks/base";
 import buildClassName from "../lib/buildClassName";
 import { requestMeasure } from "@/lib/modules/fastdom/fastdom";
 

@@ -1,5 +1,5 @@
 import { ApiMessageEntityTypes } from "@/@types/api/types/messages";
-import useStableCallback from "@/lib/hooks/callbacks/useStableCallback";
+import { useStableCallback } from "@/shared/hooks/base";
 import { ReactNode, useRef } from "react";
 import useCollapsibleLines from "../hooks/DOM/useCollapsible";
 import buildClassName from "../lib/buildClassName";

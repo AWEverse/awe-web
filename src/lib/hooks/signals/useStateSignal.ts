@@ -2,7 +2,7 @@ import { DEBUG } from "@/lib/config/dev";
 import { ReadonlySignal, Signal, signal } from "@/lib/core/public/signals";
 import { areDeepEqual } from "@/lib/utils/areDeepEqual";
 import { useRef } from "react";
-import useStableCallback from "../callbacks/useStableCallback";
+import { useStableCallback } from "@/shared/hooks/base";
 
 type SignalSetter<T> = (value: T | ((prevValue: T | undefined) => T)) => void;
 

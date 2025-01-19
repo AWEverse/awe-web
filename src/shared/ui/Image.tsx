@@ -5,7 +5,7 @@ import {
   useOnIntersect,
 } from "@/lib/hooks/sensors/useIntersectionObserver";
 import "./Image.scss";
-import useStableCallback from "@/lib/hooks/callbacks/useStableCallback";
+import { useStableCallback } from "@/shared/hooks/base";
 
 interface OwnProps {
   src: string;

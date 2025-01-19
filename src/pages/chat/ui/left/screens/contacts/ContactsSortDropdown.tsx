@@ -4,7 +4,7 @@ import IconButton from "@/shared/ui/IconButton";
 import { SortByAlpha } from "@mui/icons-material";
 import { FC, memo, useState } from "react";
 import s from "./ContactsSortDropdown.module.scss";
-import useStableCallback from "@/lib/hooks/callbacks/useStableCallback";
+import { useStableCallback } from "@/shared/hooks/base";
 
 interface OwnProps {
   onChange?: (sortType: SortTypes) => void;

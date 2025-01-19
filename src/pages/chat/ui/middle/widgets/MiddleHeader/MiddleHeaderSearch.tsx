@@ -1,4 +1,4 @@
-import useStableCallback from "@/lib/hooks/callbacks/useStableCallback";
+import { useStableCallback } from "@/shared/hooks/base";
 import { debounce } from "@/lib/core";
 import SearchInput from "@/shared/ui/SearchInput";
 import { FC, memo, useState } from "react";

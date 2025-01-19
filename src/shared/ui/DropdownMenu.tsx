@@ -2,7 +2,6 @@ import React, { FC, useState, memo, useEffect } from "react";
 import { CSSTransition } from "react-transition-group";
 import s from "./DropdownMenu.module.scss";
 import buildClassName from "../lib/buildClassName";
-import useRefInstead from "@/lib/hooks/state/useRefInstead";
 import captureKeyboardListeners from "@/lib/utils/captureKeyboardListeners";
 import LightEffect from "./common/LightEffect";
 import trapFocus from "@/lib/utils/trapFocus";
@@ -13,6 +12,7 @@ import {
   withFreezeWhenClosed,
 } from "@/lib/core";
 import { pipe } from "@/lib/core/public/misc/Pipe";
+import { useRefInstead } from "../hooks/base";
 
 interface OwnTriggerProps<T = HTMLElement> extends React.HTMLAttributes<T> {
   onTrigger: NoneToVoidFunction;

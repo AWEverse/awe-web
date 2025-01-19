@@ -4,7 +4,7 @@ import HeaderNavigation from "../../common/HeaderNavigation";
 import useChatStore from "@/pages/chat/store/useChatSelector";
 import IconButton from "@/shared/ui/IconButton";
 import { EditRounded } from "@mui/icons-material";
-import useStableCallback from "@/lib/hooks/callbacks/useStableCallback";
+import { useStableCallback } from "@/shared/hooks/base";
 import TabList from "@/shared/ui/TabList";
 import Square from "@/entities/album-layout/ui/Square";
 

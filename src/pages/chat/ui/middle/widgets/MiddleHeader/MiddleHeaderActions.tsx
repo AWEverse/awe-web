@@ -9,7 +9,7 @@ import {
 import buildClassName from "@/shared/lib/buildClassName";
 import { withStateProps } from "@/lib/core";
 import MiddleHeaderDropdown from "./MiddleHeaderDropdown";
-import useStableCallback from "@/lib/hooks/callbacks/useStableCallback";
+import { useStableCallback } from "@/shared/hooks/base";
 import IconButton from "@/shared/ui/IconButton";
 import useChatStore from "@/pages/chat/store/useChatSelector";
 import CallModal from "../../call/CallModal";

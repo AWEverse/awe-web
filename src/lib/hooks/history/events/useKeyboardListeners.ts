@@ -4,7 +4,7 @@ import captureKeyboardListeners, {
   ReleaseListeners,
 } from "../../utils/captureKeyboardListeners";
 import { debounce, throttle } from "../../utils/schedulers";
-import useStableCallback from "../callbacks/useStableCallback";
+import { useStableCallback } from "@/shared/hooks/base";
 
 interface UseKeyboardListenersOptions extends CaptureOptions {
   throttle?: number;

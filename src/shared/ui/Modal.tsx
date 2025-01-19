@@ -13,7 +13,7 @@ import s from "./Modal.module.scss";
 import Portal from "./Portal";
 import trapFocus from "@/lib/utils/trapFocus";
 import captureKeyboardListeners from "@/lib/utils/captureKeyboardListeners";
-import useStableCallback from "@/lib/hooks/callbacks/useStableCallback";
+import { useStableCallback } from "@/shared/hooks/base";
 import useLayoutEffectWithPrevDeps from "@/lib/hooks/effects/useLayoutEffectWithPrevDeps";
 import buildClassName from "../lib/buildClassName";
 import useUniqueId from "@/lib/hooks/utilities/useUniqueId";

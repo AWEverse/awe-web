@@ -19,13 +19,13 @@ import {
 import ActionButton from "@/shared/ui/ActionButton";
 
 import s from "./LeftHeaderDropdownMenu.module.scss";
-import useStableCallback from "@/lib/hooks/callbacks/useStableCallback";
+import { useStableCallback } from "@/shared/hooks/base";
 import useChatStore from "@/pages/chat/store/useChatSelector";
 import { LeftColumnScreenType } from "@/pages/chat/types/LeftColumn";
 import { useColorScheme } from "@mui/material/styles";
 import IconButton from "@/shared/ui/IconButton";
 import Modal from "@/shared/ui/Modal";
-import useFlag from "@/lib/hooks/state/useFlag";
+import { useBooleanState } from "@/shared/hooks/state";
 import { Avatar } from "@mui/material";
 import buildClassName from "@/shared/lib/buildClassName";
 import MenuSeparator from "@/shared/ui/MenuSeparator";

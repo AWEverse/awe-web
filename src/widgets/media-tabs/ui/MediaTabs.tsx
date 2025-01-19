@@ -1,4 +1,4 @@
-import useStableCallback from "@/lib/hooks/callbacks/useStableCallback";
+import { useStableCallback } from "@/shared/hooks/base";
 import TabList from "@/shared/ui/TabList";
 import { FC, memo, ReactNode, useState } from "react";
 

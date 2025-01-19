@@ -1,7 +1,7 @@
 import { FC, memo, ReactNode, useState } from "react";
 import s from "./InfoAction.module.scss";
 import buildClassName from "@/shared/lib/buildClassName";
-import useStableCallback from "@/lib/hooks/callbacks/useStableCallback";
+import { useStableCallback } from "@/shared/hooks/base";
 import { Snackbar, SnackbarCloseReason, Alert } from "@mui/material";
 
 interface OwnProps {

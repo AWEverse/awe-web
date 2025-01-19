@@ -1,4 +1,4 @@
-import useStableCallback from "@/lib/hooks/callbacks/useStableCallback";
+import { useStableCallback } from "@/shared/hooks/base";
 import useRefInstead from "@/lib/hooks/state/useRefInstead";
 import { IVector2D } from "@/lib/utils/data-structures/Vector2d";
 import { throttle } from "@/lib/utils/schedulers";

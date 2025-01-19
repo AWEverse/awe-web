@@ -8,7 +8,7 @@ import {
   Sheet,
 } from "@mui/material";
 import useMedia from "@/lib/hooks/ui/useMedia";
-import useStableCallback from "@/lib/hooks/callbacks/useStableCallback";
+import { useStableCallback } from "@/shared/hooks/base";
 
 interface CustomDrawerProps {
   children: React.ReactNode;

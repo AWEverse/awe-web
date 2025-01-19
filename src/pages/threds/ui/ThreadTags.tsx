@@ -1,8 +1,8 @@
 import React, { memo, useCallback, useReducer, useMemo, useState } from "react";
 import FlatList from "@/entities/FlatList";
 import TagCheckbox from "@/entities/TagCheckbox";
-import useStableCallback from "@/lib/hooks/callbacks/useStableCallback";
 import { debounce } from "@/lib/core";
+import { useStableCallback } from "@/shared/hooks/base";
 
 interface ThreadTagsProps {
   items: string[];

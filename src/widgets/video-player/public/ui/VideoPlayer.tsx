@@ -14,7 +14,7 @@ import {
   setMediaVolume,
   throttle,
 } from "@/lib/core";
-import useStableCallback from "@/lib/hooks/callbacks/useStableCallback";
+import { useStableCallback } from "@/shared/hooks/base";
 import useFullscreen from "../hooks/useFullScreen";
 import useUnsupportedMedia from "../hooks/useSupportCheck";
 import { BufferedRange, getTimeRanges } from "@/lib/hooks/ui/useBuffering";
@@ -23,16 +23,16 @@ import stopEvent from "@/lib/utils/stopEvent";
 import useAmbilight from "../hooks/useAmbilight";
 import { ObserveFn } from "@/lib/hooks/sensors/useIntersectionObserver";
 
-import VideoPlayerControls from "./VideoPlayerControls";
+import VideoPlayerControls from "../../private/ui/VideoPlayerControls";
 
 import "./VideoPlayer.scss";
 import { ApiDimensions } from "@/@types/api/types/messages";
 import useAppLayout from "@/lib/hooks/ui/useAppLayout";
 import usePictureInPicture from "../hooks/usePictureInPicture";
 import buildClassName from "@/shared/lib/buildClassName";
-import useFlag from "@/lib/hooks/state/useFlag";
 import useStateSignal from "@/lib/hooks/signals/useStateSignal";
 import { DEBUG } from "@/lib/config/dev";
+import { useBooleanState } from "@/shared/hooks/state";
 
 type OwnProps = {
   ref?: React.RefObject<HTMLVideoElement | null>;
@@ -94,7 +94,7 @@ const VideoPlayer: React.FC<OwnProps> = ({
 
   const [isReady, setReady] = useState(false);
   const [isPlaying, setPlaying] = useState(false);
-  const [isAmbient, markAmbientOn, markAmbientOff] = useFlag();
+  const [isAmbient, markAmbientOn, markAmbientOff] = useBooleanState();
 
   const [currentTime, setCurrentTime] = useStateSignal(0);
   const [volume, setVolume] = useStateSignal(1);
@@ -393,39 +393,37 @@ const VideoPlayer: React.FC<OwnProps> = ({
         src={mediaUrl as string}
       />
 
-      <div className={"PlayerControlsWrapper"}>
-        <VideoPlayerControls
-          // Playback Control
-          isPlaying={isPlaying}
-          currentTimeSignal={currentTime}
-          volumeSignal={volume}
-          controlsSignal={controlsSignal}
-          duration={duration}
-          playbackRate={playbackSpeed}
-          isMuted={Boolean(videoRef.current?.muted)}
-          // Buffered Media Info
-          bufferedRangesSignal={bufferedSingal}
-          isReady={isReady}
-          fileSize={totalFileSize}
-          // UI State
-          waitingSignal={waitingSignal}
-          isForceMobileVersion={forceMobileView}
-          isFullscreen={isFullscreen}
-          isFullscreenSupported={Boolean(enterFullscreen)}
-          isPictureInPictureSupported={isPictureInPictureSupported}
-          // Event Handlers
-          onPictureInPictureChange={enterPictureInPicture}
-          onChangeFullscreen={handleFullscreenChange}
-          onVolumeClick={handleMuteClick}
-          onVolumeChange={handleVolumeChange}
-          onPlaybackRateChange={handlePlaybackRateChange}
-          onToggleControls={toggleControls}
-          onPlayPause={togglePlayState}
-          onSeek={handleSeek}
-          onSeekStart={handleSeekStart}
-          onSeekEnd={handleSeekEnd}
-        />
-      </div>
+      <VideoPlayerControls
+        // Playback Control
+        isPlaying={isPlaying}
+        currentTimeSignal={currentTime}
+        volumeSignal={volume}
+        controlsSignal={controlsSignal}
+        duration={duration}
+        playbackRate={playbackSpeed}
+        isMuted={Boolean(videoRef.current?.muted)}
+        // Buffered Media Info
+        bufferedRangesSignal={bufferedSingal}
+        isReady={isReady}
+        fileSize={totalFileSize}
+        // UI State
+        waitingSignal={waitingSignal}
+        isForceMobileVersion={forceMobileView}
+        isFullscreen={isFullscreen}
+        isFullscreenSupported={Boolean(enterFullscreen)}
+        isPictureInPictureSupported={isPictureInPictureSupported}
+        // Event Handlers
+        onPictureInPictureChange={enterPictureInPicture}
+        onChangeFullscreen={handleFullscreenChange}
+        onVolumeClick={handleMuteClick}
+        onVolumeChange={handleVolumeChange}
+        onPlaybackRateChange={handlePlaybackRateChange}
+        onToggleControls={toggleControls}
+        onPlayPause={togglePlayState}
+        onSeek={handleSeek}
+        onSeekStart={handleSeekStart}
+        onSeekEnd={handleSeekEnd}
+      />
 
       <canvas id="ambilight" ref={canvasRef} className={"CinematicLight"} />
       <div

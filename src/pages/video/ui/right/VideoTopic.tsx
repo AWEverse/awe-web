@@ -1,14 +1,14 @@
-import { FC, memo, ReactNode, KeyboardEvent } from 'react';
-import s from './VideoTopic.module.scss';
-import Img from '@/shared/ui/Image';
-import buildClassName from '@/shared/lib/buildClassName';
-import RippleEffect from '@/shared/ui/ripple-effect';
+import { FC, memo, ReactNode, KeyboardEvent } from "react";
+import s from "./VideoTopic.module.scss";
+import Img from "@/shared/ui/Image";
+import buildClassName from "@/shared/lib/buildClassName";
+import RippleEffect from "@/shared/ui/ripple-effect";
 
 interface OwnProps {
   id?: string | number;
-  direction?: 'vertical' | 'horizontal';
-  variant?: 'plain' | 'outlined' | 'soft';
-  size?: 'small' | 'medium' | 'large' | 'compact' | 'listItem';
+  direction?: "vertical" | "horizontal";
+  variant?: "plain" | "outlined" | "soft";
+  size?: "small" | "medium" | "large" | "compact" | "listItem";
   href?: string;
   thumbnail?: string;
   alt?: string;
@@ -23,10 +23,10 @@ interface OwnProps {
 }
 
 const VideoTopic: FC<OwnProps> = ({
-  size = 'medium',
+  size = "medium",
   thumbnail,
-  direction = 'horizontal',
-  variant = 'outlined',
+  direction = "horizontal",
+  variant = "outlined",
   href,
   alt,
   title,
@@ -38,10 +38,10 @@ const VideoTopic: FC<OwnProps> = ({
   onClick,
   onKeyDown,
 }) => {
-  const isMedium = size === 'medium';
+  const isMedium = size === "medium";
 
   const handleKeyDown = (e: KeyboardEvent) => {
-    if (e.key === 'Enter') {
+    if (e.key === "Enter") {
       e.preventDefault();
       onClick?.();
     }
@@ -56,19 +56,21 @@ const VideoTopic: FC<OwnProps> = ({
       </div>
 
       {author && <span className={s.meta}>@{author}</span>}
-      {isMedium && views && <span className={s.meta}>{views.toLocaleString()} views</span>}
+      {isMedium && views && (
+        <span className={s.meta}>{views.toLocaleString()} views</span>
+      )}
 
       {description && <p className={s.meta}>{description}</p>}
     </>
   );
 
   const renderOriented = () =>
-    direction === 'horizontal' ? renderContent() : <div>{renderContent()}</div>;
+    direction === "horizontal" ? renderContent() : <div>{renderContent()}</div>;
 
   return (
     <a
       aria-disabled="false"
-      aria-label={`Video Topic ${title || ''}`}
+      aria-label={`Video Topic ${title || ""}`}
       aria-pressed="false"
       className={buildClassName(className, s.VideoTopic)}
       data-direction={direction}
@@ -80,13 +82,14 @@ const VideoTopic: FC<OwnProps> = ({
       onClick={onClick}
       onKeyDown={handleKeyDown}
     >
-      <Img
-        alt={alt || 'Video thumbnail'}
-        aria-hidden="true"
-        className={s.ThumbnailImg}
-        figureClassName={s.FigureImg}
-        src={thumbnail || 'https://via.placeholder.com/150'}
-      />
+      <figure className={s.FigureImg}>
+        <img
+          alt={alt || "Video thumbnail"}
+          aria-hidden="true"
+          className={s.ThumbnailImg}
+          src={thumbnail || "https://via.placeholder.com/150"}
+        />
+      </figure>
       {renderOriented()}
       <RippleEffect />
     </a>

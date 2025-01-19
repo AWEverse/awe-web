@@ -1,7 +1,7 @@
 import { FC, ReactNode } from "react";
 import HeaderNavigation from "../../common/HeaderNavigation";
 import { SettingsScreenType } from "../screens/settings/types";
-import useStableCallback from "@/lib/hooks/callbacks/useStableCallback";
+import { useStableCallback } from "@/shared/hooks/base";
 
 interface OwnProps {
   ref?: React.RefObject<HTMLDivElement>;

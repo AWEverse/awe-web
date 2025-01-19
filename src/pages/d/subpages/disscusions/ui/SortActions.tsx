@@ -3,7 +3,7 @@ import SortByDown02Icon from "@/shared/common/icons/SortByDown02Icon";
 import SortByUp02Icon from "@/shared/common/icons/SortByUp02Icon";
 
 import s from "./SortActions.module.scss";
-import useStableCallback from "@/lib/hooks/callbacks/useStableCallback";
+import { useStableCallback } from "@/shared/hooks/base";
 import DropdownMenu, { TriggerProps } from "@/shared/ui/DropdownMenu";
 import IconButton from "@/shared/ui/IconButton";
 import ActionButton from "@/shared/ui/ActionButton";

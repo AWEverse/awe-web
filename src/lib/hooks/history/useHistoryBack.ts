@@ -1,7 +1,7 @@
 import { requestMeasure } from "@/lib/modules/fastdom/fastdom";
 import { useRef, useCallback } from "react";
 import useEffectOnce from "../effects/useEffectOnce";
-import useStableCallback from "../callbacks/useStableCallback";
+import { useStableCallback } from "@/shared/hooks/base";
 import useEffectSync from "../effects/useEffectSync";
 import { IS_TEST } from "@/lib/config/dev";
 import { IS_IOS } from "@/lib/core";

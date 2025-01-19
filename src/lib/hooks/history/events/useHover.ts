@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { cloneElement, useState, ReactElement } from "react";
 import { noop } from "../../utils/listener";
-import useStableCallback from "../callbacks/useStableCallback";
+import { useStableCallback } from "@/shared/hooks/base";
 
 export type Element =
   | ((state: boolean) => ReactElement<any>)

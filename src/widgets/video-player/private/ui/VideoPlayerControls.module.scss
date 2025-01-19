@@ -7,7 +7,6 @@
   display: flex;
   align-items: center;
   transition: opacity 250ms ease-in-out;
-  will-change: opacity;
   opacity: 0;
 
   &.active {
@@ -26,7 +25,6 @@
   font-size: small;
   color: white;
   mix-blend-mode: difference;
-  will-change: mix-blend-mode;  
 }
 
 .divider {
@@ -41,7 +39,6 @@
 
 .blendMode {
   mix-blend-mode: difference;
-  will-change: mix-blend-mode;
 }
 
 .control {
@@ -72,7 +69,6 @@ $icon-size: 25px;
   padding-inline: 0.25rem;
   gap: 0.25rem;
   mix-blend-mode: difference;
-  will-change: mix-blend-mode;
   cursor: pointer;
   display: inline-flex;
   align-items: center;

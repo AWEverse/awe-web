@@ -1,9 +1,9 @@
 import { useState } from "react";
-import useStableCallback from "../callbacks/useStableCallback";
+import { useStableCallback } from "@/shared/hooks/base";
 import { isSafariPatchInProgress } from "../../utils/patchSafariProgressiveAudio";
 import { areDeepEqual } from "../../utils/areDeepEqual";
 import { isMediaReadyToPlay } from "@/lib/core/public/misc/SafePlay";
-import useDebouncedCallback from "../shedulers/useDebouncedCallback";
+import { useDebouncedFunction } from "@/shared/hooks/shedulers";
 
 // Avoid flickering when re-mounting previously buffered video
 const DEBOUNCE = 200;
@@ -42,7 +42,7 @@ const useBuffering = (
   const [bufferedProgress, setBufferedProgress] = useState(0);
   const [bufferedRanges, setBufferedRanges] = useState<BufferedRange[]>([]);
 
-  const setIsBuffered = useDebouncedCallback(
+  const setIsBuffered = useDebouncedFunction(
     _setIsBuffered,
     [],
     DEBOUNCE,

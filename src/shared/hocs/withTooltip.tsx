@@ -1,11 +1,11 @@
 import React, { useState, useRef, useMemo, useLayoutEffect, memo } from "react";
-import useStableCallback from "@/lib/hooks/callbacks/useStableCallback";
+import { useStableCallback } from "@/shared/hooks/base";
 import { requestMeasure } from "@/lib/modules/fastdom/fastdom";
 import { pipe } from "@/lib/core/public/misc/Pipe";
 import { withFreezeWhenClosed } from "@/lib/core";
 
 interface TooltipProps {
-  tContent: React.ReactNode;
+  tContent?: React.ReactNode;
   tPosition?: "top" | "bottom" | "left" | "right";
   tColor?: string;
 }

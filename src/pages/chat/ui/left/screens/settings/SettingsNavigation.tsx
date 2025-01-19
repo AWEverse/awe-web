@@ -21,7 +21,7 @@ import s from "./SettingsNavigation.module.scss";
 import { SettingsScreenType } from "./types";
 import { useIntl } from "react-intl";
 import IconButton from "@/shared/ui/IconButton";
-import useStableCallback from "@/lib/hooks/callbacks/useStableCallback";
+import { useStableCallback } from "@/shared/hooks/base";
 import ConfirmActionModal from "@/entities/ConfirmActionModal";
 import buildClassName from "@/shared/lib/buildClassName";
 

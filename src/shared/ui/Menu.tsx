@@ -3,7 +3,7 @@ import Portal from "./Portal";
 import "./Menu.scss";
 import { dispatchHeavyAnimation, IS_BACKDROP_BLUR_SUPPORTED } from "@/lib/core";
 import useEffectWithPrevDeps from "@/lib/hooks/effects/useEffectWithPrevDeps";
-import useStableCallback from "@/lib/hooks/callbacks/useStableCallback";
+import { useStableCallback } from "@/shared/hooks/base";
 import useHistoryBack from "@/lib/hooks/history/useHistoryBack";
 import useAppLayout from "@/lib/hooks/ui/useAppLayout";
 import { FC, useRef, useEffect, memo } from "react";

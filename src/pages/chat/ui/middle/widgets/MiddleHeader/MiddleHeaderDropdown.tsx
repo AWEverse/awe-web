@@ -1,5 +1,5 @@
 import { FC, memo, useState } from "react";
-import useStableCallback from "@/lib/hooks/callbacks/useStableCallback";
+import { useStableCallback } from "@/shared/hooks/base";
 import {
   MoreVert,
   VolumeDown,

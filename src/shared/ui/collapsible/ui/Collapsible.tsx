@@ -11,7 +11,7 @@ import { CSSTransition } from "react-transition-group";
 import buildClassName from "@/shared/lib/buildClassName";
 
 import s from "./Collapsible.module.scss";
-import useStableCallback from "@/lib/hooks/callbacks/useStableCallback";
+import { useStableCallback } from "@/shared/hooks/base";
 import { CollapsibleContext, useCollapsible } from "../hooks/useCollapsible";
 import { requestMeasure } from "@/lib/modules/fastdom/fastdom";
 import { clamp } from "@/lib/core";

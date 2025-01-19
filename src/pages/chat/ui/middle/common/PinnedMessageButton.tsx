@@ -1,4 +1,4 @@
-import useStableCallback from "@/lib/hooks/callbacks/useStableCallback";
+import { useStableCallback } from "@/shared/hooks/base";
 import RippleEffect from "@/shared/ui/ripple-effect";
 import { FC, useState, useMemo, memo } from "react";
 

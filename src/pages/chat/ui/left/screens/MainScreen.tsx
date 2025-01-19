@@ -14,7 +14,7 @@ import FloatingActionButton, {
 import useFloatingButton from "../../hooks/useFloatingButton";
 import useConditionalRef from "@/lib/hooks/utilities/useConditionalRef";
 import useChatStore from "@/pages/chat/store/useChatSelector";
-import useStableCallback from "@/lib/hooks/callbacks/useStableCallback";
+import { useStableCallback } from "@/shared/hooks/base";
 
 interface OwnProps {
   className?: string;

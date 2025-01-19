@@ -16,7 +16,7 @@ import {
   requestMutation,
   requestForcedReflow,
 } from "@/lib/modules/fastdom/fastdom";
-import useStableCallback from "@/lib/hooks/callbacks/useStableCallback";
+import { useStableCallback } from "@/shared/hooks/base";
 import { generateUniqueId } from "@/lib/hooks/utilities/useUniqueId";
 
 import s from "./TextArea.module.scss";

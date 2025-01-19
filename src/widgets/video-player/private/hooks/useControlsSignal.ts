@@ -1,5 +1,5 @@
 import { useRef } from "react";
-import useStableCallback from "@/lib/hooks/callbacks/useStableCallback";
+import { useStableCallback } from "@/shared/hooks/base";
 import useStateSignal from "@/lib/hooks/signals/useStateSignal";
 
 const useControlsSignal = () => {

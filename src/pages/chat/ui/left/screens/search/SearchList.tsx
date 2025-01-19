@@ -2,7 +2,7 @@ import React, { FC, memo, useState } from "react";
 import s from "./SearchList.module.scss";
 import buildClassName from "@/shared/lib/buildClassName";
 import TabList from "@/shared/ui/TabList";
-import useStableCallback from "@/lib/hooks/callbacks/useStableCallback";
+import { useStableCallback } from "@/shared/hooks/base";
 
 interface OwnProps {
   ref?: React.RefObject<HTMLDivElement | null>;

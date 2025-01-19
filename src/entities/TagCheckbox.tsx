@@ -1,8 +1,8 @@
 import { FC, memo, useState } from "react";
-import useStableCallback from "@/lib/hooks/callbacks/useStableCallback";
 import styles from "./TagCheckbox.module.scss";
 import RippleEffect from "@/shared/ui/ripple-effect";
 import CheckIcon from "@mui/icons-material/Check";
+import { useStableCallback } from "@/shared/hooks/base";
 
 interface TagCheckboxProps {
   name: string;

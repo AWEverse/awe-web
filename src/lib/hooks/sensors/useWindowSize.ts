@@ -1,7 +1,7 @@
-import { useState, useEffect, useMemo } from 'react';
-import { throttle } from '@/lib/core';
-import windowSize from '../../utils/windowSize';
-import useDebouncedCallback from '../events/useDebouncedCallback';
+import { useState, useEffect, useMemo } from "react";
+import { throttle } from "@/lib/core";
+import windowSize from "../../utils/windowSize";
+import { useDebouncedFunction } from "@/shared/hooks/shedulers";
 
 const THROTTLE = 250;
 
@@ -11,7 +11,7 @@ export default function useWindowSize() {
   const [height, setHeight] = useState(initialHeight);
   const [isResizing, setIsResizing] = useState(false);
 
-  const setIsResizingDebounced = useDebouncedCallback(
+  const setIsResizingDebounced = useDebouncedFunction(
     setIsResizing,
     [setIsResizing],
     THROTTLE,
@@ -43,12 +43,15 @@ export default function useWindowSize() {
       throttledSetSize();
     };
 
-    window.addEventListener('resize', handleResize);
+    window.addEventListener("resize", handleResize);
 
     return () => {
-      window.removeEventListener('resize', handleResize);
+      window.removeEventListener("resize", handleResize);
     };
   }, [setIsResizingDebounced]);
 
-  return useMemo(() => ({ width, height, isResizing }), [height, isResizing, width]);
+  return useMemo(
+    () => ({ width, height, isResizing }),
+    [height, isResizing, width],
+  );
 }

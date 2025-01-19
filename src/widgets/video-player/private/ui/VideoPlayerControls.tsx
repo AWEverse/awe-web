@@ -3,7 +3,6 @@ import { BufferedRange } from "@/lib/hooks/ui/useBuffering";
 import React, { FC, memo, useEffect, useRef, useState } from "react";
 import SeekLine from "./SeekLine";
 
-import s from "./VideoPlayerControls.module.scss";
 import { ReadonlySignal } from "@/lib/core/public/signals";
 import { IconButton } from "@mui/material";
 import {
@@ -17,10 +16,9 @@ import {
   VolumeUpRounded,
   WidthFullRounded,
 } from "@mui/icons-material";
-import useStableCallback from "@/lib/hooks/callbacks/useStableCallback";
+import { useStableCallback } from "@/shared/hooks/base";
 import { IS_TOUCH_ENV } from "@/lib/core";
-import { formatMediaDuration } from "../../private/lib/utils";
-import useFlag from "@/lib/hooks/state/useFlag";
+import { formatMediaDuration } from "../lib/utils";
 import buildClassName from "@/shared/lib/buildClassName";
 import stopEvent from "@/lib/utils/stopEvent";
 import useBodyClass from "@/shared/hooks/DOM/useBodyClass";
@@ -28,9 +26,10 @@ import {
   useSignalEffect,
   useSignalLayoutEffect,
 } from "@/lib/hooks/signals/useSignalEffect";
-import useDebouncedCallback from "@/lib/hooks/shedulers/useDebouncedCallback";
-import SettingsDropdown from "../../private/ui/SettingsDropdown";
+import SettingsDropdown from "./SettingsDropdown";
 import { TriggerProps } from "@/shared/ui/DropdownMenu";
+import { useDebouncedFunction } from "@/shared/hooks/shedulers";
+import s from "./VideoPlayerControls.module.scss";
 
 type OwnProps = {
   // Playback Control
@@ -126,7 +125,7 @@ const VideoPlayerControls: FC<OwnProps> = ({
   const isSeeking = useRef(false);
   const [isBuffered, _setIsBuffered] = useState(true);
   const [bufferedProgress, setBufferedProgress] = useState(0);
-  const setIsBuffered = useDebouncedCallback(
+  const setIsBuffered = useDebouncedFunction(
     _setIsBuffered,
     [],
     DEBOUNCE,
@@ -302,13 +301,5 @@ const VideoPlayerControls: FC<OwnProps> = ({
     </section>
   );
 };
-
-function renderTime(currentTime: number, duration: number) {
-  return (
-    <div className="player-time">
-      {`${formatMediaDuration(currentTime)} / ${formatMediaDuration(duration)}`}
-    </div>
-  );
-}
 
 export default memo(VideoPlayerControls);

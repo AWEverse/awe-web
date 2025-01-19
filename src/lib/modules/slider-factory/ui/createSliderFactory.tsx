@@ -9,7 +9,7 @@ import {
 } from "react";
 import { TransitionGroup, CSSTransition } from "react-transition-group";
 import usePrevious from "@/lib/hooks/state/usePrevious";
-import useStableCallback from "@/lib/hooks/callbacks/useStableCallback";
+import { useStableCallback } from "@/shared/hooks/base";
 import SliderSkeleton from "./SliderSkeleton";
 import { CSSTransitionProps } from "react-transition-group/CSSTransition";
 import { dispatchHeavyAnimation } from "@/lib/core";

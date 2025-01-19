@@ -2,7 +2,7 @@ import { FC, forwardRef, Fragment, memo, useState } from "react";
 import ChatListItem from "./ChatListItem";
 import { ChatAnimationTypes } from "./hooks/useChatAnimationType";
 import s from "./ChatList.module.scss";
-import useStableCallback from "@/lib/hooks/callbacks/useStableCallback";
+import { useStableCallback } from "@/shared/hooks/base";
 import TabList from "@/shared/ui/TabList";
 import buildClassName from "@/shared/lib/buildClassName";
 

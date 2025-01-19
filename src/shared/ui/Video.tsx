@@ -1,5 +1,5 @@
 import useEffectSync from "@/lib/hooks/effects/useEffectSync";
-import useStableCallback from "@/lib/hooks/callbacks/useStableCallback";
+import { useStableCallback } from "@/shared/hooks/base";
 import useBuffering, {
   BufferingEvent,
   BufferingPair,

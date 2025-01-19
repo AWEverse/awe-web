@@ -1,10 +1,9 @@
 import { useState, useMemo, memo } from "react";
 
-import useStableCallback from "@/lib/hooks/callbacks/useStableCallback";
-
 import { requestMeasure } from "@/lib/modules/fastdom/fastdom";
 import buildClassName from "@/shared/lib/buildClassName";
 import { clamp01, debounce } from "@/lib/core";
+import { useStableCallback } from "@/shared/hooks/base";
 
 interface Ripple {
   x: number;

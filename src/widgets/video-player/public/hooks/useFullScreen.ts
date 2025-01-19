@@ -1,7 +1,7 @@
 import { IS_IOS } from "@/lib/core";
 import { pipeWithEffect } from "@/lib/core/public/misc/Pipe";
 import useEffectOnce from "@/lib/hooks/effects/useEffectOnce";
-import useStableCallback from "@/lib/hooks/callbacks/useStableCallback";
+import { useStableCallback } from "@/shared/hooks/base";
 import React, { useState, useLayoutEffect } from "react";
 
 type ReturnType = [boolean, () => void, () => void] | [false];

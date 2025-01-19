@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef } from "react";
 import { createCallbackManager } from "../../utils/callbacks";
-import useStableCallback from "../callbacks/useStableCallback";
+import { useStableCallback } from "@/shared/hooks/base";
 import { getIsHeavyAnimating } from "@/lib/core";
 
 const startCallbacks = createCallbackManager();

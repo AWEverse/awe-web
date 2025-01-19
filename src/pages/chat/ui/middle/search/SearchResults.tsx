@@ -6,7 +6,7 @@ import SearchFooter from "./SearchFooter";
 import { CSSTransition } from "react-transition-group";
 
 import s from "./SearchResults.module.scss";
-import useStableCallback from "@/lib/hooks/callbacks/useStableCallback";
+import { useStableCallback } from "@/shared/hooks/base";
 import { HandlerName } from "@/lib/utils/captureKeyboardListeners";
 import LastRequest from "./LastRequest";
 import SearchHistoryDropdown from "./SearchHistoryDropdown";

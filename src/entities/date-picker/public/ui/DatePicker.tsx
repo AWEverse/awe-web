@@ -10,7 +10,7 @@ import {
 } from "react";
 import { CSSTransition, TransitionGroup } from "react-transition-group";
 import { useIntl } from "react-intl";
-import useStableCallback from "@/lib/hooks/callbacks/useStableCallback";
+import { useStableCallback } from "@/shared/hooks/base";
 import { throttle } from "@/lib/core";
 
 import {

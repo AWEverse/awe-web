@@ -17,7 +17,7 @@ import useMedia from "@/lib/hooks/ui/useMedia";
 import { CalendarMonthRounded, CloseRounded } from "@mui/icons-material";
 import IconButton from "@/shared/ui/IconButton";
 import { TransitionGroup, CSSTransition } from "react-transition-group";
-import useStableCallback from "@/lib/hooks/callbacks/useStableCallback";
+import { useStableCallback } from "@/shared/hooks/base";
 import Modal from "@/shared/ui/Modal";
 import { createSelectorHooks } from "@/lib/hooks/selectors/createSelectorHooks";
 import captureKeyboardListeners from "@/lib/utils/captureKeyboardListeners";

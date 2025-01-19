@@ -3,7 +3,7 @@ import DropdownMenu, { TriggerProps } from "@/shared/ui/DropdownMenu";
 import { FC, memo, useState } from "react";
 import s from "./SettingsDropdown.module.scss";
 import { NumericLimits } from "@/lib/core";
-import useStableCallback from "@/lib/hooks/callbacks/useStableCallback";
+import { useStableCallback } from "@/shared/hooks/base";
 
 interface OwnProps<T extends Record<string, unknown> = {}> {
   triggerButton: FC<T & TriggerProps>;
