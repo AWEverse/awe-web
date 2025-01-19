@@ -1,12 +1,20 @@
-import { createElement, useState, useRef, JSX, FC, ReactElement, useEffect } from 'react';
-import { CSSTransition } from 'react-transition-group';
-import buildClassName from '@/shared/lib/buildClassName';
+import {
+  createElement,
+  useState,
+  useRef,
+  JSX,
+  FC,
+  ReactElement,
+  useEffect,
+} from "react";
+import { CSSTransition } from "react-transition-group";
+import buildClassName from "@/shared/lib/buildClassName";
 
-import s from './Collapsible.module.scss';
-import useLastCallback from '@/lib/hooks/events/useLastCallback';
-import { CollapsibleContext, useCollapsible } from '../hooks/useCollapsible';
-import { requestMeasure } from '@/lib/modules/fastdom/fastdom';
-import { clamp } from '@/lib/core';
+import s from "./Collapsible.module.scss";
+import useLastCallback from "@/lib/hooks/callbacks/useLastCallback";
+import { CollapsibleContext, useCollapsible } from "../hooks/useCollapsible";
+import { requestMeasure } from "@/lib/modules/fastdom/fastdom";
+import { clamp } from "@/lib/core";
 
 interface ContentProps {
   unmountOnExit?: boolean;
@@ -14,8 +22,8 @@ interface ContentProps {
   component?: keyof JSX.IntrinsicElements | null;
 }
 
-type DivProps = JSX.IntrinsicElements['div'];
-type ButtonProps = JSX.IntrinsicElements['button'];
+type DivProps = JSX.IntrinsicElements["div"];
+type ButtonProps = JSX.IntrinsicElements["button"];
 
 const MIN_DURATION = 150;
 const MAX_DURATION = 500;
@@ -29,7 +37,8 @@ const classNames = {
 };
 
 const calculateDuration = (height: number): number => {
-  const duration = (height / MAX_HEIGHT) * (MAX_DURATION - MIN_DURATION) + MIN_DURATION;
+  const duration =
+    (height / MAX_HEIGHT) * (MAX_DURATION - MIN_DURATION) + MIN_DURATION;
 
   return clamp(duration, MIN_DURATION, MAX_DURATION);
 };
@@ -37,7 +46,7 @@ const calculateDuration = (height: number): number => {
 const Content: FC<ContentProps & DivProps> = ({
   children,
   className,
-  component = 'div',
+  component = "div",
   contentClassName,
   unmountOnExit = true,
   ...props
@@ -58,7 +67,9 @@ const Content: FC<ContentProps & DivProps> = ({
       const height = node.scrollHeight;
       const newDuration = calculateDuration(height);
 
-      setDuration(prevDuration => (prevDuration !== newDuration ? newDuration : prevDuration));
+      setDuration((prevDuration) =>
+        prevDuration !== newDuration ? newDuration : prevDuration,
+      );
     });
   }, [isOpen]);
 
@@ -106,11 +117,13 @@ const Trigger: FC<TriggerProps & ButtonProps> = ({
 }) => {
   const { isOpen, toggleCollapse } = useCollapsible();
 
-  const handleClick = useLastCallback((e: React.MouseEvent<HTMLButtonElement>) => {
-    toggleCollapse();
-    onClick?.(e);
-    onOpenChange?.(!isOpen);
-  });
+  const handleClick = useLastCallback(
+    (e: React.MouseEvent<HTMLButtonElement>) => {
+      toggleCollapse();
+      onClick?.(e);
+      onOpenChange?.(!isOpen);
+    },
+  );
 
   return (
     <button
@@ -134,13 +147,13 @@ const Root: FC<RootProps & DivProps> = ({
   title,
   children,
   className,
-  component = 'div',
+  component = "div",
   ...props
 }) => {
   const [isOpen, setIsOpen] = useState(false);
 
   const toggleCollapse = useLastCallback(() => {
-    setIsOpen(prev => !prev);
+    setIsOpen((prev) => !prev);
   });
 
   const element =

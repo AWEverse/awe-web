@@ -1,7 +1,9 @@
-import { useRef } from 'react';
-import useLastCallback from '../events/useLastCallback';
+import { useRef } from "react";
+import useLastCallback from "../callbacks/useLastCallback";
 
-export default function useValueRef<T>(initialValue: T): [Readonly<T>, (newValue: T) => void] {
+export default function useValueRef<T>(
+  initialValue: T,
+): [Readonly<T>, (newValue: T) => void] {
   const ref = useRef<T>(initialValue);
 
   const setValue = useLastCallback((newValue: T) => {

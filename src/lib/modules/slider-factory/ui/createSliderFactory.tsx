@@ -1,10 +1,18 @@
-import { FC, cloneElement, useState, useEffect, createRef, Suspense, ReactElement } from 'react';
-import { TransitionGroup, CSSTransition } from 'react-transition-group';
-import usePrevious from '@/lib/hooks/state/usePrevious';
-import useLastCallback from '@/lib/hooks/events/useLastCallback';
-import SliderSkeleton from './SliderSkeleton';
-import { CSSTransitionProps } from 'react-transition-group/CSSTransition';
-import { dispatchHeavyAnimation } from '@/lib/core';
+import {
+  FC,
+  cloneElement,
+  useState,
+  useEffect,
+  createRef,
+  Suspense,
+  ReactElement,
+} from "react";
+import { TransitionGroup, CSSTransition } from "react-transition-group";
+import usePrevious from "@/lib/hooks/state/usePrevious";
+import useLastCallback from "@/lib/hooks/callbacks/useLastCallback";
+import SliderSkeleton from "./SliderSkeleton";
+import { CSSTransitionProps } from "react-transition-group/CSSTransition";
+import { dispatchHeavyAnimation } from "@/lib/core";
 
 const TRANSITION_DURATION = 300;
 
@@ -35,11 +43,16 @@ function createSliderFactory(args: SliderFactoryProps): FC<OwnProps> {
     withSuspence = false,
   } = args;
 
-  const SliderFactory: FC<OwnProps> = ({ className, currentScreen, onScreenChange }) => {
+  const SliderFactory: FC<OwnProps> = ({
+    className,
+    currentScreen,
+    onScreenChange,
+  }) => {
     const [content, setContent] = useState<number>(initialScreen);
 
     const previousContent = usePrevious(content);
-    const direction = previousContent !== undefined && previousContent < content;
+    const direction =
+      previousContent !== undefined && previousContent < content;
 
     const currentRef = createRef<HTMLDivElement>();
 
@@ -68,15 +81,23 @@ function createSliderFactory(args: SliderFactoryProps): FC<OwnProps> {
     const renderContent = () =>
       withSuspence ? (
         <Suspense fallback={<SliderSkeleton />}>
-          <CurrentScreen className={className} onScreenChange={handleScreenChange} />
+          <CurrentScreen
+            className={className}
+            onScreenChange={handleScreenChange}
+          />
         </Suspense>
       ) : (
-        <CurrentScreen className={className} onScreenChange={handleScreenChange} />
+        <CurrentScreen
+          className={className}
+          onScreenChange={handleScreenChange}
+        />
       );
 
     return (
       <TransitionGroup
-        childFactory={(child: ReactElement<CSSTransitionProps<HTMLDivElement>>) =>
+        childFactory={(
+          child: ReactElement<CSSTransitionProps<HTMLDivElement>>,
+        ) =>
           cloneElement(child, {
             classNames: direction ? rightClassNames : leftClassNames,
             timeout: duration,
@@ -84,7 +105,12 @@ function createSliderFactory(args: SliderFactoryProps): FC<OwnProps> {
         }
         component={null}
       >
-        <CSSTransition key={content} nodeRef={currentRef} timeout={duration} unmountOnExit>
+        <CSSTransition
+          key={content}
+          nodeRef={currentRef}
+          timeout={duration}
+          unmountOnExit
+        >
           <div ref={currentRef} className={className}>
             {renderContent()}
           </div>

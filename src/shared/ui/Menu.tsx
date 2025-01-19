@@ -1,17 +1,19 @@
-import Portal from './Portal';
+import Portal from "./Portal";
 
-import './Menu.scss';
-import { dispatchHeavyAnimation, IS_BACKDROP_BLUR_SUPPORTED } from '@/lib/core';
-import useEffectWithPrevDeps from '@/lib/hooks/effects/useEffectWithPrevDeps';
-import useLastCallback from '@/lib/hooks/events/useLastCallback';
-import useHistoryBack from '@/lib/hooks/history/useHistoryBack';
-import useAppLayout from '@/lib/hooks/ui/useAppLayout';
-import { FC, useRef, useEffect, memo } from 'react';
-import useKeyboardListNavigation from '../hooks/useKeyboardListNavigation';
-import useMenuPosition, { MenuPositionOptions } from '../hooks/useMenuPosition';
-import useVirtualBackdrop, { BACKDROP_CLASSNAME } from '../hooks/useVirtualBackdrop';
-import buildClassName from '../lib/buildClassName';
-import captureKeyboardListeners from '@/lib/utils/captureKeyboardListeners';
+import "./Menu.scss";
+import { dispatchHeavyAnimation, IS_BACKDROP_BLUR_SUPPORTED } from "@/lib/core";
+import useEffectWithPrevDeps from "@/lib/hooks/effects/useEffectWithPrevDeps";
+import useLastCallback from "@/lib/hooks/callbacks/useLastCallback";
+import useHistoryBack from "@/lib/hooks/history/useHistoryBack";
+import useAppLayout from "@/lib/hooks/ui/useAppLayout";
+import { FC, useRef, useEffect, memo } from "react";
+import useKeyboardListNavigation from "../hooks/useKeyboardListNavigation";
+import useMenuPosition, { MenuPositionOptions } from "../hooks/useMenuPosition";
+import useVirtualBackdrop, {
+  BACKDROP_CLASSNAME,
+} from "../hooks/useVirtualBackdrop";
+import buildClassName from "../lib/buildClassName";
+import captureKeyboardListeners from "@/lib/utils/captureKeyboardListeners";
 
 type OwnProps = {
   ref?: React.RefObject<HTMLDivElement>;
@@ -30,7 +32,9 @@ type OwnProps = {
   onCloseAnimationEnd?: () => void;
   onClose: () => void;
   onMouseEnter?: (e: React.MouseEvent<HTMLDivElement, MouseEvent>) => void;
-  onMouseEnterBackdrop?: (e: React.MouseEvent<HTMLDivElement, MouseEvent>) => void;
+  onMouseEnterBackdrop?: (
+    e: React.MouseEvent<HTMLDivElement, MouseEvent>,
+  ) => void;
   onMouseLeave?: (e: React.MouseEvent<HTMLDivElement, MouseEvent>) => void;
   withPortal?: boolean;
   children?: React.ReactNode;
@@ -105,10 +109,10 @@ const Menu: FC<OwnProps> = ({
   );
 
   const bubbleFullClassName = buildClassName(
-    'bubble menu-container custom-scroll',
-    footer && 'with-footer',
+    "bubble menu-container custom-scroll",
+    footer && "with-footer",
     bubbleClassName,
-    shouldCloseFast && 'close-fast',
+    shouldCloseFast && "close-fast",
   );
 
   const handleClick = useLastCallback((e: React.MouseEvent<HTMLDivElement>) => {
@@ -123,19 +127,24 @@ const Menu: FC<OwnProps> = ({
       ref={containerRef}
       id={id}
       className={buildClassName(
-        'Menu',
-        !noCompact && !isTouchScreen && 'compact',
-        !IS_BACKDROP_BLUR_SUPPORTED && 'no-blur',
-        withPortal && 'in-portal',
+        "Menu",
+        !noCompact && !isTouchScreen && "compact",
+        !IS_BACKDROP_BLUR_SUPPORTED && "no-blur",
+        withPortal && "in-portal",
         className,
       )}
       aria-labelledby={ariaLabelledBy}
-      role={ariaLabelledBy ? 'menu' : undefined}
+      role={ariaLabelledBy ? "menu" : undefined}
       onKeyDown={isOpen ? handleKeyDown : undefined}
       onMouseEnter={onMouseEnter}
       onMouseLeave={isOpen ? onMouseLeave : undefined}
     >
-      {isOpen && <div className={BACKDROP_CLASSNAME} onMouseEnter={onMouseEnterBackdrop} />}
+      {isOpen && (
+        <div
+          className={BACKDROP_CLASSNAME}
+          onMouseEnter={onMouseEnterBackdrop}
+        />
+      )}
       <div
         role="presentation"
         ref={bubbleRef}

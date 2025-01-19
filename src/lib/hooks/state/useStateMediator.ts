@@ -1,11 +1,14 @@
-import { Dispatch, SetStateAction, useRef, useState } from 'react';
-import useLastCallback from '../events/useLastCallback';
+import { Dispatch, SetStateAction, useRef, useState } from "react";
+import useLastCallback from "../callbacks/useLastCallback";
 
 export interface StateMediator<S = unknown> {
   (newState: unknown): S;
   (newState: unknown, dispatch: Dispatch<SetStateAction<S>>): void;
 }
-export type UseMediatedStateReturn<S = unknown> = [S, Dispatch<SetStateAction<S>>];
+export type UseMediatedStateReturn<S = unknown> = [
+  S,
+  Dispatch<SetStateAction<S>>,
+];
 
 export function useMediatedState<S = undefined>(
   mediator: StateMediator<S | undefined>,

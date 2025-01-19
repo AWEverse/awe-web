@@ -7,22 +7,22 @@ import {
   RefObject,
   useEffect,
   useRef,
-} from 'react';
-import { CSSTransition } from 'react-transition-group';
-import s from './Modal.module.scss';
-import Portal from './Portal';
-import trapFocus from '@/lib/utils/trapFocus';
-import captureKeyboardListeners from '@/lib/utils/captureKeyboardListeners';
-import useLastCallback from '@/lib/hooks/events/useLastCallback';
-import useLayoutEffectWithPrevDeps from '@/lib/hooks/effects/useLayoutEffectWithPrevDeps';
-import buildClassName from '../lib/buildClassName';
-import useUniqueId from '@/lib/hooks/utilities/useUniqueId';
-import { dispatchHeavyAnimation, withFreezeWhenClosed } from '@/lib/core';
+} from "react";
+import { CSSTransition } from "react-transition-group";
+import s from "./Modal.module.scss";
+import Portal from "./Portal";
+import trapFocus from "@/lib/utils/trapFocus";
+import captureKeyboardListeners from "@/lib/utils/captureKeyboardListeners";
+import useLastCallback from "@/lib/hooks/callbacks/useLastCallback";
+import useLayoutEffectWithPrevDeps from "@/lib/hooks/effects/useLayoutEffectWithPrevDeps";
+import buildClassName from "../lib/buildClassName";
+import useUniqueId from "@/lib/hooks/utilities/useUniqueId";
+import { dispatchHeavyAnimation, withFreezeWhenClosed } from "@/lib/core";
 
 const ANIMATION_DURATION = 300;
 
 type OwnProps = {
-  'aria-label'?: string;
+  "aria-label"?: string;
   dialogRef?: RefObject<HTMLDivElement | null>;
   title?: string | ReactNode[];
   className?: string;
@@ -82,7 +82,7 @@ const Modal: FC<OwnProps> = ({
   onCloseAnimationEnd,
   onEnter,
   dialogRef,
-  'aria-label': ariaLabel,
+  "aria-label": ariaLabel,
 }) => {
   const UUID = useUniqueId(`modal`, ariaLabel);
   const modalRef = useRef<HTMLDivElement>(null);
@@ -132,7 +132,7 @@ const Modal: FC<OwnProps> = ({
 
   useLayoutEffectWithPrevDeps(
     ([prevIsOpen]) => {
-      document.body.classList.toggle('has-open-dialog', isOpen);
+      document.body.classList.toggle("has-open-dialog", isOpen);
 
       const isOpened = prevIsOpen && !isOpen;
 
@@ -141,7 +141,7 @@ const Modal: FC<OwnProps> = ({
       }
 
       return () => {
-        document.body.classList.remove('has-open-dialog');
+        document.body.classList.remove("has-open-dialog");
       };
     },
     [isOpen],
@@ -178,7 +178,7 @@ const Modal: FC<OwnProps> = ({
           aria-label={ariaLabel}
           aria-labelledby="dialog-title"
           className={buildClassName(
-            'Modal',
+            "Modal",
             s.modalBackdrop,
             backdropBlur ? s.backdropBlur : noBackdrop && s.noBackdrop,
           )}
@@ -186,7 +186,12 @@ const Modal: FC<OwnProps> = ({
           role="dialog"
           onClick={handleClick}
         >
-          <div ref={dialogRef} className={classNames} style={style} onClick={handleModalClick}>
+          <div
+            ref={dialogRef}
+            className={classNames}
+            style={style}
+            onClick={handleModalClick}
+          >
             {children}
           </div>
         </div>

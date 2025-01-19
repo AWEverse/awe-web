@@ -1,5 +1,5 @@
-import { FC, memo, useState } from 'react';
-import useLastCallback from '@/lib/hooks/events/useLastCallback';
+import { FC, memo, useState } from "react";
+import useLastCallback from "@/lib/hooks/callbacks/useLastCallback";
 import {
   MoreVert,
   VolumeDown,
@@ -9,19 +9,19 @@ import {
   Delete,
   Report,
   SearchRounded,
-} from '@mui/icons-material';
-import s from './MiddleHeaderDropdown.module.scss';
-import { withStateProps } from '@/lib/core';
-import buildClassName from '@/shared/lib/buildClassName';
-import Modal from '@/shared/ui/Modal';
-import ConfirmActionModal from '@/entities/ConfirmActionModal';
-import DropdownMenu, { TriggerProps } from '@/shared/ui/DropdownMenu';
-import { Button } from '@mui/material';
-import IconButton from '@/shared/ui/IconButton';
-import { useIntl } from 'react-intl';
-import ChatActionButton from '../../common/ChatActionButton';
-import ReportModal from '@/entities/ReportModal';
-import useChatStore from '@/pages/chat/store/useChatSelector';
+} from "@mui/icons-material";
+import s from "./MiddleHeaderDropdown.module.scss";
+import { withStateProps } from "@/lib/core";
+import buildClassName from "@/shared/lib/buildClassName";
+import Modal from "@/shared/ui/Modal";
+import ConfirmActionModal from "@/entities/ConfirmActionModal";
+import DropdownMenu, { TriggerProps } from "@/shared/ui/DropdownMenu";
+import { Button } from "@mui/material";
+import IconButton from "@/shared/ui/IconButton";
+import { useIntl } from "react-intl";
+import ChatActionButton from "../../common/ChatActionButton";
+import ReportModal from "@/entities/ReportModal";
+import useChatStore from "@/pages/chat/store/useChatSelector";
 
 interface OwnProps {
   className?: string;
@@ -39,15 +39,15 @@ interface StateProps {
 }
 
 type ModalAction =
-  | 'search'
-  | 'pin'
-  | 'archive'
-  | 'hide'
-  | 'mute'
-  | 'block'
-  | 'delete'
-  | 'report'
-  | 'none';
+  | "search"
+  | "pin"
+  | "archive"
+  | "hide"
+  | "mute"
+  | "block"
+  | "delete"
+  | "report"
+  | "none";
 
 const MiddleHeaderDropdown: FC<OwnProps & StateProps> = ({
   className,
@@ -59,10 +59,12 @@ const MiddleHeaderDropdown: FC<OwnProps & StateProps> = ({
   isGroup,
   isChannel,
 }) => {
-  const [currentModal, setModal] = useState<ModalAction>('none');
+  const [currentModal, setModal] = useState<ModalAction>("none");
 
-  const closeModal = useLastCallback(() => setModal('none'));
-  const toggleChatSearching = useChatStore(state => state.toggleChatSearching);
+  const closeModal = useLastCallback(() => setModal("none"));
+  const toggleChatSearching = useChatStore(
+    (state) => state.toggleChatSearching,
+  );
 
   const handleAction = useLastCallback((action: ModalAction) => () => {
     setModal(action);
@@ -72,7 +74,7 @@ const MiddleHeaderDropdown: FC<OwnProps & StateProps> = ({
 
   const baseAction = lang.formatMessage(
     {
-      id: 'confirm.action',
+      id: "confirm.action",
     },
     { action: currentModal },
   );
@@ -93,7 +95,7 @@ const MiddleHeaderDropdown: FC<OwnProps & StateProps> = ({
       <DropdownMenu
         className={buildClassName(className)}
         position="top-right"
-        shouldClose={currentModal !== 'none'}
+        shouldClose={currentModal !== "none"}
         triggerButton={TriggerButton}
       >
         <p className={s.SingleSectionTitle}>Chat Actions</p>
@@ -152,11 +154,11 @@ const MiddleHeaderDropdown: FC<OwnProps & StateProps> = ({
           isToggled={false}
           labelOff="Report chat"
           labelOn="Report chat"
-          onClick={handleAction('report')}
+          onClick={handleAction("report")}
         />
       </DropdownMenu>
 
-      <ReportModal isOpen={currentModal === 'report'} onClose={closeModal} />
+      <ReportModal isOpen={currentModal === "report"} onClose={closeModal} />
     </>
   );
 };

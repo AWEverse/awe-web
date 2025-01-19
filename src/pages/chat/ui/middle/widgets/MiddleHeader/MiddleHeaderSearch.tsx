@@ -1,17 +1,17 @@
-import useLastCallback from '@/lib/hooks/events/useLastCallback';
-import { debounce } from '@/lib/core';
-import SearchInput from '@/shared/ui/SearchInput';
-import { FC, memo, useState } from 'react';
+import useLastCallback from "@/lib/hooks/callbacks/useLastCallback";
+import { debounce } from "@/lib/core";
+import SearchInput from "@/shared/ui/SearchInput";
+import { FC, memo, useState } from "react";
 
-import s from './MiddleHeaderSearch.module.scss';
-import SearchResults from '../../search/SearchResults';
+import s from "./MiddleHeaderSearch.module.scss";
+import SearchResults from "../../search/SearchResults";
 
 interface OwnProps {}
 
 interface StateProps {}
 
 const MiddleHeaderSearch: FC<OwnProps & StateProps> = () => {
-  const [value, setValue] = useState('');
+  const [value, setValue] = useState("");
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [isFocus, setIsFocus] = useState(false);
 
@@ -36,7 +36,7 @@ const MiddleHeaderSearch: FC<OwnProps & StateProps> = () => {
   );
 
   const handleReset = useLastCallback(() => {
-    setValue('');
+    setValue("");
   });
 
   return (
@@ -48,10 +48,14 @@ const MiddleHeaderSearch: FC<OwnProps & StateProps> = () => {
         onChange={handleChange}
         onFocus={handleFocus}
         onReset={handleReset}
-        indicator={hasValue ? 'Found: 15 in 0.53s' : undefined}
+        indicator={hasValue ? "Found: 15 in 0.53s" : undefined}
       />
 
-      <SearchResults isVisible={hasValue} onEsc={handleReset} onTab={handleReset} />
+      <SearchResults
+        isVisible={hasValue}
+        onEsc={handleReset}
+        onTab={handleReset}
+      />
     </section>
   );
 };

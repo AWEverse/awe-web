@@ -2,65 +2,63 @@ import { DEBUG } from "@/lib/config/dev";
 import { ReadonlySignal, Signal, signal } from "@/lib/core/public/signals";
 import { areDeepEqual } from "@/lib/utils/areDeepEqual";
 import { useRef } from "react";
-import useLastCallback from "../events/useLastCallback";
+import useLastCallback from "../callbacks/useLastCallback";
 
-type SignalSetter<T> = (
-  value: T | ((prevValue: T | undefined) => T),
-) => Promise<void> | void;
+type SignalSetter<T> = (value: T | ((prevValue: T | undefined) => T)) => void;
 
 type SignalReturn<T> = [ReadonlySignal<T>, SignalSetter<T>];
 
 export default function useStateSignal<T = null>(
-  value?: T,
+  initialValue?: T,
   logMessage?: string,
 ): SignalReturn<T> {
-  const _signal = useRef<Signal<T | undefined>>(signal<T | undefined>(value));
+  const _signal = useRef(signal<T | undefined>(initialValue));
+  const _previous = useRef<T | undefined>(initialValue);
 
-  const previous = useRef<T>(value);
+  const setSignal: SignalSetter<T> = useLastCallback((value) => {
+    const prevValue = _signal.current.value;
+    _previous.current = prevValue;
 
-  const setSignal: SignalSetter<T> = useLastCallback(async (value) => {
-    try {
-      const prevValue = _signal.current.value;
-      previous.current = prevValue;
+    let newValue: T;
 
-      let newValue: T;
+    if (typeof value === "function") {
+      newValue = (value as (prevValue: T | undefined) => T)(prevValue);
+    } else {
+      newValue = value;
+    }
 
-      // If a function is provided, use it to calculate the new value
-      if (typeof value === "function") {
-        const setter = value as (prevValue: T | undefined) => T;
-
-        newValue = setter(prevValue);
-      } else {
-        newValue = value;
-      }
-
-      // Await for promise if new value is a promise
-      if (newValue instanceof Promise) {
-        newValue = await newValue;
-      }
-
-      // Current signals didn't use large objects, and to be honest objects at all.
-      // So compatibility checking is easy for === primitives ​​and not so much for arrays
-      //
-      // Skip update if the value is not different (optimized deep equality check)
+    // If the new value is a promise, handle it asynchronously
+    if (newValue instanceof Promise) {
+      newValue
+        .then((resolvedValue) => {
+          if (!areDeepEqual(resolvedValue, prevValue)) {
+            updateSignal(resolvedValue);
+          }
+        })
+        .catch((error) => handleSignalError(error));
+    } else {
       if (!areDeepEqual(newValue, prevValue)) {
-        logMessage &&
-          DEBUG &&
-          console.log(
-            "useSignal.ts: Changes detected. Signal value updated: " +
-              logMessage,
-          );
-
-        _signal.current.value = newValue;
+        updateSignal(newValue);
       }
-    } catch (error) {
-      logMessage &&
-        DEBUG &&
-        console.error("useSignal.ts: Error updating signal value:", error);
-
-      _signal.current.value = previous.current;
     }
   });
+
+  const updateSignal = (newValue: T) => {
+    if (logMessage && DEBUG) {
+      console.log(
+        "useSignal.ts: Changes detected. Signal value updated: " + logMessage,
+      );
+    }
+    _signal.current.value = newValue;
+  };
+
+  const handleSignalError = (error: any) => {
+    if (logMessage && DEBUG) {
+      console.error("useSignal.ts: Error updating signal value:", error);
+    }
+
+    _signal.current.value = _previous.current;
+  };
 
   return [_signal.current as ReadonlySignal<T>, setSignal] as const;
 }

@@ -1,8 +1,8 @@
-import { FC, memo, useState } from 'react';
-import useLastCallback from '@/lib/hooks/events/useLastCallback';
-import styles from './TagCheckbox.module.scss';
-import RippleEffect from '@/shared/ui/ripple-effect';
-import CheckIcon from '@mui/icons-material/Check';
+import { FC, memo, useState } from "react";
+import useLastCallback from "@/lib/hooks/callbacks/useLastCallback";
+import styles from "./TagCheckbox.module.scss";
+import RippleEffect from "@/shared/ui/ripple-effect";
+import CheckIcon from "@mui/icons-material/Check";
 
 interface TagCheckboxProps {
   name: string;
@@ -10,7 +10,7 @@ interface TagCheckboxProps {
   handleCheckboxChange: (name: string, checked: boolean) => void;
 }
 
-const TagCheckbox: FC<TagCheckboxProps> = memo(props => {
+const TagCheckbox: FC<TagCheckboxProps> = memo((props) => {
   const { name, checked = false, handleCheckboxChange } = props;
   const [isChecked, setIsChecked] = useState(checked);
 
@@ -22,7 +22,7 @@ const TagCheckbox: FC<TagCheckboxProps> = memo(props => {
 
   return (
     <div
-      className={`${styles.chip} ${isChecked ? styles.checked : ''}`}
+      className={`${styles.chip} ${isChecked ? styles.checked : ""}`}
       role="button"
       tabIndex={0}
       onClick={toggleCheckbox}

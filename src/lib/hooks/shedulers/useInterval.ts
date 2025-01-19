@@ -1,8 +1,12 @@
-import { useEffect } from 'react';
+import { useEffect } from "react";
 
-import useLastCallback from '@/lib/hooks/events/useLastCallback';
+import useLastCallback from "@/lib/hooks/callbacks/useLastCallback";
 
-function useInterval(callback: NoneToVoidFunction, delay?: number, noFirst = false) {
+function useInterval(
+  callback: NoneToVoidFunction,
+  delay?: number,
+  noFirst = false,
+) {
   const savedCallback = useLastCallback(callback);
 
   useEffect(() => {

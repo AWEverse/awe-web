@@ -1,5 +1,5 @@
 import { useState } from "react";
-import useLastCallback from "../events/useLastCallback";
+import useLastCallback from "../callbacks/useLastCallback";
 import { isSafariPatchInProgress } from "../../utils/patchSafariProgressiveAudio";
 import { areDeepEqual } from "../../utils/areDeepEqual";
 import { isMediaReadyToPlay } from "@/lib/core/public/misc/SafePlay";

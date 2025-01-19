@@ -1,16 +1,25 @@
-import useLastCallback from '@/lib/hooks/events/useLastCallback';
-import useWindowSize from '@/lib/hooks/sensors/useWindowSize';
-import useDebouncedCallback from '@/lib/hooks/shedulers/useDebouncedCallback';
+import useLastCallback from "@/lib/hooks/callbacks/useLastCallback";
+import useWindowSize from "@/lib/hooks/sensors/useWindowSize";
+import useDebouncedCallback from "@/lib/hooks/shedulers/useDebouncedCallback";
 import {
   requestMutation,
   requestMeasure,
   requestForcedReflow,
-} from '@/lib/modules/fastdom/fastdom';
-import { useEffect, useLayoutEffect, useRef, useState, type RefObject } from 'react';
+} from "@/lib/modules/fastdom/fastdom";
+import {
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+  type RefObject,
+} from "react";
 
 const WINDOW_RESIZE_LINE_RECALC_DEBOUNCE = 200;
 
-export default function useCollapsibleLines<T extends HTMLElement, C extends HTMLElement>(
+export default function useCollapsibleLines<
+  T extends HTMLElement,
+  C extends HTMLElement,
+>(
   ref: RefObject<T | null>,
   maxLinesBeforeCollapse: number,
   cutoutRef?: RefObject<C>,
@@ -26,7 +35,9 @@ export default function useCollapsibleLines<T extends HTMLElement, C extends HTM
     if (isDisabled || !element) return;
 
     requestMutation(() => {
-      element.style.maxHeight = isCollapsed ? `${cutoutHeightRef.current}px` : '100dvh';
+      element.style.maxHeight = isCollapsed
+        ? `${cutoutHeightRef.current}px`
+        : "100dvh";
     });
   }, [cutoutRef, isCollapsed, isDisabled, ref]);
 
@@ -61,7 +72,9 @@ export default function useCollapsibleLines<T extends HTMLElement, C extends HTM
           isFirstRenderRef.current = false;
           const element = (cutoutRef || ref).current;
           if (!element) return;
-          element.style.maxHeight = cutoutHeightRef.current ? `${cutoutHeightRef.current}px` : '';
+          element.style.maxHeight = cutoutHeightRef.current
+            ? `${cutoutHeightRef.current}px`
+            : "";
         };
       });
     }

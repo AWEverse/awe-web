@@ -1,14 +1,22 @@
-import { FC, ReactNode, RefObject, useCallback, memo, useMemo, useEffect } from 'react';
+import {
+  FC,
+  ReactNode,
+  RefObject,
+  useCallback,
+  memo,
+  useMemo,
+  useEffect,
+} from "react";
 
-import s from './SearchInput.module.scss';
-import useFlag from '@/lib/hooks/state/useFlag';
-import CircularProgress from '@mui/material/CircularProgress';
-import { CloseRounded, SearchRounded } from '@mui/icons-material';
-import useRefInstead from '@/lib/hooks/state/useRefInstead';
-import { useIntl } from 'react-intl';
-import useLastCallback from '@/lib/hooks/events/useLastCallback';
-import buildClassName from '../lib/buildClassName';
-import { requestMeasure } from '@/lib/modules/fastdom/fastdom';
+import s from "./SearchInput.module.scss";
+import useFlag from "@/lib/hooks/state/useFlag";
+import CircularProgress from "@mui/material/CircularProgress";
+import { CloseRounded, SearchRounded } from "@mui/icons-material";
+import useRefInstead from "@/lib/hooks/state/useRefInstead";
+import { useIntl } from "react-intl";
+import useLastCallback from "@/lib/hooks/callbacks/useLastCallback";
+import buildClassName from "../lib/buildClassName";
+import { requestMeasure } from "@/lib/modules/fastdom/fastdom";
 
 interface OwnProps {
   ref?: RefObject<HTMLInputElement>;
@@ -25,8 +33,8 @@ interface OwnProps {
   autoComplete?: string;
   canClose?: boolean;
   labels?: ReactNode[];
-  labelsVariant?: 'text' | 'literal' | 'dot';
-  size?: 'small' | 'medium' | 'large';
+  labelsVariant?: "text" | "literal" | "dot";
+  size?: "small" | "medium" | "large";
   startDecorator?: ReactNode;
   endDecorator?: ReactNode;
   indicator?: string | number;
@@ -43,7 +51,7 @@ const SearchInput: FC<OwnProps> = ({
   ref,
   parentContainerClassName,
   className,
-  inputId = 'search-input',
+  inputId = "search-input",
   value,
   focused,
   isLoading = false,
@@ -52,7 +60,7 @@ const SearchInput: FC<OwnProps> = ({
   disabled,
   autoComplete,
   canClose,
-  size = 'medium',
+  size = "medium",
   startDecorator,
   endDecorator,
   indicator,
@@ -66,7 +74,8 @@ const SearchInput: FC<OwnProps> = ({
   onSpinnerClick,
 }) => {
   const inputRef = useRefInstead<HTMLInputElement>(ref);
-  const [isInputFocused, markInputFocused, unmarkInputFocused] = useFlag(focused);
+  const [isInputFocused, markInputFocused, unmarkInputFocused] =
+    useFlag(focused);
 
   const { formatMessage } = useIntl();
 
@@ -104,32 +113,36 @@ const SearchInput: FC<OwnProps> = ({
     onReset?.();
   }, [onReset]);
 
-  const handleKeyDown = useLastCallback((e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (!resultsItemSelector) {
-      return;
-    }
+  const handleKeyDown = useLastCallback(
+    (e: React.KeyboardEvent<HTMLInputElement>) => {
+      if (!resultsItemSelector) {
+        return;
+      }
 
-    if (e.key === 'ArrowDown' || e.key === 'Enter') {
-      requestMeasure(() => {
-        const element = document.querySelector(resultsItemSelector) as HTMLElement;
+      if (e.key === "ArrowDown" || e.key === "Enter") {
+        requestMeasure(() => {
+          const element = document.querySelector(
+            resultsItemSelector,
+          ) as HTMLElement;
 
-        if (element) {
-          element.focus();
-        }
-      });
-    }
+          if (element) {
+            element.focus();
+          }
+        });
+      }
 
-    const isBackspace =
-      e.key === 'Backspace' &&
-      e.currentTarget.selectionStart === 0 &&
-      e.currentTarget.selectionEnd === 0;
+      const isBackspace =
+        e.key === "Backspace" &&
+        e.currentTarget.selectionStart === 0 &&
+        e.currentTarget.selectionEnd === 0;
 
-    if (isBackspace) {
-      onStartBackspace?.();
-    }
-  });
+      if (isBackspace) {
+        onStartBackspace?.();
+      }
+    },
+  );
 
-  const placeholderIntl = formatMessage({ id: 'search.placeholder' });
+  const placeholderIntl = formatMessage({ id: "search.placeholder" });
 
   const renderLabels = useMemo(() => {
     if (!labels) return null;
@@ -137,7 +150,7 @@ const SearchInput: FC<OwnProps> = ({
     return (
       <>
         <label className={s.labelsContainer} htmlFor={inputId}>
-          {labels.map(label => (
+          {labels.map((label) => (
             <span key={label?.toString()} className={s.labelText}>
               {label}
             </span>
@@ -149,7 +162,11 @@ const SearchInput: FC<OwnProps> = ({
   }, [inputId, labels]);
 
   const renderLoading = () => {
-    return isLoading && <CircularProgress className={s.spinner} onClick={onSpinnerClick} />;
+    return (
+      isLoading && (
+        <CircularProgress className={s.spinner} onClick={onSpinnerClick} />
+      )
+    );
   };
 
   const renderCloseButton = () => {
@@ -180,7 +197,7 @@ const SearchInput: FC<OwnProps> = ({
       )}
       data-loading={isLoading}
       role="search"
-      onSubmit={e => e.preventDefault()}
+      onSubmit={(e) => e.preventDefault()}
     >
       <label className={s.visuallyHidden} htmlFor={inputId}>
         {placeholderIntl}
@@ -211,7 +228,9 @@ const SearchInput: FC<OwnProps> = ({
         onFocus={handleFocus}
         onKeyDown={handleKeyDown}
       />
-      <div className={buildClassName(s.bottomIndicator, !!indicator && s.visible)}>
+      <div
+        className={buildClassName(s.bottomIndicator, !!indicator && s.visible)}
+      >
         <span>{indicator}</span>
       </div>
       {endDecorator}

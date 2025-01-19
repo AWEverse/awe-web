@@ -1,34 +1,34 @@
-import { FC, useState } from 'react';
-import SortByDown02Icon from '@/shared/common/icons/SortByDown02Icon';
-import SortByUp02Icon from '@/shared/common/icons/SortByUp02Icon';
+import { FC, useState } from "react";
+import SortByDown02Icon from "@/shared/common/icons/SortByDown02Icon";
+import SortByUp02Icon from "@/shared/common/icons/SortByUp02Icon";
 
-import s from './SortActions.module.scss';
-import useLastCallback from '@/lib/hooks/events/useLastCallback';
-import DropdownMenu, { TriggerProps } from '@/shared/ui/DropdownMenu';
-import IconButton from '@/shared/ui/IconButton';
-import ActionButton from '@/shared/ui/ActionButton';
-import { AccountCircle, AccountBox, Logout } from '@mui/icons-material';
+import s from "./SortActions.module.scss";
+import useLastCallback from "@/lib/hooks/callbacks/useLastCallback";
+import DropdownMenu, { TriggerProps } from "@/shared/ui/DropdownMenu";
+import IconButton from "@/shared/ui/IconButton";
+import ActionButton from "@/shared/ui/ActionButton";
+import { AccountCircle, AccountBox, Logout } from "@mui/icons-material";
 
-type Order = 'asc' | 'desc';
+type Order = "asc" | "desc";
 
 interface OwnProps {
   className?: string;
   onClick?: () => void;
 }
 
-const reverseOrder = (order: Order) => (order === 'asc' ? 'desc' : 'asc');
+const reverseOrder = (order: Order) => (order === "asc" ? "desc" : "asc");
 
-const SortActions: FC<OwnProps> = props => {
+const SortActions: FC<OwnProps> = (props) => {
   const { className } = props;
 
-  const [order, setOrder] = useState<Order>('desc');
+  const [order, setOrder] = useState<Order>("desc");
 
   const handleOrderChange = useLastCallback(() => {
-    setOrder(prev => reverseOrder(prev));
+    setOrder((prev) => reverseOrder(prev));
   });
 
   const renderIcon = useLastCallback(() =>
-    order === 'desc' ? <SortByDown02Icon /> : <SortByUp02Icon />,
+    order === "desc" ? <SortByDown02Icon /> : <SortByUp02Icon />,
   );
 
   const TriggerButton: FC<TriggerProps> = ({ isOpen, onTrigger }) => (
@@ -38,7 +38,11 @@ const SortActions: FC<OwnProps> = props => {
   );
 
   return (
-    <DropdownMenu className={className} position="top-right" triggerButton={TriggerButton}>
+    <DropdownMenu
+      className={className}
+      position="top-right"
+      triggerButton={TriggerButton}
+    >
       <ActionButton className={s.menuItem} icon={<AccountCircle />}>
         Profile
       </ActionButton>
@@ -51,7 +55,11 @@ const SortActions: FC<OwnProps> = props => {
 
       <hr className={s.separator} />
 
-      <ActionButton className={s.menuItem} icon={renderIcon()} onClick={handleOrderChange}>
+      <ActionButton
+        className={s.menuItem}
+        icon={renderIcon()}
+        onClick={handleOrderChange}
+      >
         Set order: {order}
       </ActionButton>
     </DropdownMenu>

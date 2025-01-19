@@ -1,11 +1,11 @@
-import { requestMeasure } from '@/lib/modules/fastdom/fastdom';
-import { useRef, useCallback } from 'react';
-import useEffectOnce from '../effects/useEffectOnce';
-import useLastCallback from '../events/useLastCallback';
-import useEffectSync from '../effects/useEffectSync';
-import { IS_TEST } from '@/lib/config/dev';
-import { IS_IOS } from '@/lib/core';
-import { partition } from '@/lib/utils/iteratees';
+import { requestMeasure } from "@/lib/modules/fastdom/fastdom";
+import { useRef, useCallback } from "react";
+import useEffectOnce from "../effects/useEffectOnce";
+import useLastCallback from "../callbacks/useLastCallback";
+import useEffectSync from "../effects/useEffectSync";
+import { IS_TEST } from "@/lib/config/dev";
+import { IS_IOS } from "@/lib/core";
+import { partition } from "@/lib/utils/iteratees";
 
 const PATH_BASE = `${window.location.pathname}${window.location.search}`;
 // Carefully selected by swiping and observing visual changes
@@ -25,12 +25,12 @@ type HistoryRecord = {
 };
 
 type HistoryOperationGo = {
-  type: 'go';
+  type: "go";
   delta: number;
 };
 
 type HistoryOperationState<T extends any = any> = {
-  type: 'pushState' | 'replaceState';
+  type: "pushState" | "replaceState";
   data: T;
   hash?: string;
 };
@@ -97,20 +97,20 @@ const touchRanges: () => [(event: TouchEvent) => void, () => void] = () => {
 
 const [handleTouchStart, handleTouchEnd] = touchRanges();
 
-window.addEventListener('touchstart', handleTouchStart);
-window.addEventListener('touchend', handleTouchEnd);
-window.addEventListener('popstate', handleTouchEnd);
+window.addEventListener("touchstart", handleTouchStart);
+window.addEventListener("touchend", handleTouchEnd);
+window.addEventListener("popstate", handleTouchEnd);
 // #v-endlif
 
 function applyDeferredHistoryOperations() {
   const [goOperations, stateOperations] = partition(
     deferredHistoryOperations,
-    op => op.type === 'go',
+    (op) => op.type === "go",
   ) as [HistoryOperationGo[], HistoryOperationState[]];
 
   deferredHistoryOperations = [];
 
-  const goCount = goOperations.countBy(op => op.delta);
+  const goCount = goOperations.countBy((op) => op.delta);
 
   if (goCount) {
     window.history.go(goCount);
@@ -127,11 +127,11 @@ function applyDeferredHistoryOperations() {
 }
 
 function processStateOperations(stateOperations: HistoryOperationState[]) {
-  stateOperations.forEach(operation => {
+  stateOperations.forEach((operation) => {
     const { type, data, hash } = operation;
     const historyMethod = window.history[type];
 
-    historyMethod(data, '', hash);
+    historyMethod(data, "", hash);
   });
 }
 
@@ -153,7 +153,11 @@ function resetHistory() {
     },
   ];
 
-  window.history.replaceState({ index: 0, historyUniqueSessionId }, '', PATH_BASE);
+  window.history.replaceState(
+    { index: 0, historyUniqueSessionId },
+    "",
+    PATH_BASE,
+  );
 }
 
 resetHistory();
@@ -170,7 +174,7 @@ function cleanupClosed(alreadyClosedCount = 1) {
   if (countClosed) {
     isAlteringHistory = true;
     deferHistoryOperation({
-      type: 'go',
+      type: "go",
       delta: -countClosed,
     });
   }
@@ -197,7 +201,7 @@ function cleanupTrashedState() {
   resetHistory();
 }
 
-window.addEventListener('popstate', ({ state }: PopStateEvent) => {
+window.addEventListener("popstate", ({ state }: PopStateEvent) => {
   if (isAlteringHistory) {
     isAlteringHistory = false;
 
@@ -261,7 +265,7 @@ window.addEventListener('popstate', ({ state }: PopStateEvent) => {
     isAlteringHistory = true;
 
     deferHistoryOperation({
-      type: 'go',
+      type: "go",
       delta: -(index - historyCursor),
     });
   }
@@ -292,7 +296,8 @@ export default function useHistoryBack({
   const pushState = useCallback(
     (forceReplace = false) => {
       // Check if the old state should be replaced
-      const shouldReplace = forceReplace || historyState[historyCursor].shouldBeReplaced;
+      const shouldReplace =
+        forceReplace || historyState[historyCursor].shouldBeReplaced;
       indexRef.current = shouldReplace ? historyCursor : ++historyCursor;
 
       historyCursor = indexRef.current;
@@ -313,13 +318,13 @@ export default function useHistoryBack({
       };
 
       deferHistoryOperation({
-        type: shouldReplace ? 'replaceState' : 'pushState',
+        type: shouldReplace ? "replaceState" : "pushState",
         data: {
           index: indexRef.current,
           historyUniqueSessionId,
         },
         // Space is a hack to make the browser completely remove the hash
-        hash: hash ? `#${hash}` : shouldResetUrlHash ? ' ' : undefined,
+        hash: hash ? `#${hash}` : shouldResetUrlHash ? " " : undefined,
       });
     },
     [hash, shouldBeReplaced, shouldResetUrlHash],
@@ -327,7 +332,11 @@ export default function useHistoryBack({
 
   const processBack = useCallback(() => {
     // Only process back on open records
-    if (indexRef.current && historyState[indexRef.current] && !wasReplaced.current) {
+    if (
+      indexRef.current &&
+      historyState[indexRef.current] &&
+      !wasReplaced.current
+    ) {
       historyState[indexRef.current].isClosed = true;
       wasReplaced.current = true;
 

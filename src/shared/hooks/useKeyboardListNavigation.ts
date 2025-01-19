@@ -1,7 +1,7 @@
-import { EKeyboardKey } from '@/lib/core';
-import useLastCallback from '@/lib/hooks/events/useLastCallback';
-import { requestMutation, requestMeasure } from '@/lib/modules/fastdom/fastdom';
-import { RefObject, useState, useEffect, useCallback } from 'react';
+import { EKeyboardKey } from "@/lib/core";
+import useLastCallback from "@/lib/hooks/callbacks/useLastCallback";
+import { requestMutation, requestMeasure } from "@/lib/modules/fastdom/fastdom";
+import { RefObject, useState, useEffect, useCallback } from "react";
 
 const useKeyboardListNavigation = (
   elementRef: RefObject<HTMLElement | null>,
@@ -48,14 +48,21 @@ const useKeyboardListNavigation = (
 
       const focusedElement = document.activeElement;
       const elementChildren = Array.from(
-        itemSelector ? element.querySelectorAll(itemSelector) : element.children,
+        itemSelector
+          ? element.querySelectorAll(itemSelector)
+          : element.children,
       );
 
-      let newIndex = (focusedElement && elementChildren.indexOf(focusedElement)) || focusedIndex;
+      let newIndex =
+        (focusedElement && elementChildren.indexOf(focusedElement)) ||
+        focusedIndex;
 
       if (key === EKeyboardKey.ArrowUp && newIndex > 0) {
         newIndex--;
-      } else if (key === EKeyboardKey.ArrowDown && newIndex < elementChildren.length - 1) {
+      } else if (
+        key === EKeyboardKey.ArrowDown &&
+        newIndex < elementChildren.length - 1
+      ) {
         newIndex++;
       } else if (elementChildren.length === 1) {
         newIndex = 0;

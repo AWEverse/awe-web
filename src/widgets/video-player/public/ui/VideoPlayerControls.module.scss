@@ -6,6 +6,13 @@
   bottom: 0; 
   display: flex;
   align-items: center;
+  transition: opacity 250ms ease-in-out;
+  will-change: opacity;
+  opacity: 0;
+
+  &.active {
+    opacity: 1;
+  }
 }
 
 .Time {

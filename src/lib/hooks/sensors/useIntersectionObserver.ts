@@ -1,9 +1,9 @@
-import type { RefObject } from 'react';
-import { useEffect, useRef, useState } from 'react';
-import useHeavyAnimationCheck from './useHeavyAnimationCheck';
-import useLastCallback from '../events/useLastCallback';
-import { CallbackManager, createCallbackManager } from '../../utils/callbacks';
-import { type Scheduler, debounce, throttleWith, throttle } from '@/lib/core';
+import type { RefObject } from "react";
+import { useEffect, useRef, useState } from "react";
+import useHeavyAnimationCheck from "./useHeavyAnimationCheck";
+import useLastCallback from "../callbacks/useLastCallback";
+import { CallbackManager, createCallbackManager } from "../../utils/callbacks";
+import { type Scheduler, debounce, throttleWith, throttle } from "@/lib/core";
 
 type TargetCallback = (entry: IntersectionObserverEntry) => void;
 type RootCallback = (entries: IntersectionObserverEntry[]) => void;
@@ -119,12 +119,20 @@ export function useIntersectionObserver(
 
     let observerCallback: typeof observerCallbackSync;
 
-    if (typeof throttleScheduler === 'function') {
+    if (typeof throttleScheduler === "function") {
       observerCallback = throttleWith(throttleScheduler, observerCallbackSync);
     } else if (throttleMs) {
-      observerCallback = throttle(observerCallbackSync, throttleMs, !shouldSkipFirst);
+      observerCallback = throttle(
+        observerCallbackSync,
+        throttleMs,
+        !shouldSkipFirst,
+      );
     } else if (debounceMs) {
-      observerCallback = debounce(observerCallbackSync, debounceMs, !shouldSkipFirst);
+      observerCallback = debounce(
+        observerCallbackSync,
+        debounceMs,
+        !shouldSkipFirst,
+      );
     } else {
       observerCallback = observerCallbackSync;
     }
@@ -169,8 +177,8 @@ export function useIntersectionObserver(
     }
 
     const observer = new IntersectionObserver(
-      entries => {
-        entries.forEach(entry => {
+      (entries) => {
+        entries.forEach((entry) => {
           entriesAccumulator.set(entry.target, entry);
         });
 
@@ -222,7 +230,7 @@ export function useIsIntersecting(
 ) {
   const [isIntersecting, setIsIntersecting] = useState(!observe);
 
-  useOnIntersect(targetRef, observe, entry => {
+  useOnIntersect(targetRef, observe, (entry) => {
     setIsIntersecting(entry.isIntersecting);
     callback?.(entry);
   });

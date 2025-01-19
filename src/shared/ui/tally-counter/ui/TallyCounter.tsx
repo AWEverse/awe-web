@@ -1,18 +1,18 @@
-import { FC, memo, useCallback, useEffect, useState } from 'react';
-import useCounter from '../hooks/useCounter';
-import buildClassName from '@/shared/lib/buildClassName';
-import './TallyCounter.scss';
-import { AddRounded, RemoveRounded } from '@mui/icons-material';
-import useLongPress from '@/lib/hooks/events/useLongPress';
-import useLastCallback from '@/lib/hooks/events/useLastCallback';
-import useInterval from '@/lib/hooks/shedulers/useInterval';
+import { FC, memo, useCallback, useEffect, useState } from "react";
+import useCounter from "../hooks/useCounter";
+import buildClassName from "@/shared/lib/buildClassName";
+import "./TallyCounter.scss";
+import { AddRounded, RemoveRounded } from "@mui/icons-material";
+import useLongPress from "@/lib/hooks/events/useLongPress";
+import useLastCallback from "@/lib/hooks/callbacks/useLastCallback";
+import useInterval from "@/lib/hooks/shedulers/useInterval";
 
 interface OwnProps {
   className?: string;
   range?: [number, number];
   initialValue?: number;
   onChange?: (value: number) => void;
-  size?: 'xsmall' | 'small' | 'medium' | 'large' | 'bigger' | 'jumbo';
+  size?: "xsmall" | "small" | "medium" | "large" | "bigger" | "jumbo";
   loop?: boolean;
   threshold?: number;
 }
@@ -21,7 +21,7 @@ const TallyCounter: FC<OwnProps> = ({
   className,
   range = [-Infinity, Infinity],
   initialValue = 0,
-  size = 'large',
+  size = "large",
   onChange,
   loop = false,
   threshold = 50,
@@ -76,7 +76,7 @@ const TallyCounter: FC<OwnProps> = ({
 
   return (
     <div
-      className={buildClassName('tally-counter', size, className)}
+      className={buildClassName("tally-counter", size, className)}
       data-count={count}
       data-max={range[1]}
       data-min={range[0]}

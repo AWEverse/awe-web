@@ -17,7 +17,7 @@ import {
   VolumeUpRounded,
   WidthFullRounded,
 } from "@mui/icons-material";
-import useLastCallback from "@/lib/hooks/events/useLastCallback";
+import useLastCallback from "@/lib/hooks/callbacks/useLastCallback";
 import { IS_TOUCH_ENV } from "@/lib/core";
 import { formatMediaDuration } from "../../private/lib/utils";
 import useFlag from "@/lib/hooks/state/useFlag";
@@ -123,7 +123,6 @@ const VideoPlayerControls: FC<OwnProps> = ({
   const volumeRef = useRef<HTMLSpanElement>(null);
 
   const [isVisible, setVisibillity] = useState(true);
-  const [isPlaybackMenuOpen, openPlaybackMenu, closePlaybackMenu] = useFlag();
   const isSeeking = useRef(false);
   const [isBuffered, _setIsBuffered] = useState(true);
   const [bufferedProgress, setBufferedProgress] = useState(0);
@@ -146,8 +145,7 @@ const VideoPlayerControls: FC<OwnProps> = ({
 
     const _isSeeking = isSeeking.current;
 
-    const shouldClose =
-      !isVisible && !isPlaying && !isPlaybackMenuOpen && _isSeeking;
+    const shouldClose = !isVisible && !isPlaying && _isSeeking;
 
     if (shouldClose) {
       return;
@@ -158,14 +156,7 @@ const VideoPlayerControls: FC<OwnProps> = ({
     }, HIDE_CONTROLS_TIMEOUT_MS);
 
     return () => clearTimeout(timeoutId);
-  }, [
-    isPlaying,
-    isVisible,
-    isForceMobileVersion,
-    isPlaybackMenuOpen,
-    isSeeking,
-    onToggleControls,
-  ]);
+  }, [isPlaying, isVisible, isForceMobileVersion, isSeeking, onToggleControls]);
 
   useSignalEffect(
     bufferedRangesSignal,
@@ -219,7 +210,6 @@ const VideoPlayerControls: FC<OwnProps> = ({
 
   return (
     <section
-      data-visible={isVisible}
       className={buildClassName(
         s.PlayerControls,
         isForceMobileVersion && s.ForceMobile,

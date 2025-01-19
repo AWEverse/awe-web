@@ -1,10 +1,10 @@
-import { ApiMessageEntityTypes } from '@/@types/api/types/messages';
-import useLastCallback from '@/lib/hooks/events/useLastCallback';
-import { ReactNode, useRef } from 'react';
-import useCollapsibleLines from '../hooks/useCollapsible';
-import buildClassName from '../lib/buildClassName';
-import s from './Blockquote.module.scss';
-import { ArrowDownwardRounded, ArrowUpwardRounded } from '@mui/icons-material';
+import { ApiMessageEntityTypes } from "@/@types/api/types/messages";
+import useLastCallback from "@/lib/hooks/callbacks/useLastCallback";
+import { ReactNode, useRef } from "react";
+import useCollapsibleLines from "../hooks/useCollapsible";
+import buildClassName from "../lib/buildClassName";
+import s from "./Blockquote.module.scss";
+import { ArrowDownwardRounded, ArrowUpwardRounded } from "@mui/icons-material";
 
 type OwnProps = {
   canBeCollapsible?: boolean;
@@ -14,7 +14,11 @@ type OwnProps = {
 
 const MAX_LINES = 4;
 
-const Blockquote = ({ canBeCollapsible, isToggleDisabled, children }: OwnProps) => {
+const Blockquote = ({
+  canBeCollapsible,
+  isToggleDisabled,
+  children,
+}: OwnProps) => {
   // eslint-disable-next-line no-null/no-null
   const ref = useRef<HTMLQuoteElement | null>(null);
   const { isCollapsed, isCollapsible, setIsCollapsed } = useCollapsibleLines(
@@ -31,7 +35,7 @@ const Blockquote = ({ canBeCollapsible, isToggleDisabled, children }: OwnProps) 
   });
 
   const handleToggle = useLastCallback(() => {
-    setIsCollapsed(prev => !prev);
+    setIsCollapsed((prev) => !prev);
   });
 
   return (
@@ -41,12 +45,20 @@ const Blockquote = ({ canBeCollapsible, isToggleDisabled, children }: OwnProps) 
         data-entity-type={ApiMessageEntityTypes.Blockquote}
         className={buildClassName(s.blockquote, isCollapsed && s.expanded)}
       >
-        <div className={buildClassName(s.gradientContainer, isCollapsed && s.collapsed)}>
+        <div
+          className={buildClassName(
+            s.gradientContainer,
+            isCollapsed && s.collapsed,
+          )}
+        >
           {children}
         </div>
         {isCollapsible && (
           <div
-            className={buildClassName(s.collapseIcon, !isToggleDisabled && s.clickable)}
+            className={buildClassName(
+              s.collapseIcon,
+              !isToggleDisabled && s.clickable,
+            )}
             onClick={!isToggleDisabled ? handleToggle : undefined}
             aria-hidden
           >

@@ -1,16 +1,19 @@
-import { FC, memo, useCallback, useRef, useState } from 'react';
-import buildClassName from '@/shared/lib/buildClassName';
-import { ObserveFn, useOnIntersect } from '@/lib/hooks/sensors/useIntersectionObserver';
-import './Image.scss';
-import useLastCallback from '@/lib/hooks/events/useLastCallback';
+import { FC, memo, useCallback, useRef, useState } from "react";
+import buildClassName from "@/shared/lib/buildClassName";
+import {
+  ObserveFn,
+  useOnIntersect,
+} from "@/lib/hooks/sensors/useIntersectionObserver";
+import "./Image.scss";
+import useLastCallback from "@/lib/hooks/callbacks/useLastCallback";
 
 interface OwnProps {
   src: string;
   alt: string;
   className?: string;
   fallbackSrc?: string;
-  loading?: 'lazy' | 'eager';
-  decoding?: 'async' | 'auto' | 'sync';
+  loading?: "lazy" | "eager";
+  decoding?: "async" | "auto" | "sync";
   srcSet?: string;
   sizes?: string;
   onError?: () => void;
@@ -47,11 +50,11 @@ const Image: FC<OwnProps> = ({
   src,
   alt,
   className,
-  fallbackSrc = 'https://via.placeholder.com/150',
-  loading = 'lazy',
+  fallbackSrc = "https://via.placeholder.com/150",
+  loading = "lazy",
   srcSet,
   sizes,
-  decoding = 'async',
+  decoding = "async",
   width,
   height,
   onError,
@@ -70,7 +73,7 @@ const Image: FC<OwnProps> = ({
     setIsLoaded(true);
   });
 
-  useOnIntersect(imageRef, observeIntersectionForLoading, entry => {
+  useOnIntersect(imageRef, observeIntersectionForLoading, (entry) => {
     if (entry.isIntersecting) {
       setImgSrc(src);
     }
@@ -80,7 +83,7 @@ const Image: FC<OwnProps> = ({
     <img
       alt={alt}
       ref={imageRef}
-      className={buildClassName('Img', className)}
+      className={buildClassName("Img", className)}
       decoding={decoding}
       src={imgSrc}
       srcSet={srcSet}
@@ -88,7 +91,7 @@ const Image: FC<OwnProps> = ({
       onError={handleError}
       onLoad={handleImageLoad}
       style={isLoaded ? {} : { opacity: 0 }}
-      loading={loading === 'lazy' ? 'lazy' : 'eager'}
+      loading={loading === "lazy" ? "lazy" : "eager"}
       width={width}
       height={height}
     />

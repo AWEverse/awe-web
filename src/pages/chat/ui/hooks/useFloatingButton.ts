@@ -1,13 +1,18 @@
-import { useState, useRef } from 'react';
-import useLastCallback from '@/lib/hooks/events/useLastCallback';
+import { useState, useRef } from "react";
+import useLastCallback from "@/lib/hooks/callbacks/useLastCallback";
 
 const BUTTON_CLOSE_DELAY_MS = 250;
 
-export default function useFloatingButton(isTouchEnv: boolean, initialState = false) {
+export default function useFloatingButton(
+  isTouchEnv: boolean,
+  initialState = false,
+) {
   const isMouseInsideRef = useRef(false);
   const closeTimeoutRef = useRef<number | undefined>(undefined);
 
-  const [isButtonVisible, setIsButtonVisible] = useState(isTouchEnv ? initialState : false);
+  const [isButtonVisible, setIsButtonVisible] = useState(
+    isTouchEnv ? initialState : false,
+  );
 
   const setIsMouseInside = (value: boolean) => {
     isMouseInsideRef.current = value;

@@ -1,10 +1,10 @@
-import useLastCallback from '@/lib/hooks/events/useLastCallback';
-import RippleEffect from '@/shared/ui/ripple-effect';
-import { FC, useState, useMemo, memo } from 'react';
+import useLastCallback from "@/lib/hooks/callbacks/useLastCallback";
+import RippleEffect from "@/shared/ui/ripple-effect";
+import { FC, useState, useMemo, memo } from "react";
 
-import s from './PinnedMessageButton.module.scss';
-import buildClassName from '@/shared/lib/buildClassName';
-import Image from '@/shared/ui/Image';
+import s from "./PinnedMessageButton.module.scss";
+import buildClassName from "@/shared/lib/buildClassName";
+import Image from "@/shared/ui/Image";
 
 interface OwnProps {
   nodeRef?: React.Ref<HTMLDivElement>;
@@ -19,13 +19,20 @@ interface StateProps {
   activeIndex: number;
 }
 
-const PinnedMessageButton: FC<OwnProps & StateProps> = props => {
-  const { nodeRef, className, children, segmentCount = 4, style, onClick } = props;
+const PinnedMessageButton: FC<OwnProps & StateProps> = (props) => {
+  const {
+    nodeRef,
+    className,
+    children,
+    segmentCount = 4,
+    style,
+    onClick,
+  } = props;
 
   const [activeIndex, setActiveIndex] = useState(0);
 
   const handleClick = useLastCallback(() => {
-    setActiveIndex(prev => (prev + 1) % segmentCount);
+    setActiveIndex((prev) => (prev + 1) % segmentCount);
     onClick?.(activeIndex);
   });
 
@@ -51,7 +58,11 @@ const PinnedMessageButton: FC<OwnProps & StateProps> = props => {
       style={style}
       onClick={handleClick}
     >
-      <div aria-live="polite" className={s.roller} data-segment-count={segmentCount}>
+      <div
+        aria-live="polite"
+        className={s.roller}
+        data-segment-count={segmentCount}
+      >
         {segments}
       </div>
       {/* <Image
@@ -61,7 +72,9 @@ const PinnedMessageButton: FC<OwnProps & StateProps> = props => {
         src="https://i.pravatar.cc/300"
       /> */}
       <div className={s.pinnedMessageItem}>
-        <h5 className={s.pinnedAdditionalInfo}>Pinned message #{activeIndex + 1}</h5>
+        <h5 className={s.pinnedAdditionalInfo}>
+          Pinned message #{activeIndex + 1}
+        </h5>
         <p className={s.pinnedMessageText}>This is a pinned message</p>
       </div>
       {children}

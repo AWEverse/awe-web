@@ -1,15 +1,15 @@
-import buildClassName from '@/shared/lib/buildClassName';
-import LightEffect from '@/shared/ui/common/LightEffect';
-import TabList from '@/shared/ui/TabList';
-import { createRef, FC, useEffect, useMemo, useState } from 'react';
-import SearchFooter from './SearchFooter';
-import { CSSTransition } from 'react-transition-group';
+import buildClassName from "@/shared/lib/buildClassName";
+import LightEffect from "@/shared/ui/common/LightEffect";
+import TabList from "@/shared/ui/TabList";
+import { createRef, FC, useEffect, useMemo, useState } from "react";
+import SearchFooter from "./SearchFooter";
+import { CSSTransition } from "react-transition-group";
 
-import s from './SearchResults.module.scss';
-import useLastCallback from '@/lib/hooks/events/useLastCallback';
-import { HandlerName } from '@/lib/utils/captureKeyboardListeners';
-import LastRequest from './LastRequest';
-import SearchHistoryDropdown from './SearchHistoryDropdown';
+import s from "./SearchResults.module.scss";
+import useLastCallback from "@/lib/hooks/callbacks/useLastCallback";
+import { HandlerName } from "@/lib/utils/captureKeyboardListeners";
+import LastRequest from "./LastRequest";
+import SearchHistoryDropdown from "./SearchHistoryDropdown";
 
 interface SearchResultsProps {
   isVisible: boolean;
@@ -21,18 +21,57 @@ interface SearchResultsProps {
 }
 
 const FADE_DURATION_MS = 300;
-const keyboardEventHandlers: HandlerName[] = ['onTab', 'onUp', 'onDown', 'onEnter', 'onEsc'];
-
-const tabItems = [
-  { id: 1, title: 'All', badgeCount: 2, isBlocked: false, isBadgeActive: true },
-  { id: 2, title: 'Friends', badgeCount: 0, isBlocked: false, isBadgeActive: false },
-  { id: 3, title: 'Groups', badgeCount: 0, isBlocked: false, isBadgeActive: false },
-  { id: 4, title: 'Archived', badgeCount: 0, isBlocked: false, isBadgeActive: false },
-  { id: 5, title: 'Starred', badgeCount: 0, isBlocked: false, isBadgeActive: false },
-  { id: 6, title: 'Muted', badgeCount: 0, isBlocked: false, isBadgeActive: false },
+const keyboardEventHandlers: HandlerName[] = [
+  "onTab",
+  "onUp",
+  "onDown",
+  "onEnter",
+  "onEsc",
 ];
 
-const SearchResults: FC<SearchResultsProps> = ({ isVisible, ...keyboardActions }) => {
+const tabItems = [
+  { id: 1, title: "All", badgeCount: 2, isBlocked: false, isBadgeActive: true },
+  {
+    id: 2,
+    title: "Friends",
+    badgeCount: 0,
+    isBlocked: false,
+    isBadgeActive: false,
+  },
+  {
+    id: 3,
+    title: "Groups",
+    badgeCount: 0,
+    isBlocked: false,
+    isBadgeActive: false,
+  },
+  {
+    id: 4,
+    title: "Archived",
+    badgeCount: 0,
+    isBlocked: false,
+    isBadgeActive: false,
+  },
+  {
+    id: 5,
+    title: "Starred",
+    badgeCount: 0,
+    isBlocked: false,
+    isBadgeActive: false,
+  },
+  {
+    id: 6,
+    title: "Muted",
+    badgeCount: 0,
+    isBlocked: false,
+    isBadgeActive: false,
+  },
+];
+
+const SearchResults: FC<SearchResultsProps> = ({
+  isVisible,
+  ...keyboardActions
+}) => {
   const [activeTabIndex, setActiveTabIndex] = useState(0);
   const searchResultsRef = createRef<HTMLDivElement>();
 
@@ -60,7 +99,10 @@ const SearchResults: FC<SearchResultsProps> = ({ isVisible, ...keyboardActions }
     >
       <div
         ref={searchResultsRef}
-        className={buildClassName(s.SearchResults, isLoading && s.SearchResults__Loading)}
+        className={buildClassName(
+          s.SearchResults,
+          isLoading && s.SearchResults__Loading,
+        )}
       >
         <div className={s.SearchHeader}>
           <SearchHistoryDropdown />
@@ -75,7 +117,10 @@ const SearchResults: FC<SearchResultsProps> = ({ isVisible, ...keyboardActions }
 
         <div className={buildClassName(s.SearchContent, s.ResultsList)}>
           <LastRequest active disabled body="Who is Andrii Volynets?" />
-          <LastRequest active body="Andrii Volynets: biography and achievements" />
+          <LastRequest
+            active
+            body="Andrii Volynets: biography and achievements"
+          />
           <LastRequest disabled body="Latest news on Andrii Volynets" />
           <LastRequest body="Andrii Volynets professional background" />
           <LastRequest body="What is Andrii Volynets known for?" />

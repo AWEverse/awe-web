@@ -1,9 +1,11 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { cloneElement, useState, ReactElement } from 'react';
-import { noop } from '../../utils/listener';
-import useLastCallback from './useLastCallback';
+import { cloneElement, useState, ReactElement } from "react";
+import { noop } from "../../utils/listener";
+import useLastCallback from "../callbacks/useLastCallback";
 
-export type Element = ((state: boolean) => ReactElement<any>) | ReactElement<any>;
+export type Element =
+  | ((state: boolean) => ReactElement<any>)
+  | ReactElement<any>;
 
 const useHover = (element: Element): [ReactElement<any>, boolean] => {
   const [state, setState] = useState<boolean>(false);
@@ -24,7 +26,8 @@ const useHover = (element: Element): [ReactElement<any>, boolean] => {
       },
   );
 
-  const renderElement = typeof element === 'function' ? element(state) : element;
+  const renderElement =
+    typeof element === "function" ? element(state) : element;
 
   const el = cloneElement(renderElement, {
     onMouseEnter: onMouseEnter(renderElement.props.onMouseEnter),

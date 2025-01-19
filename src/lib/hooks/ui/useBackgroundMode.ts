@@ -1,13 +1,13 @@
-import { createCallbackManager } from '@/lib/utils/callbacks';
-import { useEffect } from 'react';
-import useLastCallback from '../events/useLastCallback';
+import { createCallbackManager } from "@/lib/utils/callbacks";
+import { useEffect } from "react";
+import useLastCallback from "../callbacks/useLastCallback";
 
 const blurCallbacks = createCallbackManager();
 const focusCallbacks = createCallbackManager();
 
 let isFocused = document.hasFocus();
 
-window.addEventListener('blur', () => {
+window.addEventListener("blur", () => {
   if (!isFocused) {
     return;
   }
@@ -16,7 +16,7 @@ window.addEventListener('blur', () => {
   blurCallbacks.runCallbacks();
 });
 
-window.addEventListener('focus', () => {
+window.addEventListener("focus", () => {
   isFocused = true;
   focusCallbacks.runCallbacks();
 });

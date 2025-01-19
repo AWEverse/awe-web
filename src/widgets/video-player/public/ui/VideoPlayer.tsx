@@ -14,7 +14,7 @@ import {
   setMediaVolume,
   throttle,
 } from "@/lib/core";
-import useLastCallback from "@/lib/hooks/events/useLastCallback";
+import useLastCallback from "@/lib/hooks/callbacks/useLastCallback";
 import useFullscreen from "../hooks/useFullScreen";
 import useUnsupportedMedia from "../hooks/useSupportCheck";
 import { BufferedRange, getTimeRanges } from "@/lib/hooks/ui/useBuffering";
@@ -32,6 +32,7 @@ import usePictureInPicture from "../hooks/usePictureInPicture";
 import buildClassName from "@/shared/lib/buildClassName";
 import useFlag from "@/lib/hooks/state/useFlag";
 import useStateSignal from "@/lib/hooks/signals/useStateSignal";
+import { DEBUG } from "@/lib/config/dev";
 
 type OwnProps = {
   ref?: React.RefObject<HTMLVideoElement | null>;
@@ -185,38 +186,15 @@ const VideoPlayer: React.FC<OwnProps> = ({
     },
   );
 
-  const handleVideoEnter = useLastCallback(
-    debounce(
-      () => {
-        toggleControls(true);
-      },
-      250,
-      false,
-      true,
-    ),
-  );
-
-  const handleVideoLeave = useLastCallback(
-    (e: React.MouseEvent<HTMLDivElement>) => {
-      const bounds = videoRef.current?.getBoundingClientRect();
-      if (!bounds) {
-        return;
-      }
-
-      if (
-        e.clientX < bounds.left ||
-        e.clientX > bounds.right ||
-        e.clientY < bounds.top ||
-        e.clientY > bounds.bottom
-      ) {
-        toggleControls(false);
-      }
-    },
-  );
-
-  const handleVideoMove = useLastCallback(() => {
+  const handleVideoEnter = useLastCallback(() => {
     toggleControls(true);
   });
+
+  const handleVideoLeave = useLastCallback(() => {
+    toggleControls(!isPlaying);
+  });
+
+  const handleVideoMove = useLastCallback(() => {});
 
   const handleVolumeChange = useLastCallback(
     throttle((value: number) => {
@@ -268,7 +246,13 @@ const VideoPlayer: React.FC<OwnProps> = ({
       // Chrome does not automatically start playing when `url` becomes available (even with `autoPlay`),
       // so we force it here. Contrary, iOS does not allow to call `play` without mouse event,
       // so we need to use `autoPlay` instead to allow pre-buffering.
-      playMedia(videoElement);
+      playMedia(videoElement)
+        .then(() => {
+          pauseMedia(videoElement);
+        })
+        .catch((err) => {
+          DEBUG && console.log(err);
+        });
     }
   }, [mediaUrl, isUnsupported]);
 

@@ -7,18 +7,18 @@ import {
   memo,
   ReactElement,
   ReactNode,
-} from 'react';
-import { CSSTransition, TransitionGroup } from 'react-transition-group';
-import { useIntl } from 'react-intl';
-import useLastCallback from '@/lib/hooks/events/useLastCallback';
-import { throttle } from '@/lib/core';
+} from "react";
+import { CSSTransition, TransitionGroup } from "react-transition-group";
+import { useIntl } from "react-intl";
+import useLastCallback from "@/lib/hooks/callbacks/useLastCallback";
+import { throttle } from "@/lib/core";
 
 import {
   CalendarAnimationType,
   CalendarMode,
   DateRangeData,
   ISelectDate,
-} from '../../private/lib/types';
+} from "../../private/lib/types";
 import {
   CELL_SIZE,
   ZoomLevel,
@@ -29,7 +29,7 @@ import {
   NEXT_MONTH,
   PREVIOUS_MONTH,
   LIGHT_SIZE,
-} from '../../private/lib/constans';
+} from "../../private/lib/constans";
 
 import {
   WeekView,
@@ -37,20 +37,20 @@ import {
   YearView,
   DatePickerNavigation,
   WeekdayLabels,
-} from '../../private/ui';
+} from "../../private/ui";
 
-import './DatePicker.scss';
-import { CSSTransitionProps } from 'react-transition-group/CSSTransition';
+import "./DatePicker.scss";
+import { CSSTransitionProps } from "react-transition-group/CSSTransition";
 
-import { initGrigPosition, initDateRange } from './config';
-import useSelectedOrCurrentDate from '../../private/lib/hooks/useSelectedOrCurrentDate';
-import { requestMeasure } from '@/lib/modules/fastdom/fastdom';
-import useClipPathForDateRange from '../../private/lib/hooks/useClipPathForDateRange';
-import useTransitionKey from '../../private/lib/hooks/useTransitionKey';
-import useCalendarStyles from '../../private/lib/hooks/useCalendarStyles';
-import LightEffect from '@/shared/ui/common/LightEffect';
-import useDateBoundary from '../../private/lib/hooks/useDateBoundary';
-import useIsDateDisabled from '../../private/lib/hooks/useIsDateDisabled';
+import { initGrigPosition, initDateRange } from "./config";
+import useSelectedOrCurrentDate from "../../private/lib/hooks/useSelectedOrCurrentDate";
+import { requestMeasure } from "@/lib/modules/fastdom/fastdom";
+import useClipPathForDateRange from "../../private/lib/hooks/useClipPathForDateRange";
+import useTransitionKey from "../../private/lib/hooks/useTransitionKey";
+import useCalendarStyles from "../../private/lib/hooks/useCalendarStyles";
+import LightEffect from "@/shared/ui/common/LightEffect";
+import useDateBoundary from "../../private/lib/hooks/useDateBoundary";
+import useIsDateDisabled from "../../private/lib/hooks/useIsDateDisabled";
 
 interface OwnProps {
   className?: string; // Custom class name for styling
@@ -66,7 +66,7 @@ interface OwnProps {
   readonly?: boolean; // Whether the picker is read-only
   range?: boolean; // Whether the picker is in range mode
   selectedAt?: number; // The currently selected date
-  size?: 'small' | 'medium' | 'large';
+  size?: "small" | "medium" | "large";
 }
 
 const LEVELS = [ZoomLevel.WEEK, ZoomLevel.MONTH, ZoomLevel.YEAR];
@@ -110,7 +110,7 @@ const DatePicker: FC<OwnProps> = ({
   minAt,
   maxAt,
   selectedAt,
-  mode = 'all',
+  mode = "all",
   onChange,
   onClear,
   placeholder,
@@ -123,7 +123,7 @@ const DatePicker: FC<OwnProps> = ({
 
   const nodeRef = createRef<HTMLDivElement>();
   const gridRef = useRef<HTMLDivElement>(null);
-  const direction = useRef<CalendarAnimationType>('LTR');
+  const direction = useRef<CalendarAnimationType>("LTR");
   const selectedCount = useRef(0);
   const isLongPressActive = useRef<boolean>(false);
 
@@ -142,8 +142,8 @@ const DatePicker: FC<OwnProps> = ({
   const isDisabledSelectionRange = zoomLevel !== ZoomLevel.WEEK;
 
   const { minDate, maxDate, isMinInFuture, isMaxInPast } = useDateBoundary({
-    isFutureMode: mode === 'future',
-    isPastMode: mode === 'past',
+    isFutureMode: mode === "future",
+    isPastMode: mode === "past",
     minAt,
     maxAt,
   });
@@ -151,8 +151,8 @@ const DatePicker: FC<OwnProps> = ({
   const isDisabled =
     useIsDateDisabled({
       selectedDate: date.userSelectedDate,
-      isFutureMode: mode === 'future',
-      isPastMode: mode === 'past',
+      isFutureMode: mode === "future",
+      isPastMode: mode === "past",
       minDate,
       maxDate,
     }) && !disabled;
@@ -162,26 +162,34 @@ const DatePicker: FC<OwnProps> = ({
     gridPosition,
     isDisabledSelectionRange,
   );
-  const transitionKey = useTransitionKey(direction, zoomLevel, date.currentSystemDate);
+  const transitionKey = useTransitionKey(
+    direction,
+    zoomLevel,
+    date.currentSystemDate,
+  );
 
   const handlePrevMonth = useLastCallback(() => updateMonth(PREVIOUS_MONTH));
   const handleNextMonth = useLastCallback(() => updateMonth(NEXT_MONTH));
 
-  const setAnimationDirection = useLastCallback((_direction: CalendarAnimationType) => {
-    direction.current = _direction;
-  });
+  const setAnimationDirection = useLastCallback(
+    (_direction: CalendarAnimationType) => {
+      direction.current = _direction;
+    },
+  );
 
   const setLongPressActive = useLastCallback((value?: boolean) => {
     isLongPressActive.current = value ?? !isLongPressActive.current;
   });
 
   const updateMonth = useLastCallback((increment: number) => {
-    setAnimationDirection(increment > 0 ? 'RTL' : 'LTR');
+    setAnimationDirection(increment > 0 ? "RTL" : "LTR");
 
-    setDate(p => {
+    setDate((p) => {
       const currentSystemDateCopy = new Date(p.currentSystemDate);
       currentSystemDateCopy.setDate(1);
-      currentSystemDateCopy.setMonth(currentSystemDateCopy.getMonth() + increment);
+      currentSystemDateCopy.setMonth(
+        currentSystemDateCopy.getMonth() + increment,
+      );
 
       if (isNaN(currentSystemDateCopy.getTime())) {
         return p;
@@ -240,10 +248,13 @@ const DatePicker: FC<OwnProps> = ({
 
           switch (selectedCount.current) {
             case 1:
-              setDate(p => ({ ...p, dateRange: { from: newDateCopy } }));
+              setDate((p) => ({ ...p, dateRange: { from: newDateCopy } }));
               break;
             case 2:
-              setDate(p => ({ ...p, dateRange: { ...p.dateRange, to: newDateCopy } }));
+              setDate((p) => ({
+                ...p,
+                dateRange: { ...p.dateRange, to: newDateCopy },
+              }));
               setLongPressActive(false);
               selectedCount.current = 0;
               break;
@@ -251,13 +262,13 @@ const DatePicker: FC<OwnProps> = ({
         }
       }
 
-      setDate(p => ({
+      setDate((p) => ({
         ...p,
         userSelectedDate: newDateCopy,
       }));
 
       if (zoomLevel !== level) {
-        setAnimationDirection('zoomIn');
+        setAnimationDirection("zoomIn");
         setZoomLevel(level);
       }
     },
@@ -290,26 +301,34 @@ const DatePicker: FC<OwnProps> = ({
     }, 100), // 10 calls per second
   );
 
-  const shouldMouseOver = isLongPressActive.current ? handleMouseOver : undefined;
+  const shouldMouseOver = isLongPressActive.current
+    ? handleMouseOver
+    : undefined;
 
   const handleSwitchZoom = useLastCallback(() => {
-    setAnimationDirection('zoomIn');
-    setZoomLevel(prev => LEVELS[(prev + 1) % LEVELS.length]);
+    setAnimationDirection("zoomIn");
+    setZoomLevel((prev) => LEVELS[(prev + 1) % LEVELS.length]);
   });
 
   const CalendarView = CALENDAR_VIEWS[zoomLevel];
 
-  const { classNames, style } = useCalendarStyles(className, zoomLevel, CELL_SIZE);
+  const { classNames, style } = useCalendarStyles(
+    className,
+    zoomLevel,
+    CELL_SIZE,
+  );
 
   return (
     <div
-      data-activity={!isDisabled ? 'Active' : 'Disabled'}
+      data-activity={!isDisabled ? "Active" : "Disabled"}
       data-mode={mode}
       className="datePicker"
       style={style}
     >
       <DatePickerNavigation
-        month={date.currentSystemDate.toLocaleString('default', { month: 'long' })}
+        month={date.currentSystemDate.toLocaleString("default", {
+          month: "long",
+        })}
         year={date.currentSystemDate.getFullYear()}
         onPrevMonth={handlePrevMonth}
         onNextMonth={handleNextMonth}
@@ -325,14 +344,20 @@ const DatePicker: FC<OwnProps> = ({
       >
         <TransitionGroup
           component={null}
-          childFactory={(child: ReactElement<CSSTransitionProps<HTMLDivElement>>) =>
+          childFactory={(
+            child: ReactElement<CSSTransitionProps<HTMLDivElement>>,
+          ) =>
             cloneElement(child, {
               classNames: direction.current, // LTR or RTL
               timeout: TRANSITION_DURATION,
             })
           }
         >
-          <CSSTransition key={transitionKey} nodeRef={nodeRef} timeout={TRANSITION_DURATION}>
+          <CSSTransition
+            key={transitionKey}
+            nodeRef={nodeRef}
+            timeout={TRANSITION_DURATION}
+          >
             <div ref={nodeRef} className={classNames}>
               <CalendarView
                 date={date}

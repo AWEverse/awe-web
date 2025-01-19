@@ -1,7 +1,14 @@
-import { useState } from 'react';
-import { Box, IconButtonProps, Drawer, DrawerProps, IconButton, Sheet } from '@mui/material';
-import useMedia from '@/lib/hooks/ui/useMedia';
-import useLastCallback from '@/lib/hooks/events/useLastCallback';
+import { useState } from "react";
+import {
+  Box,
+  IconButtonProps,
+  Drawer,
+  DrawerProps,
+  IconButton,
+  Sheet,
+} from "@mui/material";
+import useMedia from "@/lib/hooks/ui/useMedia";
+import useLastCallback from "@/lib/hooks/callbacks/useLastCallback";
 
 interface CustomDrawerProps {
   children: React.ReactNode;
@@ -9,38 +16,42 @@ interface CustomDrawerProps {
   drawerProps?: DrawerProps;
 }
 
-const DrawerBasic: React.FC<CustomDrawerProps> = ({ children, buttonProps, drawerProps }) => {
+const DrawerBasic: React.FC<CustomDrawerProps> = ({
+  children,
+  buttonProps,
+  drawerProps,
+}) => {
   const [open, setOpen] = useState<boolean>(false);
-  const isMobile = useMedia('(max-width: 600px)');
+  const isMobile = useMedia("(max-width: 600px)");
 
-  const toggleDrawer = useLastCallback(() => setOpen(prevOpen => !prevOpen));
+  const toggleDrawer = useLastCallback(() => setOpen((prevOpen) => !prevOpen));
 
   const drawerContentStyles = {
-    height: isMobile ? '100vh' : '100%',
-    width: isMobile ? '100vw' : undefined,
-    bgcolor: 'transparent',
+    height: isMobile ? "100vh" : "100%",
+    width: isMobile ? "100vw" : undefined,
+    bgcolor: "transparent",
     p: { md: 3, sm: 0 },
-    boxShadow: 'none',
+    boxShadow: "none",
   };
 
   const sheetStyles = {
-    borderRadius: 'md',
+    borderRadius: "md",
     p: 2,
-    display: 'flex',
-    flexDirection: 'column',
+    display: "flex",
+    flexDirection: "column",
     gap: 2,
-    height: '100%',
-    overflow: 'auto',
+    height: "100%",
+    overflow: "auto",
   };
 
   return (
-    <Box sx={{ display: 'flex' }}>
+    <Box sx={{ display: "flex" }}>
       <IconButton {...buttonProps} onClick={toggleDrawer}>
-        {buttonProps?.children || 'Open Drawer'}
+        {buttonProps?.children || "Open Drawer"}
       </IconButton>
       <Drawer
         {...drawerProps}
-        anchor={isMobile ? 'top' : 'right'}
+        anchor={isMobile ? "top" : "right"}
         open={open}
         slotProps={{
           content: {

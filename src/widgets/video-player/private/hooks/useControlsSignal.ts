@@ -1,5 +1,5 @@
 import { useRef } from "react";
-import useLastCallback from "@/lib/hooks/events/useLastCallback";
+import useLastCallback from "@/lib/hooks/callbacks/useLastCallback";
 import useStateSignal from "@/lib/hooks/signals/useStateSignal";
 
 const useControlsSignal = () => {

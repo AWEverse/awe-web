@@ -1,6 +1,6 @@
-import { EMediaErrorCode } from '@/lib/core';
-import useLastCallback from '@/lib/hooks/events/useLastCallback';
-import { useState, useEffect, useCallback } from 'react';
+import { EMediaErrorCode } from "@/lib/core";
+import useLastCallback from "@/lib/hooks/callbacks/useLastCallback";
+import { useState, useEffect, useCallback } from "react";
 
 const NOTIFICATION_DURATION = 8000;
 
@@ -56,12 +56,12 @@ export default function useUnsupportedMedia(
     if (isDisabled || !ref.current) return;
 
     const currentVideo = ref.current;
-    currentVideo.addEventListener('error', onError);
-    currentVideo.addEventListener('canplay', onCanPlay);
+    currentVideo.addEventListener("error", onError);
+    currentVideo.addEventListener("canplay", onCanPlay);
 
     return () => {
-      currentVideo.removeEventListener('error', onError);
-      currentVideo.removeEventListener('canplay', onCanPlay);
+      currentVideo.removeEventListener("error", onError);
+      currentVideo.removeEventListener("canplay", onCanPlay);
     };
   }, [isDisabled, ref, onError, onCanPlay]);
 

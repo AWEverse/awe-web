@@ -1,10 +1,10 @@
-import { FC, useState, memo } from 'react';
-import s from './LeftMainHeader.module.scss';
-import SearchInput from '@/shared/ui/SearchInput';
-import { useEvent } from '@/lib/hooks/utilities/useEvent';
-import { ArrowForwardRounded } from '@mui/icons-material';
-import useChatStore from '@/pages/chat/store/useChatSelector';
-import IconButton from '@/shared/ui/IconButton';
+import { FC, useState, memo } from "react";
+import s from "./LeftMainHeader.module.scss";
+import SearchInput from "@/shared/ui/SearchInput";
+import { useEvent } from "@/lib/hooks/callbacks/useLastCallbackSync";
+import { ArrowForwardRounded } from "@mui/icons-material";
+import useChatStore from "@/pages/chat/store/useChatSelector";
+import IconButton from "@/shared/ui/IconButton";
 
 interface OwnProps {
   onFocus?: () => void;
@@ -15,22 +15,22 @@ interface OwnProps {
 interface StateProps {}
 
 const useSearchInput = () => {
-  const [value, setValue] = useState('');
+  const [value, setValue] = useState("");
 
   const handleChange = useEvent((e: React.ChangeEvent<HTMLInputElement>) => {
     setValue(e.target.value);
   });
 
   const handleReset = useEvent(() => {
-    setValue('');
+    setValue("");
   });
 
   return { value, handleChange, handleReset };
 };
 
-const LeftMainHeader: FC<OwnProps & StateProps> = props => {
+const LeftMainHeader: FC<OwnProps & StateProps> = (props) => {
   const { onFocus, onBlur } = props;
-  const handleClose = useChatStore(state => state.closeChatList);
+  const handleClose = useChatStore((state) => state.closeChatList);
 
   const { value, handleChange, handleReset } = useSearchInput();
 

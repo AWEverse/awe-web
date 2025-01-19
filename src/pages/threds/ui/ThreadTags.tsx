@@ -1,8 +1,8 @@
-import React, { memo, useCallback, useReducer, useMemo, useState } from 'react';
-import FlatList from '@/entities/FlatList';
-import TagCheckbox from '@/entities/TagCheckbox';
-import useLastCallback from '@/lib/hooks/events/useLastCallback';
-import { debounce } from '@/lib/core';
+import React, { memo, useCallback, useReducer, useMemo, useState } from "react";
+import FlatList from "@/entities/FlatList";
+import TagCheckbox from "@/entities/TagCheckbox";
+import useLastCallback from "@/lib/hooks/callbacks/useLastCallback";
+import { debounce } from "@/lib/core";
 
 interface ThreadTagsProps {
   items: string[];
@@ -10,10 +10,10 @@ interface ThreadTagsProps {
   onChange?: (selected: string[]) => void;
 }
 
-type Action = { type: 'toggle'; payload: string };
+type Action = { type: "toggle"; payload: string };
 function selectionReducer(state: string[], action: Action) {
   switch (action.type) {
-    case 'toggle': {
+    case "toggle": {
       const stateSet = new Set(state);
 
       if (stateSet.has(action.payload)) {
@@ -29,22 +29,29 @@ function selectionReducer(state: string[], action: Action) {
   }
 }
 
-const ThreadTags: React.FC<ThreadTagsProps> = ({ items, selected = [], onChange = () => {} }) => {
-  const [searchQuery, setSearchQuery] = useState('');
+const ThreadTags: React.FC<ThreadTagsProps> = ({
+  items,
+  selected = [],
+  onChange = () => {},
+}) => {
+  const [searchQuery, setSearchQuery] = useState("");
   const [state, dispatch] = useReducer(selectionReducer, selected);
 
   const debouncedOnChange = useMemo(() => debounce(onChange, 300), [onChange]);
 
   const handleCheckboxChange = useCallback(
     (name: string) => {
-      dispatch({ type: 'toggle', payload: name });
+      dispatch({ type: "toggle", payload: name });
       debouncedOnChange(state);
     },
     [debouncedOnChange, state],
   );
 
   const filteredItems = useMemo(
-    () => items.filter(item => item.toLowerCase().includes(searchQuery.toLowerCase())),
+    () =>
+      items.filter((item) =>
+        item.toLowerCase().includes(searchQuery.toLowerCase()),
+      ),
     [items, searchQuery],
   );
 
@@ -59,9 +66,11 @@ const ThreadTags: React.FC<ThreadTagsProps> = ({ items, selected = [], onChange 
     [state, handleCheckboxChange],
   );
 
-  const handleSearch = useLastCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    setSearchQuery(e.target.value);
-  });
+  const handleSearch = useLastCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      setSearchQuery(e.target.value);
+    },
+  );
 
   return (
     <div>
@@ -74,9 +83,11 @@ const ThreadTags: React.FC<ThreadTagsProps> = ({ items, selected = [], onChange 
       />
       <FlatList
         horizontal
-        ListHeaderComponent={<h1 className="text-2xl font-bold mb-2">Pin on the main thread</h1>}
+        ListHeaderComponent={
+          <h1 className="text-2xl font-bold mb-2">Pin on the main thread</h1>
+        }
         data={filteredItems}
-        keyExtractor={item => item}
+        keyExtractor={(item) => item}
         renderItem={renderCheckbox}
       />
     </div>

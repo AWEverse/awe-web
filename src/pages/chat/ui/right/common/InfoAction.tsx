@@ -1,8 +1,8 @@
-import { FC, memo, ReactNode, useState } from 'react';
-import s from './InfoAction.module.scss';
-import buildClassName from '@/shared/lib/buildClassName';
-import useLastCallback from '@/lib/hooks/events/useLastCallback';
-import { Snackbar, SnackbarCloseReason, Alert } from '@mui/material';
+import { FC, memo, ReactNode, useState } from "react";
+import s from "./InfoAction.module.scss";
+import buildClassName from "@/shared/lib/buildClassName";
+import useLastCallback from "@/lib/hooks/callbacks/useLastCallback";
+import { Snackbar, SnackbarCloseReason, Alert } from "@mui/material";
 
 interface OwnProps {
   className?: string;
@@ -15,9 +15,9 @@ interface OwnProps {
 
 const InfoAction: FC<OwnProps> = ({
   className,
-  title = 'title',
-  subtitle = 'subtitle',
-  alert = 'Copied to clipboard!',
+  title = "title",
+  subtitle = "subtitle",
+  alert = "Copied to clipboard!",
   startDecorator,
   endDecorator,
 }) => {
@@ -29,7 +29,7 @@ const InfoAction: FC<OwnProps> = ({
 
   const handleClose = useLastCallback(
     (_event?: React.SyntheticEvent | Event, reason?: SnackbarCloseReason) => {
-      if (reason === 'clickaway') {
+      if (reason === "clickaway") {
         return;
       }
 
@@ -45,7 +45,9 @@ const InfoAction: FC<OwnProps> = ({
         role="button"
         onClick={handleCopyClick}
       >
-        {startDecorator && <span className={s.Decorator}>{startDecorator}</span>}
+        {startDecorator && (
+          <span className={s.Decorator}>{startDecorator}</span>
+        )}
         <div className={s.Container}>
           <h3 className={s.Title}>{title}</h3>
           <span className={s.Subtitle}>{subtitle}</span>
@@ -53,13 +55,13 @@ const InfoAction: FC<OwnProps> = ({
         {endDecorator && <span className={s.Decorator}>{endDecorator}</span>}
       </div>
       <Snackbar
-        anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+        anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
         autoHideDuration={1000}
         message="Note archived"
         open={open}
         onClose={handleClose}
       >
-        <Alert sx={{ width: '100%' }} onClose={handleClose}>
+        <Alert sx={{ width: "100%" }} onClose={handleClose}>
           {alert}
         </Alert>
       </Snackbar>

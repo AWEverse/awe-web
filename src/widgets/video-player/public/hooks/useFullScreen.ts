@@ -1,8 +1,8 @@
-import { IS_IOS } from '@/lib/core';
-import { pipeWithEffect } from '@/lib/core/public/misc/Pipe';
-import useEffectOnce from '@/lib/hooks/effects/useEffectOnce';
-import useLastCallback from '@/lib/hooks/events/useLastCallback';
-import React, { useState, useLayoutEffect } from 'react';
+import { IS_IOS } from "@/lib/core";
+import { pipeWithEffect } from "@/lib/core/public/misc/Pipe";
+import useEffectOnce from "@/lib/hooks/effects/useEffectOnce";
+import useLastCallback from "@/lib/hooks/callbacks/useLastCallback";
+import React, { useState, useLayoutEffect } from "react";
 
 type ReturnType = [boolean, () => void, () => void] | [false];
 type CallbackType = (isPlayed: boolean) => void;
@@ -48,23 +48,37 @@ export default function useFullscreen(
       if (element instanceof HTMLVideoElement) element.controls = isEnabled;
     };
 
-    document.addEventListener('fullscreenchange', handleFullscreenChange);
-    document.addEventListener('webkitfullscreenchange', handleFullscreenChange);
-    document.addEventListener('mozfullscreenchange', handleFullscreenChange);
+    document.addEventListener("fullscreenchange", handleFullscreenChange);
+    document.addEventListener("webkitfullscreenchange", handleFullscreenChange);
+    document.addEventListener("mozfullscreenchange", handleFullscreenChange);
 
     if (element) {
-      element.addEventListener('webkitbeginfullscreen', () => enterCallback?.(true));
-      element.addEventListener('webkitendfullscreen', () => exitCallback?.(false));
+      element.addEventListener("webkitbeginfullscreen", () =>
+        enterCallback?.(true),
+      );
+      element.addEventListener("webkitendfullscreen", () =>
+        exitCallback?.(false),
+      );
     }
 
     return () => {
-      document.removeEventListener('fullscreenchange', handleFullscreenChange);
-      document.removeEventListener('webkitfullscreenchange', handleFullscreenChange);
-      document.removeEventListener('mozfullscreenchange', handleFullscreenChange);
+      document.removeEventListener("fullscreenchange", handleFullscreenChange);
+      document.removeEventListener(
+        "webkitfullscreenchange",
+        handleFullscreenChange,
+      );
+      document.removeEventListener(
+        "mozfullscreenchange",
+        handleFullscreenChange,
+      );
 
       if (element) {
-        element.removeEventListener('webkitbeginfullscreen', () => enterCallback?.(true));
-        element.removeEventListener('webkitendfullscreen', () => exitCallback?.(false));
+        element.removeEventListener("webkitbeginfullscreen", () =>
+          enterCallback?.(true),
+        );
+        element.removeEventListener("webkitendfullscreen", () =>
+          exitCallback?.(false),
+        );
       }
     };
   }, [elRef, enterCallback, exitCallback]);
@@ -80,16 +94,42 @@ export const useFullscreenStatus = () => {
   const [isFullscreen, setIsFullscreen] = useState(checkIfFullscreen());
 
   useEffectOnce(() => {
-    const handleFullscreenChange = useLastCallback(() => setIsFullscreen(checkIfFullscreen()));
+    const handleFullscreenChange = useLastCallback(() =>
+      setIsFullscreen(checkIfFullscreen()),
+    );
 
-    document.addEventListener('fullscreenchange', handleFullscreenChange, false);
-    document.addEventListener('webkitfullscreenchange', handleFullscreenChange, false);
-    document.addEventListener('mozfullscreenchange', handleFullscreenChange, false);
+    document.addEventListener(
+      "fullscreenchange",
+      handleFullscreenChange,
+      false,
+    );
+    document.addEventListener(
+      "webkitfullscreenchange",
+      handleFullscreenChange,
+      false,
+    );
+    document.addEventListener(
+      "mozfullscreenchange",
+      handleFullscreenChange,
+      false,
+    );
 
     return () => {
-      document.removeEventListener('fullscreenchange', handleFullscreenChange, false);
-      document.removeEventListener('webkitfullscreenchange', handleFullscreenChange, false);
-      document.removeEventListener('mozfullscreenchange', handleFullscreenChange, false);
+      document.removeEventListener(
+        "fullscreenchange",
+        handleFullscreenChange,
+        false,
+      );
+      document.removeEventListener(
+        "webkitfullscreenchange",
+        handleFullscreenChange,
+        false,
+      );
+      document.removeEventListener(
+        "mozfullscreenchange",
+        handleFullscreenChange,
+        false,
+      );
     };
   });
 
@@ -97,10 +137,10 @@ export const useFullscreenStatus = () => {
 };
 
 function getBrowserFullscreenElementProp(): string {
-  if ('fullscreenElement' in document) return 'fullscreenElement';
-  if ('webkitFullscreenElement' in document) return 'webkitFullscreenElement';
-  if ('mozFullScreenElement' in document) return 'mozFullScreenElement';
-  return '';
+  if ("fullscreenElement" in document) return "fullscreenElement";
+  if ("webkitFullscreenElement" in document) return "webkitFullscreenElement";
+  if ("mozFullScreenElement" in document) return "mozFullScreenElement";
+  return "";
 }
 
 export function checkIfFullscreen(): boolean {
@@ -119,7 +159,7 @@ export function safeRequestFullscreen(element: HTMLElement) {
   if (_requestFullscreen) {
     _requestFullscreen.call(element);
   } else {
-    console.warn('Fullscreen API is not supported by this browser.');
+    console.warn("Fullscreen API is not supported by this browser.");
   }
 }
 
@@ -134,7 +174,7 @@ export function safeExitFullscreen() {
   if (_exitFullscreen) {
     _exitFullscreen.call(document);
   } else {
-    console.warn('Fullscreen exit API is not supported by this browser.');
+    console.warn("Fullscreen exit API is not supported by this browser.");
   }
 }
 

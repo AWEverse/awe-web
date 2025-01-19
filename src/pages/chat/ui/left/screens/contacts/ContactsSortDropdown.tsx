@@ -1,36 +1,36 @@
-import ActionButton from '@/shared/ui/ActionButton';
-import DropdownMenu, { TriggerProps } from '@/shared/ui/DropdownMenu';
-import IconButton from '@/shared/ui/IconButton';
-import { SortByAlpha } from '@mui/icons-material';
-import { FC, memo, useState } from 'react';
-import s from './ContactsSortDropdown.module.scss';
-import useLastCallback from '@/lib/hooks/events/useLastCallback';
+import ActionButton from "@/shared/ui/ActionButton";
+import DropdownMenu, { TriggerProps } from "@/shared/ui/DropdownMenu";
+import IconButton from "@/shared/ui/IconButton";
+import { SortByAlpha } from "@mui/icons-material";
+import { FC, memo, useState } from "react";
+import s from "./ContactsSortDropdown.module.scss";
+import useLastCallback from "@/lib/hooks/callbacks/useLastCallback";
 
 interface OwnProps {
   onChange?: (sortType: SortTypes) => void;
 }
 
-type SortTypes = 'name' | 'last_seen' | 'status' | 'online' | 'last_message';
+type SortTypes = "name" | "last_seen" | "status" | "online" | "last_message";
 
 const switchIcon = (sortType: SortTypes) => {
   switch (sortType) {
-    case 'name':
+    case "name":
       return <SortByAlpha />;
-    case 'last_seen':
+    case "last_seen":
       return <SortByAlpha />;
-    case 'status':
+    case "status":
       return <SortByAlpha />;
-    case 'online':
+    case "online":
       return <SortByAlpha />;
-    case 'last_message':
+    case "last_message":
       return <SortByAlpha />;
   }
 };
 
-const ContactsSortDropdown: FC<OwnProps> = props => {
+const ContactsSortDropdown: FC<OwnProps> = (props) => {
   const { onChange } = props;
 
-  const [sortType, setSortType] = useState<SortTypes>('name');
+  const [sortType, setSortType] = useState<SortTypes>("name");
 
   const handleSortTypeChange = useLastCallback((type: SortTypes) => {
     setSortType(type);
@@ -52,19 +52,34 @@ const ContactsSortDropdown: FC<OwnProps> = props => {
       position="top-right"
       triggerButton={TriggerButton}
     >
-      <ActionButton icon={<SortByAlpha />} onClick={() => handleSortTypeChange('name')}>
+      <ActionButton
+        icon={<SortByAlpha />}
+        onClick={() => handleSortTypeChange("name")}
+      >
         Sort by name
       </ActionButton>
-      <ActionButton icon={<SortByAlpha />} onClick={() => handleSortTypeChange('last_seen')}>
+      <ActionButton
+        icon={<SortByAlpha />}
+        onClick={() => handleSortTypeChange("last_seen")}
+      >
         Sort by last seen
       </ActionButton>
-      <ActionButton icon={<SortByAlpha />} onClick={() => handleSortTypeChange('status')}>
+      <ActionButton
+        icon={<SortByAlpha />}
+        onClick={() => handleSortTypeChange("status")}
+      >
         Sort by status
       </ActionButton>
-      <ActionButton icon={<SortByAlpha />} onClick={() => handleSortTypeChange('online')}>
+      <ActionButton
+        icon={<SortByAlpha />}
+        onClick={() => handleSortTypeChange("online")}
+      >
         Sort by online
       </ActionButton>
-      <ActionButton icon={<SortByAlpha />} onClick={() => handleSortTypeChange('last_message')}>
+      <ActionButton
+        icon={<SortByAlpha />}
+        onClick={() => handleSortTypeChange("last_message")}
+      >
         Sort by last message
       </ActionButton>
     </DropdownMenu>

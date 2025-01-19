@@ -1,12 +1,12 @@
-import { useCallback, useEffect, useMemo, useRef } from 'react';
-import { createCallbackManager } from '../../utils/callbacks';
-import useLastCallback from '../events/useLastCallback';
-import { getIsHeavyAnimating } from '@/lib/core';
+import { useCallback, useEffect, useMemo, useRef } from "react";
+import { createCallbackManager } from "../../utils/callbacks";
+import useLastCallback from "../callbacks/useLastCallback";
+import { getIsHeavyAnimating } from "@/lib/core";
 
 const startCallbacks = createCallbackManager();
 const endCallbacks = createCallbackManager();
 
-getIsHeavyAnimating.subscribe(IsHeavyAnimating => {
+getIsHeavyAnimating.subscribe((IsHeavyAnimating) => {
   (IsHeavyAnimating ? startCallbacks : endCallbacks).runCallbacks();
 });
 

@@ -1,13 +1,13 @@
-import useEffectSync from '@/lib/hooks/effects/useEffectSync';
-import useLastCallback from '@/lib/hooks/events/useLastCallback';
+import useEffectSync from "@/lib/hooks/effects/useEffectSync";
+import useLastCallback from "@/lib/hooks/callbacks/useLastCallback";
 import useBuffering, {
   BufferingEvent,
   BufferingPair,
   HTMLMediaBufferedEvent,
-} from '@/lib/hooks/ui/useBuffering';
-import { useRef, useMemo, memo } from 'react';
-import useVideoCleanup from '../hooks/useVideoCleanup';
-import useRefInstead from '@/lib/hooks/state/useRefInstead';
+} from "@/lib/hooks/ui/useBuffering";
+import { useRef, useMemo, memo } from "react";
+import useVideoCleanup from "../hooks/useVideoCleanup";
+import useRefInstead from "@/lib/hooks/state/useRefInstead";
 
 type VideoProps = React.DetailedHTMLProps<
   React.VideoHTMLAttributes<HTMLVideoElement>,
@@ -69,7 +69,11 @@ function Video({
   // onProgress: handleBuffering, // Needed for video buffering progress
 
   // This is only needed for browsers not allowing autoplay
-  const { isBuffered, bufferingHandlers } = useBuffering(true, onTimeUpdate, onBroken);
+  const { isBuffered, bufferingHandlers } = useBuffering(
+    true,
+    onTimeUpdate,
+    onBroken,
+  );
   const {
     onPLay: handlePlayForBuffering,
     onPlaying: handlePlayingForBuffering,
@@ -87,13 +91,13 @@ function Video({
     [isBuffered, handleReady],
   );
 
-  const handlePlaying = useLastCallback(e => {
+  const handlePlaying = useLastCallback((e) => {
     handlePlayingForBuffering(e);
     handleReady();
     restProps.onPlaying?.(e);
   });
 
-  const handlePlay = useLastCallback(e => {
+  const handlePlay = useLastCallback((e) => {
     handlePlayForBuffering(e);
     restProps.onPlay?.(e);
   });
@@ -101,7 +105,7 @@ function Video({
   const mergedOtherBufferingHandlers = useMemo(() => {
     const mergedHandlers: BufferingPair = {};
 
-    Object.keys(otherBufferingHandlers).forEach(keyString => {
+    Object.keys(otherBufferingHandlers).forEach((keyString) => {
       const key = keyString as keyof typeof otherBufferingHandlers;
 
       mergedHandlers[key] = (e: HTMLMediaBufferedEvent) => {

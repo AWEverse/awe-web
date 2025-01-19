@@ -9,14 +9,17 @@ import {
   memo,
   useState,
   useMemo,
-} from 'react';
-import buildClassName from '../lib/buildClassName';
-import useRefInstead from '@/lib/hooks/state/useRefInstead';
-import { requestMutation, requestForcedReflow } from '@/lib/modules/fastdom/fastdom';
-import useLastCallback from '@/lib/hooks/events/useLastCallback';
-import { generateUniqueId } from '@/lib/hooks/utilities/useUniqueId';
+} from "react";
+import buildClassName from "../lib/buildClassName";
+import useRefInstead from "@/lib/hooks/state/useRefInstead";
+import {
+  requestMutation,
+  requestForcedReflow,
+} from "@/lib/modules/fastdom/fastdom";
+import useLastCallback from "@/lib/hooks/callbacks/useLastCallback";
+import { generateUniqueId } from "@/lib/hooks/utilities/useUniqueId";
 
-import s from './TextArea.module.scss';
+import s from "./TextArea.module.scss";
 
 type OwnProps = {
   ref?: RefObject<HTMLTextAreaElement>;
@@ -34,7 +37,15 @@ type OwnProps = {
   maxLengthIndicator?: string;
   tabIndex?: number;
   replaceNewlines?: boolean;
-  inputMode?: 'text' | 'none' | 'tel' | 'url' | 'email' | 'numeric' | 'decimal' | 'search';
+  inputMode?:
+    | "text"
+    | "none"
+    | "tel"
+    | "url"
+    | "email"
+    | "numeric"
+    | "decimal"
+    | "search";
   maxLines?: number;
   onChange?: (e: ChangeEvent<HTMLTextAreaElement>) => void;
   onInput?: (e: FormEvent<HTMLTextAreaElement>) => void;
@@ -97,7 +108,7 @@ const TextArea: FC<OwnProps> = ({
   onPaste,
   replaceNewlines = false,
 }) => {
-  const uuid = useMemo(() => id || generateUniqueId('textarea', 'input'), [id]);
+  const uuid = useMemo(() => id || generateUniqueId("textarea", "input"), [id]);
 
   const textareaRef = useRefInstead<HTMLTextAreaElement>(ref);
   const [isInputFocused, setFocused] = useState(false);
@@ -106,17 +117,17 @@ const TextArea: FC<OwnProps> = ({
   const labelText = error || success || label;
   const fullClassName = buildClassName(
     s.TextArea,
-    'input-group',
-    isInputFocused && 'touched',
-    error ? 'error' : success && 'success',
-    (disabled || readOnly) && 'disabled',
-    labelText && 'with-label',
+    "input-group",
+    isInputFocused && "touched",
+    error ? "error" : success && "success",
+    (disabled || readOnly) && "disabled",
+    labelText && "with-label",
     className,
   );
 
   const resizeHeight = useLastCallback((element: HTMLTextAreaElement) => {
     requestMutation(() => {
-      element.style.height = '0';
+      element.style.height = "0";
 
       requestForcedReflow(() => {
         const maxHeight = parseFloat(element.style.maxHeight) || 0;
@@ -124,7 +135,7 @@ const TextArea: FC<OwnProps> = ({
 
         return () => {
           element.style.height = `${newHeight}px`;
-          element.style.overflow = maxHeight < newHeight ? 'auto' : 'hidden';
+          element.style.overflow = maxHeight < newHeight ? "auto" : "hidden";
         };
       });
     });
@@ -140,24 +151,26 @@ const TextArea: FC<OwnProps> = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [maxLines]);
 
-  const handleChange = useLastCallback((e: ChangeEvent<HTMLTextAreaElement>) => {
-    const target = e.currentTarget;
-    const { value } = target;
+  const handleChange = useLastCallback(
+    (e: ChangeEvent<HTMLTextAreaElement>) => {
+      const target = e.currentTarget;
+      const { value } = target;
 
-    setFocused(value.trim().length > 0);
+      setFocused(value.trim().length > 0);
 
-    if (replaceNewlines) {
-      const previousSelectionEnd = target.selectionEnd;
-      target.value = value.replace(/\n/g, ' ');
-      target.selectionEnd = previousSelectionEnd;
-    }
+      if (replaceNewlines) {
+        const previousSelectionEnd = target.selectionEnd;
+        target.value = value.replace(/\n/g, " ");
+        target.selectionEnd = previousSelectionEnd;
+      }
 
-    resizeHeight(target);
-    onChange?.(e);
-  });
+      resizeHeight(target);
+      onChange?.(e);
+    },
+  );
 
   return (
-    <div className={fullClassName} dir={lang === 'ar' ? 'rtl' : undefined}>
+    <div className={fullClassName} dir={lang === "ar" ? "rtl" : undefined}>
       <textarea
         id={uuid}
         ref={textareaRef}
@@ -179,7 +192,9 @@ const TextArea: FC<OwnProps> = ({
         onPaste={onPaste}
       />
       {labelText && <label htmlFor={uuid}>{labelText}</label>}
-      {maxLengthIndicator && <div className="max-length-indicator">{maxLengthIndicator}</div>}
+      {maxLengthIndicator && (
+        <div className="max-length-indicator">{maxLengthIndicator}</div>
+      )}
       <div className={s.scrollbar}></div>
     </div>
   );

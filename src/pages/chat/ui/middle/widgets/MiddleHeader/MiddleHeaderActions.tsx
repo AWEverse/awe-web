@@ -1,18 +1,18 @@
-import { FC, memo, useState } from 'react';
-import s from './MiddleHeaderActions.module.scss';
+import { FC, memo, useState } from "react";
+import s from "./MiddleHeaderActions.module.scss";
 import {
   CallOutlined,
   SearchOutlined,
   NotificationsOutlined,
   ChecklistRtlOutlined,
-} from '@mui/icons-material';
-import buildClassName from '@/shared/lib/buildClassName';
-import { withStateProps } from '@/lib/core';
-import MiddleHeaderDropdown from './MiddleHeaderDropdown';
-import useLastCallback from '@/lib/hooks/events/useLastCallback';
-import IconButton from '@/shared/ui/IconButton';
-import useChatStore from '@/pages/chat/store/useChatSelector';
-import CallModal from '../../call/CallModal';
+} from "@mui/icons-material";
+import buildClassName from "@/shared/lib/buildClassName";
+import { withStateProps } from "@/lib/core";
+import MiddleHeaderDropdown from "./MiddleHeaderDropdown";
+import useLastCallback from "@/lib/hooks/callbacks/useLastCallback";
+import IconButton from "@/shared/ui/IconButton";
+import useChatStore from "@/pages/chat/store/useChatSelector";
+import CallModal from "../../call/CallModal";
 
 interface OwnProps {
   chatId?: string;
@@ -58,11 +58,13 @@ interface StateProps {
 TODO: Shall we need to add a pop-up tooltip 
 that informs the potential user about the action they have archived now 
 */
-const MiddleHeaderActions: FC<OwnProps & StateProps> = props => {
+const MiddleHeaderActions: FC<OwnProps & StateProps> = (props) => {
   const { className, noMenu } = props;
   const [openCallModal, setOpenCallModal] = useState(false);
 
-  const toggleChatSearching = useChatStore(state => state.toggleChatSearching);
+  const toggleChatSearching = useChatStore(
+    (state) => state.toggleChatSearching,
+  );
 
   const handleOpenCallModal = useLastCallback(() => {
     setOpenCallModal(true);
@@ -115,9 +117,9 @@ export default memo(
       canCreateVoiceChat: false,
       canTranslate: false,
       isTranslating: false,
-      translationLanguage: 'en',
-      language: 'en',
-      detectedChatLanguage: '',
+      translationLanguage: "en",
+      language: "en",
+      detectedChatLanguage: "",
       doNotTranslate: [],
       pendingJoinRequests: 0,
       shouldJoinToSend: false,

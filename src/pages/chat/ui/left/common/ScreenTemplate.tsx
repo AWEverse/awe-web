@@ -1,7 +1,7 @@
-import { FC, ReactNode } from 'react';
-import HeaderNavigation from '../../common/HeaderNavigation';
-import { SettingsScreenType } from '../screens/settings/types';
-import useLastCallback from '@/lib/hooks/events/useLastCallback';
+import { FC, ReactNode } from "react";
+import HeaderNavigation from "../../common/HeaderNavigation";
+import { SettingsScreenType } from "../screens/settings/types";
+import useLastCallback from "@/lib/hooks/callbacks/useLastCallback";
 
 interface OwnProps {
   ref?: React.RefObject<HTMLDivElement>;
@@ -12,7 +12,7 @@ interface OwnProps {
   children: ReactNode;
 }
 
-const ScreenTemplate: FC<OwnProps> = props => {
+const ScreenTemplate: FC<OwnProps> = (props) => {
   const {
     ref,
     className,

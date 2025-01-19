@@ -1,15 +1,23 @@
-import useLastCallback from '@/lib/hooks/events/useLastCallback';
-import useRefInstead from '@/lib/hooks/state/useRefInstead';
-import { IVector2D } from '@/lib/utils/data-structures/Vector2d';
-import { throttle } from '@/lib/utils/schedulers';
-import stopEvent from '@/lib/utils/stopEvent';
-import buildClassName from '@/shared/lib/buildClassName';
-import buildStyle from '@/shared/lib/buildStyle';
-import { CSSProperties, FC, ReactNode, useCallback, useEffect, useRef, useState } from 'react';
-import { CSSTransition } from 'react-transition-group';
-import useContextMenu from './hooks/useContextMenu';
-import { requestMeasure } from '@/lib/modules/fastdom/fastdom';
-import { calculateContextMenuPosition } from '../private/utils';
+import useLastCallback from "@/lib/hooks/callbacks/useLastCallback";
+import useRefInstead from "@/lib/hooks/state/useRefInstead";
+import { IVector2D } from "@/lib/utils/data-structures/Vector2d";
+import { throttle } from "@/lib/utils/schedulers";
+import stopEvent from "@/lib/utils/stopEvent";
+import buildClassName from "@/shared/lib/buildClassName";
+import buildStyle from "@/shared/lib/buildStyle";
+import {
+  CSSProperties,
+  FC,
+  ReactNode,
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
+import { CSSTransition } from "react-transition-group";
+import useContextMenu from "./hooks/useContextMenu";
+import { requestMeasure } from "@/lib/modules/fastdom/fastdom";
+import { calculateContextMenuPosition } from "../private/utils";
 
 const TRANSITION_DURATION = 300;
 
@@ -38,7 +46,9 @@ interface OwnProps {
   // Mouse events
   onMouseEnter?: (e: React.MouseEvent<HTMLDivElement, MouseEvent>) => void;
   onMouseLeave?: (e: React.MouseEvent<HTMLDivElement, MouseEvent>) => void;
-  onMouseEnterBackdrop?: (e: React.MouseEvent<HTMLDivElement, MouseEvent>) => void;
+  onMouseEnterBackdrop?: (
+    e: React.MouseEvent<HTMLDivElement, MouseEvent>,
+  ) => void;
 
   // Miscellaneous
   id?: string;
@@ -102,9 +112,12 @@ const ContextMenuComponent: FC<OwnProps> = ({
   children,
 }) => {
   const cntxRef = useRef<HTMLDivElement>(null);
-  const [transformOrigin, setTransformOrigin] = useState<{ x: string; y: string }>({
-    x: 'left',
-    y: 'top',
+  const [transformOrigin, setTransformOrigin] = useState<{
+    x: string;
+    y: string;
+  }>({
+    x: "left",
+    y: "top",
   });
 
   const handleOutsideClick = useLastCallback((e: MouseEvent) => {
@@ -114,18 +127,18 @@ const ContextMenuComponent: FC<OwnProps> = ({
   });
 
   const handleKeyDown = useLastCallback((e: KeyboardEvent) => {
-    if (e.key === 'Escape') {
+    if (e.key === "Escape") {
       onClose();
     }
   });
 
   useEffect(() => {
     if (isOpen) {
-      document.addEventListener('mousedown', handleOutsideClick);
-      document.addEventListener('keydown', handleKeyDown);
+      document.addEventListener("mousedown", handleOutsideClick);
+      document.addEventListener("keydown", handleKeyDown);
       return () => {
-        document.removeEventListener('mousedown', handleOutsideClick);
-        document.removeEventListener('keydown', handleKeyDown);
+        document.removeEventListener("mousedown", handleOutsideClick);
+        document.removeEventListener("keydown", handleKeyDown);
       };
     }
   }, [isOpen, handleOutsideClick, handleKeyDown]);
@@ -133,10 +146,8 @@ const ContextMenuComponent: FC<OwnProps> = ({
   useEffect(() => {
     if (isOpen) {
       requestMeasure(() => {
-        const { transformOrigin: newTransformOrigin } = calculateContextMenuPosition(
-          position,
-          cntxRef,
-        );
+        const { transformOrigin: newTransformOrigin } =
+          calculateContextMenuPosition(position, cntxRef);
         setTransformOrigin(newTransformOrigin);
       });
     }
@@ -155,7 +166,7 @@ const ContextMenuComponent: FC<OwnProps> = ({
     throttle((e: React.MouseEvent<HTMLDivElement, MouseEvent>) => {
       const menu = cntxRef.current;
 
-      console.log('cntxRef.current', menu);
+      console.log("cntxRef.current", menu);
 
       if (!menu) return;
 
@@ -190,7 +201,7 @@ const ContextMenuComponent: FC<OwnProps> = ({
       </CSSTransition>
       {isOpen && (
         <div
-          className={'ContextBackdrop'}
+          className={"ContextBackdrop"}
           onClick={onMouseEnterBackdrop}
           onMouseMove={onMouseMove}
         />

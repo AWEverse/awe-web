@@ -1,5 +1,5 @@
-import { FC, ReactNode } from 'react';
-import s from './MediaPlayer.module.scss';
+import { FC, memo, ReactNode } from "react";
+import { VideoPlayer } from "@/widgets/video-player";
 
 interface OwnProps {
   children: ReactNode;
@@ -9,10 +9,13 @@ interface StateProps {}
 
 const MediaPlayer: FC<OwnProps & StateProps> = () => {
   return (
-    <div id="MediaPlayer">
-      <video autoPlay loop muted className={s.MediaVideo} src="https://media.w3.org/2010/05/sintel/trailer.mp4"></video>
-    </div>
+    <VideoPlayer
+      audioVolume={0}
+      isAudioMuted={false}
+      playbackSpeed={0}
+      totalFileSize={0}
+    />
   );
 };
 
-export default MediaPlayer;
+export default memo(MediaPlayer);

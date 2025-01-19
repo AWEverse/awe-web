@@ -1,5 +1,5 @@
 import { useState } from "react";
-import useLastCallback from "../events/useLastCallback";
+import useLastCallback from "../callbacks/useLastCallback";
 
 /**
  * Custom hook that returns a boolean flag and two functions to set or unset the flag.

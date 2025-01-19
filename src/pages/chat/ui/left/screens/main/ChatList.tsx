@@ -1,10 +1,10 @@
-import { FC, forwardRef, Fragment, memo, useState } from 'react';
-import ChatListItem from './ChatListItem';
-import { ChatAnimationTypes } from './hooks/useChatAnimationType';
-import s from './ChatList.module.scss';
-import useLastCallback from '@/lib/hooks/events/useLastCallback';
-import TabList from '@/shared/ui/TabList';
-import buildClassName from '@/shared/lib/buildClassName';
+import { FC, forwardRef, Fragment, memo, useState } from "react";
+import ChatListItem from "./ChatListItem";
+import { ChatAnimationTypes } from "./hooks/useChatAnimationType";
+import s from "./ChatList.module.scss";
+import useLastCallback from "@/lib/hooks/callbacks/useLastCallback";
+import TabList from "@/shared/ui/TabList";
+import buildClassName from "@/shared/lib/buildClassName";
 
 interface OwnProps {
   ref?: React.RefObject<HTMLDivElement | null>;
@@ -12,12 +12,42 @@ interface OwnProps {
 }
 
 const tabsData = [
-  { id: 1, title: 'All', badgeCount: 2, isBlocked: false, isBadgeActive: true },
-  { id: 2, title: 'Friends', badgeCount: 0, isBlocked: false, isBadgeActive: false },
-  { id: 3, title: 'Groups', badgeCount: 0, isBlocked: false, isBadgeActive: false },
-  { id: 4, title: 'Archived', badgeCount: 0, isBlocked: false, isBadgeActive: false },
-  { id: 5, title: 'Starred', badgeCount: 0, isBlocked: false, isBadgeActive: false },
-  { id: 6, title: 'Muted', badgeCount: 0, isBlocked: false, isBadgeActive: false },
+  { id: 1, title: "All", badgeCount: 2, isBlocked: false, isBadgeActive: true },
+  {
+    id: 2,
+    title: "Friends",
+    badgeCount: 0,
+    isBlocked: false,
+    isBadgeActive: false,
+  },
+  {
+    id: 3,
+    title: "Groups",
+    badgeCount: 0,
+    isBlocked: false,
+    isBadgeActive: false,
+  },
+  {
+    id: 4,
+    title: "Archived",
+    badgeCount: 0,
+    isBlocked: false,
+    isBadgeActive: false,
+  },
+  {
+    id: 5,
+    title: "Starred",
+    badgeCount: 0,
+    isBlocked: false,
+    isBadgeActive: false,
+  },
+  {
+    id: 6,
+    title: "Muted",
+    badgeCount: 0,
+    isBlocked: false,
+    isBadgeActive: false,
+  },
 ];
 
 const ChatList: FC<OwnProps> = ({ ref, className }) => {

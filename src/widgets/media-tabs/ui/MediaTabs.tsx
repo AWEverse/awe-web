@@ -1,15 +1,15 @@
-import useLastCallback from '@/lib/hooks/events/useLastCallback';
-import TabList from '@/shared/ui/TabList';
-import { FC, memo, ReactNode, useState } from 'react';
+import useLastCallback from "@/lib/hooks/callbacks/useLastCallback";
+import TabList from "@/shared/ui/TabList";
+import { FC, memo, ReactNode, useState } from "react";
 
 interface OwnProps {}
 
 const DEFAULT_TABS = [
-  { id: 0, title: 'Story' },
-  { id: 1, title: 'Media' },
-  { id: 2, title: 'Files' },
-  { id: 3, title: 'Links' },
-  { id: 4, title: 'Polls' },
+  { id: 0, title: "Story" },
+  { id: 1, title: "Media" },
+  { id: 2, title: "Files" },
+  { id: 3, title: "Links" },
+  { id: 4, title: "Polls" },
 ];
 
 const MediaTabs: FC<OwnProps> = () => {

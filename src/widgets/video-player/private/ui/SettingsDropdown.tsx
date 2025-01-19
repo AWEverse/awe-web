@@ -1,9 +1,9 @@
-import ActionButton from '@/shared/ui/ActionButton';
-import DropdownMenu, { TriggerProps } from '@/shared/ui/DropdownMenu';
-import { FC, memo, useState } from 'react';
-import s from './SettingsDropdown.module.scss';
-import { NumericLimits } from '@/lib/core';
-import useLastCallback from '@/lib/hooks/events/useLastCallback';
+import ActionButton from "@/shared/ui/ActionButton";
+import DropdownMenu, { TriggerProps } from "@/shared/ui/DropdownMenu";
+import { FC, memo, useState } from "react";
+import s from "./SettingsDropdown.module.scss";
+import { NumericLimits } from "@/lib/core";
+import useLastCallback from "@/lib/hooks/callbacks/useLastCallback";
 
 interface OwnProps<T extends Record<string, unknown> = {}> {
   triggerButton: FC<T & TriggerProps>;
@@ -22,7 +22,7 @@ const SettingsDropdown: FC<OwnProps> = ({
   onSpeedTimerClick,
   onQualityClick,
 }) => {
-  const [quality, setQuality] = useState<string>('Auto (1080p)');
+  const [quality, setQuality] = useState<string>("Auto (1080p)");
   const [playbackSpeed, setPlaybackSpeed] = useState<number>(1.0);
 
   const handleStableVolumeClick = useLastCallback(() => {
@@ -49,13 +49,19 @@ const SettingsDropdown: FC<OwnProps> = ({
 
   return (
     <DropdownMenu triggerButton={triggerButton} position="bottom-right">
-      <ActionButton onClick={handleStableVolumeClick}>Stable volume</ActionButton>
+      <ActionButton onClick={handleStableVolumeClick}>
+        Stable volume
+      </ActionButton>
       <ActionButton onClick={handleAmbientModeClick}>Ambient Mode</ActionButton>
-      <ActionButton onClick={() => handlePlaybackSpeedClick(1.25)}>Playback speed</ActionButton>
-      <ActionButton onClick={() => handleSpeedTimerClick(10)}>Speed timer</ActionButton>
+      <ActionButton onClick={() => handlePlaybackSpeedClick(1.25)}>
+        Playback speed
+      </ActionButton>
+      <ActionButton onClick={() => handleSpeedTimerClick(10)}>
+        Speed timer
+      </ActionButton>
       <ActionButton
         endDecorator={renderAnnotation(quality)}
-        onClick={() => handleQualityClick('Auto (1080p)')}
+        onClick={() => handleQualityClick("Auto (1080p)")}
       >
         Quality
       </ActionButton>

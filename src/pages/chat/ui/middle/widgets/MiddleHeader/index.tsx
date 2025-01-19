@@ -1,25 +1,32 @@
-import React, { createRef, memo, useCallback, useEffect, useRef, useState } from 'react';
-import { Avatar } from '@mui/material';
-import { UserProps } from '@/shared/types';
-import DotAnimation from '@/shared/ui/dot-animation';
-import ArrowBackRoundedIcon from '@mui/icons-material/ArrowBackRounded';
-import './index.scss';
-import MiddleHeaderActions from './MiddleHeaderActions';
-import PinnedMessageButton from '../../common/PinnedMessageButton';
-import useMedia from '@/lib/hooks/ui/useMedia';
-import { CalendarMonthRounded, CloseRounded } from '@mui/icons-material';
-import IconButton from '@/shared/ui/IconButton';
-import { TransitionGroup, CSSTransition } from 'react-transition-group';
-import useLastCallback from '@/lib/hooks/events/useLastCallback';
-import Modal from '@/shared/ui/Modal';
-import { createSelectorHooks } from '@/lib/hooks/selectors/createSelectorHooks';
-import captureKeyboardListeners from '@/lib/utils/captureKeyboardListeners';
-import MiddleHeaderSearch from './MiddleHeaderSearch';
-import useChatStore from '@/pages/chat/store/useChatSelector';
-import useConditionalRef from '@/lib/hooks/utilities/useConditionalRef';
-import buildClassName from '@/shared/lib/buildClassName';
-import useEffectOnce from '@/lib/hooks/effects/useEffectOnce';
-import { DatePicker } from '@/entities/date-picker';
+import React, {
+  createRef,
+  memo,
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
+import { Avatar } from "@mui/material";
+import { UserProps } from "@/shared/types";
+import DotAnimation from "@/shared/ui/dot-animation";
+import ArrowBackRoundedIcon from "@mui/icons-material/ArrowBackRounded";
+import "./index.scss";
+import MiddleHeaderActions from "./MiddleHeaderActions";
+import PinnedMessageButton from "../../common/PinnedMessageButton";
+import useMedia from "@/lib/hooks/ui/useMedia";
+import { CalendarMonthRounded, CloseRounded } from "@mui/icons-material";
+import IconButton from "@/shared/ui/IconButton";
+import { TransitionGroup, CSSTransition } from "react-transition-group";
+import useLastCallback from "@/lib/hooks/callbacks/useLastCallback";
+import Modal from "@/shared/ui/Modal";
+import { createSelectorHooks } from "@/lib/hooks/selectors/createSelectorHooks";
+import captureKeyboardListeners from "@/lib/utils/captureKeyboardListeners";
+import MiddleHeaderSearch from "./MiddleHeaderSearch";
+import useChatStore from "@/pages/chat/store/useChatSelector";
+import useConditionalRef from "@/lib/hooks/utilities/useConditionalRef";
+import buildClassName from "@/shared/lib/buildClassName";
+import useEffectOnce from "@/lib/hooks/effects/useEffectOnce";
+import { DatePicker } from "@/entities/date-picker";
 
 const TRANSITION_DURATION = 300;
 
@@ -28,7 +35,7 @@ const useStore = createSelectorHooks(useChatStore);
 const MiddleHeader: React.FC<{ sender?: UserProps }> = ({ sender }) => {
   const headerRef = useRef<HTMLDivElement>(null);
 
-  const isTablet = useMedia('(max-width: 1024px)');
+  const isTablet = useMedia("(max-width: 1024px)");
 
   const [openDateModal, setOpenDateModal] = useState(false);
 
@@ -40,13 +47,13 @@ const MiddleHeader: React.FC<{ sender?: UserProps }> = ({ sender }) => {
 
   const onTransitionStart = useLastCallback(() => {
     if (headerRef.current) {
-      headerRef.current.style.overflow = 'hidden';
+      headerRef.current.style.overflow = "hidden";
     }
   });
 
   const onTransitionEnd = useLastCallback(() => {
     if (headerRef.current) {
-      headerRef.current.style.overflow = 'visible';
+      headerRef.current.style.overflow = "visible";
     }
   });
 
@@ -91,13 +98,17 @@ const MiddleHeader: React.FC<{ sender?: UserProps }> = ({ sender }) => {
   const renderMain = useCallback(() => {
     return (
       <>
-        <div className={'UserDetails'} onClick={openProfileColumn}>
+        <div className={"UserDetails"} onClick={openProfileColumn}>
           <p>Andrii CLiyensa</p>
           <DotAnimation content="Looking" />
         </div>
-        <div className={'MiddleHeaderActions'}>
+        <div className={"MiddleHeaderActions"}>
           {!isTablet && (
-            <PinnedMessageButton activeIndex={0} className={'InAction'} segmentCount={4} />
+            <PinnedMessageButton
+              activeIndex={0}
+              className={"InAction"}
+              segmentCount={4}
+            />
           )}
           <MiddleHeaderActions />
         </div>
@@ -109,23 +120,27 @@ const MiddleHeader: React.FC<{ sender?: UserProps }> = ({ sender }) => {
 
   return (
     <>
-      <div ref={headerRef} className={'MiddleHeaderWrapper'}>
-        <IconButton className={'BackButton'} onClick={toggleChatList}>
+      <div ref={headerRef} className={"MiddleHeaderWrapper"}>
+        <IconButton className={"BackButton"} onClick={toggleChatList}>
           <ArrowBackRoundedIcon />
         </IconButton>
 
-        <Avatar className={'UserAvatar'} sizes="medium" src={'https://i.pravatar.cc/300'} />
+        <Avatar
+          className={"UserAvatar"}
+          sizes="medium"
+          src={"https://i.pravatar.cc/300"}
+        />
 
-        <TransitionGroup className={'HeaderBodyWrapper'}>
+        <TransitionGroup className={"HeaderBodyWrapper"}>
           <CSSTransition
-            key={isChatSearching ? 'search' : 'main'}
-            classNames={isChatSearching ? 'toTop' : 'toBottom'}
+            key={isChatSearching ? "search" : "main"}
+            classNames={isChatSearching ? "toTop" : "toBottom"}
             nodeRef={nodeRef}
             timeout={TRANSITION_DURATION}
             onEnter={onTransitionStart}
             onExited={onTransitionEnd}
           >
-            <div ref={nodeRef} className={'HeaderTransition'}>
+            <div ref={nodeRef} className={"HeaderTransition"}>
               {isChatSearching ? renderSearch() : renderMain()}
             </div>
           </CSSTransition>
@@ -135,7 +150,10 @@ const MiddleHeader: React.FC<{ sender?: UserProps }> = ({ sender }) => {
       {isTablet && (
         <PinnedMessageButton
           activeIndex={0}
-          className={buildClassName('UnderHeader', isChatSearching && 'UnderHeader__Hidden')}
+          className={buildClassName(
+            "UnderHeader",
+            isChatSearching && "UnderHeader__Hidden",
+          )}
           segmentCount={4}
         />
       )}
