@@ -1,5 +1,5 @@
 import { useCallback, useLayoutEffect, useRef } from "react";
-import { useStateRef } from "../state/useStateRef";
+import useStateRef from "./useStateRef";
 
 const NO_DEPS = [] as const;
 

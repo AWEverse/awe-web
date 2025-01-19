@@ -1,7 +1,7 @@
 import { ApiMessageEntityTypes } from "@/@types/api/types/messages";
 import useStableCallback from "@/lib/hooks/callbacks/useStableCallback";
 import { ReactNode, useRef } from "react";
-import useCollapsibleLines from "../hooks/useCollapsible";
+import useCollapsibleLines from "../hooks/DOM/useCollapsible";
 import buildClassName from "../lib/buildClassName";
 import s from "./Blockquote.module.scss";
 import { ArrowDownwardRounded, ArrowUpwardRounded } from "@mui/icons-material";

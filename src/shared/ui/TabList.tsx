@@ -1,32 +1,32 @@
-import { FC, useRef, memo, ReactNode } from 'react';
-import useHorizontalScroll from '@/lib/hooks/sensors/useHorizontalScroll';
-import usePrevious from '@/lib/hooks/state/usePrevious';
-import useHorizontalScrollToContanier from '../hooks/useHorizontalScrollToContanier';
-import buildClassName from '../lib/buildClassName';
-import Tab, { TabProps } from './Tab';
-import { capitalize } from '@/lib/utils/helpers/string/stringFormaters';
-import './TabList.scss';
+import { FC, useRef, memo, ReactNode } from "react";
+import useHorizontalScroll from "@/lib/hooks/sensors/useHorizontalScroll";
+import usePrevious from "@/lib/hooks/state/usePrevious";
+import useHorizontalScrollToContanier from "../hooks/DOM/useHorizontalScrollToContanier";
+import buildClassName from "../lib/buildClassName";
+import Tab, { TabProps } from "./Tab";
+import { capitalize } from "@/lib/utils/helpers/string/stringFormaters";
+import "./TabList.scss";
 
-type TabProperty = 'title' | 'badgeCount' | 'isBlocked' | 'isBadgeActive';
+type TabProperty = "title" | "badgeCount" | "isBlocked" | "isBadgeActive";
 type TabWithProperties = { id: number | string } & Pick<TabProps, TabProperty>;
 
 interface OwnProps {
   tabs: readonly TabWithProperties[];
   activeTab: number;
   className?: string;
-  variant: TabProps['variant'];
+  variant: TabProps["variant"];
   onSwitchTab: (index: number) => void;
   startDecorator?: ReactNode;
   endDecorator?: ReactNode;
   disableScroll?: boolean;
 }
 
-const TabList: FC<OwnProps> = props => {
+const TabList: FC<OwnProps> = (props) => {
   const {
     tabs,
     activeTab,
     className,
-    variant = 'folders',
+    variant = "folders",
     onSwitchTab,
     startDecorator,
     endDecorator,
@@ -36,11 +36,11 @@ const TabList: FC<OwnProps> = props => {
   const containerRef = useRef<HTMLDivElement>(null);
   const previousActiveTab = usePrevious(activeTab);
 
-  const isFolderVariant = variant === 'folders';
+  const isFolderVariant = variant === "folders";
   const tabListClassName = buildClassName(
-    'TabList',
+    "TabList",
     `TabList-${capitalize(variant)}`,
-    'no-scrollbar',
+    "no-scrollbar",
     className,
   );
 
@@ -58,7 +58,8 @@ const TabList: FC<OwnProps> = props => {
       >
         {tabs.map(({ id, title, ...tabProps }, index) => {
           const isActive = index === activeTab;
-          const currentTitle = !isFolderVariant && title === 'All' ? 'All folders' : title;
+          const currentTitle =
+            !isFolderVariant && title === "All" ? "All folders" : title;
           const tabIndex = isActive ? 0 : -1;
 
           return (

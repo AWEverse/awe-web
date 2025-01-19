@@ -1,6 +1,3 @@
-import useStableCallback from "@/lib/hooks/callbacks/useStableCallback";
-import useWindowSize from "@/lib/hooks/sensors/useWindowSize";
-import useDebouncedCallback from "@/lib/hooks/shedulers/useDebouncedCallback";
 import {
   requestMutation,
   requestMeasure,
@@ -13,6 +10,9 @@ import {
   useState,
   type RefObject,
 } from "react";
+import { useStableCallback } from "../base";
+import { useDebouncedFunction } from "../shedulers";
+import useWindowSize from "@/lib/hooks/sensors/useWindowSize";
 
 const WINDOW_RESIZE_LINE_RECALC_DEBOUNCE = 200;
 
@@ -57,7 +57,7 @@ export default function useCollapsibleLines<
     }
   });
 
-  const debouncedRecalcTextLines = useDebouncedCallback(
+  const debouncedRecalcTextLines = useDebouncedFunction(
     () => requestMeasure(recalculateTextLines),
     [recalculateTextLines],
     WINDOW_RESIZE_LINE_RECALC_DEBOUNCE,
@@ -71,7 +71,11 @@ export default function useCollapsibleLines<
         return () => {
           isFirstRenderRef.current = false;
           const element = (cutoutRef || ref).current;
-          if (!element) return;
+
+          if (!element) {
+            return;
+          }
+
           element.style.maxHeight = cutoutHeightRef.current
             ? `${cutoutHeightRef.current}px`
             : "";
@@ -84,7 +88,9 @@ export default function useCollapsibleLines<
   const { width: windowWidth } = useWindowSize();
   useEffect(() => {
     if (!isDisabled) {
-      if (isFirstRenderRef.current) return;
+      if (isFirstRenderRef.current) {
+        return;
+      }
 
       debouncedRecalcTextLines();
     } else {

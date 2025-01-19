@@ -6,7 +6,7 @@ import useBuffering, {
   HTMLMediaBufferedEvent,
 } from "@/lib/hooks/ui/useBuffering";
 import { useRef, useMemo, memo } from "react";
-import useVideoCleanup from "../hooks/useVideoCleanup";
+import useVideoCleanup from "../hooks/DOM/useVideoCleanup";
 import useRefInstead from "@/lib/hooks/state/useRefInstead";
 
 type VideoProps = React.DetailedHTMLProps<

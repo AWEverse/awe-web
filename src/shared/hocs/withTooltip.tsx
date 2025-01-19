@@ -133,28 +133,25 @@ const calculateTooltipPosition = (
   const viewportHeight = window.innerHeight;
   const viewportWidth = window.innerWidth;
 
-  const offset = 8; // Distance between the tooltip and the component
-  const tPositions = useMemo(
-    () => ({
-      top: {
-        top: rect.top - tooltipRect.height - offset,
-        left: rect.left + rect.width / 2 - tooltipRect.width / 2,
-      },
-      bottom: {
-        top: rect.bottom + offset,
-        left: rect.left + rect.width / 2 - tooltipRect.width / 2,
-      },
-      left: {
-        top: rect.top + rect.height / 2 - tooltipRect.height / 2,
-        left: rect.left - tooltipRect.width - offset,
-      },
-      right: {
-        top: rect.top + rect.height / 2 - tooltipRect.height / 2,
-        left: rect.right + offset,
-      },
-    }),
-    [rect, tooltipRect, offset],
-  );
+  const offset = 8;
+  const tPositions = {
+    top: {
+      top: rect.top - tooltipRect.height - offset,
+      left: rect.left + rect.width / 2 - tooltipRect.width / 2,
+    },
+    bottom: {
+      top: rect.bottom + offset,
+      left: rect.left + rect.width / 2 - tooltipRect.width / 2,
+    },
+    left: {
+      top: rect.top + rect.height / 2 - tooltipRect.height / 2,
+      left: rect.left - tooltipRect.width - offset,
+    },
+    right: {
+      top: rect.top + rect.height / 2 - tooltipRect.height / 2,
+      left: rect.right + offset,
+    },
+  };
 
   let { top, left } = tPositions[tPosition as keyof typeof tPositions];
 

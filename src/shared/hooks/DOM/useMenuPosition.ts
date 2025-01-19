@@ -1,7 +1,10 @@
-import { useStateRef } from '@/lib/hooks/state/useStateRef';
-import { requestForcedReflow, requestMutation } from '@/lib/modules/fastdom/fastdom';
-import { useCallback, useLayoutEffect } from 'react';
-import { addExtraClass, setExtraStyles } from '../lib/extraClassHelpers';
+import { useStateRef } from "@/lib/hooks/state/useStateRef";
+import {
+  requestForcedReflow,
+  requestMutation,
+} from "@/lib/modules/fastdom/fastdom";
+import { useCallback, useLayoutEffect } from "react";
+import { addExtraClass, setExtraStyles } from "../../lib/extraClassHelpers";
 
 type IAnchorPosition = {
   x: number;
@@ -10,8 +13,8 @@ type IAnchorPosition = {
 
 interface StaticPositionOptions {
   anchor?: IAnchorPosition;
-  positionX?: 'left' | 'right';
-  positionY?: 'top' | 'bottom';
+  positionX?: "left" | "right";
+  positionY?: "top" | "bottom";
   transformOriginX?: number;
   transformOriginY?: number;
   style?: string;
@@ -27,7 +30,9 @@ interface DynamicPositionOptions {
   withMaxHeight?: boolean;
 }
 
-export type MenuPositionOptions = StaticPositionOptions | DynamicPositionOptions;
+export type MenuPositionOptions =
+  | StaticPositionOptions
+  | DynamicPositionOptions;
 
 export interface Layout {
   extraPaddingX?: number;
@@ -61,7 +66,7 @@ export default function useMenuPosition(
   const applyPositioning = useCallback(() => {
     const options = optionsRef.current;
 
-    if (!('getTriggerElement' in options)) {
+    if (!("getTriggerElement" in options)) {
       applyStaticOptions(containerRef!, bubbleRef!, options);
     } else {
       requestForcedReflow(() => {
@@ -85,8 +90,8 @@ function applyStaticOptions(
   containerRef: React.RefObject<HTMLDivElement | null>,
   bubbleRef: React.RefObject<HTMLDivElement | null>,
   {
-    positionX = 'left',
-    positionY = 'top',
+    positionX = "left",
+    positionY = "top",
     transformOriginX,
     transformOriginY,
     style,
@@ -116,7 +121,7 @@ function applyStaticOptions(
     transformOrigin: [
       transformOriginX ? `${transformOriginX}px` : positionX,
       transformOriginY ? `${transformOriginY}px` : positionY,
-    ].join(' '),
+    ].join(" "),
   });
 }
 
@@ -154,7 +159,9 @@ function processDynamically(
     isDense = false,
   } = getLayout?.() || {};
 
-  const marginTop = menuEl ? parseInt(getComputedStyle(menuEl).marginTop, 10) + extraMarginTop : 0;
+  const marginTop = menuEl
+    ? parseInt(getComputedStyle(menuEl).marginTop, 10) + extraMarginTop
+    : 0;
   const { offsetWidth: menuElWidth, offsetHeight: menuElHeight } = menuEl || {
     offsetWidth: 0,
     offsetHeight: 0,
@@ -168,16 +175,19 @@ function processDynamically(
 
   const rootRect = rootEl ? rootEl.getBoundingClientRect() : EMPTY_RECT;
 
-  let positionX: 'left' | 'right';
-  let positionY: 'top' | 'bottom';
-  if (isDense || x + menuRect.width + extraPaddingX < rootRect.width + rootRect.left) {
+  let positionX: "left" | "right";
+  let positionY: "top" | "bottom";
+  if (
+    isDense ||
+    x + menuRect.width + extraPaddingX < rootRect.width + rootRect.left
+  ) {
     x += 3;
-    positionX = 'left';
+    positionX = "left";
   } else if (x - menuRect.width - rootRect.left > 0) {
-    positionX = 'right';
+    positionX = "right";
     x -= 3;
   } else {
-    positionX = 'left';
+    positionX = "left";
     x = 16;
   }
 
@@ -185,11 +195,14 @@ function processDynamically(
 
   const yWithTopShift = y + topShiftY;
 
-  if (isDense || yWithTopShift + menuRect.height < rootRect.height + rootRect.top) {
-    positionY = 'top';
+  if (
+    isDense ||
+    yWithTopShift + menuRect.height < rootRect.height + rootRect.top
+  ) {
+    positionY = "top";
     y = yWithTopShift;
   } else {
-    positionY = 'bottom';
+    positionY = "bottom";
 
     if (y - menuRect.height < rootRect.top + extraTopPadding) {
       y = rootRect.top + rootRect.height;
@@ -206,16 +219,25 @@ function processDynamically(
     rootRect.width - menuRect.width - MENU_POSITION_VISUAL_COMFORT_SPACE_PX,
   );
   let left =
-    (positionX === 'left'
+    (positionX === "left"
       ? withPortal || shouldAvoidNegativePosition
-        ? Math.max(MENU_POSITION_VISUAL_COMFORT_SPACE_PX, leftWithPossibleNegative)
+        ? Math.max(
+            MENU_POSITION_VISUAL_COMFORT_SPACE_PX,
+            leftWithPossibleNegative,
+          )
         : leftWithPossibleNegative
       : x - triggerRect.left) + addedXForPortalPositioning;
   let top = y - triggerRect.top + addedYForPortalPositioning;
 
   if (isDense) {
-    left = Math.min(left, rootRect.width - menuRect.width - MENU_POSITION_VISUAL_COMFORT_SPACE_PX);
-    top = Math.min(top, rootRect.height - menuRect.height - MENU_POSITION_VISUAL_COMFORT_SPACE_PX);
+    left = Math.min(
+      left,
+      rootRect.width - menuRect.width - MENU_POSITION_VISUAL_COMFORT_SPACE_PX,
+    );
+    top = Math.min(
+      top,
+      rootRect.height - menuRect.height - MENU_POSITION_VISUAL_COMFORT_SPACE_PX,
+    );
   }
 
   // Avoid hiding external parts of menus on mobile devices behind the edges of the screen (ReactionSelector for example)
@@ -227,17 +249,22 @@ function processDynamically(
     left = addedXForMenuPositioning + MENU_POSITION_VISUAL_COMFORT_SPACE_PX;
   }
 
-  const offsetX = anchorX + addedXForPortalPositioning - triggerRect.left - left;
-  const offsetY = anchorY + addedYForPortalPositioning - triggerRect.top - top - marginTop;
-  const transformOriginX = positionX === 'left' ? offsetX : menuRect.width + offsetX;
-  const transformOriginY = positionY === 'bottom' ? menuRect.height + offsetY : offsetY;
+  const offsetX =
+    anchorX + addedXForPortalPositioning - triggerRect.left - left;
+  const offsetY =
+    anchorY + addedYForPortalPositioning - triggerRect.top - top - marginTop;
+  const transformOriginX =
+    positionX === "left" ? offsetX : menuRect.width + offsetX;
+  const transformOriginY =
+    positionY === "bottom" ? menuRect.height + offsetY : offsetY;
 
   const style = `left: ${left}px; top: ${top}px`;
 
   let heightStyle;
 
   if (withMaxHeight) {
-    const menuMaxHeight = rootRect.height - MENU_POSITION_BOTTOM_MARGIN - marginTop;
+    const menuMaxHeight =
+      rootRect.height - MENU_POSITION_BOTTOM_MARGIN - marginTop;
     heightStyle = `max-height: ${menuMaxHeight}px;`;
   }
 

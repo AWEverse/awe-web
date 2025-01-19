@@ -7,11 +7,13 @@ import useStableCallback from "@/lib/hooks/callbacks/useStableCallback";
 import useHistoryBack from "@/lib/hooks/history/useHistoryBack";
 import useAppLayout from "@/lib/hooks/ui/useAppLayout";
 import { FC, useRef, useEffect, memo } from "react";
-import useKeyboardListNavigation from "../hooks/useKeyboardListNavigation";
-import useMenuPosition, { MenuPositionOptions } from "../hooks/useMenuPosition";
+import useKeyboardListNavigation from "../hooks/keyboard/useKeyboardListNavigation";
+import useMenuPosition, {
+  MenuPositionOptions,
+} from "../hooks/DOM/useMenuPosition";
 import useVirtualBackdrop, {
   BACKDROP_CLASSNAME,
-} from "../hooks/useVirtualBackdrop";
+} from "../hooks/DOM/useVirtualBackdrop";
 import buildClassName from "../lib/buildClassName";
 import captureKeyboardListeners from "@/lib/utils/captureKeyboardListeners";
 

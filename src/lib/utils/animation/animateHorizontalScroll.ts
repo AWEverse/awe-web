@@ -1,5 +1,5 @@
-import { requestMutation } from '@/lib/modules/fastdom/fastdom';
-import { animate } from './animate';
+import { requestMutation } from "@/lib/modules/fastdom/fastdom";
+import { animate } from "./animate";
 
 const DEFAULT_DURATION = 300;
 
@@ -18,7 +18,7 @@ export default function animateHorizontalScroll(
     duration = START_DURATION;
   }
 
-  const isRtl = container.getAttribute('dir') === 'rtl';
+  const isRtl = container.getAttribute("dir") === "rtl";
   const {
     scrollLeft,
     offsetWidth: containerWidth,
@@ -44,7 +44,7 @@ export default function animateHorizontalScroll(
 
   const target = scrollLeft + path;
 
-  return new Promise<void>(resolve => {
+  return new Promise<void>((resolve) => {
     requestMutation(() => {
       if (duration === START_DURATION) {
         container.scrollLeft = target;
@@ -60,8 +60,8 @@ export default function animateHorizontalScroll(
         isStopped = true;
       });
 
-      container.style.scrollSnapType = 'none';
-      container.style.scrollBehavior = 'smooth';
+      container.style.scrollSnapType = "none";
+      container.style.scrollBehavior = "smooth";
 
       const startAt = Date.now();
 
@@ -76,8 +76,8 @@ export default function animateHorizontalScroll(
         container.scrollLeft = Math.round(target - currentPath);
 
         if (t >= END_DURATION) {
-          container.style.scrollSnapType = '';
-          container.style.scrollBehavior = '';
+          container.style.scrollSnapType = "";
+          container.style.scrollBehavior = "";
           delete container.dataset.scrollId;
           stopById.delete(id);
           resolve();

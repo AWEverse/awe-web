@@ -23,7 +23,7 @@ import { formatMediaDuration } from "../../private/lib/utils";
 import useFlag from "@/lib/hooks/state/useFlag";
 import buildClassName from "@/shared/lib/buildClassName";
 import stopEvent from "@/lib/utils/stopEvent";
-import useBodyClass from "@/shared/hooks/useBodyClass";
+import useBodyClass from "@/shared/hooks/DOM/useBodyClass";
 import {
   useSignalEffect,
   useSignalLayoutEffect,
