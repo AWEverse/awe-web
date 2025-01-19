@@ -1,10 +1,12 @@
-import { Signal } from '@/lib/core/public/signals';
-import { DependencyList, useEffect, useLayoutEffect, useCallback } from 'react';
+import { ReadonlySignal, Signal } from "@/lib/core/public/signals";
+import { DependencyList, useEffect, useLayoutEffect, useCallback } from "react";
 
 type EffectType = typeof useEffect | typeof useLayoutEffect;
 
+type SharedSignal<T> = Signal<T> | ReadonlySignal<T>;
+
 const useSignalEffectBase = <T = any>(
-  signal: Signal<T>,
+  signal: SharedSignal<T>,
   fn: (value: T) => void,
   effectHook: EffectType,
   deps?: DependencyList,
@@ -21,7 +23,7 @@ const useSignalEffectBase = <T = any>(
 };
 
 const useSignalEffect = <T = any>(
-  signal: Signal<T>,
+  signal: SharedSignal<T>,
   fn: (value: T) => void,
   deps?: DependencyList,
 ) => {
@@ -29,7 +31,7 @@ const useSignalEffect = <T = any>(
 };
 
 const useSignalLayoutEffect = <T = any>(
-  signal: Signal<T>,
+  signal: SharedSignal<T>,
   fn: (value: T) => void,
   deps?: DependencyList,
 ) => {

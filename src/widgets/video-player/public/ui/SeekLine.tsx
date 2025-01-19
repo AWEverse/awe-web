@@ -1,35 +1,21 @@
 import { ApiDimensions } from "@/@types/api/types/messages";
 import { BufferedRange } from "@/lib/hooks/ui/useBuffering";
-import {
-  FC,
-  memo,
-  use,
-  useCallback,
-  useEffect,
-  useLayoutEffect,
-  useRef,
-  useState,
-} from "react";
+import { FC, memo, useCallback, useEffect, useRef, useState } from "react";
 import { CSSTransition } from "react-transition-group";
 
 import s from "./SeekLine.module.scss";
 import buildClassName from "@/shared/lib/buildClassName";
 import buildStyle from "@/shared/lib/buildStyle";
-import { Signal } from "@/lib/core/public/signals";
-import { clamp, IS_TOUCH_ENV, round, throttle } from "@/lib/core";
-import { requestMutation } from "@/lib/modules/fastdom/fastdom";
-import { animateNumber } from "@/lib/utils/animation/animateNumber";
+import { ReadonlySignal } from "@/lib/core/public/signals";
+import { clamp, IS_TOUCH_ENV, round } from "@/lib/core";
 import useSignal from "@/lib/hooks/signals/useSignal";
 import { captureEvents } from "@/lib/utils/captureEvents";
 import { useSignalEffect } from "@/lib/hooks/signals/useSignalEffect";
-import useDebouncedCallback from "@/lib/hooks/shedulers/useDebouncedCallback";
-import { areDeepEqual } from "@/lib/utils/areDeepEqual";
-import useLastCallback from "@/lib/hooks/events/useLastCallback";
 
 interface OwnProps {
-  waitingSignal: Signal<boolean>;
-  currentTimeSignal: Signal<number>;
-  bufferedRangesSignal: Signal<BufferedRange[]>;
+  waitingSignal: ReadonlySignal<boolean>;
+  currentTimeSignal: ReadonlySignal<number>;
+  bufferedRangesSignal: ReadonlySignal<BufferedRange[]>;
   url?: string;
   duration: number;
   playbackRate: number;
@@ -77,14 +63,6 @@ const SeekLine: FC<OwnProps> = ({
 
   const previewOffsetSignal = useSignal(0);
 
-  const setTimeOffset = useCallback(
-    (time: number, offset: number) => {
-      currentTimeSignal.value = time;
-      previewOffsetSignal.value = offset;
-    },
-    [currentTimeSignal, previewOffsetSignal],
-  );
-
   useSignalEffect(bufferedRangesSignal, (ranges) => {
     console.log(ranges);
 
@@ -115,8 +93,7 @@ const SeekLine: FC<OwnProps> = ({
       setPreviewVisible(true);
 
       [time, offset] = calculatePreviewPosition(e);
-      onSeek(time);
-      setTimeOffset(time, offset);
+      onSeek?.(time);
     };
 
     const handleStartSeek = () => {
@@ -130,7 +107,6 @@ const SeekLine: FC<OwnProps> = ({
       setIsSeeking(false);
 
       [time, offset] = calculatePreviewPosition(e);
-      setTimeOffset(time, offset);
 
       onSeek?.(time);
       onSeekEnd?.();
@@ -177,7 +153,6 @@ const SeekLine: FC<OwnProps> = ({
     setIsSeeking,
     isPreviewDisabled,
     playbackRate,
-    setTimeOffset,
   ]);
 
   const calculatePreviewPosition = useCallback(

@@ -1,14 +1,18 @@
-import React, { FC, useState, memo, useEffect } from 'react';
-import { CSSTransition } from 'react-transition-group';
-import s from './DropdownMenu.module.scss';
-import buildClassName from '../lib/buildClassName';
-import useRefInstead from '@/lib/hooks/state/useRefInstead';
-import captureKeyboardListeners from '@/lib/utils/captureKeyboardListeners';
-import LightEffect from './common/LightEffect';
-import trapFocus from '@/lib/utils/trapFocus';
-import useLayoutEffectWithPrevDeps from '@/lib/hooks/effects/useLayoutEffectWithPrevDeps';
-import { dispatchHeavyAnimation, throttle, withFreezeWhenClosed } from '@/lib/core';
-import { pipe } from '@/lib/core/public/misc/Pipe';
+import React, { FC, useState, memo, useEffect } from "react";
+import { CSSTransition } from "react-transition-group";
+import s from "./DropdownMenu.module.scss";
+import buildClassName from "../lib/buildClassName";
+import useRefInstead from "@/lib/hooks/state/useRefInstead";
+import captureKeyboardListeners from "@/lib/utils/captureKeyboardListeners";
+import LightEffect from "./common/LightEffect";
+import trapFocus from "@/lib/utils/trapFocus";
+import useLayoutEffectWithPrevDeps from "@/lib/hooks/effects/useLayoutEffectWithPrevDeps";
+import {
+  dispatchHeavyAnimation,
+  throttle,
+  withFreezeWhenClosed,
+} from "@/lib/core";
+import { pipe } from "@/lib/core/public/misc/Pipe";
 
 interface OwnTriggerProps<T = HTMLElement> extends React.HTMLAttributes<T> {
   onTrigger: NoneToVoidFunction;
@@ -17,7 +21,7 @@ interface OwnTriggerProps<T = HTMLElement> extends React.HTMLAttributes<T> {
 }
 
 interface OwnSharedProps {
-  position: 'top-right' | 'top-left' | 'bottom-right' | 'bottom-left';
+  position: "top-right" | "top-left" | "bottom-right" | "bottom-left";
 }
 
 interface OwnProps {
@@ -34,7 +38,9 @@ interface OwnProps {
   onHide?: () => void;
   onEnter?: () => void;
   onTransitionEnd?: () => void;
-  onBackdropMouseEnter?: (e: React.MouseEvent<HTMLDivElement, MouseEvent>) => void;
+  onBackdropMouseEnter?: (
+    e: React.MouseEvent<HTMLDivElement, MouseEvent>,
+  ) => void;
 }
 
 const OUTBOX_SIZE = 60; //px
@@ -48,7 +54,7 @@ const DropdownMenu: FC<OwnProps & OwnSharedProps> = ({
   containerClass,
   children,
   triggerButton: TriggerButton,
-  position = 'top-right',
+  position = "top-right",
   shouldClose,
   onOpen,
   onClose,
@@ -61,11 +67,11 @@ const DropdownMenu: FC<OwnProps & OwnSharedProps> = ({
 
   const [isOpen, setIsOpen] = useState(false);
 
-  const isTop = position.startsWith('top');
-  const isLeft = position.endsWith('left');
+  const isTop = position.startsWith("top");
+  const isLeft = position.endsWith("left");
 
   const handleTriggerClick = () => {
-    setIsOpen(prev => !prev);
+    setIsOpen((prev) => !prev);
 
     isOpen ? onOpen?.() : onClose?.();
   };
@@ -122,7 +128,8 @@ const DropdownMenu: FC<OwnProps & OwnSharedProps> = ({
       const adjRight = factoredPosition.right + OUTBOX_SIZE;
       const adjBottom = factoredPosition.bottom + OUTBOX_SIZE;
 
-      const isPointerInside = x > adjLeft && x < adjRight && y > adjTop && y < adjBottom;
+      const isPointerInside =
+        x > adjLeft && x < adjRight && y > adjTop && y < adjBottom;
 
       if (!isPointerInside) {
         handleClose();
@@ -130,17 +137,17 @@ const DropdownMenu: FC<OwnProps & OwnSharedProps> = ({
     }, THROTTLE_INTERVAL);
 
     const trapFocusCleanup = trapFocus(menu);
-    window.addEventListener('mousemove', handleMove);
+    window.addEventListener("mousemove", handleMove);
 
     return () => {
       trapFocusCleanup();
-      window.removeEventListener('mousemove', handleMove);
+      window.removeEventListener("mousemove", handleMove);
     };
   }, [isOpen, handleClose]);
 
   useLayoutEffectWithPrevDeps(
     ([prevIsOpen]) => {
-      document.body.classList.toggle('has-open-dialog', isOpen);
+      document.body.classList.toggle("has-open-dialog", isOpen);
 
       const isOpened = !isOpen && prevIsOpen !== undefined;
 
@@ -149,7 +156,7 @@ const DropdownMenu: FC<OwnProps & OwnSharedProps> = ({
       }
 
       return () => {
-        document.body.classList.remove('has-open-dialog');
+        document.body.classList.remove("has-open-dialog");
       };
     },
     [isOpen],
@@ -158,7 +165,11 @@ const DropdownMenu: FC<OwnProps & OwnSharedProps> = ({
   return (
     <div className={buildClassName(s.dropdownContainer, containerClass)}>
       {TriggerButton && (
-        <TriggerButton isOpen={isOpen} onTrigger={handleTriggerClick} tabIndex={-1} />
+        <TriggerButton
+          isOpen={isOpen}
+          onTrigger={handleTriggerClick}
+          tabIndex={-1}
+        />
       )}
 
       <CSSTransition
@@ -180,15 +191,26 @@ const DropdownMenu: FC<OwnProps & OwnSharedProps> = ({
           className={buildClassName(s.dropdownMenu, s[position])}
           onMouseEnter={onBackdropMouseEnter}
         >
-          <section className={buildClassName(s.dropdownBody, className)}>{children}</section>
+          <section className={buildClassName(s.dropdownBody, className)}>
+            {children}
+          </section>
           <LightEffect gridRef={dropdownRef} lightSize={700} />
         </div>
       </CSSTransition>
 
-      {isOpen && <div className={s.dropdownBackdrop} role="presentation" onClick={handleClose} />}
+      {isOpen && (
+        <div
+          className={s.dropdownBackdrop}
+          role="presentation"
+          onClick={handleClose}
+        />
+      )}
     </div>
   );
 };
 
 export default pipe(withFreezeWhenClosed, memo)(DropdownMenu);
-export type { OwnTriggerProps as TriggerProps, OwnSharedProps as DropdopwnSharedProps };
+export type {
+  OwnTriggerProps as TriggerProps,
+  OwnSharedProps as DropdopwnSharedProps,
+};

@@ -1,11 +1,10 @@
-import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { memo, useEffect, useMemo, useRef, useState } from "react";
 import {
   clamp,
   clamp01,
-  derivative,
+  debounce,
   EKeyboardKey,
   EMediaReadyState,
-  IS_IOS,
   IS_TOUCH_ENV,
   isMediaReadyToPlay,
   pauseMedia,
@@ -18,11 +17,7 @@ import {
 import useLastCallback from "@/lib/hooks/events/useLastCallback";
 import useFullscreen from "../hooks/useFullScreen";
 import useUnsupportedMedia from "../hooks/useSupportCheck";
-import useContextSignal from "../../private/hooks/useContextSignal";
-import useBuffering, {
-  BufferedRange,
-  getTimeRanges,
-} from "@/lib/hooks/ui/useBuffering";
+import { BufferedRange, getTimeRanges } from "@/lib/hooks/ui/useBuffering";
 import useControlsSignal from "../../private/hooks/useControlsSignal";
 import stopEvent from "@/lib/utils/stopEvent";
 import useAmbilight from "../hooks/useAmbilight";
@@ -32,13 +27,11 @@ import VideoPlayerControls from "./VideoPlayerControls";
 
 import "./VideoPlayer.scss";
 import { ApiDimensions } from "@/@types/api/types/messages";
-import useVideoCleanup from "@/shared/hooks/useVideoCleanup";
 import useAppLayout from "@/lib/hooks/ui/useAppLayout";
 import usePictureInPicture from "../hooks/usePictureInPicture";
-import useThrottledCallback from "@/lib/hooks/shedulers/useThrottledCallback";
 import buildClassName from "@/shared/lib/buildClassName";
-import { areDeepEqual } from "@/lib/utils/areDeepEqual";
 import useFlag from "@/lib/hooks/state/useFlag";
+import useStateSignal from "@/lib/hooks/signals/useStateSignal";
 
 type OwnProps = {
   ref?: React.RefObject<HTMLVideoElement | null>;
@@ -102,11 +95,11 @@ const VideoPlayer: React.FC<OwnProps> = ({
   const [isPlaying, setPlaying] = useState(false);
   const [isAmbient, markAmbientOn, markAmbientOff] = useFlag();
 
-  const [currentTime, setCurrentTime] = useContextSignal(0);
-  const [volume, setVolume] = useContextSignal(1);
-  const [waitingSignal, setWaiting] = useContextSignal(false);
+  const [currentTime, setCurrentTime] = useStateSignal(0);
+  const [volume, setVolume] = useStateSignal(1);
+  const [waitingSignal, setWaiting] = useStateSignal(false);
 
-  const [bufferedSingal, setBuffered] = useContextSignal<BufferedRange[]>([]);
+  const [bufferedSingal, setBuffered] = useStateSignal<BufferedRange[]>([]);
   const [controlsSignal, toggleControls, lockControls] = useControlsSignal();
 
   const { isMobile } = useAppLayout();
@@ -160,6 +153,7 @@ const VideoPlayer: React.FC<OwnProps> = ({
 
   const handleSeek = useLastCallback((position: number) => {
     videoRef.current!.currentTime = clamp(position, 0, duration);
+    setCurrentTime(position);
   });
 
   const handleSeekStart = useLastCallback(() => {});
@@ -189,6 +183,17 @@ const VideoPlayer: React.FC<OwnProps> = ({
 
       await togglePlayState(e);
     },
+  );
+
+  const handleVideoEnter = useLastCallback(
+    debounce(
+      () => {
+        toggleControls(true);
+      },
+      250,
+      false,
+      true,
+    ),
   );
 
   const handleVideoLeave = useLastCallback(
@@ -381,6 +386,7 @@ const VideoPlayer: React.FC<OwnProps> = ({
       ref={containerRef}
       onMouseMove={shouldToggleControls ? handleVideoMove : undefined}
       onMouseOut={shouldToggleControls ? handleVideoLeave : undefined}
+      onMouseOver={shouldToggleControls ? handleVideoEnter : undefined}
     >
       <video
         id="media-viewer-video"
@@ -409,6 +415,7 @@ const VideoPlayer: React.FC<OwnProps> = ({
           isPlaying={isPlaying}
           currentTimeSignal={currentTime}
           volumeSignal={volume}
+          controlsSignal={controlsSignal}
           duration={duration}
           playbackRate={playbackSpeed}
           isMuted={Boolean(videoRef.current?.muted)}

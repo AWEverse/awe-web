@@ -1,23 +1,20 @@
-import { useRef } from 'react';
-import useLastCallback from '@/lib/hooks/events/useLastCallback';
+import { useRef } from "react";
+import useLastCallback from "@/lib/hooks/events/useLastCallback";
+import useStateSignal from "@/lib/hooks/signals/useStateSignal";
 
-export type InsensitiveSignal<T> = [T, (value: T) => void, (value: T) => void];
-
-const useControlsSignal = (): InsensitiveSignal<boolean> => {
-  const visibilityRef = useRef(false);
+const useControlsSignal = () => {
   const lockedRef = useRef(false);
-
-  const getVisible = !lockedRef.current && visibilityRef.current;
+  const [visibilitySignal, setVisibilitySignal] = useStateSignal(false);
 
   const setControlsVisible = useLastCallback((value: boolean) => {
-    visibilityRef.current = value;
+    setVisibilitySignal(value);
   });
 
   const setIsLocked = useLastCallback((value: boolean) => {
     lockedRef.current = value;
   });
 
-  return [getVisible, setControlsVisible, setIsLocked];
+  return [visibilitySignal, setControlsVisible, setIsLocked] as const;
 };
 
 export default useControlsSignal;

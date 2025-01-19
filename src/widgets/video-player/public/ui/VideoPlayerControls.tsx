@@ -4,7 +4,7 @@ import React, { FC, memo, useEffect, useRef, useState } from "react";
 import SeekLine from "./SeekLine";
 
 import s from "./VideoPlayerControls.module.scss";
-import { Signal } from "@/lib/core/public/signals";
+import { ReadonlySignal } from "@/lib/core/public/signals";
 import { IconButton } from "@mui/material";
 import {
   FullscreenExitRounded,
@@ -35,14 +35,15 @@ import { TriggerProps } from "@/shared/ui/DropdownMenu";
 type OwnProps = {
   // Playback Control
   isPlaying: boolean;
-  currentTimeSignal: Signal<number>;
-  volumeSignal: Signal<number>;
+  currentTimeSignal: ReadonlySignal<number>;
+  volumeSignal: ReadonlySignal<number>;
+  controlsSignal: ReadonlySignal<boolean>;
   duration: number;
   playbackRate: number;
   isMuted: boolean;
 
   // Buffered Media Info
-  bufferedRangesSignal: Signal<BufferedRange[]>;
+  bufferedRangesSignal: ReadonlySignal<BufferedRange[]>;
   isReady: boolean;
 
   // Media Properties
@@ -51,7 +52,7 @@ type OwnProps = {
   posterSize?: ApiDimensions;
 
   // UI State
-  waitingSignal: Signal<boolean>;
+  waitingSignal: ReadonlySignal<boolean>;
   isForceMobileVersion?: boolean;
   isFullscreen: boolean;
   isFullscreenSupported: boolean;
@@ -85,12 +86,13 @@ const TriggerButton: FC<TriggerProps> = ({ onTrigger }) => (
   </IconButton>
 );
 
-// Signals only change values ​​in the root component in the input file. Revised the ability to switch to a read-only signal
+// ReadonlySignals only change values ​​in the root component in the input file. Revised the ability to switch to a read-only readonlysignal
 
 const VideoPlayerControls: FC<OwnProps> = ({
   isPlaying,
   currentTimeSignal,
   volumeSignal,
+  controlsSignal,
   duration,
   playbackRate,
   isMuted,
@@ -132,6 +134,10 @@ const VideoPlayerControls: FC<OwnProps> = ({
     false,
     true,
   );
+
+  useSignalLayoutEffect(controlsSignal, (flag) => {
+    setVisibillity(flag);
+  });
 
   useEffect(() => {
     if (!IS_TOUCH_ENV && !isForceMobileVersion) {
@@ -213,6 +219,7 @@ const VideoPlayerControls: FC<OwnProps> = ({
 
   return (
     <section
+      data-visible={isVisible}
       className={buildClassName(
         s.PlayerControls,
         isForceMobileVersion && s.ForceMobile,
