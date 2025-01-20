@@ -1,12 +1,11 @@
 import { useRef } from "react";
 
-import useEffectOnce from "./useEffectOnce";
-import usePrevious from "../state/usePrevious";
+import { usePrevious } from "../base";
+import { useComponentWillUnmount } from "./useLifecycle";
 
 const NO_DEPS = [] as const;
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export default function <const T extends readonly any[]>(
+export default function <const T extends Readonly<AnyArray>>(
   effect: (args: T | readonly []) => NoneToVoidFunction | void,
   deps: T,
 ) {
@@ -21,9 +20,7 @@ export default function <const T extends readonly any[]>(
     cleanupRef.current = effect(prevDeps || NO_DEPS) ?? undefined;
   }
 
-  useEffectOnce(() => {
-    return () => {
-      cleanupRef.current?.();
-    };
+  useComponentWillUnmount(() => {
+    cleanupRef.current?.();
   });
 }

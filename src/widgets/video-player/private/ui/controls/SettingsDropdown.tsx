@@ -2,10 +2,10 @@ import ActionButton from "@/shared/ui/ActionButton";
 import DropdownMenu, { TriggerProps } from "@/shared/ui/DropdownMenu";
 import { FC, memo, useState } from "react";
 import s from "./SettingsDropdown.module.scss";
-import { NumericLimits } from "@/lib/core";
 import { useStableCallback } from "@/shared/hooks/base";
 
 interface OwnProps<T extends Record<string, unknown> = {}> {
+  position: string;
   triggerButton: FC<T & TriggerProps>;
   onStableVolumeClick?: (flag: boolean) => void;
   onAmbientModeClick?: (flag: boolean) => void;
@@ -15,6 +15,7 @@ interface OwnProps<T extends Record<string, unknown> = {}> {
 }
 
 const SettingsDropdown: FC<OwnProps> = ({
+  position = "bottom-right",
   triggerButton,
   onStableVolumeClick,
   onAmbientModeClick,
@@ -48,7 +49,7 @@ const SettingsDropdown: FC<OwnProps> = ({
   });
 
   return (
-    <DropdownMenu triggerButton={triggerButton} position="bottom-right">
+    <DropdownMenu triggerButton={triggerButton} position={position}>
       <ActionButton onClick={handleStableVolumeClick}>
         Stable volume
       </ActionButton>

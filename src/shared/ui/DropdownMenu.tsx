@@ -5,7 +5,6 @@ import buildClassName from "../lib/buildClassName";
 import captureKeyboardListeners from "@/lib/utils/captureKeyboardListeners";
 import LightEffect from "./common/LightEffect";
 import trapFocus from "@/lib/utils/trapFocus";
-import useLayoutEffectWithPrevDeps from "@/lib/hooks/effects/useLayoutEffectWithPrevDeps";
 import {
   dispatchHeavyAnimation,
   throttle,
@@ -13,6 +12,7 @@ import {
 } from "@/lib/core";
 import { pipe } from "@/lib/core/public/misc/Pipe";
 import { useRefInstead } from "../hooks/base";
+import { useLayoutEffectWithPreviousDeps } from "../hooks/effects/useEffectWithPreviousDependencies";
 
 interface OwnTriggerProps<T = HTMLElement> extends React.HTMLAttributes<T> {
   onTrigger: NoneToVoidFunction;
@@ -145,7 +145,7 @@ const DropdownMenu: FC<OwnProps & OwnSharedProps> = ({
     };
   }, [isOpen, handleClose]);
 
-  useLayoutEffectWithPrevDeps(
+  useLayoutEffectWithPreviousDeps(
     ([prevIsOpen]) => {
       document.body.classList.toggle("has-open-dialog", isOpen);
 

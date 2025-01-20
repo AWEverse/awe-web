@@ -1,7 +1,6 @@
 import { IS_IOS } from "@/lib/core";
-import { pipeWithEffect } from "@/lib/core/public/misc/Pipe";
-import useEffectOnce from "@/lib/hooks/effects/useEffectOnce";
 import { useStableCallback } from "@/shared/hooks/base";
+import { useComponentDidMount } from "@/shared/hooks/effects/useLifecycle";
 import React, { useState, useLayoutEffect } from "react";
 
 type ReturnType = [boolean, () => void, () => void] | [false];
@@ -93,7 +92,7 @@ export default function useFullscreen(
 export const useFullscreenStatus = () => {
   const [isFullscreen, setIsFullscreen] = useState(checkIfFullscreen());
 
-  useEffectOnce(() => {
+  useComponentDidMount(() => {
     const handleFullscreenChange = useStableCallback(() =>
       setIsFullscreen(checkIfFullscreen()),
     );

@@ -1,14 +1,22 @@
-import s from './ChatListItem.module.scss';
-import buildClassName from '@/shared/lib/buildClassName';
-import { Avatar } from '@mui/material';
-import { ApiChat, ApiPeer, ApiTopic, ApiTypingStatus } from '@/@types/api/types/chats';
-import { ApiMessage, ApiMessageOutgoingStatus } from '@/@types/api/types/messages';
-import { ApiUser, ApiUserStatus } from '@/@types/api/types/user';
-import { ObserveFn } from '@/lib/hooks/sensors/useIntersectionObserver';
-import { ChatAnimationTypes } from './hooks/useChatAnimationType';
-import { memo } from 'react';
-import RippleEffect from '@/shared/ui/ripple-effect';
-import { CollectionsBookmarkRounded } from '@mui/icons-material';
+import s from "./ChatListItem.module.scss";
+import buildClassName from "@/shared/lib/buildClassName";
+import { Avatar } from "@mui/material";
+import {
+  ApiChat,
+  ApiPeer,
+  ApiTopic,
+  ApiTypingStatus,
+} from "@/@types/api/types/chats";
+import {
+  ApiMessage,
+  ApiMessageOutgoingStatus,
+} from "@/@types/api/types/messages";
+import { ApiUser, ApiUserStatus } from "@/@types/api/types/user";
+import { ObserveFn } from "@/shared/hooks/DOM/useIntersectionObserver";
+import { ChatAnimationTypes } from "./hooks/useChatAnimationType";
+import { memo } from "react";
+import RippleEffect from "@/shared/ui/ripple-effect";
+import { CollectionsBookmarkRounded } from "@mui/icons-material";
 
 type OwnProps = {
   chatId: string;
@@ -50,7 +58,11 @@ type StateProps = {
 };
 
 const ChatListItem: React.FC<OwnProps & StateProps> = () => {
-  const classNames = buildClassName('awe-user', 'awe-user-actions', s.ChatListItem);
+  const classNames = buildClassName(
+    "awe-user",
+    "awe-user-actions",
+    s.ChatListItem,
+  );
 
   return (
     <a
@@ -61,13 +73,13 @@ const ChatListItem: React.FC<OwnProps & StateProps> = () => {
       tabIndex={0}
       onClick={() => {}}
     >
-      <Avatar className={s.Avatar} src={'https://picsum.photos/200'} />
-      <section className={'awe-title'}>
-        <h3 className={'awe-overflow-ellipsis'}>Albinchik</h3>
+      <Avatar className={s.Avatar} src={"https://picsum.photos/200"} />
+      <section className={"awe-title"}>
+        <h3 className={"awe-overflow-ellipsis"}>Albinchik</h3>
         <span className={s.TopActions}>14:33</span>
       </section>
-      <section className={'awe-subtitle'}>
-        <p className={'awe-overflow-ellipsis'}>
+      <section className={"awe-subtitle"}>
+        <p className={"awe-overflow-ellipsis"}>
           Hi, how are you? <span className={s.Emoji}>😀</span>
         </p>
         <span className={s.BottomActions}>

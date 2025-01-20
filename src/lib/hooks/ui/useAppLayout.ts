@@ -63,6 +63,7 @@ function handleMediaQueryChange() {
   updateSizes();
   callbacks.runCallbacks();
 }
+
 handleMediaQueryChange();
 
 export default function useAppLayout() {

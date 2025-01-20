@@ -1,8 +1,11 @@
 import type { RefObject } from "react";
 import { useEffect, useRef, useState } from "react";
-import useHeavyAnimationCheck from "./useHeavyAnimationCheck";
+import useHeavyAnimationCheck from "../../../lib/hooks/sensors/useHeavyAnimationCheck";
 import { useStableCallback } from "@/shared/hooks/base";
-import { CallbackManager, createCallbackManager } from "../../utils/callbacks";
+import {
+  CallbackManager,
+  createCallbackManager,
+} from "../../../lib/utils/callbacks";
 import { type Scheduler, debounce, throttleWith, throttle } from "@/lib/core";
 
 type TargetCallback = (entry: IntersectionObserverEntry) => void;

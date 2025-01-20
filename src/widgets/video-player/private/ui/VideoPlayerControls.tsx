@@ -1,6 +1,6 @@
 import { ApiDimensions } from "@/@types/api/types/messages";
 import { BufferedRange } from "@/lib/hooks/ui/useBuffering";
-import React, { FC, memo, useEffect, useRef, useState } from "react";
+import React, { FC, lazy, memo, useEffect, useRef, useState } from "react";
 import SeekLine from "./SeekLine";
 
 import { ReadonlySignal } from "@/lib/core/public/signals";
@@ -26,7 +26,7 @@ import {
   useSignalEffect,
   useSignalLayoutEffect,
 } from "@/lib/hooks/signals/useSignalEffect";
-import SettingsDropdown from "./SettingsDropdown";
+import SettingsDropdown from "./controls/SettingsDropdown";
 import { TriggerProps } from "@/shared/ui/DropdownMenu";
 import { useDebouncedFunction } from "@/shared/hooks/shedulers";
 import s from "./VideoPlayerControls.module.scss";
@@ -230,35 +230,41 @@ const VideoPlayerControls: FC<OwnProps> = ({
         onSeekStart={handleStartSeek}
         onSeekEnd={onSeekEnd}
       />
-      <IconButton
-        className={buildClassName(s.control, s.blendMode)}
-        onClick={onPlayPause}
-      >
-        {isPlaying ? (
-          <PauseRounded className={s.icon} />
-        ) : (
-          <PlayArrowRounded className={s.icon} />
-        )}
-      </IconButton>
-      <IconButton className={buildClassName(s.control, s.blendMode)}>
-        <SkipNextRounded className={s.icon} />
-      </IconButton>
-      <IconButton
-        className={buildClassName(s.control, s.blendMode)}
-        onClick={onVolumeClick}
-      >
-        <VolumeUpRounded className={s.icon} />
-      </IconButton>
-      <label className={s.slider}>
-        <input
-          ref={inputRef}
-          type="range"
-          className={s.level}
-          min={0}
-          max={100}
-          onChange={handleVolumeChange}
-        />
-      </label>
+
+      {!isForceMobileVersion && (
+        <>
+          <IconButton
+            className={buildClassName(s.control, s.blendMode)}
+            onClick={onPlayPause}
+          >
+            {isPlaying ? (
+              <PauseRounded className={s.icon} />
+            ) : (
+              <PlayArrowRounded className={s.icon} />
+            )}
+          </IconButton>
+          <IconButton className={buildClassName(s.control, s.blendMode)}>
+            <SkipNextRounded className={s.icon} />
+          </IconButton>
+          <IconButton
+            className={buildClassName(s.control, s.blendMode)}
+            onClick={onVolumeClick}
+          >
+            <VolumeUpRounded className={s.icon} />
+          </IconButton>
+
+          <label className={s.slider}>
+            <input
+              ref={inputRef}
+              type="range"
+              className={s.level}
+              min={0}
+              max={100}
+              onChange={handleVolumeChange}
+            />
+          </label>
+        </>
+      )}
 
       <div className={buildClassName(s.Time, s.blendMode)}>
         <time ref={timeRef} aria-label="Current time position"></time>
@@ -273,19 +279,28 @@ const VideoPlayerControls: FC<OwnProps> = ({
 
       <div className={s.divider} />
 
-      <SettingsDropdown triggerButton={TriggerButton} />
+      {!isForceMobileVersion && (
+        <>
+          <SettingsDropdown
+            position="bottom-right"
+            triggerButton={TriggerButton}
+            onPlaybackSpeedClick={onPlaybackRateChange}
+          />
 
-      {isPictureInPictureSupported && (
-        <IconButton
-          className={buildClassName(s.control, s.blendMode)}
-          onClick={onPictureInPictureChange}
-        >
-          <PictureInPictureAltRounded className={s.icon} />
-        </IconButton>
+          {isPictureInPictureSupported && (
+            <IconButton
+              className={buildClassName(s.control, s.blendMode)}
+              onClick={onPictureInPictureChange}
+            >
+              <PictureInPictureAltRounded className={s.icon} />
+            </IconButton>
+          )}
+          <IconButton className={buildClassName(s.control, s.blendMode)}>
+            <WidthFullRounded className={s.icon} />
+          </IconButton>
+        </>
       )}
-      <IconButton className={buildClassName(s.control, s.blendMode)}>
-        <WidthFullRounded className={s.icon} />
-      </IconButton>
+
       {isFullscreenSupported && (
         <IconButton
           className={buildClassName(s.control, s.blendMode)}

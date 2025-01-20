@@ -1,5 +1,5 @@
-import { useRef, useCallback } from 'react';
-import useEffectOnce from '../effects/useEffectOnce';
+import { useRef, useCallback } from "react";
+import useComponentDidMount from "../effects/useComponentDidMount";
 
 const DEFAULT_THRESHOLD = 500;
 
@@ -10,7 +10,12 @@ interface LongPressProps {
   threshold?: number;
 }
 
-function useLongPress({ onClick, onStart, onEnd, threshold = DEFAULT_THRESHOLD }: LongPressProps) {
+function useLongPress({
+  onClick,
+  onStart,
+  onEnd,
+  threshold = DEFAULT_THRESHOLD,
+}: LongPressProps) {
   const isLongPressActive = useRef(false);
   const isPressed = useRef(false);
   const timerId = useRef<number | undefined>(undefined);
@@ -18,7 +23,8 @@ function useLongPress({ onClick, onStart, onEnd, threshold = DEFAULT_THRESHOLD }
   const start = useCallback(
     (e: React.MouseEvent | React.TouchEvent) => {
       const canProcessEvent =
-        ('button' in e && e.button === 0) || ('touches' in e && e.touches.length > 0);
+        ("button" in e && e.button === 0) ||
+        ("touches" in e && e.touches.length > 0);
 
       if (isPressed.current || !canProcessEvent) {
         return;
@@ -51,7 +57,7 @@ function useLongPress({ onClick, onStart, onEnd, threshold = DEFAULT_THRESHOLD }
     [onEnd, onClick],
   );
 
-  useEffectOnce(() => () => {
+  useComponentDidMount(() => () => {
     window.clearTimeout(timerId.current);
   });
 

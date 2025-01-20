@@ -1,5 +1,5 @@
-import { ApiMessageEntity } from '@/@types/api/types/messages';
-import { ObserveFn } from '@/lib/hooks/sensors/useIntersectionObserver';
+import { ApiMessageEntity } from "@/@types/api/types/messages";
+import { ObserveFn } from "@/shared/hooks/DOM/useIntersectionObserver";
 
 interface IRenderEntity {
   text: string;

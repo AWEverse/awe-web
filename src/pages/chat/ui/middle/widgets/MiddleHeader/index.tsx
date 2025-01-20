@@ -25,8 +25,8 @@ import MiddleHeaderSearch from "./MiddleHeaderSearch";
 import useChatStore from "@/pages/chat/store/useChatSelector";
 import useConditionalRef from "@/lib/hooks/utilities/useConditionalRef";
 import buildClassName from "@/shared/lib/buildClassName";
-import useEffectOnce from "@/lib/hooks/effects/useEffectOnce";
 import { DatePicker } from "@/entities/date-picker";
+import { useComponentDidMount } from "@/shared/hooks/effects/useLifecycle";
 
 const TRANSITION_DURATION = 300;
 
@@ -63,7 +63,7 @@ const MiddleHeader: React.FC<{ sender?: UserProps }> = ({ sender }) => {
     }
   });
 
-  useEffectOnce(() => {
+  useComponentDidMount(() => {
     const keyboardListenersCleanup = captureKeyboardListeners({
       onEsc: handleEscListener,
     });

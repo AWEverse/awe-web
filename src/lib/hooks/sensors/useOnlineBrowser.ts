@@ -1,18 +1,18 @@
-import { useState } from 'react';
-import useEffectOnce from '../effects/useEffectOnce';
+import { useState } from "react";
+import useComponentDidMount from "../effects/useComponentDidMount";
 
 const useBrowserOnline = () => {
   const [isOnline, setIsOnline] = useState(window.navigator.onLine);
 
-  useEffectOnce(() => {
+  useComponentDidMount(() => {
     const handleChange = () => setIsOnline(window.navigator.onLine);
 
-    window.addEventListener('online', handleChange);
-    window.addEventListener('offline', handleChange);
+    window.addEventListener("online", handleChange);
+    window.addEventListener("offline", handleChange);
 
     return () => {
-      window.removeEventListener('offline', handleChange);
-      window.removeEventListener('online', handleChange);
+      window.removeEventListener("offline", handleChange);
+      window.removeEventListener("online", handleChange);
     };
   });
 

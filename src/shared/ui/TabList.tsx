@@ -1,11 +1,11 @@
 import { FC, useRef, memo, ReactNode } from "react";
-import useHorizontalScroll from "@/lib/hooks/sensors/useHorizontalScroll";
-import usePrevious from "@/lib/hooks/state/usePrevious";
+import useHorizontalScroll from "@/shared/hooks/DOM/useHorizontalScroll";
 import useHorizontalScrollToContanier from "../hooks/DOM/useHorizontalScrollToContanier";
 import buildClassName from "../lib/buildClassName";
 import Tab, { TabProps } from "./Tab";
 import { capitalize } from "@/lib/utils/helpers/string/stringFormaters";
 import "./TabList.scss";
+import { usePrevious } from "../hooks/base";
 
 type TabProperty = "title" | "badgeCount" | "isBlocked" | "isBadgeActive";
 type TabWithProperties = { id: number | string } & Pick<TabProps, TabProperty>;

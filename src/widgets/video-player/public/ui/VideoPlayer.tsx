@@ -1,4 +1,4 @@
-import { memo, useEffect, useMemo, useRef, useState } from "react";
+import { lazy, memo, useEffect, useMemo, useRef, useState } from "react";
 import {
   clamp,
   clamp01,
@@ -21,7 +21,7 @@ import { BufferedRange, getTimeRanges } from "@/lib/hooks/ui/useBuffering";
 import useControlsSignal from "../../private/hooks/useControlsSignal";
 import stopEvent from "@/lib/utils/stopEvent";
 import useAmbilight from "../hooks/useAmbilight";
-import { ObserveFn } from "@/lib/hooks/sensors/useIntersectionObserver";
+import { ObserveFn } from "@/shared/hooks/DOM/useIntersectionObserver";
 
 import VideoPlayerControls from "../../private/ui/VideoPlayerControls";
 
@@ -33,6 +33,8 @@ import buildClassName from "@/shared/lib/buildClassName";
 import useStateSignal from "@/lib/hooks/signals/useStateSignal";
 import { DEBUG } from "@/lib/config/dev";
 import { useBooleanState } from "@/shared/hooks/state";
+import { requestMeasure } from "@/lib/modules/fastdom/fastdom";
+const TopPannel = lazy(() => import("../../private/ui/mobile/TopPannel"));
 
 type OwnProps = {
   ref?: React.RefObject<HTMLVideoElement | null>;
@@ -62,7 +64,7 @@ type OwnProps = {
 
   onAdsClick?: (triggeredFromMedia?: boolean) => void;
 
-  forceMobileView?: boolean;
+  isMobile?: boolean;
 };
 
 const MAX_LOOP_DURATION = 30; // Seconds
@@ -72,7 +74,6 @@ const REWIND_STEP = 5; // Seconds
 const VideoPlayer: React.FC<OwnProps> = ({
   mediaUrl = "public\\video_test\\got.mp4",
   posterDimensions,
-  forceMobileView,
   audioVolume = 1,
   playbackSpeed = 1,
   isAdsMessage,
@@ -82,6 +83,8 @@ const VideoPlayer: React.FC<OwnProps> = ({
   totalFileSize,
   onAdsClick,
 }) => {
+  const { isMobile } = useAppLayout();
+
   // References
   const containerRef = useRef<HTMLDivElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -103,7 +106,6 @@ const VideoPlayer: React.FC<OwnProps> = ({
   const [bufferedSingal, setBuffered] = useStateSignal<BufferedRange[]>([]);
   const [controlsSignal, toggleControls, lockControls] = useControlsSignal();
 
-  const { isMobile } = useAppLayout();
   const [isFullscreen, enterFullscreen, exitFullscreen] = useFullscreen(
     containerRef,
     setPlaying,
@@ -185,6 +187,39 @@ const VideoPlayer: React.FC<OwnProps> = ({
       await togglePlayState(e);
     },
   );
+
+  const handleTouch = useStableCallback(
+    (e: React.TouchEvent<HTMLMediaElement>) => {
+      const touch = e.touches[0];
+      const videoElement = e.target as HTMLVideoElement;
+
+      // Чтение данных из DOM через fastdom
+      requestMeasure(() => {
+        const touchX = touch.clientX;
+
+        // Расчет положения касания
+        const action = calculateTouchPosition(videoElement, touchX);
+
+        switch (action) {
+          case "back":
+            break;
+          case "play-pause":
+            break;
+          case "forward":
+            break;
+        }
+      });
+    },
+  );
+
+  // Example handlers
+  const handleBack = useStableCallback(() => {
+    console.log("Navigating back...");
+  });
+
+  const handleNext = useStableCallback(() => {
+    console.log("Navigating next...");
+  });
 
   const handleVideoEnter = useStableCallback(() => {
     toggleControls(true);
@@ -321,7 +356,7 @@ const VideoPlayer: React.FC<OwnProps> = ({
     };
   }, [togglePlayState, isFullscreen, isInPictureInPicture]);
 
-  const shouldToggleControls = !IS_TOUCH_ENV && !forceMobileView;
+  const shouldToggleControls = !IS_TOUCH_ENV && !isMobile;
 
   // useEffect(() => {
   //   console.log('bufferedRanges changed:', bufferedRanges);
@@ -363,6 +398,7 @@ const VideoPlayer: React.FC<OwnProps> = ({
 
   return (
     <div
+      id="media-player"
       className={buildClassName(
         "VideoPlayer",
         isFullscreen && "FullscreenMode",
@@ -372,9 +408,10 @@ const VideoPlayer: React.FC<OwnProps> = ({
       onMouseOut={shouldToggleControls ? handleVideoLeave : undefined}
       onMouseOver={shouldToggleControls ? handleVideoEnter : undefined}
     >
+      {isMobile && <TopPannel />}
+
       <video
         id="media-viewer-video"
-        autoPlay={IS_TOUCH_ENV}
         ref={videoRef}
         className={buildClassName("Video", IS_TOUCH_ENV && "is-touch-env")}
         controls={false}
@@ -386,6 +423,7 @@ const VideoPlayer: React.FC<OwnProps> = ({
         onContextMenu={stopEvent}
         onEnded={handleEnded}
         onClick={!isMobile ? handleClick : undefined}
+        onTouchStart={isMobile && IS_TOUCH_ENV ? handleTouch : undefined}
         onDoubleClick={!IS_TOUCH_ENV ? handleFullscreenChange : undefined}
         onPlay={handlePlay}
         onPause={handlePauseChange}
@@ -408,7 +446,7 @@ const VideoPlayer: React.FC<OwnProps> = ({
         fileSize={totalFileSize}
         // UI State
         waitingSignal={waitingSignal}
-        isForceMobileVersion={forceMobileView}
+        isForceMobileVersion={isMobile}
         isFullscreen={isFullscreen}
         isFullscreenSupported={Boolean(enterFullscreen)}
         isPictureInPictureSupported={isPictureInPictureSupported}
@@ -434,6 +472,22 @@ const VideoPlayer: React.FC<OwnProps> = ({
       />
     </div>
   );
+};
+
+const calculateTouchPosition = (
+  videoElement: HTMLVideoElement,
+  touchX: number,
+) => {
+  const videoWidth = videoElement.clientWidth;
+  const thirdOfScreen = videoWidth / 3;
+
+  if (touchX < thirdOfScreen) {
+    return "back";
+  } else if (touchX >= thirdOfScreen && touchX <= 2 * thirdOfScreen) {
+    return "play-pause";
+  } else {
+    return "forward";
+  }
 };
 
 export default memo(VideoPlayer);

@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from "react";
 import { throttle } from "@/lib/core";
-import windowSize from "../../utils/windowSize";
+import windowSize from "../../../lib/utils/windowSize";
 import { useDebouncedFunction } from "@/shared/hooks/shedulers";
 
 const THROTTLE = 250;

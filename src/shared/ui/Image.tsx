@@ -3,7 +3,7 @@ import buildClassName from "@/shared/lib/buildClassName";
 import {
   ObserveFn,
   useOnIntersect,
-} from "@/lib/hooks/sensors/useIntersectionObserver";
+} from "@/shared/hooks/DOM/useIntersectionObserver";
 import "./Image.scss";
 import { useStableCallback } from "@/shared/hooks/base";
 

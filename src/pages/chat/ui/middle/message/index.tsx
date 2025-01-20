@@ -1,29 +1,33 @@
-import { ApiMessage, IAlbum, MessageListType } from '@/@types/api/types/messages';
+import {
+  ApiMessage,
+  IAlbum,
+  MessageListType,
+} from "@/@types/api/types/messages";
 import {
   ObserveFn,
   useIsIntersecting,
   useOnIntersect,
-} from '@/lib/hooks/sensors/useIntersectionObserver';
-import { REM } from '@/lib/utils/mediaDimensions';
-import { ThreadId } from '@/types';
-import { FC, ReactNode, useRef, useState } from 'react';
-import MessageText from './views/MessageText';
+} from "@/shared/hooks/DOM/useIntersectionObserver";
+import { REM } from "@/lib/utils/mediaDimensions";
+import { ThreadId } from "@/types";
+import { FC, ReactNode, useRef, useState } from "react";
+import MessageText from "./views/MessageText";
 
-import './index.scss';
+import "./index.scss";
 
-type PositionEntity = 'Group' | 'Document' | 'List';
-type Position = 'IsFirst' | 'IsLast';
+type PositionEntity = "Group" | "Document" | "List";
+type Position = "IsFirst" | "IsLast";
 
 type MessagePositionProperties = {
   [K in `${Position}${PositionEntity}`]: boolean;
 };
 
-type MetaPosition = 'in-text' | 'standalone' | 'none';
-type ReactionsPosition = 'inside' | 'outside' | 'none';
-type QuickReactionPosition = 'in-content' | 'in-meta';
-type ReplyPosition = 'in-content' | 'in-meta' | 'outside';
+type MetaPosition = "in-text" | "standalone" | "none";
+type ReactionsPosition = "inside" | "outside" | "none";
+type QuickReactionPosition = "in-content" | "in-meta";
+type ReplyPosition = "in-content" | "in-meta" | "outside";
 
-const NBSP = '\u00A0';
+const NBSP = "\u00A0";
 const ANIMATION_DURATION = 250;
 const APPEARANCE_DELAY = 10;
 const NO_MEDIA_CORNERS_THRESHOLD = 18;
@@ -34,9 +38,9 @@ const THROTTLE_MS = 300;
 const RESIZE_ANIMATION_DURATION = 400;
 
 class Purposes {
-  static readonly READING = 'reading';
-  static readonly PLAYING = 'playing';
-  static readonly LOADING = 'loading';
+  static readonly READING = "reading";
+  static readonly PLAYING = "playing";
+  static readonly LOADING = "loading";
 }
 
 type OwnProps = {
@@ -93,7 +97,7 @@ const ChatMessage: FC<OwnProps & StateProps> = ({
       ttlSeconds,
     } = content;
 
-    return <div>Message content is {isLoading ? 'visible' : 'hidden'}</div>;
+    return <div>Message content is {isLoading ? "visible" : "hidden"}</div>;
   };
 
   const renderAvatar = () => {
@@ -108,8 +112,14 @@ const ChatMessage: FC<OwnProps & StateProps> = ({
     return <div>Text</div>;
   };
 
-  const isLoading = useIsIntersecting(messageRef, observeIntersectionForLoading);
-  const isReading = useIsIntersecting(bottomMarkerRef, observeIntersectionForBottom);
+  const isLoading = useIsIntersecting(
+    messageRef,
+    observeIntersectionForLoading,
+  );
+  const isReading = useIsIntersecting(
+    bottomMarkerRef,
+    observeIntersectionForBottom,
+  );
 
   return (
     <div ref={messageRef} className="Message">

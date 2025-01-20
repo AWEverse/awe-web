@@ -1,7 +1,7 @@
-import { RefObject, useEffect, useRef } from 'react';
-import { off, on } from '../../utils/listener';
+import { RefObject, useEffect, useRef } from "react";
+import { off, on } from "../../../lib/utils/listener";
 
-type ScrollDirection = 'up' | 'down';
+type ScrollDirection = "up" | "down";
 
 interface UseScrollingOptions {
   debounce?: number;
@@ -10,7 +10,10 @@ interface UseScrollingOptions {
   onScrollStart?: NoneToVoidFunction;
 }
 
-const useScrolling = (ref: RefObject<HTMLElement>, options: UseScrollingOptions = {}): void => {
+const useScrolling = (
+  ref: RefObject<HTMLElement>,
+  options: UseScrollingOptions = {},
+): void => {
   const {
     debounce = 300,
     onScrollEnd = () => {},
@@ -33,9 +36,9 @@ const useScrolling = (ref: RefObject<HTMLElement>, options: UseScrollingOptions 
         }
 
         if (currentScrollTop > lastScrollTop.current) {
-          onScroll('down');
+          onScroll("down");
         } else if (currentScrollTop < lastScrollTop.current) {
-          onScroll('up');
+          onScroll("up");
         }
 
         lastScrollTop.current = currentScrollTop;
@@ -47,10 +50,10 @@ const useScrolling = (ref: RefObject<HTMLElement>, options: UseScrollingOptions 
         onScrollStart();
       };
 
-      on(currentRef, 'scroll', handleScroll, false);
+      on(currentRef, "scroll", handleScroll, false);
 
       return () => {
-        off(currentRef, 'scroll', handleScroll, false);
+        off(currentRef, "scroll", handleScroll, false);
         if (scrollingTimeout.current) {
           clearTimeout(scrollingTimeout.current);
         }

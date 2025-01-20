@@ -1,6 +1,6 @@
 import { requestMeasure } from "@/lib/modules/fastdom/fastdom";
 import { useRef, useCallback } from "react";
-import useEffectOnce from "../effects/useEffectOnce";
+import useComponentDidMount from "../effects/useComponentDidMount";
 import { useStableCallback } from "@/shared/hooks/base";
 import useEffectSync from "../effects/useEffectSync";
 import { IS_TEST } from "@/lib/config/dev";
@@ -347,7 +347,7 @@ export default function useHistoryBack({
   }, [shouldBeReplaced]);
 
   // Process back navigation when element is unmounted
-  useEffectOnce(() => {
+  useComponentDidMount(() => {
     isFirstRender.current = false;
 
     return () => {

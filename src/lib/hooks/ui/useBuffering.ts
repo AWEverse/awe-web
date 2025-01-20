@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { RefObject, useEffect, useState } from "react";
 import { useStableCallback } from "@/shared/hooks/base";
 import { isSafariPatchInProgress } from "../../utils/patchSafariProgressiveAudio";
 import { areDeepEqual } from "../../utils/areDeepEqual";
@@ -31,6 +31,46 @@ export type BufferedCallback = {
 export type BufferingPair<T = BufferingEvent> = {
   [key: string]: T;
 };
+
+export type ObserveBufferingFn = (target: HTMLMediaBufferedEvent) => void;
+
+interface UseBufferingOptions {
+  mediaRef: RefObject<HTMLMediaElement | null>;
+}
+
+export function useBufferingObserver({ mediaRef }: UseBufferingOptions) {
+  const observer = useStableCallback((e: HTMLMediaBufferedEvent) => {
+    return e.target as HTMLMediaElement;
+  });
+
+  useEffect(() => {
+    const mediaElement = mediaRef.current;
+
+    if (mediaElement) {
+      const events = [
+        "play",
+        "loadeddata",
+        "playing",
+        "loadstart", // Needed for Safari to start
+        "pause", // Needed for Chrome when seeking
+        "timeupdate", // Needed for audio buffering progress
+        "progress", // Needed for buffering
+      ];
+
+      events.forEach((event) => mediaElement.addEventListener(event, observer));
+
+      return () => {
+        events.forEach((event) =>
+          mediaElement.removeEventListener(event, observer),
+        );
+      };
+    }
+  }, [mediaRef, observer]);
+
+  return {
+    observer,
+  };
+}
 
 const useBuffering = (
   noInitiallyBuffered = false,
@@ -81,7 +121,7 @@ const useBuffering = (
         });
       }
 
-      setIsBuffered(isMediaReady || media.currentTime > 0);
+      setIsBuffered(media.currentTime > 0 || isMediaReady);
       setIsReady((current) => current || isMediaReady);
     }
   });

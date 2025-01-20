@@ -83,7 +83,9 @@ const SeekLine: FC<OwnProps> = ({
   );
 
   useEffect(() => {
-    if (!seekerRef.current) return undefined;
+    if (!seekerRef.current) {
+      return undefined;
+    }
     const seeker = seekerRef.current;
 
     let time = 0;
@@ -93,11 +95,15 @@ const SeekLine: FC<OwnProps> = ({
       setPreviewVisible(true);
 
       [time, offset] = calculatePreviewPosition(e);
+
+      console.log(time);
       onSeek?.(time);
     };
 
     const handleStartSeek = () => {
       setIsSeeking(true);
+      console.log(time);
+
       onSeekStart?.();
     };
 
@@ -123,10 +129,6 @@ const SeekLine: FC<OwnProps> = ({
       onDrag: handleSeek,
     });
 
-    if (IS_TOUCH_ENV || isPreviewDisabled) {
-      return cleanup;
-    }
-
     const handleSeekMouseMove = (e: MouseEvent) => {
       setPreviewVisible(true);
     };
@@ -139,11 +141,21 @@ const SeekLine: FC<OwnProps> = ({
     seeker.addEventListener("mouseenter", handleSeekMouseMove);
     seeker.addEventListener("mouseleave", handleSeekMouseLeave);
 
+    // Mobile touch event listeners
+    seeker.addEventListener("touchmove", handleSeek);
+    seeker.addEventListener("touchstart", handleStartSeek);
+    seeker.addEventListener("touchend", handleStopSeek);
+
     return () => {
       cleanup();
       seeker.removeEventListener("mousemove", handleSeekMouseMove);
       seeker.removeEventListener("mouseenter", handleSeekMouseMove);
       seeker.removeEventListener("mouseleave", handleSeekMouseLeave);
+
+      // Cleanup mobile touch events
+      seeker.removeEventListener("touchmove", handleSeek);
+      seeker.removeEventListener("touchstart", handleStartSeek);
+      seeker.removeEventListener("touchend", handleStopSeek);
     };
   }, [
     duration,
@@ -157,14 +169,14 @@ const SeekLine: FC<OwnProps> = ({
 
   const calculatePreviewPosition = useCallback(
     (e: MouseEvent | TouchEvent) => {
-      if (!seekerRef.current || !isActive) {
+      if (!seekerRef.current) {
         return [0, 0];
       }
 
       const seeker = seekerRef.current;
       const seekerSize = seeker.getBoundingClientRect();
 
-      const pageX = e instanceof MouseEvent ? e.pageX : e.touches?.[0].pageX;
+      const pageX = e instanceof MouseEvent ? e.pageX : e.touches[0].pageX;
 
       const time = clamp(
         duration * ((pageX - seekerSize.left) / seekerSize.width),
@@ -207,7 +219,7 @@ const SeekLine: FC<OwnProps> = ({
         </CSSTransition>
       )}
       <div className={s.track}>
-        {bufferedRanges.map(({ start, end }, index) => (
+        {/* {bufferedRanges.map(({ start, end }, index) => (
           <div
             key={`${index}_${start}_${end}`}
             className={s.buffered}
@@ -216,7 +228,7 @@ const SeekLine: FC<OwnProps> = ({
               `right: ${100 - end * 100}%;`,
             )}
           />
-        ))}
+        ))} */}
       </div>
       <div
         className={s.track}
@@ -225,7 +237,7 @@ const SeekLine: FC<OwnProps> = ({
         aria-label="Seek slider"
         aria-valuemin={0}
         aria-valuemax={duration}
-        draggable={true}
+        draggable={false}
       >
         <div
           ref={progressRef}

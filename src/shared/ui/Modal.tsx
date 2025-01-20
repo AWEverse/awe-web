@@ -14,7 +14,7 @@ import Portal from "./Portal";
 import trapFocus from "@/lib/utils/trapFocus";
 import captureKeyboardListeners from "@/lib/utils/captureKeyboardListeners";
 import { useStableCallback } from "@/shared/hooks/base";
-import useLayoutEffectWithPrevDeps from "@/lib/hooks/effects/useLayoutEffectWithPrevDeps";
+import { useLayoutEffectWithPreviousDeps } from "../hooks/effects/useEffectWithPreviousDependencies";
 import buildClassName from "../lib/buildClassName";
 import useUniqueId from "@/lib/hooks/utilities/useUniqueId";
 import { dispatchHeavyAnimation, withFreezeWhenClosed } from "@/lib/core";
@@ -132,7 +132,7 @@ const Modal: FC<OwnProps> = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen, onClose, handleEnter]);
 
-  useLayoutEffectWithPrevDeps(
+  useLayoutEffectWithPreviousDeps(
     ([prevIsOpen]) => {
       document.body.classList.toggle("has-open-dialog", isOpen);
 

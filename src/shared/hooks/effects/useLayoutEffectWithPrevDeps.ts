@@ -1,6 +1,6 @@
-import { useRef, useLayoutEffect } from 'react';
+import { useRef, useLayoutEffect } from "react";
 
-const useLayoutEffectWithPrevDeps = <const T extends readonly unknown[]>(
+const useLayoutEffectWithPreviousDeps = <const T extends readonly unknown[]>(
   cb: (args: T | readonly []) => void,
   dependencies: T,
 ) => {
@@ -15,4 +15,4 @@ const useLayoutEffectWithPrevDeps = <const T extends readonly unknown[]>(
   }, dependencies);
 };
 
-export default useLayoutEffectWithPrevDeps;
+export default useLayoutEffectWithPreviousDeps;

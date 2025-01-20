@@ -74,9 +74,15 @@ const ScrollDemo: React.FC = () => {
   );
 };
 
+export function getTranslatorLink(text: string, lang: string): string {
+  return `https://translate.google.com/?sl=auto&tl=${lang}&text=${encodeURIComponent(
+    text,
+  )}`;
+}
+
 const TestPage = () => {
   return (
-    <div className="p-20" style={{ height: "300px", maxWidth: "1000px" }}>
+    <div className="p-1" style={{ height: "300px", maxWidth: "1000px" }}>
       <VideoPlayer
         audioVolume={0}
         isAudioMuted={false}

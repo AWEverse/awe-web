@@ -1,13 +1,22 @@
 .container {
  --border-radius-default: 0.25rem;
   position: absolute;
-  top: 0;
-  right: 1rem;
-  left: 1rem;
   height: 1rem;
   touch-action: none;
   cursor: pointer;
   border-radius: var(--border-radius-default);
+
+  @media (min-width: 649px) {
+    top: 0;
+    right: 1rem;
+    left: 1rem;
+  }
+
+  @media (max-width: 648px) {
+    bottom: 0;
+    right: 0.5rem;
+    left: 0.5rem;
+  }
 
   :global(body.is-electron) & {
     cursor: auto;

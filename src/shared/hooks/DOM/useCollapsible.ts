@@ -12,7 +12,7 @@ import {
 } from "react";
 import { useStableCallback } from "../base";
 import { useDebouncedFunction } from "../shedulers";
-import useWindowSize from "@/lib/hooks/sensors/useWindowSize";
+import useWindowSize from "@/shared/hooks/DOM/useWindowSize";
 
 const WINDOW_RESIZE_LINE_RECALC_DEBOUNCE = 200;
 
