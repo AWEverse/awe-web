@@ -9,7 +9,9 @@ interface StateProps {}
 const HomePage: FC<OwnProps & StateProps> = () => {
   return (
     <HomePageLayout>
-      <div>A</div>
+      <div>
+        <img src="https://picfiles.alphacoders.com/289/thumb-1920-289142.jpg" />
+      </div>
       <TopSection />
       <div>C</div>
     </HomePageLayout>
