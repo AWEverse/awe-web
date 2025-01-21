@@ -1,6 +1,6 @@
 import { ApiDimensions } from "@/@types/api/types/messages";
 import { BufferedRange } from "@/lib/hooks/ui/useBuffering";
-import { FC, memo, useCallback, useEffect, useRef, useState } from "react";
+import { FC, memo, use, useCallback, useEffect, useRef, useState } from "react";
 import { CSSTransition } from "react-transition-group";
 
 import s from "./SeekLine.module.scss";
@@ -11,6 +11,8 @@ import { clamp, IS_TOUCH_ENV, round } from "@/lib/core";
 import useSignal from "@/lib/hooks/signals/useSignal";
 import { captureEvents } from "@/lib/utils/captureEvents";
 import { useSignalEffect } from "@/lib/hooks/signals/useSignalEffect";
+import useSeekerEvents from "../hooks/useSeekerEvents";
+import { useStableCallback } from "@/shared/hooks/base";
 
 interface OwnProps {
   waitingSignal: ReadonlySignal<boolean>;
@@ -79,127 +81,42 @@ const SeekLine: FC<OwnProps> = ({
         progressEl.setAttribute("aria-valuenow", `${round(time)}`);
       }
     },
-    [isSeeking, duration],
+    [duration],
   );
 
-  useEffect(() => {
-    if (!seekerRef.current) {
-      return undefined;
-    }
-    const seeker = seekerRef.current;
+  const handleSeek = useStableCallback((position: number) => {
+    setPreviewVisible(true);
+    onSeek?.(position);
+  });
 
-    let time = 0;
-    let offset = 0;
+  const handleSeekStart = useStableCallback(() => {
+    setIsSeeking(true);
+    onSeekStart?.();
+  });
 
-    const handleSeek = (e: MouseEvent | TouchEvent) => {
-      setPreviewVisible(true);
+  const handleSeekEnd = useStableCallback((endPoint: number) => {
+    isLockedRef.current = true;
+    setPreviewVisible(false);
+    setIsSeeking(false);
 
-      [time, offset] = calculatePreviewPosition(e);
+    onSeek?.(endPoint);
+    onSeekEnd?.();
 
-      console.log(time);
-      onSeek?.(time);
-    };
+    setTimeout(() => {
+      isLockedRef.current = false;
+    }, LOCK_TIMEOUT);
+  });
 
-    const handleStartSeek = () => {
-      setIsSeeking(true);
-      console.log(time);
-
-      onSeekStart?.();
-    };
-
-    const handleStopSeek = (e: MouseEvent | TouchEvent) => {
-      isLockedRef.current = true;
-      setPreviewVisible(false);
-      setIsSeeking(false);
-
-      [time, offset] = calculatePreviewPosition(e);
-
-      onSeek?.(time);
-      onSeekEnd?.();
-
-      setTimeout(() => {
-        isLockedRef.current = false;
-      }, LOCK_TIMEOUT);
-    };
-
-    const cleanup = captureEvents(seeker, {
-      onCapture: handleStartSeek,
-      onRelease: handleStopSeek,
-      onClick: handleStopSeek,
-      onDrag: handleSeek,
-    });
-
-    const handleSeekMouseMove = (e: MouseEvent) => {
-      setPreviewVisible(true);
-    };
-
-    const handleSeekMouseLeave = () => {
-      setPreviewVisible(false);
-    };
-
-    seeker.addEventListener("mousemove", handleSeekMouseMove);
-    seeker.addEventListener("mouseenter", handleSeekMouseMove);
-    seeker.addEventListener("mouseleave", handleSeekMouseLeave);
-
-    // Mobile touch event listeners
-    seeker.addEventListener("touchmove", handleSeek);
-    seeker.addEventListener("touchstart", handleStartSeek);
-    seeker.addEventListener("touchend", handleStopSeek);
-
-    return () => {
-      cleanup();
-      seeker.removeEventListener("mousemove", handleSeekMouseMove);
-      seeker.removeEventListener("mouseenter", handleSeekMouseMove);
-      seeker.removeEventListener("mouseleave", handleSeekMouseLeave);
-
-      // Cleanup mobile touch events
-      seeker.removeEventListener("touchmove", handleSeek);
-      seeker.removeEventListener("touchstart", handleStartSeek);
-      seeker.removeEventListener("touchend", handleStopSeek);
-    };
-  }, [
-    duration,
-    isActive,
-    onSeek,
-    onSeekStart,
-    setIsSeeking,
+  useSeekerEvents({
+    seekerRef,
+    previewRef,
+    onSeek: handleSeek,
+    onSeekStart: handleSeekStart,
+    onSeekEnd: handleSeekEnd,
     isPreviewDisabled,
-    playbackRate,
-  ]);
-
-  const calculatePreviewPosition = useCallback(
-    (e: MouseEvent | TouchEvent) => {
-      if (!seekerRef.current) {
-        return [0, 0];
-      }
-
-      const seeker = seekerRef.current;
-      const seekerSize = seeker.getBoundingClientRect();
-
-      const pageX = e instanceof MouseEvent ? e.pageX : e.touches[0].pageX;
-
-      const time = clamp(
-        duration * ((pageX - seekerSize.left) / seekerSize.width),
-        0,
-        duration,
-      );
-
-      if (isPreviewDisabled) {
-        return [time, 0];
-      }
-
-      const preview = previewRef.current!;
-
-      const previewOffset = clamp(
-        pageX - seekerSize.left - preview.clientWidth / 2,
-        -4,
-        seekerSize.width - preview.clientWidth + 4,
-      );
-
-      return [time, previewOffset];
-    },
-    [seekerRef, isActive, isPreviewDisabled, duration],
-  );
+    isActive: isActive!,
+    duration,
+  });
 
   return (
     <div ref={seekerRef} className={s.container}>

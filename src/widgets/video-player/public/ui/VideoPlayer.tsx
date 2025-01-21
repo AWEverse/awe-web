@@ -1,4 +1,12 @@
-import { lazy, memo, useEffect, useMemo, useRef, useState } from "react";
+import {
+  lazy,
+  memo,
+  useEffect,
+  useImperativeHandle,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import {
   clamp,
   clamp01,
@@ -37,7 +45,7 @@ import { requestMeasure } from "@/lib/modules/fastdom/fastdom";
 const TopPannel = lazy(() => import("../../private/ui/mobile/TopPannel"));
 
 type OwnProps = {
-  ref?: React.RefObject<HTMLVideoElement | null>;
+  ref?: React.RefObject<HTMLVideoElement>;
 
   closeOnMediaClick?: boolean;
   disableClickActions?: boolean;
@@ -57,25 +65,62 @@ type OwnProps = {
 
   posterDimensions?: ApiDimensions; // width and height
   posterSource?: string;
+  allowFullscreen?: boolean;
 
   observeIntersectionForBottom?: ObserveFn;
   observeIntersectionForLoading?: ObserveFn;
   observeIntersectionForPlaying?: ObserveFn;
 
   onAdsClick?: (triggeredFromMedia?: boolean) => void;
-
-  isMobile?: boolean;
 };
 
 const MAX_LOOP_DURATION = 30; // Seconds
 const MIN_READY_STATE = 4;
 const REWIND_STEP = 5; // Seconds
 
+const useTimeUpdateInterval = (
+  videoRef: React.RefObject<HTMLVideoElement | null>,
+  intervalInSeconds: number,
+) => {
+  const [timeUpdateLoop, setTimeUpdateLoop] = useState<NodeJS.Timeout | null>(
+    null,
+  );
+
+  useEffect(() => {
+    if (timeUpdateLoop) {
+      clearInterval(timeUpdateLoop);
+    }
+
+    if (intervalInSeconds > 0 && videoRef.current) {
+      // Немедленное обновление времени
+      const videoElement = videoRef.current;
+      videoElement.dispatchEvent(new Event("timeupdate"));
+
+      // Запуск интервала обновления времени
+      const newInterval = setInterval(() => {
+        videoElement.dispatchEvent(new Event("timeupdate"));
+      }, intervalInSeconds * 1000);
+
+      setTimeUpdateLoop(newInterval);
+
+      // Очистка интервала при размонтировании
+      return () => {
+        if (newInterval) {
+          clearInterval(newInterval);
+        }
+      };
+    }
+  }, [intervalInSeconds, videoRef, timeUpdateLoop]);
+
+  return timeUpdateLoop;
+};
+
 const VideoPlayer: React.FC<OwnProps> = ({
   mediaUrl = "public\\video_test\\got.mp4",
   posterDimensions,
   audioVolume = 1,
   playbackSpeed = 1,
+  allowFullscreen = true,
   isAdsMessage,
   disableClickActions,
   isGif,
@@ -87,7 +132,7 @@ const VideoPlayer: React.FC<OwnProps> = ({
 
   // References
   const containerRef = useRef<HTMLDivElement>(null);
-  const videoRef = useRef<HTMLVideoElement>(null);
+  const videoRef = useRef<HTMLVideoElement | null>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
   const volumeRef = useRef(1);

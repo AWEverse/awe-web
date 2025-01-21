@@ -1,5 +1,5 @@
+import { useComponentDidMount } from "@/shared/hooks/effects/useLifecycle";
 import { useRef, useCallback } from "react";
-import useComponentDidMount from "../effects/useComponentDidMount";
 
 const DEFAULT_THRESHOLD = 500;
 

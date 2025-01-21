@@ -1,8 +1,8 @@
-import { debounce, IS_WINDOWS, IS_IOS, clamp, round } from '../core';
-import { Lethargy } from './lethargy';
-import windowSize from './windowSize';
+import { debounce, IS_WINDOWS, IS_IOS, clamp, round } from "../core";
+import { Lethargy } from "./lethargy";
+import windowSize from "./windowSize";
 
-export enum SwipeDirection {
+export enum ESwipeDirection {
   Up,
   Down,
   Left,
@@ -23,7 +23,11 @@ interface CaptureOptions {
     offsets: MoveOffsets,
     cancelDrag?: (x: boolean, y: boolean) => void,
   ) => void;
-  onSwipe?: (e: Event, direction: SwipeDirection, offsets: MoveOffsets) => boolean;
+  onSwipe?: (
+    e: Event,
+    direction: ESwipeDirection,
+    offsets: MoveOffsets,
+  ) => boolean;
   onZoom?: (
     e: TouchEvent | WheelEvent,
     params: {
@@ -71,7 +75,7 @@ export interface RealTouchEvent extends TouchEvent {
   pageY?: number;
 }
 
-type TSwipeAxis = 'x' | 'y' | undefined;
+type TSwipeAxis = "x" | "y" | undefined;
 
 export const IOS_SCREEN_EDGE_THRESHOLD = 20;
 export const SWIPE_DIRECTION_THRESHOLD = 10;
@@ -128,43 +132,52 @@ export function captureEvents(element: HTMLElement, options: CaptureOptions) {
 
   function onCapture(e: MouseEvent | RealTouchEvent) {
     const target = e.target as HTMLElement;
-    const { excludedClosestSelector, includedClosestSelector, withNativeDrag, withCursor, onDrag } =
-      options;
+    const {
+      excludedClosestSelector,
+      includedClosestSelector,
+      withNativeDrag,
+      withCursor,
+      onDrag,
+    } = options;
 
     if (element !== target && !element.contains(target)) {
       return;
     }
 
-    if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA') {
+    if (target.tagName === "INPUT" || target.tagName === "TEXTAREA") {
       return;
     }
 
     if (
       (excludedClosestSelector &&
-        (target.matches(excludedClosestSelector) || target.closest(excludedClosestSelector))) ||
+        (target.matches(excludedClosestSelector) ||
+          target.closest(excludedClosestSelector))) ||
       (includedClosestSelector &&
-        !(target.matches(includedClosestSelector) || target.closest(includedClosestSelector)))
+        !(
+          target.matches(includedClosestSelector) ||
+          target.closest(includedClosestSelector)
+        ))
     ) {
       return;
     }
 
     captureEvent = e;
 
-    if (e.type === 'mousedown') {
+    if (e.type === "mousedown") {
       if (!withNativeDrag && onDrag) {
         e.preventDefault();
       }
 
-      document.addEventListener('mousemove', onMove);
-      document.addEventListener('mouseup', onRelease);
-    } else if (e.type === 'touchstart') {
+      document.addEventListener("mousemove", onMove);
+      document.addEventListener("mouseup", onRelease);
+    } else if (e.type === "touchstart") {
       // We need to always listen on `touchstart` target:
       // https://stackoverflow.com/questions/33298828/touch-move-event-dont-fire-after-touch-start-target-is-removed
-      target.addEventListener('touchmove', onMove, { passive: true });
-      target.addEventListener('touchend', onRelease, { passive: true });
-      target.addEventListener('touchcancel', onRelease, { passive: true });
+      target.addEventListener("touchmove", onMove, { passive: true });
+      target.addEventListener("touchend", onRelease, { passive: true });
+      target.addEventListener("touchcancel", onRelease, { passive: true });
 
-      if ('touches' in e) {
+      if ("touches" in e) {
         if (e.pageX === undefined) {
           e.pageX = e.touches[0].pageX;
         }
@@ -181,7 +194,7 @@ export function captureEvents(element: HTMLElement, options: CaptureOptions) {
     }
 
     if (withCursor) {
-      document.body.classList.add('cursor-grabbing');
+      document.body.classList.add("cursor-grabbing");
     }
 
     options.onCapture?.(e);
@@ -190,21 +203,32 @@ export function captureEvents(element: HTMLElement, options: CaptureOptions) {
   function onRelease(e?: MouseEvent | TouchEvent) {
     if (captureEvent) {
       if (options.withCursor) {
-        document.body.classList.remove('cursor-grabbing');
+        document.body.classList.remove("cursor-grabbing");
       }
 
-      document.removeEventListener('mouseup', onRelease);
-      document.removeEventListener('mousemove', onMove);
-      (captureEvent.target as HTMLElement).removeEventListener('touchcancel', onRelease);
-      (captureEvent.target as HTMLElement).removeEventListener('touchend', onRelease);
-      (captureEvent.target as HTMLElement).removeEventListener('touchmove', onMove);
+      document.removeEventListener("mouseup", onRelease);
+      document.removeEventListener("mousemove", onMove);
+      (captureEvent.target as HTMLElement).removeEventListener(
+        "touchcancel",
+        onRelease,
+      );
+      (captureEvent.target as HTMLElement).removeEventListener(
+        "touchend",
+        onRelease,
+      );
+      (captureEvent.target as HTMLElement).removeEventListener(
+        "touchmove",
+        onMove,
+      );
 
       if (IS_IOS && options.selectorToPreventScroll) {
-        Array.from(document.querySelectorAll<HTMLElement>(options.selectorToPreventScroll)).forEach(
-          scrollable => {
-            scrollable.style.overflow = '';
-          },
-        );
+        Array.from(
+          document.querySelectorAll<HTMLElement>(
+            options.selectorToPreventScroll,
+          ),
+        ).forEach((scrollable) => {
+          scrollable.style.overflow = "";
+        });
       }
 
       if (e) {
@@ -212,13 +236,13 @@ export function captureEvents(element: HTMLElement, options: CaptureOptions) {
           if (options.onRelease) {
             options.onRelease(e);
           }
-        } else if (e.type === 'mouseup') {
+        } else if (e.type === "mouseup") {
           if (options.onDoubleClick && Date.now() - lastClickTime < 300) {
             options.onDoubleClick(e, {
               centerX: captureEvent!.pageX!,
               centerY: captureEvent!.pageY!,
             });
-          } else if (options.onClick && (!('button' in e) || e.button === 0)) {
+          } else if (options.onClick && (!("button" in e) || e.button === 0)) {
             options.onClick(e);
           }
           lastClickTime = Date.now();
@@ -250,7 +274,7 @@ export function captureEvents(element: HTMLElement, options: CaptureOptions) {
 
   function onMove(e: MouseEvent | RealTouchEvent) {
     if (captureEvent) {
-      if (e.type === 'touchmove' && 'touches' in e) {
+      if (e.type === "touchmove" && "touches" in e) {
         if (e.pageX === undefined) {
           e.pageX = e.touches[0].pageX;
         }
@@ -281,7 +305,10 @@ export function captureEvents(element: HTMLElement, options: CaptureOptions) {
       const dragOffsetX = e.pageX! - captureEvent.pageX!;
       const dragOffsetY = e.pageY! - captureEvent.pageY!;
 
-      if (Math.abs(dragOffsetX) >= MOVE_THRESHOLD || Math.abs(dragOffsetY) >= MOVE_THRESHOLD) {
+      if (
+        Math.abs(dragOffsetX) >= MOVE_THRESHOLD ||
+        Math.abs(dragOffsetY) >= MOVE_THRESHOLD
+      ) {
         hasMoved = true;
       }
 
@@ -301,16 +328,22 @@ export function captureEvents(element: HTMLElement, options: CaptureOptions) {
       }
 
       if (IS_IOS && shouldPreventScroll && options.selectorToPreventScroll) {
-        Array.from(document.querySelectorAll<HTMLElement>(options.selectorToPreventScroll)).forEach(
-          scrollable => {
-            scrollable.style.overflow = 'hidden';
-          },
-        );
+        Array.from(
+          document.querySelectorAll<HTMLElement>(
+            options.selectorToPreventScroll,
+          ),
+        ).forEach((scrollable) => {
+          scrollable.style.overflow = "hidden";
+        });
       }
     }
   }
 
-  function onSwipe(e: MouseEvent | RealTouchEvent, dragOffsetX: number, dragOffsetY: number) {
+  function onSwipe(
+    e: MouseEvent | RealTouchEvent,
+    dragOffsetX: number,
+    dragOffsetY: number,
+  ) {
     // Avoid conflicts with swipe-to-back gestures
     if (IS_IOS) {
       const x = (e as RealTouchEvent).touches[0].pageX;
@@ -328,9 +361,9 @@ export function captureEvents(element: HTMLElement, options: CaptureOptions) {
 
     let axis: TSwipeAxis | undefined;
     if (xAbs > yAbs && xAbs >= threshold) {
-      axis = 'x';
+      axis = "x";
     } else if (yAbs > xAbs && yAbs >= threshold) {
-      axis = 'y';
+      axis = "y";
     }
 
     if (!axis) {
@@ -382,10 +415,16 @@ export function captureEvents(element: HTMLElement, options: CaptureOptions) {
     if (!options.onDrag) return;
     onWheelCapture(e);
     // Ignore wheel inertia if drag is canceled in this direction
-    if (!isDragCanceled.x || Math.sign(initialDragOffset.x) === Math.sign(e.deltaX)) {
+    if (
+      !isDragCanceled.x ||
+      Math.sign(initialDragOffset.x) === Math.sign(e.deltaX)
+    ) {
       initialDragOffset.x -= e.deltaX;
     }
-    if (!isDragCanceled.y || Math.sign(initialDragOffset.y) === Math.sign(e.deltaY)) {
+    if (
+      !isDragCanceled.y ||
+      Math.sign(initialDragOffset.y) === Math.sign(e.deltaY)
+    ) {
       initialDragOffset.y -= e.deltaY;
     }
     const { x, y } = initialDragOffset;
@@ -415,7 +454,12 @@ export function captureEvents(element: HTMLElement, options: CaptureOptions) {
     e.preventDefault();
     e.stopPropagation();
     const { doubleTapZoom = 3 } = options;
-    if (options.onDoubleClick && Object.is(e.deltaX, -0) && Object.is(e.deltaY, -0) && e.ctrlKey) {
+    if (
+      options.onDoubleClick &&
+      Object.is(e.deltaX, -0) &&
+      Object.is(e.deltaY, -0) &&
+      e.ctrlKey
+    ) {
       onWheelCapture(e);
       wheelZoom = wheelZoom > 1 ? 1 : doubleTapZoom;
       options.onDoubleClick(e, { centerX: e.pageX, centerY: e.pageY });
@@ -436,17 +480,19 @@ export function captureEvents(element: HTMLElement, options: CaptureOptions) {
   }
 
   if (options.withWheelDrag) {
-    element.addEventListener('wheel', onWheel);
+    element.addEventListener("wheel", onWheel);
   }
 
-  element.addEventListener('mousedown', onCapture);
-  document.body.addEventListener('touchstart', onCapture, { passive: !options.isNotPassive });
+  element.addEventListener("mousedown", onCapture);
+  document.body.addEventListener("touchstart", onCapture, {
+    passive: !options.isNotPassive,
+  });
 
   return () => {
     onRelease();
-    document.body.removeEventListener('touchstart', onCapture);
-    element.removeEventListener('mousedown', onCapture);
-    element.removeEventListener('wheel', onWheel);
+    document.body.removeEventListener("touchstart", onCapture);
+    element.removeEventListener("mousedown", onCapture);
+    element.removeEventListener("wheel", onWheel);
   };
 }
 
@@ -455,21 +501,25 @@ function processSwipe(
   currentSwipeAxis: TSwipeAxis,
   dragOffsetX: number,
   dragOffsetY: number,
-  onSwipe: (e: Event, direction: SwipeDirection, offsets: MoveOffsets) => boolean,
+  onSwipe: (
+    e: Event,
+    direction: ESwipeDirection,
+    offsets: MoveOffsets,
+  ) => boolean,
 ) {
   const offsets = { dragOffsetX, dragOffsetY };
 
-  if (currentSwipeAxis === 'x') {
+  if (currentSwipeAxis === "x") {
     if (dragOffsetX < 0) {
-      return onSwipe(e, SwipeDirection.Left, offsets);
+      return onSwipe(e, ESwipeDirection.Left, offsets);
     } else {
-      return onSwipe(e, SwipeDirection.Right, offsets);
+      return onSwipe(e, ESwipeDirection.Right, offsets);
     }
-  } else if (currentSwipeAxis === 'y') {
+  } else if (currentSwipeAxis === "y") {
     if (dragOffsetY < 0) {
-      return onSwipe(e, SwipeDirection.Up, offsets);
+      return onSwipe(e, ESwipeDirection.Up, offsets);
     } else {
-      return onSwipe(e, SwipeDirection.Down, offsets);
+      return onSwipe(e, ESwipeDirection.Down, offsets);
     }
   }
 

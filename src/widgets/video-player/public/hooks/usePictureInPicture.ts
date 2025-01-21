@@ -1,6 +1,12 @@
-import { DEBUG } from '@/lib/config/dev';
-import { IS_IOS, IS_PWA, isMediaPlaying, playMedia } from '@/lib/core';
-import { useState, useLayoutEffect, useCallback } from 'react';
+import { DEBUG } from "@/lib/config/dev";
+import {
+  IS_FIREFOX,
+  IS_IOS,
+  IS_PWA,
+  isMediaPlaying,
+  playMedia,
+} from "@/lib/core";
+import { useState, useLayoutEffect, useCallback } from "react";
 
 type RefType = {
   current: HTMLVideoElement | null;
@@ -17,6 +23,9 @@ export default function usePictureInPicture(
   const [isSupported, setIsSupported] = useState(false);
   const [isActive, setIsActive] = useState(false);
 
+  if (IS_FIREFOX) {
+    return [false];
+  }
   // const IsPictureInPicture = useSignal();
 
   useLayoutEffect(() => {
@@ -24,10 +33,12 @@ export default function usePictureInPicture(
     if ((IS_IOS && IS_PWA) || !elRef.current) {
       return undefined;
     }
+
     const video = elRef.current;
     const setMode = getSetPresentationMode(video);
     const isEnabled =
-      (document.pictureInPictureEnabled && !elRef.current?.disablePictureInPicture) ||
+      (document.pictureInPictureEnabled &&
+        !elRef.current?.disablePictureInPicture) ||
       setMode !== undefined;
 
     if (!isEnabled) {
@@ -50,12 +61,12 @@ export default function usePictureInPicture(
       onLeave();
     };
 
-    video.addEventListener('enterpictureinpicture', onEnterInternal);
-    video.addEventListener('leavepictureinpicture', onLeaveInternal);
+    video.addEventListener("enterpictureinpicture", onEnterInternal);
+    video.addEventListener("leavepictureinpicture", onLeaveInternal);
 
     return () => {
-      video.removeEventListener('enterpictureinpicture', onEnterInternal);
-      video.removeEventListener('leavepictureinpicture', onLeaveInternal);
+      video.removeEventListener("enterpictureinpicture", onEnterInternal);
+      video.removeEventListener("leavepictureinpicture", onLeaveInternal);
     };
   }, [elRef, onEnter, onLeave]);
 
@@ -68,7 +79,7 @@ export default function usePictureInPicture(
     const setMode = getSetPresentationMode(video);
 
     if (setMode) {
-      setMode('inline');
+      setMode("inline");
     } else {
       exitPictureInPictureIfNeeded();
     }
@@ -86,7 +97,7 @@ export default function usePictureInPicture(
     const setMode = getSetPresentationMode(video);
 
     if (setMode) {
-      setMode('picture-in-picture');
+      setMode("picture-in-picture");
     } else {
       requestPictureInPicture(video);
     }
@@ -103,15 +114,33 @@ export default function usePictureInPicture(
   return [isSupported, enterPictureInPicture, isActive];
 }
 
-function getSetPresentationMode(video: HTMLVideoElement) {
-  // @ts-ignore
-  if (
-    (video as any).webkitSupportsPresentationMode &&
-    typeof (video as any).webkitSetPresentationMode === 'function'
-  ) {
-    // @ts-ignore
-    return video.webkitSetPresentationMode.bind(video);
+function getSetPresentationMode(
+  video: HTMLVideoElement,
+): ((mode: string) => void) | undefined {
+  if ("setPresentationMode" in video) {
+    return (
+      video as unknown as { setPresentationMode: () => void }
+    ).setPresentationMode.bind(video);
   }
+
+  // Check for WebKit-specific presentation mode support
+  if (
+    "webkitSupportsPresentationMode" in video &&
+    typeof (video as unknown as { webkitSetPresentationMode: () => void })
+      .webkitSetPresentationMode === "function"
+  ) {
+    return (
+      video as unknown as { webkitSetPresentationMode: () => void }
+    ).webkitSetPresentationMode.bind(video);
+  }
+
+  // Add checks for other vendor-prefixed versions if they appear in future browsers
+  if ("mozSetPresentationMode" in video) {
+    return (
+      video as unknown as { mozSetPresentationMode: () => void }
+    ).mozSetPresentationMode.bind(video);
+  }
+
   return undefined;
 }
 
@@ -122,7 +151,7 @@ function requestPictureInPicture(video: HTMLVideoElement) {
     } catch (err) {
       if (DEBUG) {
         // eslint-disable-next-line no-console
-        console.log('[MV] PictureInPicture Error', err);
+        console.log("[MV] PictureInPicture Error", err);
       }
     }
   }
@@ -135,7 +164,7 @@ export function exitPictureInPictureIfNeeded() {
     } catch (err) {
       if (DEBUG) {
         // eslint-disable-next-line no-console
-        console.log('[MV] PictureInPicture Error', err);
+        console.log("[MV] PictureInPicture Error", err);
       }
     }
   }

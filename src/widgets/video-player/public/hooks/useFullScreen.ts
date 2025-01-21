@@ -147,7 +147,7 @@ export function checkIfFullscreen(): boolean {
   return Boolean(fullscreenProp && document[fullscreenProp as keyof Document]);
 }
 
-export function safeRequestFullscreen(element: HTMLElement) {
+export async function safeRequestFullscreen(element: HTMLElement) {
   const _requestFullscreen = ensure(
     element.requestFullscreen,
     element.webkitRequestFullscreen,
@@ -156,13 +156,13 @@ export function safeRequestFullscreen(element: HTMLElement) {
   );
 
   if (_requestFullscreen) {
-    _requestFullscreen.call(element);
+    await _requestFullscreen.call(element);
   } else {
     console.warn("Fullscreen API is not supported by this browser.");
   }
 }
 
-export function safeExitFullscreen() {
+export async function safeExitFullscreen() {
   const _exitFullscreen = ensure(
     document.exitFullscreen,
     document.mozCancelFullScreen,
@@ -171,7 +171,7 @@ export function safeExitFullscreen() {
   );
 
   if (_exitFullscreen) {
-    _exitFullscreen.call(document);
+    await _exitFullscreen.call(document);
   } else {
     console.warn("Fullscreen exit API is not supported by this browser.");
   }

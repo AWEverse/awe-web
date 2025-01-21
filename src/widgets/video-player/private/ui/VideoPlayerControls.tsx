@@ -123,15 +123,7 @@ const VideoPlayerControls: FC<OwnProps> = ({
 
   const [isVisible, setVisibillity] = useState(true);
   const isSeeking = useRef(false);
-  const [isBuffered, _setIsBuffered] = useState(true);
   const [bufferedProgress, setBufferedProgress] = useState(0);
-  const setIsBuffered = useDebouncedFunction(
-    _setIsBuffered,
-    [],
-    DEBOUNCE,
-    false,
-    true,
-  );
 
   useSignalLayoutEffect(controlsSignal, (flag) => {
     setVisibillity(flag);
@@ -295,6 +287,7 @@ const VideoPlayerControls: FC<OwnProps> = ({
               <PictureInPictureAltRounded className={s.icon} />
             </IconButton>
           )}
+
           <IconButton className={buildClassName(s.control, s.blendMode)}>
             <WidthFullRounded className={s.icon} />
           </IconButton>
