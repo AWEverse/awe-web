@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
-import s from './RegresBar.module.scss';
-import useInterval from '@/lib/hooks/shedulers/useInterval';
+import React, { useState, useEffect } from "react";
+import s from "./RegresBar.module.scss";
+import { useInterval } from "../hooks/shedulers";
 
 interface OwnProps {
   duration: number;
@@ -12,11 +12,14 @@ const RegressBar: React.FC<OwnProps> = ({ duration = 1000, onComplete }) => {
   const [width, setWidth] = useState<number>(100);
 
   useInterval(() => {
-    setTimeLeft(prevTime => {
+    setTimeLeft((prevTime) => {
       const newTimeLeft = Math.max(prevTime - 50, 0);
 
       if (newTimeLeft <= 0) {
-        if (onComplete) onComplete();
+        if (onComplete) {
+          onComplete();
+        }
+
         return 0;
       }
 

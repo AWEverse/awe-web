@@ -8,7 +8,7 @@ import {
   useState,
 } from "react";
 import buildClassName from "../lib/buildClassName";
-import useRefInstead from "@/lib/hooks/state/useRefInstead";
+import { useRefInstead } from "@/shared/hooks/base";
 import { useStableCallback } from "@/shared/hooks/base";
 import { generateUniqueId } from "@/lib/hooks/utilities/useUniqueId";
 

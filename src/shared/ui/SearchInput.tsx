@@ -9,14 +9,13 @@ import {
 } from "react";
 
 import s from "./SearchInput.module.scss";
-import { useBooleanState } from "@/shared/hooks/state";
 import CircularProgress from "@mui/material/CircularProgress";
 import { CloseRounded, SearchRounded } from "@mui/icons-material";
-import useRefInstead from "@/lib/hooks/state/useRefInstead";
 import { useIntl } from "react-intl";
-import { useStableCallback } from "@/shared/hooks/base";
+import { useRefInstead, useStableCallback } from "@/shared/hooks/base";
 import buildClassName from "../lib/buildClassName";
 import { requestMeasure } from "@/lib/modules/fastdom/fastdom";
+import { useBooleanState } from "../hooks/state";
 
 interface OwnProps {
   ref?: RefObject<HTMLInputElement>;
@@ -75,7 +74,7 @@ const SearchInput: FC<OwnProps> = ({
 }) => {
   const inputRef = useRefInstead<HTMLInputElement>(ref);
   const [isInputFocused, markInputFocused, unmarkInputFocused] =
-    useFlag(focused);
+    useBooleanState(focused);
 
   const { formatMessage } = useIntl();
 

@@ -23,11 +23,11 @@
   height: 100%;
   width: 0.15rem;
   border-radius: 0.0625rem;
-  background: var(--awe-palette-primary-500);
+  background: var(--awe-palette-primary-main);
 }
 
 .trackNavigationBorderWrapper {
-  background-color: var(--awe-palette-secondary-main);
+  background-color: var(--awe-palette-background-paper);
   position: relative;
   will-change: transform;
   transition: transform var(--slide-transition);
@@ -39,7 +39,7 @@
   right: 0;
   top: 0;
   width: 0.15rem;
-  background: var(--awe-palette-primary-500);
+  background: var(--awe-palette-primary-main);
   border-radius: 0.0625rem;
   will-change: transform;
   transition: transform var(--slide-transition);

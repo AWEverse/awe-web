@@ -1,13 +1,10 @@
-import useEffectSync from "@/lib/hooks/effects/useEffectSync";
-import { useStableCallback } from "@/shared/hooks/base";
+import { useRefInstead, useStableCallback } from "@/shared/hooks/base";
 import useBuffering, {
-  BufferingEvent,
   BufferingPair,
   HTMLMediaBufferedEvent,
 } from "@/lib/hooks/ui/useBuffering";
 import { useRef, useMemo, memo } from "react";
-import useVideoCleanup from "../hooks/DOM/useVideoCleanup";
-import useRefInstead from "@/lib/hooks/state/useRefInstead";
+import useEffectSync from "../hooks/effects/useEffectSync";
 
 type VideoProps = React.DetailedHTMLProps<
   React.VideoHTMLAttributes<HTMLVideoElement>,
@@ -74,11 +71,8 @@ function Video({
     onTimeUpdate,
     onBroken,
   );
-  const {
-    onPLay: handlePlayForBuffering,
-    onPlaying: handlePlayingForBuffering,
-    ...otherBufferingHandlers
-  } = bufferingHandlers;
+  const { onPlaying: handlePlayingForBuffering, ...otherBufferingHandlers } =
+    bufferingHandlers;
 
   useEffectSync(
     ([prevIsBuffered]) => {
@@ -98,7 +92,6 @@ function Video({
   });
 
   const handlePlay = useStableCallback((e) => {
-    handlePlayForBuffering(e);
     restProps.onPlay?.(e);
   });
 

@@ -11,7 +11,7 @@ import {
   useMemo,
 } from "react";
 import buildClassName from "../lib/buildClassName";
-import useRefInstead from "@/lib/hooks/state/useRefInstead";
+import { useRefInstead } from "@/shared/hooks/base";
 import {
   requestMutation,
   requestForcedReflow,

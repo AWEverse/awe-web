@@ -2,7 +2,7 @@ import { requestMeasure } from "@/lib/modules/fastdom/fastdom";
 import { useRef, useCallback } from "react";
 import useComponentDidMount from "../effects/useComponentDidMount";
 import { useStableCallback } from "@/shared/hooks/base";
-import useEffectSync from "../effects/useEffectSync";
+import useEffectSync from "../hooks/effects/useEffectSync";
 import { IS_TEST } from "@/lib/config/dev";
 import { IS_IOS } from "@/lib/core";
 import { partition } from "@/lib/utils/iteratees";

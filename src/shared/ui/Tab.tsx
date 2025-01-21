@@ -108,15 +108,15 @@ const Tab: FC<OwnProps> = ({
     });
   }, [isActive, previousActiveTab]);
 
-  const { handleClick, handleMouseDown } = useFastClick(
-    (e: React.MouseEvent<HTMLButtonElement>) => {
+  const handlers = useFastClick({
+    callback: (e: React.MouseEvent<HTMLButtonElement>) => {
       if (e.type === "mousedown" && e.button !== EMouseButton.Main) {
         return;
       }
 
       onClick?.(clickArg!);
     },
-  );
+  });
 
   const renderBadge = useMemo(() => {
     if (badgeCount) {
@@ -144,8 +144,7 @@ const Tab: FC<OwnProps> = ({
       className={buildClassName("Tab", onClick && "Tab-interactive", className)}
       role="tab"
       tabIndex={tabIndex}
-      onClick={handleClick}
-      onMouseDown={handleMouseDown}
+      {...handlers}
     >
       <span
         className={buildClassName("TabInner", capitalize(variant))}

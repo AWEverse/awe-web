@@ -1,5 +1,5 @@
 import { useStableCallback } from "@/shared/hooks/base";
-import useRefInstead from "@/lib/hooks/state/useRefInstead";
+import { useRefInstead } from "@/shared/hooks/base";
 import { IVector2D } from "@/lib/utils/data-structures/Vector2d";
 import { throttle } from "@/lib/utils/schedulers";
 import stopEvent from "@/lib/utils/stopEvent";
