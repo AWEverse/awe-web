@@ -1,165 +1,241 @@
-export const clamp = (num: number, min: number, max: number, inclusive = true): number => {
-  return inclusive ? Math.min(Math.max(num, min), max) : Math.min(Math.max(num, min + 1), max - 1);
+/**
+ * Clamps a number between a minimum and a maximum value.
+ * If `inclusive` is true, `num` will be clamped inclusively.
+ * If `inclusive` is false, the clamped result will be within (min, max).
+ *
+ * @param num - The number to clamp.
+ * @param min - The minimum value.
+ * @param max - The maximum value.
+ * @returns The clamped number.
+ */
+export const clamp = (num: number, min: number, max: number): number => {
+  return Math.min(Math.max(min, num), max);
 };
 
+/**
+ * Clamps a number between 0 and 1.
+ * If `x` is not a number, it returns 0.
+ *
+ * @param x - The number to clamp.
+ * @returns The clamped number between 0 and 1.
+ */
 export const clamp01 = (x: number): number => {
   if (isNaN(x)) return 0;
   return clamp(x, 0, 1);
 };
 
-export const isBetween = (
-  num: number,
-  min: number,
-  max: number,
-  inclusiveMin = true,
-  inclusiveMax = true,
-): boolean => {
-  return (inclusiveMin ? num >= min : num > min) && (inclusiveMax ? num <= max : num < max);
+/**
+ * Checks if a number is between a minimum and maximum value.
+ * Allows specifying whether the min and max bounds are inclusive.
+ *
+ * @param num - The number to check.
+ * @param min - The minimum bound.
+ * @param max - The maximum bound.
+ * @returns True if `num` is within the range, false otherwise.
+ */
+export const isBetween = (num: number, min: number, max: number): boolean => {
+  return min <= num && num <= max;
 };
 
+/**
+ * Rounds a number to a specific number of decimal places.
+ *
+ * @param num - The number to round.
+ * @param decimals - The number of decimal places to round to (default is 0).
+ * @returns The rounded number.
+ */
 export const round = (num: number, decimals: number = 0): number => {
   const factor = 10 ** decimals;
   return Math.round((num + Number.EPSILON) * factor) / factor;
 };
 
-export const lerp = (start: number, end: number, interpolationRatio: number): number => {
+/**
+ * Performs linear interpolation between two numbers.
+ *
+ * @param start - The starting value.
+ * @param end - The ending value.
+ * @param interpolationRatio - A ratio between 0 and 1 indicating the interpolation progress.
+ * @returns The interpolated value.
+ */
+export const lerp = (
+  start: number,
+  end: number,
+  interpolationRatio: number,
+): number => {
   return (1 - interpolationRatio) * start + interpolationRatio * end;
 };
 
+/**
+ * Clamps the linear interpolation result between 0 and 1.
+ *
+ * @param x - The interpolation ratio.
+ * @returns The clamped interpolated value between 0 and 1.
+ */
 export const lerp01 = (x: number): number => {
   return clamp(lerp(0, 1, x), 0, 1);
 };
 
+/**
+ * Rounds a number to the nearest even integer.
+ *
+ * @param value - The number to round.
+ * @returns The nearest even integer.
+ */
 export const roundToNearestEven = (value: number): number => {
   return value % 2 === 0 ? value : value + (value > 0 ? 1 : -1);
 };
 
+/**
+ * Rounds a number to the nearest odd integer.
+ *
+ * @param value - The number to round.
+ * @returns The nearest odd integer.
+ */
 export const roundToNearestOdd = (value: number): number => {
   return value % 2 !== 0 ? value : value + (value > 0 ? 1 : -1);
 };
 
+/**
+ * Squares a number.
+ *
+ * @param x - The number to square.
+ * @returns The squared value.
+ */
 export const square = (x: number): number => x * x;
 
-export const distance = (...coords: number[]): number => {
-  return Math.sqrt(coords.reduce((acc, curr) => acc + square(curr), 0));
-};
+/**
+ * Calculates the distance between coordinates in 2D or N-dimensional space.
+ *
+ * @param x - The x-coordinate (for 2D distance calculation).
+ * @param y - The y-coordinate (for 2D distance calculation).
+ * @returns The Euclidean distance between the two points.
+ */
+export function distance(x: number, y: number): number;
 
-export const radToDeg = (x: number) => (x * 180) / Math.PI;
-export const degToRad = (x: number) => (x * Math.PI) / 180;
+/**
+ * Implementation of the distance function with support for 2D and N-dimensional space.
+ *
+ * @param args - Either two parameters (x, y) for 2D or a list of coordinate values.
+ * @returns The Euclidean distance.
+ */
+export function distance(...args: number[]): number {
+  if (args.length === 2) {
+    const [x, y] = args;
 
-export const angle = (x: number, y: number) => Math.atan2(y, x);
+    return Math.hypot(x, y);
+  }
 
+  return Math.hypot(...args);
+}
+
+/**
+ * Converts radians to degrees.
+ *
+ * @param x - The angle in radians.
+ * @returns The angle in degrees.
+ */
+export const radToDeg = (x: number): number => (x * 180) / Math.PI;
+
+/**
+ * Converts degrees to radians.
+ *
+ * @param x - The angle in degrees.
+ * @returns The angle in radians.
+ */
+export const degToRad = (x: number): number => (x * Math.PI) / 180;
+
+/**
+ * Calculates the angle (in radians) between the positive X-axis and a point.
+ *
+ * @param x - The x-coordinate of the point.
+ * @param y - The y-coordinate of the point.
+ * @returns The angle in radians.
+ */
+export const angle = (x: number, y: number): number => Math.atan2(y, x);
+
+/**
+ * Calculates the angle (in degrees) between the positive X-axis and a point.
+ *
+ * @param x - The x-coordinate of the point.
+ * @param y - The y-coordinate of the point.
+ * @returns The angle in degrees.
+ */
 export const angleDeg = (x: number, y: number): number => {
   return radToDeg(angle(x, y));
 };
+
+/**
+ * Calculates the angle (in radians) between the positive X-axis and a point.
+ *
+ * @param x - The x-coordinate of the point.
+ * @param y - The y-coordinate of the point.
+ * @returns The angle in radians.
+ */
 export const angleRad = (x: number, y: number): number => {
   return angle(x, y);
 };
+
+/**
+ * Returns the sign of a number (-1, 0, or 1).
+ *
+ * @param x - The number to get the sign of.
+ * @returns -1 if `x` is negative, 0 if `x` is zero, 1 if `x` is positive.
+ */
 export const sign = (x: number): number => {
-  if (Math.abs(x) < Number.EPSILON) return 0;
+  if (Math.abs(x) < Number.EPSILON) {
+    return 0;
+  }
+
   return x > 0 ? 1 : -1;
 };
 
+/**
+ * Clamps an angle in radians to the range [-π, π].
+ *
+ * @param x - The angle in radians.
+ * @returns The clamped angle.
+ */
 export const clampAngle = (x: number): number => {
   const normalizedAngle = x % (2 * Math.PI);
-  return normalizedAngle > Math.PI ? normalizedAngle - 2 * Math.PI : normalizedAngle;
+
+  if (normalizedAngle > Math.PI) {
+    return normalizedAngle - 2 * Math.PI;
+  }
+
+  return normalizedAngle;
 };
 
-export const randomInt = (min: number = 0, max: number = 1) =>
+/**
+ * Returns a random integer between `min` and `max` (inclusive).
+ *
+ * @param min - The minimum value (default is 0).
+ * @param max - The maximum value (default is 1).
+ * @returns A random integer between `min` and `max`.
+ */
+export const randomInt = (min: number = 0, max: number = 1): number =>
   min + Math.floor(Math.random() * (max - min + 1));
-export const randomBoolean = () => Math.random() > 0.5;
 
-export const randomIndex = <T>(array: T[]) => Math.floor(Math.random() * array.length);
-export const randomElementFromArray = <T>(array: T[]) => array[randomIndex(array)];
+/**
+ * Returns a random boolean value (true or false).
+ *
+ * @returns A random boolean.
+ */
+export const randomBoolean = (): boolean => Math.random() > 0.5;
 
-const randomHex = () => Math.floor(Math.random() * 16777215).toString(16);
+/**
+ * Returns a random index from an array.
+ *
+ * @param array - The array to pick an index from.
+ * @returns A random index from the array.
+ */
+export const randomIndex = <T>(array: T[]): number =>
+  Math.floor(Math.random() * array.length);
 
-export const randomColor = () => `#${randomHex()}`;
-export const randomColorRGB = () =>
-  `rgb(${Math.floor(Math.random() * 256)}, ${Math.floor(Math.random() * 256)}, ${Math.floor(Math.random() * 256)})`;
-export const randomColorRGBA = () =>
-  `rgba(${Math.floor(Math.random() * 256)}, ${Math.floor(
-    Math.random() * 256,
-  )}, ${Math.floor(Math.random() * 256)}, ${Math.random()})`;
-export const randomColorHSL = () => `hsl(${Math.floor(Math.random() * 360)}, 100%, 50%)`;
-export const randomColorHSLA = () =>
-  `hsla(${Math.floor(Math.random() * 360)}, 100%, 50%, ${Math.random()})`;
-export const randomColorHEX = () => `#${randomHex()}`;
-export const randomColorHEXA = () => `#${randomHex()}${randomHex()}`;
-export const randomColorHEXAA = () => `#${randomHex()}${randomHex()}${randomHex()}`;
-
-export const derivative = (f: (x: number) => number, x: number, h: number = 1e-5): number => {
-  const epsilon = Number.EPSILON;
-  const hAdjusted = Math.max(h, epsilon);
-
-  return (f(x + hAdjusted) - f(x - hAdjusted)) / (2 * hAdjusted);
-};
-
-export const median = (numbers: number[]): number => {
-  if (!numbers.length) {
-    return -1;
-  }
-
-  const swap = <T>(arr: T[], i: number, j: number): void => {
-    if (i !== j && arr[i] !== undefined && arr[j] !== undefined) {
-      const temp = arr[i];
-      arr[i] = arr[j];
-      arr[j] = temp;
-    }
-  };
-
-  const partition = (arr: number[], left: number, right: number, pivotIndex: number): number => {
-    let storeIndex = left;
-    const pivotValue = arr[pivotIndex];
-
-    swap(arr, pivotIndex, right);
-
-    for (let i = left; i < right; i++) {
-      if (arr[i] < pivotValue) {
-        swap(arr, i, storeIndex);
-        storeIndex++;
-      }
-    }
-
-    swap(arr, right, storeIndex);
-
-    return storeIndex;
-  };
-
-  const quickSelect = (arr: number[], left: number, right: number, k: number): number => {
-    if (left === right) {
-      return arr[left];
-    }
-
-    // Выбираем случайный pivot
-    const pivotIndex = Math.floor(Math.random() * (right - left + 1)) + left;
-    const pivotNewIndex = partition(arr, left, right, pivotIndex);
-
-    if (k === pivotNewIndex) {
-      return arr[k];
-    } else if (k < pivotNewIndex) {
-      const right = pivotNewIndex - 1;
-      return quickSelect(arr, left, right, k);
-    } else {
-      const left = pivotNewIndex + 1;
-      return quickSelect(arr, left, right, k);
-    }
-  };
-
-  const n = numbers.length;
-
-  if (n % 2 === 1) {
-    return quickSelect(numbers, 0, n - 1, Math.floor(n / 2));
-  } else {
-    const left = 0;
-    const right = n - 1;
-
-    const kLeft = Math.floor(n / 2) - 1;
-    const kRight = Math.floor(n / 2);
-
-    const leftMedian = quickSelect(numbers, left, right, kLeft);
-    const rightMedian = quickSelect(numbers, left, right, kRight);
-
-    return (leftMedian + rightMedian) / 2;
-  }
-};
+/**
+ * Returns a random element from an array.
+ *
+ * @param array - The array to pick an element from.
+ * @returns A random element from the array.
+ */
+export const randomElementFromArray = <T>(array: T[]): T =>
+  array[randomIndex(array)];

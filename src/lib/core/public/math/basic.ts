@@ -2,10 +2,8 @@ type MathFunction = (x: number) => number;
 
 /**
  * Calculates the numerical derivative of a given function at a specific point using central difference.
- *
- * @param {function} f - The function whose derivative needs to be computed.
  * @param {number} x - The point at which to compute the derivative.
- * @param {number} [h=1e-5] - The step size used for numerical differentiation (default is 1e-5).
+ * @param {number} [h] - The step size used for numerical differentiation (default is 1e-5).
  * @returns {number} The approximate value of the derivative at the point x.
  */
 export const derivative = (
@@ -161,13 +159,6 @@ export const median = (numbers: number[]): number => {
   }
 };
 
-/**
- * Returns the greatest common divisor (GCD) of two numbers using the Euclidean algorithm.
- *
- * @param {number} a - The first number.
- * @param {number} b - The second number.
- * @returns {number} The GCD of a and b.
- */
 /**
  * Computes the greatest common divisor (GCD) of two numbers using bitwise operations (binary GCD algorithm).
  * This implementation is more efficient than the standard Euclidean algorithm for large numbers.

@@ -10,12 +10,16 @@ import { updateSizes } from "@/lib/utils/windowSize";
 import { ThemeKey } from "@/shared/themes/config";
 import "@/lib/core/public/templates/linq";
 import { useComponentDidMount } from "@/shared/hooks/effects/useLifecycle";
+import useBodyClass from "@/shared/hooks/DOM/useBodyClass";
+import { IS_TOUCH_ENV } from "@/lib/core";
 
 interface StateProps {
   themeKey: ThemeKey;
 }
 
 const App: FC<StateProps> = ({ themeKey = "dark" }) => {
+  useBodyClass("is-touch-env", IS_TOUCH_ENV);
+
   useComponentDidMount(() => {
     updateSizes();
   });

@@ -49,7 +49,8 @@ type Impossible<T> = { [P in keyof T]: never };
  * // to type 'NoExtraProperties<Base, { a: string; b: number; c: boolean; }>'
  * const invalid: NoExtraProperties<Base, { a: string, b: number, c: boolean }> = { a: "hello", b: 42, c: true };
  */
-type NoExtraProperties<T, U extends T = T> = U & Impossible<Exclude<keyof U, keyof T>>;
+type NoExtraProperties<T, U extends T = T> = U &
+  Impossible<Exclude<keyof U, keyof T>>;
 
 /**
  * The `ModifyFunctionsToAsync<T>` type recursively modifies the function types in `T` by ensuring that
@@ -78,7 +79,7 @@ type NoExtraProperties<T, U extends T = T> = U & Impossible<Exclude<keyof U, key
  */
 type ModifyFunctionsToAsync<T> = {
   [key in keyof T]: T[key] extends (...args: infer A) => infer R
-    ? R extends PromiseLike<infer O>
+    ? R extends PromiseLike
       ? T[key]
       : (...args: A) => Promise<Awaited<R>>
     : T[key];
@@ -176,7 +177,7 @@ type FixedSizeArray<T, N extends number> = N extends 0
 /**
  * Represents types that are considered "falsy".
  */
-type Falsy = false | 0 | '' | null | undefined;
+type Falsy = false | 0 | "" | null | undefined;
 
 /**
  * Custom constructor interface for `Boolean`, ensuring proper type inference for `Falsy` values.
@@ -192,7 +193,7 @@ interface BooleanConstructor {
  * @param value - The value to coerce into a boolean.
  * @returns A boolean indicating the truthiness of the value.
  */
-const Boolean: BooleanConstructor = (value: any) => !!value;
+declare const Boolean: BooleanConstructor;
 
 /**
  * Extends the HTMLElement interface to include cross-browser fullscreen support methods.
@@ -249,7 +250,9 @@ type Complement<A, B extends A> = Difference<B, A>;
  * @template A - The first type.
  * @template B - The second type.
  */
-type OptionalCombine<A, B> = Intersection<A, B> | Intersection<A | Undefined<B>>;
+type OptionalCombine<A, B> =
+  | Intersection<A, B>
+  | Intersection<A | Undefined<B>>;
 
 /**
  * Extracts the element type from a readonly array.
@@ -262,10 +265,10 @@ type ElementType<T> = T extends ReadonlyArray<infer E> ? E : never;
  * @template T - The array type.
  * @template R - An accumulator array type (defaults to an empty array).
  */
-type ElementsOfAll<T, R extends ReadonlyArray<unknown> = []> = T extends readonly [
-  infer F,
-  ...infer M,
-]
+type ElementsOfAll<
+  T,
+  R extends ReadonlyArray<unknown> = [],
+> = T extends readonly [infer F, ...infer M]
   ? ElementsOfAll<M, [...R, ElementType<F>]>
   : R;
 
@@ -376,7 +379,9 @@ type NonNullable<T> = T extends null | undefined ? never : T;
  * type Args = ArgumentTypes<(a: string, b: number) => void>;
  * // Resulting type: [string, number]
  */
-type ArgumentTypes<F extends Function> = F extends (...args: infer A) => any ? A : never;
+type ArgumentTypes<F extends AnyFunction> = F extends (...args: infer A) => any
+  ? A
+  : never;
 
 /**
  * `SuperReturnType` extracts the return type of a function `F`.
@@ -390,7 +395,9 @@ type ArgumentTypes<F extends Function> = F extends (...args: infer A) => any ? A
  * type ReturnT = SuperReturnType<(a: string, b: number) => string>;
  * // Resulting type: string
  */
-type SuperReturnType<F extends Function> = F extends (...args: any) => any ? ReturnType<F> : never;
+type SuperReturnType<F extends AnyFunction> = F extends (...args: any) => any
+  ? ReturnType<F>
+  : never;
 
 /**
  * `assumeType` is a type guard function that asserts that the given value `x` is of type `T`.
@@ -459,11 +466,19 @@ type ExpandArrayUntilLengthReached<
   CurrentArray extends Array<any>,
   TargetLength extends number,
   Buffers extends Array<Array<any>>,
-> = CurrentArray['length'] extends TargetLength
+> = CurrentArray["length"] extends TargetLength
   ? CurrentArray
   : {
-      0: ExpandArrayUntilLengthReached<[...CurrentArray, ...Buffers[0]], TargetLength, Buffers>;
-      1: ExpandArrayUntilLengthReached<CurrentArray, TargetLength, ShiftArray<Buffers>>;
+      0: ExpandArrayUntilLengthReached<
+        [...CurrentArray, ...Buffers[0]],
+        TargetLength,
+        Buffers
+      >;
+      1: ExpandArrayUntilLengthReached<
+        CurrentArray,
+        TargetLength,
+        ShiftArray<Buffers>
+      >;
     }[[...CurrentArray, ...Buffers[0]][TargetLength] extends undefined ? 0 : 1];
 
 /**
@@ -485,7 +500,7 @@ type ExponentiallyExpandArray<
   CurrentArray extends Array<any>,
   TargetLength extends number,
   Buffers extends Array<Array<any>>,
-> = CurrentArray['length'] extends TargetLength
+> = CurrentArray["length"] extends TargetLength
   ? CurrentArray
   : {
       0: ExponentiallyExpandArray<
@@ -494,7 +509,9 @@ type ExponentiallyExpandArray<
         [CurrentArray, ...Buffers]
       >;
       1: ExpandArrayUntilLengthReached<CurrentArray, TargetLength, Buffers>;
-    }[[...CurrentArray, ...CurrentArray][TargetLength] extends undefined ? 0 : 1];
+    }[[...CurrentArray, ...CurrentArray][TargetLength] extends undefined
+      ? 0
+      : 1];
 
 /**
  * Array extensions for common functional programming operations.
@@ -692,10 +709,8 @@ interface Array<T> {
    * @param thisArg The value to use as `this` when executing the predicate.
    * @returns A new array with elements that are truthy.
    */
-  filter<S extends T>(predicate: BooleanConstructor, thisArg?: any): Exclude<S, Falsy>[];
+  filter<S extends T>(
+    predicate: BooleanConstructor,
+    thisArg?: any,
+  ): Exclude<S, Falsy>[];
 }
-
-/**
- * ReadonlyArray extension for the `filter` method, using a custom `BooleanConstructor`.
- */
-interface ReadonlyArray<T> extends Array<T> {}

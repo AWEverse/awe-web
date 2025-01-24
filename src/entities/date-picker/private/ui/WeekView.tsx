@@ -1,11 +1,11 @@
-import React, { memo, useCallback, useMemo } from 'react';
-import buildClassName from '@/shared/lib/buildClassName';
-import { CalendarViewProps } from '../lib/types';
-import { buildCalendarGrid } from '../lib/utils';
-import useLongPress from '@/lib/hooks/events/useLongPress';
-import DayCell from './DayCell';
+import React, { memo, useCallback, useMemo } from "react";
+import buildClassName from "@/shared/lib/buildClassName";
+import { CalendarViewProps } from "../lib/types";
+import { buildCalendarGrid } from "../lib/utils";
+import DayCell from "./DayCell";
+import useLongPress from "@/lib/hooks/history/events/useLongPress";
 
-type TimeLapse = 'prev' | 'current' | 'next';
+type TimeLapse = "prev" | "current" | "next";
 
 const WeekView: React.FC<CalendarViewProps> = ({
   date,
@@ -33,17 +33,19 @@ const WeekView: React.FC<CalendarViewProps> = ({
   // Memoize getDayClassName to avoid unnecessary recalculation
   const getDayClassName = useCallback(
     (day: number, isCurrentMonth: boolean): string | undefined => {
-      const isCurrentDay = day === currentDay && currentMonth === new Date().getMonth();
-      const isCurrentSelectedDay = day === selectedDay && currentMonth === selectedMonth;
+      const isCurrentDay =
+        day === currentDay && currentMonth === new Date().getMonth();
+      const isCurrentSelectedDay =
+        day === selectedDay && currentMonth === selectedMonth;
       // Mode-based conditions
-      const isFutureMode = mode === 'future' && day >= currentDay;
-      const isPastMode = mode === 'past' && day <= currentDay;
-      const isAllMode = mode === 'all';
+      const isFutureMode = mode === "future" && day >= currentDay;
+      const isPastMode = mode === "past" && day <= currentDay;
+      const isAllMode = mode === "all";
 
       return buildClassName(
-        !isCurrentMonth && 'another',
-        isCurrentMonth && isCurrentSelectedDay && 'selectedDay',
-        isCurrentMonth && isCurrentDay && 'currentDay',
+        !isCurrentMonth && "another",
+        isCurrentMonth && isCurrentSelectedDay && "selectedDay",
+        isCurrentMonth && isCurrentDay && "currentDay",
       );
     },
     [currentDay, currentMonth, selectedDay, selectedMonth],
@@ -57,18 +59,18 @@ const WeekView: React.FC<CalendarViewProps> = ({
   });
 
   const handleSelectDate = useCallback(
-    (day: number, type: TimeLapse = 'current') => {
+    (day: number, type: TimeLapse = "current") => {
       let newMonth = currentMonth;
       let newYear = currentYear;
 
-      if (type === 'prev') {
+      if (type === "prev") {
         newMonth -= 1;
 
         if (newMonth < 0) {
           newMonth = 11;
           newYear -= 1;
         }
-      } else if (type === 'next') {
+      } else if (type === "next") {
         newMonth += 1;
 
         if (newMonth > 11) {
@@ -92,17 +94,17 @@ const WeekView: React.FC<CalendarViewProps> = ({
   );
 
   const renderDays = useCallback(
-    (days: number[], type: TimeLapse = 'current') => {
-      return days.map(day => (
+    (days: number[], type: TimeLapse = "current") => {
+      return days.map((day) => (
         <DayCell
           key={day.toString()}
           className={buildClassName(
-            'calendarCell',
-            'dayCell',
-            getDayClassName(day, type === 'current'),
+            "calendarCell",
+            "dayCell",
+            getDayClassName(day, type === "current"),
           )}
           onClick={() => handleSelectDate(day, type)}
-          onContextMenu={event => handleRightClick(event, day)}
+          onContextMenu={(event) => handleRightClick(event, day)}
           {...longPressListeners}
         >
           {day}
@@ -114,9 +116,9 @@ const WeekView: React.FC<CalendarViewProps> = ({
 
   return (
     <>
-      {renderDays(prevMonthGrid, 'prev')}
+      {renderDays(prevMonthGrid, "prev")}
       {renderDays(currentMonthGrid)}
-      {renderDays(nextMonthGrid, 'next')}
+      {renderDays(nextMonthGrid, "next")}
     </>
   );
 };

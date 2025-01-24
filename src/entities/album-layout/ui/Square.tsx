@@ -1,10 +1,10 @@
-import { Children, FC, ReactNode, useMemo, RefObject } from 'react';
-import s from './Square.module.scss';
-import buildStyle from '@/shared/lib/buildStyle';
-import { TransitionGroup, CSSTransition } from 'react-transition-group';
-import usePrevious from '@/lib/hooks/state/usePrevious';
-import buildClassName from '@/shared/lib/buildClassName';
-import useConditionalRef from '@/lib/hooks/utilities/useConditionalRef';
+import { Children, FC, ReactNode, useMemo, RefObject } from "react";
+import s from "./Square.module.scss";
+import buildStyle from "@/shared/lib/buildStyle";
+import { TransitionGroup, CSSTransition } from "react-transition-group";
+import buildClassName from "@/shared/lib/buildClassName";
+import useConditionalRef from "@/lib/hooks/utilities/useConditionalRef";
+import { usePrevious } from "@/shared/hooks/base";
 
 interface OwnProps {
   containerRef?: RefObject<HTMLDivElement | null>;
@@ -44,7 +44,9 @@ const Square: FC<OwnProps> = ({
       <TransitionGroup component={null}>
         <CSSTransition
           key={currentColumn}
-          classNames={currentColumn > previouscurrentColumn! ? 'zoomIn' : 'zoomOut'}
+          classNames={
+            currentColumn > previouscurrentColumn! ? "zoomIn" : "zoomOut"
+          }
           nodeRef={nodeRef}
           timeout={300}
         >

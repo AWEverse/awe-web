@@ -1,6 +1,5 @@
 //https://trekhleb.dev/blog/2021/content-aware-image-resizing-in-javascript/
 
-import { pause } from "../schedulers";
 import { Color, getPixel, setPixel } from "./pixel";
 
 type Coordinate = { x: number; y: number };
@@ -37,6 +36,7 @@ const getPixelDeleteEnergy = (): number => {
   const numNeighbors = 2;
   const multiplier = 2;
   const maxSeamSize = Math.max(MAX_WIDTH_LIMIT, MAX_HEIGHT_LIMIT);
+
   return (
     -1 *
     multiplier *
@@ -384,8 +384,6 @@ const resizeImageWidth = async (args: ResizeAxisArgs): Promise<void> => {
     }
 
     size.w -= 1;
-
-    await pause(1);
   }
 };
 
@@ -422,8 +420,6 @@ const resizeImageHeight = async (args: ResizeAxisArgs): Promise<void> => {
     }
 
     size.h -= 1;
-
-    await pause(1);
   }
 };
 

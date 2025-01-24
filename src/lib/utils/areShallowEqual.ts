@@ -1,61 +1,50 @@
-export type validArrayValue = any[] | null | undefined;
-export type validObjectValue = Record<string, any> | null | undefined;
-type Comparable = Record<string, any> | any[] | null | undefined;
-
-function shallowEqualArrays(
-  arrA: validArrayValue,
-  arrB: validArrayValue,
-): boolean {
-  if (arrA === arrB) {
+function is<T>(x: T, y: T): boolean {
+  if (x !== x && y !== y) {
     return true;
   }
 
-  if (!arrA || !arrB) {
-    return false;
+  if (x === y) {
+    return (
+      x !== 0 ||
+      (typeof x === "number" && typeof y === "number" && 1 / x === 1 / y)
+    );
   }
 
-  const len = arrA.length;
-  let halfLen = Math.floor(len / 2);
-
-  for (let i = 0; i < halfLen; i++) {
-    if (arrA[i] !== arrB[i] && arrA[len - i - 1] !== arrB[len - i - 1]) {
-      return false;
-    }
-  }
-
-  if (len % 2 === 1 && arrA[halfLen] !== arrB[halfLen]) {
-    return false;
-  }
-
-  return true;
+  return false;
 }
 
-function shallowEqualObjects(
-  objA: validObjectValue,
-  objB: validObjectValue,
+const hasOwnProperty = Object.prototype.hasOwnProperty;
+
+export default function areShallowEqual<T extends Record<string, any>>(
+  objA: T,
+  objB: T,
 ): boolean {
-  if (objA === objB) {
+  if (is(objA, objB)) {
     return true;
   }
 
-  if (!objA || !objB) {
+  if (
+    typeof objA !== "object" ||
+    objA === null ||
+    typeof objB !== "object" ||
+    objB === null
+  ) {
     return false;
   }
 
-  const aKeys = Object.keys(objA);
-  const bKeys = Object.keys(objB);
-  const len = aKeys.length;
+  const keysA = Object.keys(objA);
+  const keysB = Object.keys(objB);
 
-  if (bKeys.length !== len) {
+  if (keysA.length !== keysB.length) {
     return false;
   }
 
-  for (let i = 0; i < len; i++) {
-    const key = aKeys[i];
+  for (let i = 0; i < keysA.length; i++) {
+    const currentKey = keysA[i];
 
     if (
-      objA[key] !== objB[key] ||
-      !Object.prototype.hasOwnProperty.call(objB, key)
+      !hasOwnProperty.call(objB, currentKey) ||
+      !is(objA[currentKey], objB[currentKey])
     ) {
       return false;
     }
@@ -63,23 +52,3 @@ function shallowEqualObjects(
 
   return true;
 }
-
-export default function areShallowEqual<T extends Comparable>(
-  a: T,
-  b: T,
-): boolean {
-  const aIsArr = Array.isArray(a);
-  const bIsArr = Array.isArray(b);
-
-  if (aIsArr !== bIsArr) {
-    return false;
-  }
-
-  if (aIsArr && bIsArr) {
-    return shallowEqualArrays(a, b);
-  }
-
-  return shallowEqualObjects(a, b);
-}
-
-export { shallowEqualObjects, shallowEqualArrays };

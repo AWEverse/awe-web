@@ -8,6 +8,7 @@ import "./Tab.scss";
 import { useFastClick } from "../hooks/mouse/useFastClick";
 import { capitalize } from "@/lib/utils/helpers/string/stringFormaters";
 import { EMouseButton } from "@/lib/core";
+import { useStableCallback } from "../hooks/base";
 
 type OwnProps = {
   className?: string;
@@ -21,6 +22,7 @@ type OwnProps = {
   clickArg?: number;
   variant: "folders" | "pannels" | "fill";
   tabIndex?: number;
+  contextRootElementSelector?: string;
 };
 
 const classNames = {
@@ -42,6 +44,7 @@ const Tab: FC<OwnProps> = ({
   clickArg,
   variant = "pannels",
   tabIndex = 0,
+  contextRootElementSelector,
 }) => {
   const tabRef = useRef<HTMLButtonElement>(null);
 
@@ -108,15 +111,15 @@ const Tab: FC<OwnProps> = ({
     });
   }, [isActive, previousActiveTab]);
 
-  const handlers = useFastClick({
-    callback: (e: React.MouseEvent<HTMLButtonElement>) => {
+  const { handleClick, handleMouseDown } = useFastClick(
+    (e: React.MouseEvent<HTMLButtonElement>) => {
       if (e.type === "mousedown" && e.button !== EMouseButton.Main) {
         return;
       }
 
       onClick?.(clickArg!);
     },
-  });
+  );
 
   const renderBadge = useMemo(() => {
     if (badgeCount) {
@@ -136,6 +139,19 @@ const Tab: FC<OwnProps> = ({
     return null;
   }, [badgeCount, isBadgeActive]);
 
+  const getTriggerElement = useStableCallback(() => tabRef.current);
+  const getRootElement = useStableCallback(() =>
+    contextRootElementSelector
+      ? tabRef.current!.closest(contextRootElementSelector)
+      : document.body,
+  );
+  const getMenuElement = useStableCallback(() =>
+    document
+      .querySelector("#portals")!
+      .querySelector(".Tab-context-menu .bubble"),
+  );
+  const getLayout = useStableCallback(() => ({ withPortal: true }));
+
   return (
     <button
       ref={tabRef}
@@ -144,7 +160,8 @@ const Tab: FC<OwnProps> = ({
       className={buildClassName("Tab", onClick && "Tab-interactive", className)}
       role="tab"
       tabIndex={tabIndex}
-      {...handlers}
+      onClick={handleClick}
+      onMouseDown={handleMouseDown}
     >
       <span
         className={buildClassName("TabInner", capitalize(variant))}

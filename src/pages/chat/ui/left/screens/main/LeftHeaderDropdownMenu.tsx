@@ -36,7 +36,8 @@ interface StateProps {}
 
 const LeftHeaderDropdownMenu: FC<OwnProps & StateProps> = () => {
   const { mode, setMode } = useColorScheme();
-  const [downloadModal, setDownloadModal, resetDownloadModal] = useFlag(false);
+  const [downloadModal, setDownloadModal, resetDownloadModal] =
+    useBooleanState(false);
 
   const themeLabel = `${mode === "dark" ? "Светлая" : "Темная"} тема`;
 

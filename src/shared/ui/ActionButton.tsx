@@ -1,9 +1,9 @@
-import { ReactNode, FC, MouseEvent, memo, useCallback } from 'react';
-import s from './ActionButton.module.scss';
-import buildClassName from '../lib/buildClassName';
-import RippleEffect from './ripple-effect';
+import { ReactNode, FC, MouseEvent, memo, useCallback } from "react";
+import s from "./ActionButton.module.scss";
+import buildClassName from "../lib/buildClassName";
+import RippleEffect from "./ripple-effect";
 
-type Sizes = 'small' | 'medium' | 'large';
+type Sizes = "small" | "medium" | "large";
 
 interface OwnProps {
   onClick?: (event: MouseEvent<HTMLButtonElement>) => void;
@@ -15,7 +15,7 @@ interface OwnProps {
   count?: number;
   label?: string;
   labelClassName?: string;
-  variant?: 'rounded' | 'outlined' | 'plain';
+  variant?: "rounded" | "outlined" | "plain";
   size?: Sizes | `custom-${Sizes}`;
   loading?: boolean;
   swap?: boolean;
@@ -33,8 +33,8 @@ const ActionButton: FC<OwnProps> = ({
   icon,
   label,
   labelClassName,
-  variant = 'plain',
-  size = 'custom-medium',
+  variant = "plain",
+  size = "custom-medium",
   loading = false,
   swap,
   children,
@@ -63,13 +63,21 @@ const ActionButton: FC<OwnProps> = ({
       <>
         {swap ? (
           <>
-            {child && <span className={buildClassName(s.label, labelClassName)}>{child}</span>}
+            {child && (
+              <span className={buildClassName(s.label, labelClassName)}>
+                {child}
+              </span>
+            )}
             {icon && <i className={s.icon}>{icon}</i>}
           </>
         ) : (
           <>
             {icon && <i className={s.icon}>{icon}</i>}
-            {child && <span className={buildClassName(s.label, labelClassName)}>{child}</span>}
+            {child && (
+              <span className={buildClassName(s.label, labelClassName)}>
+                {child}
+              </span>
+            )}
           </>
         )}
       </>
@@ -80,7 +88,7 @@ const ActionButton: FC<OwnProps> = ({
   return (
     <button
       aria-busy={loading}
-      aria-label={label || 'Action Button'}
+      aria-label={label || "Action Button"}
       aria-pressed={active}
       className={buttonClassname}
       disabled={disabled || loading}

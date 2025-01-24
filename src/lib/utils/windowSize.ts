@@ -1,5 +1,8 @@
-import { throttle, IS_IOS } from '../core';
-import { requestMeasure } from '../modules/fastdom/fastdom';
+import { throttle, IS_IOS } from "../core";
+import {
+  requestForcedReflow,
+  requestMeasure,
+} from "../modules/fastdom/fastdom";
 
 interface IDimensions {
   height: number;
@@ -29,25 +32,27 @@ const handleOrientationChange = throttle(
   false,
 );
 
-window.addEventListener('orientationchange', handleOrientationChange);
+window.addEventListener("orientationchange", handleOrientationChange);
 
 if (IS_IOS) {
-  window.visualViewport!.addEventListener('resize', handleResize);
+  window.visualViewport!.addEventListener("resize", handleResize);
 } else {
-  window.addEventListener('resize', handleResize);
+  window.addEventListener("resize", handleResize);
 }
 
 export function updateSizes(): IDimensions {
   let height: number;
 
-  requestMeasure(() => {
-    if (IS_IOS) {
-      height = window.visualViewport!.height + window.visualViewport!.pageTop;
+  requestForcedReflow(() => {
+    if (IS_IOS && window.visualViewport) {
+      height = window.visualViewport.height + window.visualViewport.pageTop;
     } else {
       height = window.innerHeight;
     }
 
-    document.documentElement.style.setProperty('--vh', `${height * 0.01}px`);
+    return () => {
+      document.documentElement.style.setProperty("--vh", `${height * 0.01}px`);
+    };
   });
 
   return {

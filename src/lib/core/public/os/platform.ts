@@ -87,10 +87,7 @@ export const IS_YA_BROWSER = userAgent.includes("yabrowser");
  * Flag indicating if the browser is Firefox.
  * Detects several possible identifiers for Firefox-based browsers.
  */
-export const IS_FIREFOX =
-  userAgent.includes("firefox") ||
-  userAgent.includes("iceweasel") ||
-  userAgent.includes("icecat");
+export const IS_FIREFOX = /firefox|iceweasel|icecat/i.test(userAgent);
 
 /**
  * Normalized version of the platform environment in lowercase, with spaces replaced by dashes.

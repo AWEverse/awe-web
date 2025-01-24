@@ -1,54 +1,108 @@
 import { IS_TEST } from "@/lib/config/dev";
 import { IS_FIREFOX, IS_MOBILE } from "../platform";
 
+/**
+ * Check if the current environment is a Progressive Web App (PWA).
+ */
 export const IS_PWA =
-  window.matchMedia("(display-mode: standalone)").matches ||
-  (window.navigator as { standalone?: boolean }).standalone ||
-  document.referrer.includes("android-app://");
+  window.matchMedia?.("(display-mode: standalone)").matches ||
+  !!(navigator as any).standalone ||
+  document.referrer.startsWith("android-app://");
 
+/**
+ * Alias for `IS_PWA`, used to check if the current environment is an app.
+ */
 export const IS_APP = IS_PWA; // || IS_ELECTRON;
 
-export const IS_TOUCH_ENV = window.matchMedia("(pointer: coarse)").matches;
-export const IS_VOICE_RECORDING_SUPPORTED = Boolean(
-  window.navigator.mediaDevices &&
-    "getUserMedia" in window.navigator.mediaDevices &&
-    (window.AudioContext ||
-      (window as { webkitAudioContext?: unknown }).webkitAudioContext),
-);
+/**
+ * Check if the current environment supports touch input.
+ */
+export const IS_TOUCH_ENV =
+  "ontouchstart" in window && window.matchMedia("(pointer: coarse)").matches;
+
+/**
+ * Check if Service Workers are supported in the current environment.
+ */
 export const IS_SERVICE_WORKER_SUPPORTED = "serviceWorker" in navigator;
+
+/**
+ * Alias for `IS_SERVICE_WORKER_SUPPORTED`, used to check if Progressive Web App features are supported.
+ */
 export const IS_PROGRESSIVE_SUPPORTED = IS_SERVICE_WORKER_SUPPORTED;
-export const IS_OPUS_SUPPORTED = Boolean(
-  new Audio().canPlayType("audio/ogg; codecs=opus"),
-);
+
+/**
+ * Check if the `filter` property is supported on canvas elements.
+ * This is not available in test environments.
+ */
 export const IS_CANVAS_FILTER_SUPPORTED =
   !IS_TEST &&
   "filter" in (document.createElement("canvas").getContext("2d") || {});
-export const IS_REQUEST_FULLSCREEN_SUPPORTED =
-  "requestFullscreen" in document.createElement("div");
+
+/**
+ * Check if the browser supports `requestFullscreen` for elements.
+ */
+export const IS_REQUEST_FULLSCREEN_SUPPORTED = (() => {
+  try {
+    const element = document.createElement("div");
+
+    return (
+      "requestFullscreen" in element ||
+      "mozRequestFullScreen" in element ||
+      "webkitRequestFullscreen" in element ||
+      "msRequestFullscreen" in element
+    );
+  } catch {
+    return false;
+  }
+})();
+
+export const IS_REQUEST_PICTURE_IN_PICTURE_SUPPORTED = (() => {
+  try {
+    return "pictureInPictureEnabled" in document;
+  } catch {
+    return false;
+  }
+})();
+
+/**
+ * Check if phone calls are supported (not on Firefox).
+ */
 export const ARE_CALLS_SUPPORTED = !IS_FIREFOX;
+
+/**
+ * Check if the browser supports the Origin Private File System (OPFS).
+ */
 export const IS_OPFS_SUPPORTED = Boolean(navigator.storage?.getDirectory);
 
+/**
+ * Check if the `offset-rotate` property is supported in CSS.
+ */
 export const IS_OFFSET_PATH_SUPPORTED = CSS.supports("offset-rotate: 0deg");
+
+/**
+ * Check if backdrop blur effect is supported in CSS.
+ */
 export const IS_BACKDROP_BLUR_SUPPORTED =
-  CSS.supports("backdrop-filter: blur()") ||
-  CSS.supports("-webkit-backdrop-filter: blur()");
+  CSS.supports("backdrop-filter: blur(0px)") ||
+  CSS.supports("-webkit-backdrop-filter: blur(0px)");
+
+/**
+ * Check if the install prompt is supported (usually for PWAs).
+ */
 export const IS_INSTALL_PROMPT_SUPPORTED = "onbeforeinstallprompt" in window;
+
+/**
+ * Check if multi-tab communication is supported via `BroadcastChannel`.
+ */
 export const IS_MULTITAB_SUPPORTED = "BroadcastChannel" in window;
+
+/**
+ * Check if opening a new tab is supported (not in PWA on mobile).
+ */
 export const IS_OPEN_IN_NEW_TAB_SUPPORTED =
   IS_MULTITAB_SUPPORTED && !(IS_PWA && IS_MOBILE);
+
+/**
+ * Check if translation via `Intl.DisplayNames` is supported (not in test environments).
+ */
 export const IS_TRANSLATION_SUPPORTED = !IS_TEST && Boolean(Intl.DisplayNames);
-
-export const SCROLLBAR_WIDTH = (() => {
-  const el = document.createElement("div");
-  el.style.cssText =
-    "overflow:scroll; visibility:hidden; position:absolute; width:50px; height:50px;";
-  document.body.appendChild(el);
-
-  const width = el.offsetWidth - el.clientWidth;
-  document.body.removeChild(el);
-
-  // Set the scrollbar width as a CSS custom property
-  document.documentElement.style.setProperty("--scrollbar-width", `${width}px`);
-
-  return width;
-})();
