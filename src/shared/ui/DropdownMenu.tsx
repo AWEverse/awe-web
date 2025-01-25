@@ -73,7 +73,11 @@ const DropdownMenu: FC<OwnProps & OwnSharedProps> = ({
   const handleTriggerClick = () => {
     setIsOpen((prev) => !prev);
 
-    isOpen ? onOpen?.() : onClose?.();
+    if (isOpen) {
+      onOpen?.();
+    } else {
+      onClose?.();
+    }
   };
 
   const handleClose = () => {

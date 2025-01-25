@@ -29,6 +29,21 @@ type Undefined<T> = { [K in keyof T]: undefined };
 type Impossible<T> = { [P in keyof T]: never };
 
 /**
+ * The `ValueOf<T>` utility type retrieves the value type of the properties in an object or the elements in an array.
+ *
+ * This type is useful when you have an object or an array and you want to get the type of its values.
+ *
+ * @example
+ * type ExampleObject = { a: string, b: number };
+ * type Value = ValueOf<ExampleObject>;
+ * // The resulting type `Value` will be:
+ * // string | number
+ *
+ * @template T - The object or array type to extract the value type from.
+ */
+type ValueOf<T> = T[keyof T];
+
+/**
  * The `NoExtraProperties<T, U>` type ensures that `U` can only have properties that exist on `T`
  * and disallows any extra properties. If `U` contains additional keys that are not present in `T`,
  * they will be marked as `never` by using the `Impossible` type, effectively preventing extra properties from being assigned.
@@ -199,15 +214,22 @@ declare const Boolean: BooleanConstructor;
  * Extends the HTMLElement interface to include cross-browser fullscreen support methods.
  */
 interface HTMLElement {
+  requestFullscreen?: () => Promise<void>;
+  msRequestFullscreen?: () => Promise<void>;
   mozRequestFullScreen?: () => Promise<void>;
-  webkitEnterFullscreen?: () => Promise<void>;
   webkitRequestFullscreen?: () => Promise<void>;
 }
 
 interface Document {
+  exitFullscreen?: () => Promise<void>;
+  msExitFullscreen?: () => Promise<void>;
   mozCancelFullScreen?: () => Promise<void>;
-  webkitCancelFullScreen: () => Promise<void>;
   webkitExitFullscreen?: () => Promise<void>;
+
+  fullscreenElement?: Element | null;
+  msFullscreenElement?: Element | null;
+  mozFullScreenElement?: Element | null;
+  webkitFullscreenElement?: Element | null;
 }
 
 /**
@@ -296,24 +318,15 @@ type CommonProperties<T, U> = {
 };
 
 /**
+ * A function type that takes no arguments and returns `void`.
  * @returns {void}
  */
 type NoneToVoidFunction = () => void;
 
 /**
- * A function type that takes no arguments and returns any value of any type (`any`).
- */
-type NoneToAnyFunction = function;
-
-/**
  * @returns {any}
  */
 type NoneToAnyFunction = () => any;
-
-/**
- * A function type that accepts `any` as props and returns a React functional component (`FC`) with props of any type.
- */
-type AnyToFunctionalComponent = function;
 
 /**
  * @param {any} props - The props of the component.
@@ -339,11 +352,6 @@ type AnyClass = new (...args: any[]) => any;
  * @param {...any[]} args - The arguments of the function.
  */
 type AnyFunction = (...args: any[]) => any;
-
-/**
- * A function type that accepts any number of arguments but returns `void`.
- */
-type AnyToVoidFunction = function;
 
 /**
  * @param {...any[]} args - The arguments of the function.
@@ -617,14 +625,14 @@ interface Array<T> {
    * @param selector A function to extract a key to order the elements by.
    * @returns A new array with elements ordered in ascending order based on the selector.
    */
-  orderBy(selector: (item: T) => any): T[];
+  orderBy<R>(selector: (item: T) => R): T[];
 
   /**
    * Orders the elements in the array based on a given selector in descending order.
    * @param selector A function to extract a key to order the elements by.
    * @returns A new array with elements ordered in descending order based on the selector.
    */
-  orderByDescending(selector: (item: T) => any): T[];
+  orderByDescending<R>(selector: (item: T) => R): T[];
 
   /**
    * Projects each element of the array into a new form.
@@ -713,4 +721,138 @@ interface Array<T> {
     predicate: BooleanConstructor,
     thisArg?: any,
   ): Exclude<S, Falsy>[];
+}
+
+interface String {
+  /**
+   * Aggregates the characters in the string using a provided accumulator function.
+   * @param seed The initial value to start the aggregation.
+   * @param func The function to apply to each character, returning a new accumulator value.
+   * @returns The final accumulated value.
+   */
+  aggregate<S>(seed: S, func: (acc: S, item: string) => S): S;
+
+  /**
+   * Determines whether all characters in the string satisfy a given predicate.
+   * @param predicate The function to test each character.
+   * @returns `true` if all characters satisfy the predicate, otherwise `false`.
+   */
+  all(predicate: (item: string) => boolean): boolean;
+
+  /**
+   * Determines whether any characters in the string satisfy a given predicate.
+   * @param predicate The function to test each character. If omitted, returns `true` if the string is non-empty.
+   * @returns `true` if any character satisfies the predicate, otherwise `false`.
+   */
+  any(predicate?: (item: string) => boolean): boolean;
+
+  /**
+   * Checks if the string contains a specific character.
+   * @param item The character to search for in the string.
+   * @returns `true` if the string contains the character, otherwise `false`.
+   */
+  contains(item: string): boolean;
+
+  /**
+   * Groups the characters of the string by a given selector.
+   * @param selector A function to select the key for each character.
+   * @returns A `Map` where keys are selected by the `selector` and values are arrays of matching characters.
+   */
+  groupBy<K>(keySelector: (item: string) => K): Map<K, string[]>;
+
+  /**
+   * Filters out duplicates from the string.
+   * @returns A new string with distinct characters.
+   */
+  distinct(): string;
+
+  /**
+   * Computes the difference between the string and another string (characters in the current string not in the second string).
+   * @param secondString The string to compare against.
+   * @returns A new string containing the characters that are in the current string but not in the second string.
+   */
+  except(secondString: string): string;
+
+  /**
+   * Finds the first character that satisfies the provided predicate.
+   * @param predicate The function to test each character. If omitted, returns the first character.
+   * @returns The first character that satisfies the predicate or `undefined` if no match is found.
+   */
+  first(predicate?: (item: string) => boolean): string | undefined;
+
+  /**
+   * Computes the intersection between two strings (common characters).
+   * @param secondString The string to compare against.
+   * @returns A string containing the common characters between the two strings.
+   */
+  intersect(secondString: string): string;
+
+  /**
+   * Orders the characters in the string based on a given selector in ascending order.
+   * @param selector A function to extract a key to order the characters by.
+   * @returns A new string with characters ordered in ascending order based on the selector.
+   */
+  orderBy(selector: (item: string) => any): string;
+
+  /**
+   * Orders the characters in the string based on a given selector in descending order.
+   * @param selector A function to extract a key to order the characters by.
+   * @returns A new string with characters ordered in descending order based on the selector.
+   */
+  orderByDescending(selector: (item: string) => any): string;
+
+  /**
+   * Projects each character of the string into a new form.
+   * @param selector A function to select the new form of each character.
+   * @returns A new string with the transformed characters.
+   */
+  select<S>(selector: (item: string) => S): string;
+
+  /**
+   * Skips the first `n` characters of the string.
+   * @param count The number of characters to skip.
+   * @returns A new string with the remaining characters after skipping `count` characters.
+   */
+  skip(count: number): string;
+
+  /**
+   * Skips characters of the string as long as they satisfy a given predicate.
+   * @param predicate A function to test each character. Skips characters that satisfy the predicate.
+   * @returns A new string with characters after skipping those that satisfy the predicate.
+   */
+  skipWhile(predicate: (item: string) => boolean): string;
+
+  /**
+   * Takes the first `n` characters from the string.
+   * @param count The number of characters to take.
+   * @returns A new string containing the first `count` characters.
+   */
+  take(count: number): string;
+
+  /**
+   * Takes characters from the string as long as they satisfy a given predicate.
+   * @param predicate A function to test each character. Takes characters that satisfy the predicate.
+   * @returns A new string with characters taken from the start until the predicate no longer satisfies.
+   */
+  takeWhile(predicate: (item: string) => boolean): string;
+
+  /**
+   * Converts the string to an array of characters.
+   * @returns An array of characters.
+   */
+  toArray(): string[];
+
+  /**
+   * Computes the union of two strings (characters that are in either string, without duplicates).
+   * @param secondString The string to compute the union with.
+   * @returns A string containing all characters from both strings, excluding duplicates.
+   */
+  union(secondString: string): string;
+
+  /**
+   * Filters the string based on a predicate function.
+   * @param predicate A function to test each character.
+   * @returns A new string with characters that satisfy the predicate.
+   */
+  where(predicate: (item: string) => boolean): string;
 }

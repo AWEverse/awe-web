@@ -65,7 +65,7 @@ export const CHROMIUM_VERSION = (() => {
   try {
     const match = navigator.userAgent.match(/Chrom(?:e|ium)\/([0-9.]+)/);
     return match ? +match[1] : undefined;
-  } catch (err) {
+  } catch {
     return undefined;
   }
 })();

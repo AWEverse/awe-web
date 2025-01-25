@@ -13,6 +13,7 @@ export default [
       semi: "error",
       "prefer-const": "error",
       "no-var": "error",
+      "react/react-in-jsx-scope": "off",
     },
   },
   { languageOptions: { globals: globals.browser } },

@@ -174,6 +174,7 @@ function processDynamically(
 
   let positionX: "left" | "right";
   let positionY: "top" | "bottom";
+
   if (
     isDense ||
     x + menuRect.width + extraPaddingX < rootRect.width + rootRect.left

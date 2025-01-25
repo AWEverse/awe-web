@@ -70,8 +70,11 @@ export const factorial = (n: number): number => {
  * @returns {number} The mean of the numbers.
  */
 export const average = (numbers: number[]): number => {
-  if (numbers.length === 0) return NaN;
-  return numbers.reduce((sum, value) => sum + value, 0) / numbers.length;
+  if (numbers.length === 0) {
+    return 0;
+  }
+
+  return numbers.sum() / numbers.length;
 };
 
 /**

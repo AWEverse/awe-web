@@ -1,4 +1,5 @@
-import { FC, useRef } from 'react';
+/* eslint-disable @typescript-eslint/no-explicit-any */
+import { FC, useRef } from "react";
 
 interface WithFreezeWhenClosedProps {
   isOpen: boolean;
@@ -6,7 +7,9 @@ interface WithFreezeWhenClosedProps {
 
 type OwnProps<T extends FC<any>> = WithFreezeWhenClosedProps & Parameters<T>[0];
 
-export default function withFreezeWhenClosed<T extends FC<any>>(CurrentComponent: T): T {
+export default function withFreezeWhenClosed<T extends FC<any>>(
+  CurrentComponent: T,
+): T {
   function ComponentWrapper(props: OwnProps<T>) {
     const newProps = useRef<OwnProps<T>>(props);
 
@@ -21,6 +24,7 @@ export default function withFreezeWhenClosed<T extends FC<any>>(CurrentComponent
       };
     }
 
+    // eslint-disable-next-line react/react-in-jsx-scope
     return <CurrentComponent {...newProps.current} />;
   }
 

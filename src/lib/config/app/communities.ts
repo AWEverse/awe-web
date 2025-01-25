@@ -1,4 +1,4 @@
-import { MAX_INT32 } from '@/lib/core';
+import { MAX_INT32 } from "@/lib/core";
 
 // Participants limits
 export const MAX_PARTICIPANTS = 200_000;

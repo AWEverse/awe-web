@@ -7,21 +7,23 @@ export function invoke<TFunc extends AnyFunction>(
   return func?.(...args);
 }
 
-type InvokeArgs<Obj, MethodName extends keyof Obj> = Obj[MethodName] extends AnyFunction
-  ? Parameters<Obj[MethodName]>
-  : never;
+type InvokeArgs<
+  Obj,
+  MethodName extends keyof Obj,
+> = Obj[MethodName] extends AnyFunction ? Parameters<Obj[MethodName]> : never;
 
-type InvokeResults<Obj, MethodName extends keyof Obj> = Obj[MethodName] extends AnyFunction
-  ? ReturnType<Obj[MethodName]>
-  : never;
+type InvokeResults<
+  Obj,
+  MethodName extends keyof Obj,
+> = Obj[MethodName] extends AnyFunction ? ReturnType<Obj[MethodName]> : never;
 
 export function invokeMethod<Obj, MethodName extends keyof Obj>(
   obj: Obj,
   methodName: MethodName,
   ...args: InvokeArgs<Obj, MethodName>
 ): InvokeResults<Obj, MethodName> {
-  const method = obj[methodName] as any;
-  return method.apply(obj, args);
+  const method = obj[methodName] as unknown;
+  return (method as AnyFunction).apply(obj, args);
 }
 
 export function projection<TFunc extends AnyFunction>(func: TFunc) {
@@ -48,7 +50,7 @@ export function cachedInvoke<TFunc extends AnyFunction>(
 export function safeInvoke<TFunc extends AnyFunction>(
   func: TFunc,
   defaultValue?: ReturnType<TFunc>,
-  onError?: (error: any, args: Parameters<TFunc>) => void,
+  onError?: (error: unknown, args: Parameters<TFunc>) => void,
 ) {
   return (...args: Parameters<TFunc>): ReturnType<TFunc> | undefined => {
     try {

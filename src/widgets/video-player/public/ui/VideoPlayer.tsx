@@ -1,4 +1,4 @@
-import {
+import React, {
   lazy,
   memo,
   useEffect,
@@ -78,43 +78,6 @@ const MAX_LOOP_DURATION = 30; // Seconds
 const MIN_READY_STATE = 4;
 const REWIND_STEP = 5; // Seconds
 
-const useTimeUpdateInterval = (
-  videoRef: React.RefObject<HTMLVideoElement | null>,
-  intervalInSeconds: number,
-) => {
-  const [timeUpdateLoop, setTimeUpdateLoop] = useState<NodeJS.Timeout | null>(
-    null,
-  );
-
-  useEffect(() => {
-    if (timeUpdateLoop) {
-      clearInterval(timeUpdateLoop);
-    }
-
-    if (intervalInSeconds > 0 && videoRef.current) {
-      // Немедленное обновление времени
-      const videoElement = videoRef.current;
-      videoElement.dispatchEvent(new Event("timeupdate"));
-
-      // Запуск интервала обновления времени
-      const newInterval = setInterval(() => {
-        videoElement.dispatchEvent(new Event("timeupdate"));
-      }, intervalInSeconds * 1000);
-
-      setTimeUpdateLoop(newInterval);
-
-      // Очистка интервала при размонтировании
-      return () => {
-        if (newInterval) {
-          clearInterval(newInterval);
-        }
-      };
-    }
-  }, [intervalInSeconds, videoRef, timeUpdateLoop]);
-
-  return timeUpdateLoop;
-};
-
 const VideoPlayer: React.FC<OwnProps> = ({
   mediaUrl = "public\\video_test\\got.mp4",
   posterDimensions,
@@ -135,7 +98,6 @@ const VideoPlayer: React.FC<OwnProps> = ({
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
-  const volumeRef = useRef(1);
 
   const duration = videoRef.current?.duration || 0;
   const isLooped = isGif || duration <= MAX_LOOP_DURATION;
@@ -215,7 +177,7 @@ const VideoPlayer: React.FC<OwnProps> = ({
       const video = videoRef.current!;
       setPlaying(!isPlaying);
 
-      isPlaying ? pauseMedia(video) : await playMedia(video);
+      return isPlaying ? pauseMedia(video) : await playMedia(video);
     },
   );
 
@@ -278,16 +240,16 @@ const VideoPlayer: React.FC<OwnProps> = ({
 
   const handleVolumeChange = useStableCallback(
     throttle((value: number) => {
+      setMediaMute(videoRef.current!, false);
       setMediaVolume(videoRef.current!, value);
       setVolume(value);
-      volumeRef.current = value;
     }, 100),
   );
 
   const handleMuteClick = useStableCallback(() => {
     const video = videoRef.current!;
-    setMediaMute(video, !video.muted);
-    setVolume(!video.muted ? volumeRef.current : 0);
+    const lastVolume = setMediaMute(video, !video.muted);
+    setVolume(!video.muted ? lastVolume : 0);
   });
 
   const handlePlaybackRateChange = useStableCallback((value: number) => {
@@ -331,7 +293,9 @@ const VideoPlayer: React.FC<OwnProps> = ({
           pauseMedia(videoElement);
         })
         .catch((err) => {
-          DEBUG && console.log(err);
+          if (DEBUG) {
+            console.log(err);
+          }
         });
     }
   }, [mediaUrl, isUnsupported]);
@@ -402,22 +366,6 @@ const VideoPlayer: React.FC<OwnProps> = ({
   }, [togglePlayState, isFullscreen, isInPictureInPicture]);
 
   const shouldToggleControls = !IS_TOUCH_ENV && !isMobile;
-
-  // useEffect(() => {
-  //   console.log('bufferedRanges changed:', bufferedRanges);
-  // }, [bufferedRanges]);
-
-  // useEffect(() => {
-  //   console.log('bufferedProgress changed:', bufferedProgress);
-  // }, [bufferedProgress]);
-
-  // useEffect(() => {
-  //   console.log('isBuffered changed:', isBuffered);
-  // }, [isBuffered]);
-
-  // useEffect(() => {
-  //   console.log('isReady changed:', isReady);
-  // }, [isReady]);
 
   const handlersBuffering = useMemo(() => {
     const handleBuffering = (

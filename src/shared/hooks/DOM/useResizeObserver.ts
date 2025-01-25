@@ -1,8 +1,11 @@
-import { useStateRef } from '@/lib/hooks/state/useStateRef';
-import { CallbackManager, createCallbackManager } from '@/lib/utils/callbacks';
-import { useEffect } from 'react';
+import { CallbackManager, createCallbackManager } from "@/lib/utils/callbacks";
+import { useEffect } from "react";
+import { useStateRef } from "../base";
 
-const elementObserverMap = new WeakMap<HTMLElement, [ResizeObserver, CallbackManager]>();
+const elementObserverMap = new WeakMap<
+  HTMLElement,
+  [ResizeObserver, CallbackManager]
+>();
 
 export default function useResizeObserver(
   ref: React.RefObject<HTMLElement | null>,
@@ -27,7 +30,10 @@ export default function useResizeObserver(
       onResizeRef.current(entry);
     };
 
-    let [observer, callbackManager] = elementObserverMap.get(element) || [undefined, undefined];
+    let [observer, callbackManager] = elementObserverMap.get(element) || [
+      undefined,
+      undefined,
+    ];
 
     if (!observer) {
       callbackManager = createCallbackManager();

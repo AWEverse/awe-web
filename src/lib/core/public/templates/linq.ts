@@ -1,4 +1,7 @@
-Array.prototype.select = function <T, S>(this: T[], selector: (item: T) => S): S[] {
+Array.prototype.select = function <T, S>(
+  this: T[],
+  selector: (item: T) => S,
+): S[] {
   const result: S[] = [];
   const iterator = this[Symbol.iterator]();
 
@@ -12,7 +15,10 @@ Array.prototype.select = function <T, S>(this: T[], selector: (item: T) => S): S
   return result;
 };
 
-Array.prototype.where = function <T>(this: T[], predicate: (item: T) => boolean): T[] {
+Array.prototype.where = function <T>(
+  this: T[],
+  predicate: (item: T) => boolean,
+): T[] {
   const result: T[] = [];
   const iterator = this[Symbol.iterator]();
 
@@ -28,7 +34,11 @@ Array.prototype.where = function <T>(this: T[], predicate: (item: T) => boolean)
   return result;
 };
 
-Array.prototype.aggregate = function <T, S>(this: T[], seed: S, func: (acc: S, item: T) => S): S {
+Array.prototype.aggregate = function <T, S>(
+  this: T[],
+  seed: S,
+  func: (acc: S, item: T) => S,
+): S {
   let acc = seed;
 
   for (const item of this) {
@@ -40,16 +50,29 @@ Array.prototype.aggregate = function <T, S>(this: T[], seed: S, func: (acc: S, i
 
 Array.prototype.sum = function <T>(
   this: T[],
-  selector: (item: T) => number = item => Number(item),
+  selector: (item: T) => number = (item) => Number(item),
+): number {
+  let sum = 0;
+
+  for (let i = 0; i < this.length; i++) {
+    sum += selector(this[i]);
+  }
+
+  return sum;
+};
+
+Array.prototype.countBy = function <T>(
+  this: T[],
+  selector: (item: T) => number,
 ): number {
   return this.aggregate(0, (acc, item) => acc + selector(item));
 };
 
-Array.prototype.countBy = function <T>(this: T[], selector: (item: T) => number): number {
-  return this.aggregate(0, (acc, item) => acc + selector(item));
-};
-
-Array.prototype.aggregate = function <T, U>(this: T[], seed: U, func: (acc: U, item: T) => U): U {
+Array.prototype.aggregate = function <T, U>(
+  this: T[],
+  seed: U,
+  func: (acc: U, item: T) => U,
+): U {
   let result = seed;
 
   for (const item of this) {
@@ -58,7 +81,10 @@ Array.prototype.aggregate = function <T, U>(this: T[], seed: U, func: (acc: U, i
   return result;
 };
 
-Array.prototype.groupBy = function <T, K>(this: T[], keySelector: (item: T) => K): Map<K, T[]> {
+Array.prototype.groupBy = function <T, K>(
+  this: T[],
+  keySelector: (item: T) => K,
+): Map<K, T[]> {
   const map = new Map<K, T[]>();
 
   for (const item of this) {
@@ -87,7 +113,10 @@ Array.prototype.zip = function <T, U, V>(
   return result;
 };
 
-Array.prototype.selectMany = function <T, U>(this: T[], selector: (item: T) => U[]): U[] {
+Array.prototype.selectMany = function <T, U>(
+  this: T[],
+  selector: (item: T) => U[],
+): U[] {
   return this.reduce((acc, item) => acc.concat(selector(item)), [] as U[]);
 };
 
@@ -125,22 +154,31 @@ Array.prototype.joins = function <T, U, K, V>(
   return results;
 };
 
-Array.prototype.any = function <T>(this: T[], predicate?: (item: T) => boolean): boolean {
+Array.prototype.any = function <T>(
+  this: T[],
+  predicate?: (item: T) => boolean,
+): boolean {
   if (!predicate) {
     return this.length > 0;
   }
   return this.some(predicate);
 };
 
-Array.prototype.all = function <T>(this: T[], predicate: (item: T) => boolean): boolean {
+Array.prototype.all = function <T>(
+  this: T[],
+  predicate: (item: T) => boolean,
+): boolean {
   return this.every(predicate);
 };
 
-Array.prototype.first = function <T>(this: T[], predicate?: (item: T) => boolean): T | undefined {
+Array.prototype.first = function <T>(
+  this: T[],
+  predicate?: (item: T) => boolean,
+): T | undefined {
   const iterator = this[Symbol.iterator]();
 
   if (predicate) {
-    for (let item of iterator) {
+    for (const item of iterator) {
       if (predicate(item)) {
         return item;
       }
@@ -151,12 +189,15 @@ Array.prototype.first = function <T>(this: T[], predicate?: (item: T) => boolean
   }
 };
 
-Array.prototype.last = function <T>(this: T[], predicate?: (item: T) => boolean): T | undefined {
+Array.prototype.last = function <T>(
+  this: T[],
+  predicate?: (item: T) => boolean,
+): T | undefined {
   const iterator = this[Symbol.iterator]();
   let lastMatch: T | undefined = undefined;
 
   if (predicate) {
-    for (let item of iterator) {
+    for (const item of iterator) {
       if (predicate(item)) {
         lastMatch = item;
       }
@@ -177,43 +218,118 @@ Array.prototype.distinct = function <T>(this: T[]): T[] {
   return [...new Set(this)];
 };
 
-Array.prototype.orderBy = function <T>(this: T[], selector: (item: T) => any): T[] {
-  const merge = (left: T[], right: T[], selector: (item: T) => any): T[] => {
-    const result: T[] = [];
-    let leftIndex = 0,
-      rightIndex = 0;
+Array.prototype.orderBy = function <T, R>(
+  this: T[],
+  selector: (item: T) => R,
+): T[] {
+  const MIN_MERGE = 32;
 
-    while (leftIndex < left.length && rightIndex < right.length) {
-      const leftValue = selector(left[leftIndex]);
-      const rightValue = selector(right[rightIndex]);
+  const minRunLength = (n: number): number => {
+    let r = 0;
 
-      if (
-        leftValue < rightValue ||
-        (leftValue === rightValue && left[leftIndex] < right[rightIndex])
-      ) {
-        result.push(left[leftIndex++]);
-      } else {
-        result.push(right[rightIndex++]);
-      }
+    while (n >= MIN_MERGE) {
+      r |= n & 1;
+      n >>= 1;
     }
 
-    return result.concat(left.slice(leftIndex), right.slice(rightIndex));
+    return n + r;
   };
 
-  const mergeSort = (array: T[], selector: (item: T) => any): T[] => {
-    if (array.length <= 1) return array;
+  const insertionSort = (
+    arr: T[],
+    left: number,
+    right: number,
+    selector: (item: T) => R,
+  ): void => {
+    for (let i = left + 1; i <= right; i++) {
+      const temp = arr[i];
+      let j = i - 1;
 
-    const mid = Math.floor(array.length / 2);
-    const left = mergeSort(array.slice(0, mid), selector);
-    const right = mergeSort(array.slice(mid), selector);
+      while (j >= left && selector(arr[j]) > selector(temp)) {
+        arr[j + 1] = arr[j];
+        j--;
+      }
 
-    return merge(left, right, selector);
+      arr[j + 1] = temp;
+    }
   };
 
-  return mergeSort([...this], selector);
+  const merge = (
+    arr: T[],
+    l: number,
+    m: number,
+    r: number,
+    selector: (item: T) => R,
+  ): void => {
+    const len1 = m - l + 1;
+    const len2 = r - m;
+
+    const left = new Array(len1);
+    const right = new Array(len2);
+
+    for (let x = 0; x < len1; x++) {
+      left[x] = arr[l + x];
+    }
+    for (let x = 0; x < len2; x++) {
+      right[x] = arr[m + 1 + x];
+    }
+
+    let i = 0,
+      j = 0,
+      k = l;
+
+    while (i < len1 && j < len2) {
+      if (selector(left[i]) <= selector(right[j])) {
+        arr[k] = left[i];
+        i++;
+      } else {
+        arr[k] = right[j];
+        j++;
+      }
+      k++;
+    }
+
+    while (i < len1) {
+      arr[k] = left[i];
+      k++;
+      i++;
+    }
+
+    while (j < len2) {
+      arr[k] = right[j];
+      k++;
+      j++;
+    }
+  };
+
+  const timSort = (arr: T[], n: number, selector: (item: T) => R): void => {
+    const minRun = minRunLength(MIN_MERGE);
+
+    for (let i = 0; i < n; i += minRun) {
+      insertionSort(arr, i, Math.min(i + MIN_MERGE - 1, n - 1), selector);
+    }
+
+    for (let size = minRun; size < n; size = 2 * size) {
+      for (let left = 0; left < n; left += 2 * size) {
+        const mid = left + size - 1;
+        const right = Math.min(left + 2 * size - 1, n - 1);
+
+        if (mid < right) {
+          merge(arr, left, mid, right, selector);
+        }
+      }
+    }
+  };
+
+  const arrCopy = [...this];
+  timSort(arrCopy, arrCopy.length, selector);
+  return arrCopy;
 };
 
-Array.prototype.orderByDescending = function <T>(this: T[], selector: (item: T) => any): T[] {
+Array.prototype.orderByDescending = function <T, R>(
+  this: T[],
+  selector: (item: T) => R,
+): T[] {
   return this.orderBy(selector).reverse();
 };
 
@@ -234,7 +350,7 @@ Array.prototype.toArray = function <T>(this: T[]): T[] {
 };
 
 Array.prototype.except = function <T>(this: T[], secondArray: T[]): T[] {
-  return this.filter(item => !secondArray.includes(item));
+  return this.filter((item) => !secondArray.includes(item));
 };
 
 Array.prototype.union = function <T>(this: T[], secondArray: T[]): T[] {
@@ -242,10 +358,13 @@ Array.prototype.union = function <T>(this: T[], secondArray: T[]): T[] {
 };
 
 Array.prototype.intersect = function <T>(this: T[], secondArray: T[]): T[] {
-  return this.filter(item => secondArray.includes(item));
+  return this.filter((item) => secondArray.includes(item));
 };
 
-Array.prototype.takeWhile = function <T>(this: T[], predicate: (item: T) => boolean): T[] {
+Array.prototype.takeWhile = function <T>(
+  this: T[],
+  predicate: (item: T) => boolean,
+): T[] {
   const result: T[] = [];
 
   for (const item of this) {
@@ -259,7 +378,10 @@ Array.prototype.takeWhile = function <T>(this: T[], predicate: (item: T) => bool
   return result;
 };
 
-Array.prototype.skipWhile = function <T>(this: T[], predicate: (item: T) => boolean): T[] {
+Array.prototype.skipWhile = function <T>(
+  this: T[],
+  predicate: (item: T) => boolean,
+): T[] {
   const result: T[] = [];
   let skipping = true;
 
@@ -267,6 +389,7 @@ Array.prototype.skipWhile = function <T>(this: T[], predicate: (item: T) => bool
     if (skipping && predicate(item)) {
       continue;
     }
+
     skipping = false;
     result.push(item);
   }
@@ -274,16 +397,178 @@ Array.prototype.skipWhile = function <T>(this: T[], predicate: (item: T) => bool
   return result;
 };
 
-// arr.select(x => x * 2).any(x => x > 10);
+String.prototype.aggregate = function <S>(
+  seed: S,
+  func: (acc: S, item: string) => S,
+): S {
+  let accumulator = seed;
+  for (let i = 0; i < this.length; i++) {
+    accumulator = func(accumulator, this[i]);
+  }
+  return accumulator;
+};
 
-/*
-  {
-  const p1 = x => x * 2;
-  const p2 = x => x > 10;
-
-  for (const item of arr) {
-    if (p1(item) && p2(item)) {
-      return true;
+String.prototype.all = function (
+  predicate: (item: string) => boolean,
+): boolean {
+  for (let i = 0; i < this.length; i++) {
+    if (!predicate(this[i])) {
+      return false;
     }
   }
-*/
+  return true;
+};
+
+String.prototype.any = function (
+  predicate?: (item: string) => boolean,
+): boolean {
+  if (predicate) {
+    for (let i = 0; i < this.length; i++) {
+      if (predicate(this[i])) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  return this.length > 0;
+};
+
+String.prototype.contains = function (item: string): boolean {
+  return this.includes(item);
+};
+
+String.prototype.groupBy = function <K>(
+  keySelector: (item: string) => K,
+): Map<K, string[]> {
+  return Array.from(this).groupBy(keySelector);
+};
+String.prototype.distinct = function (): string {
+  let result = "";
+
+  for (let i = 0; i < this.length; i++) {
+    if (!result.includes(this[i])) {
+      result += this[i];
+    }
+  }
+  return result;
+};
+
+String.prototype.except = function (secondString: string): string {
+  let result = "";
+
+  const secondSet = new Set(secondString);
+
+  for (let i = 0; i < this.length; i++) {
+    if (!secondSet.has(this[i])) {
+      result += this[i];
+    }
+  }
+  return result;
+};
+
+String.prototype.first = function (
+  predicate?: (item: string) => boolean,
+): string | undefined {
+  if (predicate) {
+    for (let i = 0; i < this.length; i++) {
+      if (predicate(this[i])) {
+        return this[i];
+      }
+    }
+    return undefined;
+  }
+
+  return this[0];
+};
+
+String.prototype.intersect = function (secondString: string): string {
+  const set = new Set(secondString);
+  let result = "";
+
+  for (let i = 0; i < this.length; i++) {
+    if (set.has(this[i])) {
+      result += this[i];
+    }
+  }
+
+  return result;
+};
+
+String.prototype.orderBy = function <R>(selector: (item: string) => R): string {
+  return Array.from(this)
+    .sort((a, b) => (selector(a) > selector(b) ? 1 : -1))
+    .join("");
+};
+
+String.prototype.orderByDescending = function <R>(
+  selector: (item: string) => R,
+): string {
+  return Array.from(this).orderByDescending(selector).join("");
+};
+
+String.prototype.select = function <R>(selector: (item: string) => R): string {
+  let result = "";
+
+  for (let i = 0; i < this.length; i++) {
+    result += selector(this[i]);
+  }
+
+  return result;
+};
+
+String.prototype.skip = function (count: number): string {
+  return this.slice(count);
+};
+
+String.prototype.skipWhile = function (
+  predicate: (item: string) => boolean,
+): string {
+  let index = 0;
+
+  while (index < this.length && predicate(this[index])) {
+    index++;
+  }
+
+  return this.slice(index);
+};
+
+String.prototype.take = function (count: number): string {
+  return this.slice(0, count);
+};
+
+String.prototype.takeWhile = function (
+  predicate: (item: string) => boolean,
+): string {
+  let index = 0;
+  while (index < this.length && predicate(this[index])) {
+    index++;
+  }
+  return this.slice(0, index);
+};
+
+String.prototype.toArray = function (): string[] {
+  return Array.from(this);
+};
+
+String.prototype.union = function (secondString: string): string {
+  const set = new Set(this);
+  for (const char of secondString) {
+    set.add(char);
+  }
+  return Array.from(set).join("");
+};
+
+String.prototype.where = function (
+  predicate: (item: string) => boolean,
+): string {
+  let result = "";
+
+  for (let i = 0; i < this.length; i++) {
+    if (predicate(this[i])) {
+      result += this[i];
+    }
+  }
+
+  return result;
+};

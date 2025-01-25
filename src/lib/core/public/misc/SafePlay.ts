@@ -1,5 +1,5 @@
-import { DEBUG } from '@/lib/config/dev';
-import { clamp, clamp01 } from '../math';
+import { DEBUG } from "@/lib/config/dev";
+import { clamp, clamp01 } from "../math";
 
 // Enum representing the readyState property of HTMLMediaElement
 export enum EMediaReadyState {
@@ -40,7 +40,7 @@ export const playMedia = async (
     if (options.onError) {
       options.onError(err instanceof Error ? err : new Error(err as string));
     } else if (DEBUG) {
-      console.warn('Playback error:', err, mediaEl);
+      console.warn("Playback error:", err, mediaEl);
     }
     return false;
   }
@@ -65,7 +65,9 @@ export const pauseMedia = (mediaEl: HTMLMediaElement): void => {
  */
 export const isMediaPlaying = (mediaEl: HTMLMediaElement): boolean => {
   return (
-    !mediaEl.paused && !mediaEl.ended && mediaEl.readyState > EMediaReadyState.HAVE_CURRENT_DATA
+    !mediaEl.paused &&
+    !mediaEl.ended &&
+    mediaEl.readyState > EMediaReadyState.HAVE_CURRENT_DATA
   );
 };
 
@@ -76,24 +78,6 @@ export const isMediaPlaying = (mediaEl: HTMLMediaElement): boolean => {
  */
 export const isMediaReadyToPlay = (mediaEl: HTMLMediaElement): boolean => {
   return mediaEl.readyState >= EMediaReadyState.HAVE_FUTURE_DATA;
-};
-
-/**
- * Retrieves the total duration of the media.
- * @param mediaEl - The media element to check (video or audio).
- * @returns The duration of the media in seconds.
- */
-export const getMediaDuration = (mediaEl: HTMLMediaElement): number => {
-  return mediaEl.duration;
-};
-
-/**
- * Retrieves the current playback time of the media.
- * @param mediaEl - The media element to check (video or audio).
- * @returns The current playback time in seconds.
- */
-export const getCurrentPlaybackTime = (mediaEl: HTMLMediaElement): number => {
-  return mediaEl.currentTime;
 };
 
 /**
@@ -139,16 +123,22 @@ export const setMediaMute = (
   mediaEl: HTMLMediaElement,
   mute: boolean = true,
   fadeDuration: number = 0,
-): void => {
+): number => {
+  mediaEl.muted = mute;
+
   if (mute) {
-    mediaEl.dataset.previousVolume = String(mediaEl.volume);
+    if (!mediaEl.dataset.previousVolume) {
+      mediaEl.dataset.previousVolume = mediaEl.volume + "";
+    }
     setMediaVolume(mediaEl, 0, fadeDuration);
-    mediaEl.muted = true;
   } else {
-    const previousVolume = parseFloat(mediaEl.dataset.previousVolume || '1');
-    mediaEl.muted = false;
+    const previousVolume = mediaEl.dataset.previousVolume
+      ? +mediaEl.dataset.previousVolume
+      : 1;
     setMediaVolume(mediaEl, previousVolume, fadeDuration);
   }
+
+  return Number(mediaEl.dataset.previousVolume);
 };
 
 /**
