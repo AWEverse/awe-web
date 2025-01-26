@@ -21,33 +21,3 @@
   height: 100%;
   background-color: var(--awe-palette-secondary-main);
 }
-
-.right-to-left-enter {
-  transform: translateX(100%);
-}
-.right-to-left-enter-active {
-  transform: translateX(0);
-  transition: all var(--slide-transition);
-}
-.right-to-left-exit {
-  transform: translateX(0);
-}
-.right-to-left-exit-active {
-  transform: translateX(-100%);
-  transition: all var(--slide-transition);
-}
-
-.left-to-right-enter {
-  transform: translateX(-100%);
-}
-.left-to-right-enter-active {
-  transform: translateX(0);
-  transition: all var(--slide-transition);
-}
-.left-to-right-exit {
-  transform: translateX(0);
-}
-.left-to-right-exit-active {
-  transform: translateX(100%);
-  transition: all var(--slide-transition);
-}

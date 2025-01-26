@@ -1,4 +1,7 @@
-const SIGNAL_SYMBOL = Symbol.for('signals');
+import { glob } from "fs";
+import { MAX_INT32 } from "../math";
+
+const SIGNAL_SYMBOL = Symbol.for("signals");
 
 // Flags for Computed and Effect.
 const RUNNING = 1 << 0; // 1
@@ -348,7 +351,7 @@ Signal.prototype.valueOf = function () {
 };
 
 Signal.prototype.toString = function () {
-  return this.value + '';
+  return this.value + "";
 };
 
 Signal.prototype.toJSON = function () {
@@ -366,7 +369,7 @@ Signal.prototype.peek = function () {
   }
 };
 
-Object.defineProperty(Signal.prototype, 'value', {
+Object.defineProperty(Signal.prototype, "value", {
   get(this: Signal) {
     const node = addDependency(this);
     if (node !== undefined) {
@@ -377,12 +380,12 @@ Object.defineProperty(Signal.prototype, 'value', {
   set(this: Signal, value) {
     if (value !== this._value) {
       if (batchIteration > 100) {
-        throw new Error('Cycle detected');
+        throw new Error("Cycle detected");
       }
 
       this._value = value;
-      this._version++;
-      globalVersion++;
+      this._version = this._version === MAX_INT32 ? 1 : this._version + 1;
+      globalVersion = globalVersion === MAX_INT32 ? 1 : globalVersion + 1;
 
       /**@__INLINE__*/ startBatch();
       try {
@@ -415,7 +418,11 @@ function needsToRecompute(target: Computed | Effect): boolean {
   // Проверьте зависимости на предмет измененных значений. Список зависимостей уже
   // в порядке использования. Поэтому, если несколько зависимостей изменили значения, только
   // первая использованная зависимость переоценивается в этой точке.
-  for (let node = target._sources; node !== undefined; node = node._nextSource) {
+  for (
+    let node = target._sources;
+    node !== undefined;
+    node = node._nextSource
+  ) {
     // Если есть новая версия зависимости до или после обновления,
     // или зависимость имеет что-то, что блокирует ее обновление вообще (например,
     // цикл зависимости), то нам нужно пересчитать.
@@ -595,15 +602,19 @@ Computed.prototype._refresh = function () {
     evalContext = this;
     const value = this._fn();
 
-    if (this._flags & HAS_ERROR || this._value !== value || this._version === EVersion.Current) {
+    if (
+      this._flags & HAS_ERROR ||
+      this._value !== value ||
+      this._version === EVersion.Current
+    ) {
       this._value = value;
       this._flags &= ~HAS_ERROR;
-      this._version++;
+      this._version = this._version === MAX_INT32 ? 1 : this._version + 1;
     }
   } catch (err) {
     this._value = err;
     this._flags |= HAS_ERROR;
-    this._version++;
+    this._version = this._version === MAX_INT32 ? 1 : this._version + 1;
   }
 
   evalContext = prevContext;
@@ -618,7 +629,11 @@ Computed.prototype._subscribe = function (node) {
 
     // Вычисляемый сигнал лениво подписывается на свои зависимости, когда он
     // получает своего первого подписчика.
-    for (let node = this._sources; node !== undefined; node = node._nextSource) {
+    for (
+      let node = this._sources;
+      node !== undefined;
+      node = node._nextSource
+    ) {
       node._source._subscribe(node);
     }
   }
@@ -635,7 +650,11 @@ Computed.prototype._unsubscribe = function (node) {
     if (this._targets === undefined) {
       this._flags &= ~TRACKING;
 
-      for (let node = this._sources; node !== undefined; node = node._nextSource) {
+      for (
+        let node = this._sources;
+        node !== undefined;
+        node = node._nextSource
+      ) {
         node._source._unsubscribe(node);
       }
     }
@@ -646,16 +665,20 @@ Computed.prototype._notify = function () {
   if (!(this._flags & NOTIFIED)) {
     this._flags |= OUTDATED | NOTIFIED;
 
-    for (let node = this._targets; node !== undefined; node = node._nextTarget) {
+    for (
+      let node = this._targets;
+      node !== undefined;
+      node = node._nextTarget
+    ) {
       node._target._notify();
     }
   }
 };
 
-Object.defineProperty(Computed.prototype, 'value', {
+Object.defineProperty(Computed.prototype, "value", {
   get(this: Computed) {
     if (this._flags & RUNNING) {
-      throw new Error('Cycle detected');
+      throw new Error("Cycle detected");
     }
 
     const node = addDependency(this);
@@ -703,7 +726,7 @@ function cleanupEffect(effect: Effect) {
   const cleanup = effect._cleanup;
   effect._cleanup = undefined;
 
-  if (typeof cleanup === 'function') {
+  if (typeof cleanup === "function") {
     /*@__INLINE__**/ startBatch();
 
     // Run cleanup functions always outside of any context.
@@ -725,7 +748,11 @@ function cleanupEffect(effect: Effect) {
 }
 
 function disposeEffect(effect: Effect) {
-  for (let node = effect._sources; node !== undefined; node = node._nextSource) {
+  for (
+    let node = effect._sources;
+    node !== undefined;
+    node = node._nextSource
+  ) {
     node._source._unsubscribe(node);
   }
 
@@ -737,7 +764,7 @@ function disposeEffect(effect: Effect) {
 
 function endEffect(this: Effect, prevContext?: Computed | Effect) {
   if (evalContext !== this) {
-    throw new Error('Out-of-order effect');
+    throw new Error("Out-of-order effect");
   }
   cleanupSources(this);
   evalContext = prevContext;
@@ -785,7 +812,7 @@ Effect.prototype._callback = function () {
 
     const cleanup = this._fn();
 
-    if (typeof cleanup === 'function') {
+    if (typeof cleanup === "function") {
       this._cleanup = cleanup;
     }
   } finally {
@@ -795,7 +822,7 @@ Effect.prototype._callback = function () {
 
 Effect.prototype._start = function () {
   if (this._flags & RUNNING) {
-    throw new Error('Cycle detected');
+    throw new Error("Cycle detected");
   }
 
   this._flags |= RUNNING;
@@ -869,4 +896,12 @@ export function reactiveObject<T extends object>(obj: T) {
   return reactive;
 }
 
-export { computed, effect, batch, untracked, Signal, type ReadonlySignal, type ISignalObject };
+export {
+  computed,
+  effect,
+  batch,
+  untracked,
+  Signal,
+  type ReadonlySignal,
+  type ISignalObject,
+};

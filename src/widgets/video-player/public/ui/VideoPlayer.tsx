@@ -17,6 +17,7 @@ import {
   isMediaReadyToPlay,
   pauseMedia,
   playMedia,
+  round,
   setMediaMute,
   setMediaPlayBackRate,
   setMediaVolume,
@@ -79,7 +80,7 @@ const MIN_READY_STATE = 4;
 const REWIND_STEP = 5; // Seconds
 
 const VideoPlayer: React.FC<OwnProps> = ({
-  mediaUrl = "public\\video_test\\got.mp4",
+  mediaUrl = "public\\video_test\\Интерстеллар.mp4",
   posterDimensions,
   audioVolume = 1,
   playbackSpeed = 1,
@@ -143,12 +144,15 @@ const VideoPlayer: React.FC<OwnProps> = ({
     (e: React.SyntheticEvent<HTMLVideoElement>) => {
       const { currentTime, duration, readyState } = e.currentTarget;
 
+      const normalizedTime = round(currentTime);
+      const normalizedDuration = round(duration);
+
       if (readyState >= EMediaReadyState.HAVE_ENOUGH_DATA) {
         setWaiting(false);
-        setCurrentTime(currentTime);
+        setCurrentTime(normalizedTime);
       }
 
-      if (!isLooped && currentTime === duration) {
+      if (!isLooped && normalizedTime === normalizedDuration) {
         setCurrentTime(0);
         setPlaying(false);
       }

@@ -1,17 +1,15 @@
-import { Children, FC, ReactNode, useMemo, RefObject } from "react";
-import s from "./Square.module.scss";
-import buildStyle from "@/shared/lib/buildStyle";
-import { TransitionGroup, CSSTransition } from "react-transition-group";
+import { FC, Children, useMemo } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import buildClassName from "@/shared/lib/buildClassName";
-import useConditionalRef from "@/lib/hooks/utilities/useConditionalRef";
-import { usePrevious } from "@/shared/hooks/base";
+import buildStyle from "@/shared/lib/buildStyle";
+import s from "./Square.module.scss";
 
 interface OwnProps {
-  containerRef?: RefObject<HTMLDivElement | null>;
+  containerRef: React.RefObject<HTMLDivElement>;
   currentColumn?: number;
   className?: string;
-  children: ReactNode;
-  onMouseOver?: (e: React.MouseEvent) => void;
+  children: React.ReactNode;
+  onMouseOver?: () => void;
 }
 
 const Square: FC<OwnProps> = ({
@@ -21,44 +19,34 @@ const Square: FC<OwnProps> = ({
   children,
   onMouseOver,
 }) => {
-  const previouscurrentColumn = usePrevious(currentColumn);
-
-  const renderedChildren = useMemo(
-    () =>
-      Children.map(children, (child, index) => (
-        <div key={`square-item-${index}`} className={s.square}>
-          {child}
-        </div>
-      )),
-    [children],
-  );
-
-  const nodeRef = useConditionalRef<HTMLDivElement>(null, [currentColumn]);
-
   return (
     <div
       ref={containerRef}
       className={buildClassName(s.AlbumSquareWrapper, className)}
       onMouseOver={onMouseOver}
     >
-      <TransitionGroup component={null}>
-        <CSSTransition
-          key={currentColumn}
-          classNames={
-            currentColumn > previouscurrentColumn! ? "zoomIn" : "zoomOut"
-          }
-          nodeRef={nodeRef}
-          timeout={300}
-        >
-          <section
-            ref={nodeRef}
-            className={s.AlbumSquare}
-            style={buildStyle(`--grid-columns: ${currentColumn}`)}
-          >
-            {renderedChildren}
-          </section>
-        </CSSTransition>
-      </TransitionGroup>
+      <div
+        className={s.AlbumSquare}
+        style={buildStyle(`--grid-columns: ${currentColumn}`)}
+      >
+        <AnimatePresence initial={false}>
+          {Children.map(children, (child, index) => (
+            <motion.div
+              key={`square-item-${index}`}
+              layout
+              transition={{
+                type: "spring",
+                damping: 20,
+                mass: 1,
+                stiffness: 150,
+              }}
+              className={s.square}
+            >
+              {child}
+            </motion.div>
+          ))}{" "}
+        </AnimatePresence>
+      </div>
     </div>
   );
 };

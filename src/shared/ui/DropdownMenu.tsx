@@ -1,5 +1,5 @@
 import React, { FC, useState, memo, useEffect } from "react";
-import { CSSTransition } from "react-transition-group";
+import { motion } from "framer-motion";
 import s from "./DropdownMenu.module.scss";
 import buildClassName from "../lib/buildClassName";
 import captureKeyboardListeners from "@/lib/utils/captureKeyboardListeners";
@@ -46,7 +46,7 @@ interface OwnProps {
 const OUTBOX_SIZE = 60; //px
 const SCALE_FACTOR = 0.85; //%
 const THROTTLE_INTERVAL = 250; //1/4 per second
-const TRANSITION_DURATION = 250;
+const TRANSITION_DURATION = 0.15;
 
 const DropdownMenu: FC<OwnProps & OwnSharedProps> = ({
   reference,
@@ -58,7 +58,6 @@ const DropdownMenu: FC<OwnProps & OwnSharedProps> = ({
   shouldClose,
   onOpen,
   onClose,
-  onHide,
   onEnter,
   onTransitionEnd,
   onBackdropMouseEnter,
@@ -115,11 +114,9 @@ const DropdownMenu: FC<OwnProps & OwnSharedProps> = ({
     const handleMove = throttle((e: MouseEvent) => {
       const { clientX: x, clientY: y } = e;
 
-      // TODO: Fix on diff aligments
+      // TODO: Fix on diff alignments
       // Check if pointer is inside the expanded area
-      // Scale factor is a for a forward compatibility
-      // adj = adjusted
-
+      // Scale factor is for forward compatibility
       const factoredPosition = {
         top: position.top / (isTop ? SCALE_FACTOR : 1),
         left: position.left / (isLeft ? SCALE_FACTOR : 1),
@@ -176,31 +173,38 @@ const DropdownMenu: FC<OwnProps & OwnSharedProps> = ({
         />
       )}
 
-      <CSSTransition
-        unmountOnExit
-        classNames="scale-transition"
-        in={isOpen}
-        nodeRef={dropdownRef}
-        timeout={TRANSITION_DURATION}
-        onExited={onHide}
+      <motion.div
+        initial={{
+          visibility: "hidden",
+          scale: SCALE_FACTOR,
+          opacity: 0,
+          willChange: "transform",
+        }}
+        animate={{
+          visibility: isOpen ? "visible" : "hidden",
+          scale: isOpen ? 1 : SCALE_FACTOR,
+          opacity: isOpen ? 1 : 0,
+        }}
+        exit={{ scale: SCALE_FACTOR, opacity: 0 }}
+        transition={{
+          duration: TRANSITION_DURATION,
+          ease: "easeInOut",
+        }}
+        role="menu"
+        aria-hidden={!isOpen}
+        aria-expanded={isOpen}
+        data-position={position}
+        tabIndex={-1}
+        className={buildClassName(s.dropdownMenu, s[position])}
+        onMouseEnter={onBackdropMouseEnter}
+        ref={dropdownRef}
         onTransitionEnd={onTransitionEnd}
       >
-        <div
-          ref={dropdownRef}
-          role="menu"
-          aria-hidden={!isOpen}
-          aria-expanded={isOpen}
-          data-position={position}
-          tabIndex={-1}
-          className={buildClassName(s.dropdownMenu, s[position])}
-          onMouseEnter={onBackdropMouseEnter}
-        >
-          <section className={buildClassName(s.dropdownBody, className)}>
-            {children}
-          </section>
-          <LightEffect gridRef={dropdownRef} lightSize={700} />
-        </div>
-      </CSSTransition>
+        <section className={buildClassName(s.dropdownBody, className)}>
+          {children}
+        </section>
+        <LightEffect gridRef={dropdownRef} lightSize={700} />
+      </motion.div>
 
       {isOpen && (
         <div

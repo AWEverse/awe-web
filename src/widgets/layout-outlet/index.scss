@@ -1,0 +1,37 @@
+.LayoutHeader {
+  z-index: 1000;
+  background-color: transparent;
+  border-bottom: 2px solid black;
+
+  background-image: radial-gradient(transparent 1px, var(--awe-palette-background-default) 1px);
+  background-size: 4px 4px;
+
+  backdrop-filter: blur(3px);
+
+  // Fallback for browsers not supporting backdrop-filter
+  @supports not ((-webkit-backdrop-filter: none) or (backdrop-filter: none)) {
+    background-color: rgba(255, 255, 255, 0.8); // A fallback color for unsupported browsers
+  }
+
+  mask: linear-gradient(to bottom, black 60%, transparent);
+
+  padding: 1rem;
+  min-height: 2rem;
+  max-height: 4rem;
+
+  // For older browsers (IE/Edge) that don't support the mask property
+  @supports not (mask: linear-gradient(to bottom, black 60%, transparent)) {
+    border-bottom: 1px solid var(--awe-palette-background-default); // A fallback for the mask effect
+  }
+}
+
+.LayoutOutlet {
+  display: flex;
+  flex-direction: column;
+  min-height: 100dvh;  
+}
+
+.LayoutBody {
+  flex: 1;
+  box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.05);
+}

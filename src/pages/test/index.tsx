@@ -1,96 +1,82 @@
-import { useEffect, useState } from "react";
+import React, { useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import "./styles.scss";
-import { marked, Tokens } from "marked";
-import DOMPurify from "dompurify";
 
-import MoonPhases from "@/shared/common/MoonPhases";
-import VideoPlayer from "@/widgets/video-player/public/ui/VideoPlayer";
-import SeekLine from "@/widgets/video-player/private/ui/SeekLine";
-import { Lethargy } from "@/lib/utils/lethargy";
-
-const ScrollDemo: React.FC = () => {
-  const [intent, setIntent] = useState<"None" | "Scrolling" | "Inertia">(
-    "None",
-  );
-  const [inertia, setInertia] = useState<string>("Inactive");
-  const lethargy = new Lethargy({
-    stability: 8,
-    sensitivity: 100,
-    tolerance: 1.1,
-    delay: 150,
-  });
-
-  const handleWheel = (e: WheelEvent) => {
-    console.log(lethargy);
-
-    const isInertia = lethargy.check(e);
-    if (isInertia === false) {
-      setIntent("Scrolling");
-      setInertia("Intent");
-    } else if (isInertia) {
-      setIntent("Scrolling");
-      setInertia("Inertial");
-    } else {
-      setIntent("None");
-    }
-  };
-
-  useEffect(() => {
-    const scrollContainer = document.getElementById("scroll-container");
-    if (scrollContainer) {
-      scrollContainer.addEventListener("wheel", handleWheel);
-    }
-
-    return () => {
-      if (scrollContainer) {
-        scrollContainer.removeEventListener("wheel", handleWheel);
-      }
-    };
-  }, []);
-
-  return (
-    <div>
-      <div
-        id="scroll-container"
-        style={{
-          width: "100%",
-          height: "400px",
-          maxWidth: "600px",
-          overflowY: "auto",
-          border: "2px solid black",
-          padding: "10px",
-        }}
-      >
-        <div style={{ height: "1000px" }}>
-          <h2>Scroll down to start scrolling!</h2>
-        </div>
-      </div>
-
-      <div>
-        <p>Intent: {intent}</p>
-        <p>Inertia: {inertia}</p>
-      </div>
-    </div>
-  );
-};
-
-export function getTranslatorLink(text: string, lang: string): string {
-  return `https://translate.google.com/?sl=auto&tl=${lang}&text=${encodeURIComponent(
-    text,
-  )}`;
+interface GalleryProps {
+  items: string[];
+  setIndex: React.Dispatch<React.SetStateAction<number | false>>;
 }
 
-const TestPage = () => {
+interface SingleImageProps {
+  color: string;
+  onClick: () => void;
+}
+
+const Gallery: React.FC<GalleryProps> = ({ items, setIndex }) => {
   return (
-    <div className="p-1" style={{ height: "300px", maxWidth: "1000px" }}>
-      <VideoPlayer
-        audioVolume={0}
-        isAudioMuted={false}
-        playbackSpeed={0}
-        totalFileSize={0}
-      />
+    <motion.ul className="gallery-container" layout>
+      {items.map((color, i) => (
+        <motion.li
+          className="gallery-item"
+          key={color}
+          onClick={() => setIndex(i)}
+          style={{ backgroundColor: color, willChange: "transform" }}
+          layoutId={color}
+        >
+          <img src={"https://picsum.photos/100/100"} />
+        </motion.li>
+      ))}
+    </motion.ul>
+  );
+};
+
+const SingleImage: React.FC<SingleImageProps> = ({ color, onClick }) => {
+  return (
+    <div className="single-image-container" onClick={onClick}>
+      <motion.div
+        layoutId={color}
+        className="single-image"
+        style={{ backgroundColor: color }}
+      >
+        <img src={"https://picsum.photos/500/300"} />
+      </motion.div>
     </div>
   );
 };
+
+const TestPage: React.FC = () => {
+  const [index, setIndex] = useState<number | false>(false);
+
+  return (
+    <>
+      <Gallery items={colors} setIndex={setIndex} />
+      <AnimatePresence>
+        {index !== false && (
+          <>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 0.6 }}
+              exit={{ opacity: 0 }}
+              key="overlay"
+              className="overlay"
+              onClick={() => setIndex(false)}
+            />
+            <SingleImage
+              key="image"
+              color={colors[index]}
+              onClick={() => setIndex(false)}
+            />
+          </>
+        )}
+      </AnimatePresence>
+    </>
+  );
+};
+
+const numColors = 4 * 4;
+const makeColor = (hue: number): string => `hsl(${hue}, 100%, 50%)`;
+const colors: string[] = Array.from(Array(numColors)).map((_, i) =>
+  makeColor(Math.round((360 / numColors) * i)),
+);
 
 export default TestPage;

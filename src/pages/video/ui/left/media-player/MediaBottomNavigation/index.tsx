@@ -1,13 +1,11 @@
-import { FC, useState } from 'react';
-import { CSSTransition, TransitionGroup } from 'react-transition-group';
-import TrackNavigation from '@/shared/ui/TrackNavigation';
-import FirstSlide from './slides/FirstSlide';
-import SecondSlide from './slides/SecondSlide';
-import s from './index.module.scss';
-import useConditionalRef from '@/lib/hooks/utilities/useConditionalRef';
+import { FC, memo, useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import TrackNavigation from "@/shared/ui/TrackNavigation";
+import FirstSlide from "./slides/FirstSlide";
+import SecondSlide from "./slides/SecondSlide";
 
 const MAX_SLIDES = 2;
-const TRANSITION_DURATION = 250;
+const TRANSITION_DURATION = 0.25; // In seconds
 
 const MediaBottomNavigation: FC = () => {
   const [index, setIndex] = useState(0);
@@ -15,32 +13,32 @@ const MediaBottomNavigation: FC = () => {
   const onSlideChange = (e: React.MouseEvent<HTMLDivElement>) => {
     e.stopPropagation();
     e.preventDefault();
-
-    setIndex(prevIndex => (prevIndex === MAX_SLIDES - 1 ? 0 : prevIndex + 1));
+    setIndex((prevIndex) => (prevIndex === MAX_SLIDES - 1 ? 0 : prevIndex + 1));
   };
 
   const currentSlide = index === 0 ? <FirstSlide /> : <SecondSlide />;
-  const slideDirection = index === 0 ? 'toTop' : 'toBottom';
-
-  const transitionRef = useConditionalRef<HTMLDivElement>(null, [index]);
+  const slideDirection = index === 0 ? "toTop" : "toBottom";
 
   return (
-    <section className={s.MediaNavigation} onClick={onSlideChange}>
+    <section
+      className="relative flex items-center gap-2 px-1 rounded-md cursor-pointer select-none h-16 w-full bg-awe-palette-secondary-main overflow-hidden"
+      onClick={onSlideChange}
+    >
       <TrackNavigation count={MAX_SLIDES} index={index} />
-      <TransitionGroup component={null}>
-        <CSSTransition
-          nodeRef={transitionRef}
+      <AnimatePresence>
+        <motion.div
           key={slideDirection}
-          timeout={TRANSITION_DURATION}
-          classNames={slideDirection}
+          className="absolute top-0 left-0 right-0 bottom-0 w-full h-full z-10 pl-3 flex items-center self-end gap-2"
+          initial={{ opacity: 0, y: slideDirection === "toTop" ? -50 : 50 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: slideDirection === "toTop" ? -50 : 50 }}
+          transition={{ duration: TRANSITION_DURATION }}
         >
-          <div ref={transitionRef} className={s.slide}>
-            {currentSlide}
-          </div>
-        </CSSTransition>
-      </TransitionGroup>
+          {currentSlide}
+        </motion.div>
+      </AnimatePresence>
     </section>
   );
 };
 
-export default MediaBottomNavigation;
+export default memo(MediaBottomNavigation);
