@@ -12,6 +12,7 @@ import "@/lib/core/public/templates/linq";
 import { useComponentDidMount } from "@/shared/hooks/effects/useLifecycle";
 import useBodyClass from "@/shared/hooks/DOM/useBodyClass";
 import { IS_TOUCH_ENV } from "@/lib/core";
+import { LazyMotion, domAnimation } from "motion/react";
 
 interface StateProps {
   themeKey: ThemeKey;
@@ -26,19 +27,21 @@ const App: FC<StateProps> = ({ themeKey = "dark" }) => {
 
   return (
     <StrictMode>
-      <InltLocaleProvider>
-        <ThemeProvider
-          defaultMode={themeKey}
-          theme={theme}
-          disableTransitionOnChange
-        >
-          <CssBaseline />
+      <LazyMotion features={domAnimation}>
+        <InltLocaleProvider>
+          <ThemeProvider
+            defaultMode={themeKey}
+            theme={theme}
+            disableTransitionOnChange
+          >
+            <CssBaseline />
 
-          <BrowserRouter>
-            <AWERoutesBrowserRouter />
-          </BrowserRouter>
-        </ThemeProvider>
-      </InltLocaleProvider>
+            <BrowserRouter>
+              <AWERoutesBrowserRouter />
+            </BrowserRouter>
+          </ThemeProvider>
+        </InltLocaleProvider>
+      </LazyMotion>
     </StrictMode>
   );
 };

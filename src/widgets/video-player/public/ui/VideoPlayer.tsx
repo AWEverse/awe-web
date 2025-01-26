@@ -79,7 +79,7 @@ const MIN_READY_STATE = 4;
 const REWIND_STEP = 5; // Seconds
 
 const VideoPlayer: React.FC<OwnProps> = ({
-  mediaUrl = "public\\video_test\\got.mp4",
+  mediaUrl = "public\\video_test\\Интерстеллар.mp4",
   posterDimensions,
   audioVolume = 1,
   playbackSpeed = 1,

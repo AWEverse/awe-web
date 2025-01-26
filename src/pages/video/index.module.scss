@@ -8,7 +8,7 @@
   height: 100%;
   gap: var(--gap);
   flex-direction: row;
-  padding: var(--padding-overflow) calc(var(--padding-overflow) * 2);
+  padding: 1rem calc(var(--padding-overflow) * 2);
 
   @media (max-width: 1024px) {
     --right-column-width: 320px;

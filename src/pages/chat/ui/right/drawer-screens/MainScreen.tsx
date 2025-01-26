@@ -71,11 +71,7 @@ const MainScreen: FC<OwnProps> = ({ nodeRef, className }) => {
           onSwitchTab={handleTabChange}
         />
 
-        <Square
-          className={s.Square}
-          containerRef={containerRef}
-          currentColumn={columnsCount}
-        >
+        <Square className={s.Square} currentColumn={columnsCount}>
           {Array.from({ length: 50 }, (_, i) => (
             <img
               key={i}

@@ -14,6 +14,7 @@
 }
 
 .Video {
+  aspect-ratio: 16 / 9;
   border-radius: inherit;
   display: block;
   object-fit: cover;
@@ -22,6 +23,7 @@
   height: 100%;
   background: no-repeat 50% 50%;
   background-size: cover;
+  background-color: var(--color-black);
 
   @media (max-height: 640px) {
     max-height: 100dvh;

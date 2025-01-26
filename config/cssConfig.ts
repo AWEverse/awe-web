@@ -1,5 +1,5 @@
-import { CSSOptions } from 'vite';
-import autoprefixer from 'autoprefixer';
+import { CSSOptions } from "vite";
+import autoprefixer from "autoprefixer";
 
 export default {
   devSourcemap: true,

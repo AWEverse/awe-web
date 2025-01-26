@@ -1,24 +1,22 @@
-import React from 'react';
-import { DEBUG } from '../config/dev';
+import React from "react";
+import { DEBUG } from "../config/dev";
 
-type IEvent = React.UIEvent | Event | React.FormEvent;
+type GenericEvent<T> =
+  | React.SyntheticEvent<T>
+  | React.UIEvent<T>
+  | React.MouseEvent<T>
+  | React.FormEvent<T>;
 
-const stopEvent = (event: IEvent): void => {
+const stopEvent = <T = HTMLElement>(event: GenericEvent<T>): void => {
   if (event) {
-    // 'input' event will have cancelable=false, but we still need to preventDefault
-    // if(!event.cancelable) {
-    //   return false;
-    // }
-
-    // @ts-ignore
-    event = event.originalEvent || event;
+    const nativeEvent = event?.nativeEvent || event;
 
     try {
-      if (event.stopPropagation) event.stopPropagation();
-      if (event.preventDefault) event.preventDefault();
+      if (nativeEvent.stopPropagation) nativeEvent.stopPropagation();
+      if (nativeEvent.preventDefault) nativeEvent.preventDefault();
     } catch (err) {
       if (DEBUG) {
-        console.error('src\\lib\\utils\\stopEvent.ts: ' + err);
+        console.error("src\\lib\\utils\\stopEvent.ts:", err);
       }
     }
   }
