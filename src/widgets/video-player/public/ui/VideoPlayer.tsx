@@ -204,11 +204,9 @@ const VideoPlayer: React.FC<OwnProps> = ({
       const touch = e.touches[0];
       const videoElement = e.target as HTMLVideoElement;
 
-      // Чтение данных из DOM через fastdom
       requestMeasure(() => {
         const touchX = touch.clientX;
 
-        // Расчет положения касания
         const action = calculateTouchPosition(videoElement, touchX);
 
         switch (action) {
