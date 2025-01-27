@@ -18,14 +18,12 @@ import {
 import { useStableCallback } from "@/shared/hooks/base";
 import useFullscreen from "../hooks/useFullScreen";
 import useUnsupportedMedia from "../hooks/useSupportCheck";
-import { BufferedRange, getTimeRanges } from "@/lib/hooks/ui/useBuffering";
+import { BufferedRange } from "@/lib/hooks/ui/useBuffering";
 import useControlsSignal from "../../private/hooks/useControlsSignal";
 import stopEvent from "@/lib/utils/stopEvent";
 import useAmbilight from "../hooks/useAmbilight";
 import { ObserveFn } from "@/shared/hooks/DOM/useIntersectionObserver";
-
 import VideoPlayerControls from "../../private/ui/VideoPlayerControls";
-
 import "./VideoPlayer.scss";
 import { ApiDimensions } from "@/@types/api/types/messages";
 import useAppLayout from "@/lib/hooks/ui/useAppLayout";
@@ -35,11 +33,11 @@ import useStateSignal from "@/lib/hooks/signals/useStateSignal";
 import { DEBUG } from "@/lib/config/dev";
 import { useBooleanState } from "@/shared/hooks/state";
 import { requestMeasure } from "@/lib/modules/fastdom/fastdom";
+
 const TopPannel = lazy(() => import("../../private/ui/mobile/TopPannel"));
 
 type OwnProps = {
   ref?: React.RefObject<HTMLVideoElement>;
-
   closeOnMediaClick?: boolean;
   disableClickActions?: boolean;
   disablePreview?: boolean;
@@ -47,7 +45,6 @@ type OwnProps = {
   isAdsMessage?: boolean;
   isViewerOpen?: boolean;
   isGif?: boolean;
-
   mediaUrl?: string | string[];
   progressPercentage?: number;
   totalFileSize: number;
@@ -55,21 +52,18 @@ type OwnProps = {
   audioVolume: number;
   isAudioMuted: boolean;
   isContentProtected?: boolean;
-
-  posterDimensions?: ApiDimensions; // width and height
+  posterDimensions?: ApiDimensions;
   posterSource?: string;
   allowFullscreen?: boolean;
-
   observeIntersectionForBottom?: ObserveFn;
   observeIntersectionForLoading?: ObserveFn;
   observeIntersectionForPlaying?: ObserveFn;
-
   onAdsClick?: (triggeredFromMedia?: boolean) => void;
 };
 
-const MAX_LOOP_DURATION = 30; // Seconds
+const MAX_LOOP_DURATION = 30;
 const MIN_READY_STATE = 4;
-const REWIND_STEP = 5; // Seconds
+const REWIND_STEP = 5;
 
 const VideoPlayer: React.FC<OwnProps> = ({
   mediaUrl = "/video_test/Интерстеллар.mp4",
@@ -85,8 +79,6 @@ const VideoPlayer: React.FC<OwnProps> = ({
   onAdsClick,
 }) => {
   const { isMobile } = useAppLayout();
-
-  // References
   const containerRef = useRef<HTMLDivElement>(null);
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -102,7 +94,6 @@ const VideoPlayer: React.FC<OwnProps> = ({
   const [currentTime, setCurrentTime] = useStateSignal(0);
   const [volume, setVolume] = useStateSignal(1);
   const [waitingSignal, setWaiting] = useStateSignal(false);
-
   const [bufferedSingal, setBuffered] = useStateSignal<BufferedRange[]>([]);
   const [controlsSignal, toggleControls, lockControls] = useControlsSignal();
 
@@ -112,7 +103,6 @@ const VideoPlayer: React.FC<OwnProps> = ({
   );
 
   const handleEnterFullscreen = useStableCallback(() => {});
-
   const handleLeaveFullscreen = useStableCallback(() => {});
 
   const [
@@ -125,19 +115,20 @@ const VideoPlayer: React.FC<OwnProps> = ({
     handleLeaveFullscreen,
   );
 
-  // const { isReady, isBuffered, bufferedRanges, bufferingHandlers, bufferedProgress } = useBuffering();
-  // useVideoCleanup(videoRef, bufferingHandlers);
-
   const isUnsupported = useUnsupportedMedia(videoRef);
-
   useAmbilight(videoRef, canvasRef);
+
+  const mediaSources = useMemo(() => {
+    if (!mediaUrl) return null;
+    const urls = Array.isArray(mediaUrl) ? mediaUrl : [mediaUrl];
+    return urls.map((url) => <source key={url} src={url} />);
+  }, [mediaUrl]);
 
   const handleTimeUpdate = useStableCallback(
     (e: React.SyntheticEvent<HTMLVideoElement>) => {
-      const { currentTime, duration, readyState } = e.currentTarget;
-
-      const normalizedTime = round(currentTime);
-      const normalizedDuration = round(duration);
+      const { currentTime: ct, duration: d, readyState } = e.currentTarget;
+      const normalizedTime = round(ct);
+      const normalizedDuration = round(d);
 
       if (readyState >= EMediaReadyState.HAVE_ENOUGH_DATA) {
         setWaiting(false);
@@ -162,32 +153,19 @@ const VideoPlayer: React.FC<OwnProps> = ({
     setCurrentTime(position);
   });
 
-  const handleSeekStart = useStableCallback(() => {});
-
-  const handleSeekEnd = useStableCallback(() => {});
-
   const togglePlayState = useStableCallback(
     async (e: React.MouseEvent<HTMLElement, MouseEvent> | KeyboardEvent) => {
       e.stopPropagation();
-
       const video = videoRef.current!;
       setPlaying(!isPlaying);
-
       return isPlaying ? pauseMedia(video) : await playMedia(video);
     },
   );
 
   const handleClick = useStableCallback(
     async (e: React.MouseEvent<HTMLVideoElement, MouseEvent>) => {
-      if (isAdsMessage) {
-        onAdsClick?.(true);
-      }
-
-      if (disableClickActions) {
-        return;
-      }
-
-      await togglePlayState(e);
+      if (isAdsMessage) onAdsClick?.(true);
+      if (!disableClickActions) await togglePlayState(e);
     },
   );
 
@@ -195,42 +173,13 @@ const VideoPlayer: React.FC<OwnProps> = ({
     (e: React.TouchEvent<HTMLMediaElement>) => {
       const touch = e.touches[0];
       const videoElement = e.target as HTMLVideoElement;
-
       requestMeasure(() => {
         const touchX = touch.clientX;
-
         const action = calculateTouchPosition(videoElement, touchX);
-
-        switch (action) {
-          case "back":
-            break;
-          case "play-pause":
-            break;
-          case "forward":
-            break;
-        }
+        // Handle touch actions
       });
     },
   );
-
-  // Example handlers
-  const handleBack = useStableCallback(() => {
-    console.log("Navigating back...");
-  });
-
-  const handleNext = useStableCallback(() => {
-    console.log("Navigating next...");
-  });
-
-  const handleVideoEnter = useStableCallback(() => {
-    toggleControls(true);
-  });
-
-  const handleVideoLeave = useStableCallback(() => {
-    toggleControls(!isPlaying);
-  });
-
-  const handleVideoMove = useStableCallback(() => {});
 
   const handleVolumeChange = useStableCallback(
     throttle((value: number) => {
@@ -246,74 +195,30 @@ const VideoPlayer: React.FC<OwnProps> = ({
     setVolume(!video.muted ? lastVolume : 0);
   });
 
-  const handlePlaybackRateChange = useStableCallback((value: number) => {
-    setMediaPlayBackRate(videoRef.current!, value);
-  });
-
   const handleFullscreenChange = useStableCallback(() => {
-    if (isFullscreen) {
-      exitFullscreen?.();
-    } else {
-      enterFullscreen?.();
-    }
+    isFullscreen ? exitFullscreen?.() : enterFullscreen?.();
   });
-
-  const handlePlay = useStableCallback(
-    (e: React.SyntheticEvent<HTMLVideoElement>) => {
-      setPlaying(true);
-    },
-  );
-
-  const handlePauseChange = useStableCallback(
-    (e: React.SyntheticEvent<HTMLVideoElement>) => {
-      setPlaying(false);
-    },
-  );
 
   useEffect(() => {
     const videoElement = videoRef.current;
-    if (!videoElement) {
-      return;
-    }
+    if (!videoElement || isUnsupported) return;
 
-    if (isUnsupported) {
-      pauseMedia(videoElement);
-    } else if (mediaUrl && !IS_TOUCH_ENV) {
-      // Chrome does not automatically start playing when `url` becomes available (even with `autoPlay`),
-      // so we force it here. Contrary, iOS does not allow to call `play` without mouse event,
-      // so we need to use `autoPlay` instead to allow pre-buffering.
-      playMedia(videoElement)
-        .then(() => {
-          pauseMedia(videoElement);
-        })
-        .catch((err) => {
-          if (DEBUG) {
-            console.log(err);
-          }
-        });
-    }
-  }, [mediaUrl, isUnsupported]);
-
-  useEffect(() => {
-    const rewind = (dir: number) => {
-      const video = videoRef.current!;
-
-      const newTime = clamp(
-        video.currentTime + dir * REWIND_STEP,
-        0,
-        video.duration,
-      );
-
-      if (Number.isFinite(newTime)) {
-        video.currentTime = newTime;
+    const initializePlayback = async () => {
+      try {
+        await playMedia(videoElement);
+        pauseMedia(videoElement);
+      } catch (err) {
+        DEBUG && console.log(err);
       }
     };
 
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (isInPictureInPicture) {
-        return;
-      }
+    if (mediaUrl && !IS_TOUCH_ENV) initializePlayback();
+  }, [mediaUrl, isUnsupported]);
 
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (isInPictureInPicture) return;
+      const video = videoRef.current!;
       const key = e.key || e.code;
 
       switch (key) {
@@ -323,22 +228,26 @@ const VideoPlayer: React.FC<OwnProps> = ({
           togglePlayState(e);
           break;
         case EKeyboardKey.ArrowLeft:
-        case "Left": // IE/Edge specific
           e.preventDefault();
-          rewind(-1);
+          video.currentTime = clamp(
+            video.currentTime - REWIND_STEP,
+            0,
+            duration,
+          );
           break;
         case EKeyboardKey.ArrowRight:
-        case "Right": // IE/Edge specific
           e.preventDefault();
-          rewind(1);
+          video.currentTime = clamp(
+            video.currentTime + REWIND_STEP,
+            0,
+            duration,
+          );
           break;
         case EKeyboardKey.ArrowUp:
         case EKeyboardKey.ArrowDown:
           e.preventDefault();
           handleVolumeChange(
-            clamp01(
-              volume.value + (e.key === EKeyboardKey.ArrowUp ? 0.1 : -0.1),
-            ),
+            clamp01(volume.value + (key === EKeyboardKey.ArrowUp ? 0.1 : -0.1)),
           );
           break;
         case EKeyboardKey.M:
@@ -352,40 +261,54 @@ const VideoPlayer: React.FC<OwnProps> = ({
       }
     };
 
-    document.addEventListener("keydown", handleKeyDown, false);
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, [
+    togglePlayState,
+    isFullscreen,
+    isInPictureInPicture,
+    handleVolumeChange,
+    handleMuteClick,
+    handleFullscreenChange,
+  ]);
 
-    if (isFullscreen) {
-      handleFullscreenChange();
-    }
+  const handlersBuffering = useMemo(
+    () => ({
+      onPlay: updateBuffering,
+      onPlaying: updateBuffering,
+      onLoadedData: updateBuffering,
+      onLoadStart: updateBuffering,
+      onPause: updateBuffering,
+      onTimeUpdate: updateBuffering,
+      onProgress: updateBuffering,
+    }),
+    [],
+  );
 
-    return () => {
-      document.removeEventListener("keydown", handleKeyDown, false);
-    };
-  }, [togglePlayState, isFullscreen, isInPictureInPicture]);
+  function updateBuffering(e: Event | React.SyntheticEvent<HTMLMediaElement>) {
+    const media = e.currentTarget as HTMLMediaElement;
+    const ranges = BTimeRanges.getBufferedInfo(media.buffered);
+    setBuffered(ranges);
+    setReady((current) => current || isMediaReadyToPlay(media));
+  }
 
-  const shouldToggleControls = !IS_TOUCH_ENV && !isMobile;
+  const handleVideoEnter = useStableCallback(() => {
+    toggleControls(true);
+  });
 
-  const handlersBuffering = useMemo(() => {
-    const handleBuffering = (
-      e: Event | React.SyntheticEvent<HTMLMediaElement>,
-    ) => {
-      const media = e.currentTarget as HTMLMediaElement;
-      const ranges = BTimeRanges.getBufferedInfo(media.buffered);
+  const handleVideoLeave = useStableCallback(() => {
+    toggleControls(!isPlaying);
+  });
 
-      setBuffered(ranges);
-      setReady((current) => current || isMediaReadyToPlay(media));
-    };
+  const handleVideoMove = useStableCallback(() => {});
 
-    return {
-      onPlay: handleBuffering,
-      onPlaying: handleBuffering,
-      onLoadedData: handleBuffering,
-      onLoadStart: handleBuffering, // Needed for Safari to start
-      onPause: handleBuffering, // Needed for Chrome when seeking
-      onTimeUpdate: handleBuffering, // Needed for audio buffering progress
-      onProgress: handleBuffering, // Needed for video buffering progress
-    };
-  }, [duration, setBuffered]);
+  const handlePlaybackRateChange = useStableCallback((value: number) => {
+    setMediaPlayBackRate(videoRef.current!, value);
+  });
+
+  const handleSeekStart = useStableCallback(() => {});
+
+  const handleSeekEnd = useStableCallback(() => {});
 
   return (
     <div
@@ -395,9 +318,9 @@ const VideoPlayer: React.FC<OwnProps> = ({
         isFullscreen && "FullscreenMode",
       )}
       ref={containerRef}
-      onMouseMove={shouldToggleControls ? handleVideoMove : undefined}
-      onMouseOut={shouldToggleControls ? handleVideoLeave : undefined}
-      onMouseOver={shouldToggleControls ? handleVideoEnter : undefined}
+      onMouseMove={!isMobile ? handleVideoMove : undefined}
+      onMouseOut={!isMobile ? handleVideoLeave : undefined}
+      onMouseOver={!isMobile ? handleVideoEnter : undefined}
     >
       {isMobile && <TopPannel />}
 
@@ -414,16 +337,16 @@ const VideoPlayer: React.FC<OwnProps> = ({
         onContextMenu={stopEvent}
         onEnded={handleEnded}
         onClick={!isMobile ? handleClick : undefined}
-        onTouchStart={isMobile && IS_TOUCH_ENV ? handleTouch : undefined}
+        onTouchStart={isMobile ? handleTouch : undefined}
         onDoubleClick={!IS_TOUCH_ENV ? handleFullscreenChange : undefined}
-        onPlay={handlePlay}
-        onPause={handlePauseChange}
+        onPlay={() => setPlaying(true)}
+        onPause={() => setPlaying(false)}
         onTimeUpdate={handleTimeUpdate}
-        src={mediaUrl as string}
-      />
+      >
+        {mediaSources}
+      </video>
 
       <VideoPlayerControls
-        // Playback Control
         isPlaying={isPlaying}
         currentTimeSignal={currentTime}
         volumeSignal={volume}
@@ -431,17 +354,14 @@ const VideoPlayer: React.FC<OwnProps> = ({
         duration={duration}
         playbackRate={playbackSpeed}
         isMuted={Boolean(videoRef.current?.muted)}
-        // Buffered Media Info
         bufferedRangesSignal={bufferedSingal}
         isReady={isReady}
         fileSize={totalFileSize}
-        // UI State
         waitingSignal={waitingSignal}
         isForceMobileVersion={isMobile}
         isFullscreen={isFullscreen}
         isFullscreenSupported={Boolean(enterFullscreen)}
         isPictureInPictureSupported={isPictureInPictureSupported}
-        // Event Handlers
         onPictureInPictureChange={enterPictureInPicture}
         onChangeFullscreen={handleFullscreenChange}
         onVolumeClick={handleMuteClick}
@@ -454,11 +374,10 @@ const VideoPlayer: React.FC<OwnProps> = ({
         onSeekEnd={handleSeekEnd}
       />
 
-      <canvas id="ambilight" ref={canvasRef} className={"CinematicLight"} />
+      <canvas ref={canvasRef} className="CinematicLight" />
       <div
         ref={bottomRef}
         className="VideoPlayerBottom"
-        role="contentinfo"
         aria-label="Video Player Bottom"
       />
     </div>
@@ -469,16 +388,12 @@ const calculateTouchPosition = (
   videoElement: HTMLVideoElement,
   touchX: number,
 ) => {
-  const videoWidth = videoElement.clientWidth;
-  const thirdOfScreen = videoWidth / 3;
-
-  if (touchX < thirdOfScreen) {
-    return "back";
-  } else if (touchX >= thirdOfScreen && touchX <= 2 * thirdOfScreen) {
-    return "play-pause";
-  } else {
-    return "forward";
-  }
+  const third = videoElement.clientWidth / 3;
+  return touchX < third
+    ? "back"
+    : touchX < 2 * third
+      ? "play-pause"
+      : "forward";
 };
 
 export default memo(VideoPlayer);
