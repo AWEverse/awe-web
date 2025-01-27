@@ -1,171 +1,126 @@
 import { DEBUG } from "@/lib/config/dev";
-import {
-  IS_FIREFOX,
-  IS_IOS,
-  IS_PWA,
-  isMediaPlaying,
-  playMedia,
-} from "@/lib/core";
-import { useState, useLayoutEffect, useCallback } from "react";
+import { isMediaPlaying, playMedia } from "@/lib/core";
+import { useState, useLayoutEffect, useCallback, useRef } from "react";
 
-type RefType = {
-  current: HTMLVideoElement | null;
+type PipState = {
+  isSupported: boolean;
+  isActive: boolean;
+  enter: () => Promise<void>;
+  exit: () => Promise<void>;
 };
 
-type ReturnType = [boolean, () => void, boolean] | [false];
-type CallbackType = () => void;
+const PIP_EVENTS = [
+  "enterpictureinpicture",
+  "webkitenterpictureinpicture",
+  "leavepictureinpicture",
+  "webkitleavepictureinpicture",
+] as const;
 
 export default function usePictureInPicture(
-  elRef: RefType,
-  onEnter: CallbackType,
-  onLeave: CallbackType,
-): ReturnType {
-  const [isSupported, setIsSupported] = useState(false);
-  const [isActive, setIsActive] = useState(false);
+  videoRef: React.RefObject<HTMLVideoElement | null>,
+  callbacks?: {
+    onEnter?: () => void;
+    onLeave?: () => void;
+  },
+): PipState {
+  const [state, setState] = useState<PipState>({
+    isSupported: false,
+    isActive: false,
+    enter: () => Promise.resolve(),
+    exit: () => Promise.resolve(),
+  });
 
-  if (IS_FIREFOX) {
-    return [false];
-  }
-  // const IsPictureInPicture = useSignal();
+  const pipElement = useRef<HTMLVideoElement | null>(null);
+
+  // Feature detection
+  const isPipSupported = useCallback(() => {
+    const video = videoRef.current;
+    return !!(
+      (document.pictureInPictureEnabled ||
+        video?.webkitSupportsPresentationMode?.("picture-in-picture")) &&
+      !video?.disablePictureInPicture
+    );
+  }, [videoRef]);
+
+  const handleEnter = useCallback(() => {
+    setState((prev) => ({ ...prev, isActive: true }));
+    callbacks?.onEnter?.();
+  }, [callbacks?.onEnter]);
+
+  const handleLeave = useCallback(() => {
+    setState((prev) => ({ ...prev, isActive: false }));
+    callbacks?.onLeave?.();
+  }, [callbacks?.onLeave]);
 
   useLayoutEffect(() => {
-    // PIP is not supported in PWA on iOS, despite being detected
-    if ((IS_IOS && IS_PWA) || !elRef.current) {
-      return undefined;
-    }
+    const video = videoRef.current;
+    if (!video || !isPipSupported()) return;
 
-    const video = elRef.current;
-    const setMode = getSetPresentationMode(video);
-    const isEnabled =
-      (document.pictureInPictureEnabled &&
-        !elRef.current?.disablePictureInPicture) ||
-      setMode !== undefined;
-
-    if (!isEnabled) {
-      return undefined;
-    }
-    // @ts-ignore
-    video.autoPictureInPicture = true;
-
-    setIsSupported(true);
-
-    const onEnterInternal = () => {
-      onEnter();
-      setIsActive(true);
-      // setIsPictureInPicture(true); - signal
+    const handlePipEvent = (event: Event) => {
+      event.type.includes("enter") ? handleEnter() : handleLeave();
     };
 
-    const onLeaveInternal = () => {
-      // setIsPictureInPicture(false); - signal
-      setIsActive(false);
-      onLeave();
-    };
+    PIP_EVENTS.forEach((event) => {
+      video.addEventListener(event, handlePipEvent);
+    });
 
-    video.addEventListener("enterpictureinpicture", onEnterInternal);
-    video.addEventListener("leavepictureinpicture", onLeaveInternal);
+    setState((prev) => ({
+      ...prev,
+      isSupported: true,
+      isActive: !!document.pictureInPictureElement,
+    }));
 
     return () => {
-      video.removeEventListener("enterpictureinpicture", onEnterInternal);
-      video.removeEventListener("leavepictureinpicture", onLeaveInternal);
+      PIP_EVENTS.forEach((event) => {
+        video.removeEventListener(event, handlePipEvent);
+      });
     };
-  }, [elRef, onEnter, onLeave]);
+  }, [videoRef, isPipSupported, handleEnter, handleLeave]);
 
-  const exitPictureInPicture = useCallback(() => {
-    if (!elRef.current) {
-      return;
-    }
+  const enterPip = useCallback(async () => {
+    const video = videoRef.current;
+    if (!video || !isPipSupported()) return;
 
-    const video = elRef.current;
-    const setMode = getSetPresentationMode(video);
-
-    if (setMode) {
-      setMode("inline");
-    } else {
-      exitPictureInPictureIfNeeded();
-    }
-  }, [elRef]);
-
-  const enterPictureInPicture = useCallback(() => {
-    if (!elRef.current) {
-      return;
-    }
-
-    exitPictureInPicture();
-
-    const video = elRef.current;
-    const isPlaying = isMediaPlaying(video);
-    const setMode = getSetPresentationMode(video);
-
-    if (setMode) {
-      setMode("picture-in-picture");
-    } else {
-      requestPictureInPicture(video);
-    }
-
-    if (isPlaying) {
-      playMedia(video);
-    }
-  }, [elRef, exitPictureInPicture]);
-
-  if (!isSupported) {
-    return [false];
-  }
-
-  return [isSupported, enterPictureInPicture, isActive];
-}
-
-function getSetPresentationMode(
-  video: HTMLVideoElement,
-): ((mode: string) => void) | undefined {
-  if ("setPresentationMode" in video) {
-    return (
-      video as unknown as { setPresentationMode: () => void }
-    ).setPresentationMode.bind(video);
-  }
-
-  // Check for WebKit-specific presentation mode support
-  if (
-    "webkitSupportsPresentationMode" in video &&
-    typeof (video as unknown as { webkitSetPresentationMode: () => void })
-      .webkitSetPresentationMode === "function"
-  ) {
-    return (
-      video as unknown as { webkitSetPresentationMode: () => void }
-    ).webkitSetPresentationMode.bind(video);
-  }
-
-  // Add checks for other vendor-prefixed versions if they appear in future browsers
-  if ("mozSetPresentationMode" in video) {
-    return (
-      video as unknown as { mozSetPresentationMode: () => void }
-    ).mozSetPresentationMode.bind(video);
-  }
-
-  return undefined;
-}
-
-function requestPictureInPicture(video: HTMLVideoElement) {
-  if (video.requestPictureInPicture) {
     try {
-      video.requestPictureInPicture();
-    } catch (err) {
-      if (DEBUG) {
-        // eslint-disable-next-line no-console
-        console.log("[MV] PictureInPicture Error", err);
-      }
-    }
-  }
-}
+      const wasPlaying = isMediaPlaying(video);
 
-export function exitPictureInPictureIfNeeded() {
-  if (document.pictureInPictureElement) {
-    try {
-      document.exitPictureInPicture();
-    } catch (err) {
-      if (DEBUG) {
-        // eslint-disable-next-line no-console
-        console.log("[MV] PictureInPicture Error", err);
+      if (video.webkitSetPresentationMode) {
+        video.webkitSetPresentationMode("picture-in-picture");
+      } else if (video.requestPictureInPicture) {
+        await video.requestPictureInPicture();
+      } else if (video.webkitRequestPictureInPicture) {
+        await video.webkitRequestPictureInPicture();
       }
+
+      pipElement.current = video;
+      if (wasPlaying) await playMedia(video);
+    } catch (error) {
+      DEBUG && console.error("PIP enter failed:", error);
     }
-  }
+  }, [videoRef, isPipSupported]);
+
+  const exitPip = useCallback(async () => {
+    try {
+      if (pipElement.current?.webkitSetPresentationMode) {
+        pipElement.current.webkitSetPresentationMode("inline");
+      } else if (document.exitPictureInPicture) {
+        await document.exitPictureInPicture();
+      } else if (document.webkitExitPictureInPicture) {
+        await document.webkitExitPictureInPicture();
+      }
+      pipElement.current = null;
+    } catch (error) {
+      DEBUG && console.error("PIP exit failed:", error);
+    }
+  }, []);
+
+  useLayoutEffect(() => {
+    setState((prev) => ({
+      ...prev,
+      enter: enterPip,
+      exit: exitPip,
+    }));
+  }, [enterPip, exitPip]);
+
+  return state;
 }

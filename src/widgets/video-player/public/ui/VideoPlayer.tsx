@@ -100,18 +100,17 @@ const VideoPlayer: React.FC<OwnProps> = ({
   const [isFullscreen, enterFullscreen, exitFullscreen] =
     useFullscreen(containerRef);
 
-  const handleEnterFullscreen = useStableCallback(() => {});
-  const handleLeaveFullscreen = useStableCallback(() => {});
+  const handleEnterFullscreen = useStableCallback(async () => {});
+  const handleLeaveFullscreen = useStableCallback(async () => {});
 
-  const [
-    isPictureInPictureSupported,
-    enterPictureInPicture,
-    isInPictureInPicture,
-  ] = usePictureInPicture(
-    videoRef,
-    handleEnterFullscreen,
-    handleLeaveFullscreen,
-  );
+  const {
+    isSupported: isPictureInPictureSupported,
+    isActive: isInPictureInPicture,
+    enter: enterPictureInPicture,
+  } = usePictureInPicture(videoRef, {
+    onEnter: handleEnterFullscreen,
+    onLeave: handleLeaveFullscreen,
+  });
 
   const isUnsupported = useUnsupportedMedia(videoRef);
   useAmbilight(videoRef, canvasRef);
