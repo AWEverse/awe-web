@@ -1,60 +1,109 @@
-.VideoPlayer {
-  position: relative;
-  max-height: calc(100vh - 8.25rem);
-  z-index: 10;
-  border-radius: 0.5rem;
+:root {
+  --video-radius: 0.5rem;
+  --video-bg-color: var(--color-black, #000);
+  --cinematic-blur: 3rem;
+  --cinematic-opacity: 0.85;
+  --player-z-index: 10;
+  --controls-z-index: 15;
+  --light-z-index: -1;
 }
 
-.FullscreenMode > .Video {
-  border-radius: 0 !important;
+.VideoPlayer {
+  --max-player-height: calc(100dvh - 8.25rem);
+  
+  position: relative;
+  max-height: var(--max-player-height);
+  border-radius: var(--video-radius);
+  z-index: var(--player-z-index);
+  background: var(--video-bg-color);
+  
+  @media (max-height: 640px) {
+    max-height: min(100dvh, var(--max-player-height));
+  }
+}
+
+.FullscreenMode {
+  --video-radius: 0;
+  --max-player-height: 100dvh;
+  
+  .Video {
+    border-radius: 0;
+  }
 }
 
 .PlayerControlsWrapper {
   width: 100%;
+  contain: content;
+  z-index: var(--controls-z-index);
 }
 
 .Video {
   aspect-ratio: 16 / 9;
-  border-radius: inherit;
   display: block;
-  object-fit: cover;
-  outline: none;
   width: 100%;
-  height: 100%;
-  background: no-repeat 50% 50%;
-  background-size: cover;
-  background-color: var(--color-black);
+  height: auto;
+  object-fit: contain;
+  background: var(--video-bg-color) no-repeat 50% / contain;
+  border-radius: inherit;
+  outline: none;
+  transform: translateZ(0); // GPU layer promotion
+  backface-visibility: hidden;
+  touch-action: manipulation;
+  user-select: none;
+  overscroll-behavior: contain;
 
-  @media (max-height: 640px) {
+  // Modern browser optimizations
+  @supports (height: 100dvh) {
     max-height: 100dvh;
   }
 
-  .is-touch-env & {
+  // Media controls suppression
+  &::-webkit-media-controls {
+    display: none !important;
+    opacity: 0;
     pointer-events: none;
   }
 
-  &::-webkit-media-controls {
-    display: none !important;
+  .is-touch-env & {
+    touch-action: pan-y pinch-zoom;
   }
 
-  &::-webkit-media-controls-enclosure {
-    display: none !important;
-  }
-
-  &::-webkit-media-controls-panel {
-    display: none !important;
+  @media (max-height: 640px) {
+    max-height: clamp(320px, 100dvh, 640px);
   }
 }
 
 .CinematicLight {
+  --scale-factor: 1.125;
+  
   position: absolute;
   pointer-events: none;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  z-index: -1;
-  transform: scale(1.125);
-  filter: blur(3rem);
-  opacity: 0.85; // Fallback for older browsers
+  inset: 0;
+  z-index: var(--light-z-index);
+  transform: scale(var(--scale-factor));
+  filter: blur(var(--cinematic-blur));
+  opacity: var(--cinematic-opacity);
+  will-change: filter, opacity;
+  mix-blend-mode: soft-light;
+  transform-style: preserve-3d;
+
+  @supports not (backdrop-filter: blur(1px)) {
+    opacity: calc(var(--cinematic-opacity) * 0.8);
+  }
+}
+
+// Performance optimizations for animation-heavy contexts
+@media (prefers-reduced-motion: no-preference) {
+  .Video {
+    will-change: transform, opacity;
+  }
+  
+  .CinematicLight {
+    animation: cinematic-pulse 8s ease-in-out infinite;
+  }
+}
+
+@keyframes cinematic-pulse {
+  0%, 100% { opacity: var(--cinematic-opacity); }
+  50% { opacity: calc(var(--cinematic-opacity) * 0.9); }
 }
