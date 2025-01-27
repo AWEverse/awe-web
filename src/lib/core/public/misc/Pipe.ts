@@ -1,60 +1,67 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 /**
- * A function type that takes an input and returns an output.
+ * A function type that takes an argument of any type and an effect, then returns any value.
+ * @template E - The type of the effect.
  */
-type Func<TInput, TOutput> = (arg: TInput, effect?: any) => TOutput;
+type AnyFunctionEffect<E> = (arg: any, effect: E) => any;
 
 /**
- * Extracts the input type of the first function in a function pipe.
- * This type represents the initial value passed to the pipe.
- * If the pipe is empty, the input type is `never` or inferred properly based on the first function.
+ * Recursively computes the return type of the pipeWithEffect function by applying each function in the pipe to the result of the previous one.
+ * @template T - The initial value type.
+ * @template E - The effect type passed to each function.
+ * @template F - The array of functions applied in the pipeline.
  */
-export type PipeInput<T extends Func<any, any>[]> = T extends [
-  Func<infer I, any>,
-  ...any[],
+type PipeWithEffectReturn<T, E, F extends AnyFunctionEffect<E>[]> = F extends [
+  (arg: T, effect: E) => infer R,
+  ...infer Rest,
 ]
-  ? I
-  : unknown;
+  ? Rest extends AnyFunctionEffect<E>[]
+    ? PipeWithEffectReturn<R, E, Rest>
+    : R
+  : T;
 
 /**
- * Extracts the output type of the last function in a function pipe.
- */
-export type PipeOutput<T extends Func<any, any>[]> = T extends [
-  ...any[],
-  Func<infer I, any>,
-]
-  ? I
-  : unknown;
-
-/**
- * The resulting function type after applying the entire pipe.
- */
-export type PipeResult<T extends Func<any, any>[]> = Func<
-  PipeInput<T>,
-  PipeOutput<T>
->;
-
-export type PipeWithEffect<T extends Func<any, any>[], E> = (
-  input: PipeInput<T>,
-  effect: E,
-) => PipeOutput<T>;
-
-/**
- * Pipe function that takes an array of functions and returns a function that applies them sequentially.
- * Supports functions that take an additional `effect` parameter.
+ * Applies a sequence of functions to an initial value and an effect.
+ * Each function takes two parameters: the result from the previous function and an effect.
+ * @template E - The effect type passed to each function.
+ * @template F - The array of functions applied in the pipeline.
+ * @param fns - The list of functions to be applied sequentially.
+ * @returns A function that takes an initial value and an effect, returning the final result after applying all functions.
  */
 export const pipeWithEffect =
-  <T extends Func<any, any>[], E>(...fns: T): PipeWithEffect<T, E> =>
-  (initialValue: PipeInput<T>, effect: E) =>
-    fns.reduce<any>(
+  <E, F extends AnyFunctionEffect<E>[]>(...fns: F) =>
+  <T>(initialValue: T, effect: E): PipeWithEffectReturn<T, E, F> => {
+    return fns.reduce(
       (result, fn) => fn(result, effect),
-      initialValue as PipeInput<T>,
-    );
+      initialValue,
+    ) as PipeWithEffectReturn<T, E, F>;
+  };
 
 /**
- * Regular pipe function that applies a series of functions to an initial value.
+ * Recursively computes the return type of the pipe function by applying each function in the pipe to the result of the previous one.
+ * @template T - The initial value type.
+ * @template F - The array of functions applied in the pipeline.
+ */
+type PipeReturn<T, F extends Array<(arg: any) => any>> = F extends [
+  (arg: T) => infer R,
+  ...infer Rest,
+]
+  ? Rest extends Array<(arg: any) => any>
+    ? PipeReturn<R, Rest>
+    : R
+  : T;
+
+/**
+ * Applies a sequence of functions to an initial value.
+ * Each function takes the result from the previous function and returns a new result.
+ * @template F - The array of functions applied in the pipeline.
+ * @param fns - The list of functions to be applied sequentially.
+ * @returns A function that takes an initial value and returns the final result after applying all functions.
  */
 export const pipe =
-  <T extends Func<any, any>[]>(...fns: T): PipeResult<T> =>
-  (initialValue: PipeInput<T>) =>
-    fns.reduce<any>((result, fn) => fn(result), initialValue);
+  <F extends Array<(arg: any) => any>>(...fns: F) =>
+  <T>(initialValue: T): PipeReturn<T, F> => {
+    return fns.reduce((result, fn) => fn(result), initialValue) as PipeReturn<
+      T,
+      F
+    >;
+  };

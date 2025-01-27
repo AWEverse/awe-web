@@ -1,7 +1,7 @@
 import {
   requestMutation,
   requestMeasure,
-  requestForcedReflow,
+  requestNextMutation,
 } from "@/lib/modules/fastdom/fastdom";
 import {
   useEffect,
@@ -65,7 +65,7 @@ export default function useCollapsibleLines<
 
   useLayoutEffect(() => {
     if (!isDisabled && isFirstRenderRef.current) {
-      requestForcedReflow(() => {
+      requestNextMutation(() => {
         recalculateTextLines();
 
         return () => {
