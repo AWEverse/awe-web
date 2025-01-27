@@ -1,16 +1,8 @@
-import React, {
-  lazy,
-  memo,
-  useEffect,
-  useImperativeHandle,
-  useMemo,
-  useRef,
-  useState,
-} from "react";
+import React, { lazy, memo, useEffect, useMemo, useRef, useState } from "react";
 import {
+  BTimeRanges,
   clamp,
   clamp01,
-  debounce,
   EKeyboardKey,
   EMediaReadyState,
   IS_TOUCH_ENV,
@@ -80,7 +72,7 @@ const MIN_READY_STATE = 4;
 const REWIND_STEP = 5; // Seconds
 
 const VideoPlayer: React.FC<OwnProps> = ({
-  mediaUrl = "public\\video_test\\Интерстеллар.mp4",
+  mediaUrl = "/video_test/Интерстеллар.mp4",
   posterDimensions,
   audioVolume = 1,
   playbackSpeed = 1,
@@ -360,10 +352,14 @@ const VideoPlayer: React.FC<OwnProps> = ({
       }
     };
 
-    document.addEventListener("keydown", handleKeyDown);
+    document.addEventListener("keydown", handleKeyDown, false);
+
+    if (isFullscreen) {
+      handleFullscreenChange();
+    }
 
     return () => {
-      document.removeEventListener("keydown", handleKeyDown);
+      document.removeEventListener("keydown", handleKeyDown, false);
     };
   }, [togglePlayState, isFullscreen, isInPictureInPicture]);
 
@@ -374,7 +370,7 @@ const VideoPlayer: React.FC<OwnProps> = ({
       e: Event | React.SyntheticEvent<HTMLMediaElement>,
     ) => {
       const media = e.currentTarget as HTMLMediaElement;
-      const ranges = getTimeRanges(media.buffered, media.duration);
+      const ranges = BTimeRanges.getBufferedInfo(media.buffered);
 
       setBuffered(ranges);
       setReady((current) => current || isMediaReadyToPlay(media));
@@ -382,8 +378,8 @@ const VideoPlayer: React.FC<OwnProps> = ({
 
     return {
       onPlay: handleBuffering,
-      onLoadedData: handleBuffering,
       onPlaying: handleBuffering,
+      onLoadedData: handleBuffering,
       onLoadStart: handleBuffering, // Needed for Safari to start
       onPause: handleBuffering, // Needed for Chrome when seeking
       onTimeUpdate: handleBuffering, // Needed for audio buffering progress

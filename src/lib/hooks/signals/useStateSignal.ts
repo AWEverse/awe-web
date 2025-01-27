@@ -28,14 +28,19 @@ export default function useStateSignal<T = null>(
     }
 
     // If the new value is a promise, handle it asynchronously
+    const handleNewValue = async (newValue: T) => {
+      try {
+        const resolvedValue = await newValue;
+        if (!areDeepEqual(resolvedValue, prevValue)) {
+          updateSignal(resolvedValue);
+        }
+      } catch (error) {
+        handleSignalError(error);
+      }
+    };
+
     if (newValue instanceof Promise) {
-      newValue
-        .then((resolvedValue) => {
-          if (!areDeepEqual(resolvedValue, prevValue)) {
-            updateSignal(resolvedValue);
-          }
-        })
-        .catch((error) => handleSignalError(error));
+      handleNewValue(newValue);
     } else {
       if (!areDeepEqual(newValue, prevValue)) {
         updateSignal(newValue);

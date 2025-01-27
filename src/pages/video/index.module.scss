@@ -1,33 +1,39 @@
 .VideoRoot {
   --right-column-width: 402px;
   --right-column-min-width: 300px;
-  --padding-overflow: 64px;
+  --padding-overflow: 1rem;
   --gap: calc(var(--padding-overflow) / 2);
-
+  
   display: flex;
   height: 100%;
   gap: var(--gap);
   flex-direction: row;
-  padding: 1rem calc(var(--padding-overflow) * 2);
+  padding: var(--padding-overflow) calc(var(--padding-overflow) * 6);
 
   @media (max-width: 1024px) {
     --right-column-width: 320px;
-    --padding-overflow: 48px;
+    padding: 1rem calc(var(--padding-overflow) * 4);
   }
 
   @media (max-width: 992px) {
     --right-column-width: 280px;
-    --padding-overflow: 32px;
+    padding: 1rem calc(var(--padding-overflow) * 2);
+  }
+
+  @media (max-width: 882px) {
+    --right-column-width: 100%;
+    flex-direction: column;
   }
 
   @media (max-width: 768px) {
-    flex-direction: column;
-    --padding-overflow: 8px;
+    --padding-overflow: 6px;
+    padding: var(--padding-overflow);
   }
 }
 
+
 .LeftColumn {
-  @media (min-width: 768px) {
+  @media (min-width: 882px) {
     width: calc(100dvw - (var(--right-column-width) + var(--padding-overflow) + var(--gap)));
   }
 }

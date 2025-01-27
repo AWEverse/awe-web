@@ -1,17 +1,18 @@
-import { FC } from 'react';
-import MediaPlayer from './media-player/MediaPlayer';
-import s from './LeftColumn.module.scss';
-import MediaBottomNavigation from './media-player/MediaBottomNavigation/';
+import { FC } from "react";
+import MediaPlayer from "./media-player/MediaPlayer";
+import s from "./LeftColumn.module.scss";
+import MediaBottomNavigation from "./media-player/MediaBottomNavigation/";
+import buildClassName from "@/shared/lib/buildClassName";
 
 interface OwnProps {
   className?: string;
 }
 
-const LeftColumn: FC<OwnProps> = props => {
+const LeftColumn: FC<OwnProps> = (props) => {
   const { className } = props;
 
   return (
-    <section className={className}>
+    <section className={buildClassName(className, "space-y-4")}>
       <MediaPlayer>
         <div>Left</div>
       </MediaPlayer>
