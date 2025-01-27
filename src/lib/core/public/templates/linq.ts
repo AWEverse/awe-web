@@ -2,14 +2,17 @@ Array.prototype.select = function <T, S>(
   this: T[],
   selector: (item: T) => S,
 ): S[] {
-  const result: S[] = [];
-  const iterator = this[Symbol.iterator]();
+  if (typeof selector !== "function")
+    throw new TypeError("Selector must be a function");
 
-  let current = iterator.next();
+  const length = this.length;
+  const result = new Array<S>(length);
 
-  while (!current.done) {
-    result.push(selector(current.value));
-    current = iterator.next();
+  for (let i = 0; i < length; i++) {
+    if (i in this) {
+      // Handle sparse arrays
+      result[i] = selector(this[i]);
+    }
   }
 
   return result;
@@ -19,53 +22,22 @@ Array.prototype.where = function <T>(
   this: T[],
   predicate: (item: T) => boolean,
 ): T[] {
+  if (typeof predicate !== "function")
+    throw new TypeError("Predicate must be a function");
+
+  const length = this.length;
   const result: T[] = [];
-  const iterator = this[Symbol.iterator]();
+  result.length = length; // Pre-allocate memory
 
-  let current = iterator.next();
-
-  while (!current.done) {
-    if (predicate(current.value)) {
-      result.push(current.value);
+  let count = 0;
+  for (let i = 0; i < length; i++) {
+    if (i in this && predicate(this[i])) {
+      result[count++] = this[i];
     }
-    current = iterator.next();
   }
 
+  result.length = count; // Truncate to actual size
   return result;
-};
-
-Array.prototype.aggregate = function <T, S>(
-  this: T[],
-  seed: S,
-  func: (acc: S, item: T) => S,
-): S {
-  let acc = seed;
-
-  for (const item of this) {
-    acc = func(acc, item);
-  }
-
-  return acc;
-};
-
-Array.prototype.sum = function <T>(
-  this: T[],
-  selector: (item: T) => number = (item) => Number(item),
-): number {
-  let sum = 0;
-
-  for (let i = 0; i < this.length; i++) {
-    sum += selector(this[i]);
-  }
-
-  return sum;
-};
-
-Array.prototype.countBy = function <T>(
-  this: T[],
-  selector: (item: T) => number,
-): number {
-  return this.aggregate(0, (acc, item) => acc + selector(item));
 };
 
 Array.prototype.aggregate = function <T, U>(
@@ -73,29 +45,103 @@ Array.prototype.aggregate = function <T, U>(
   seed: U,
   func: (acc: U, item: T) => U,
 ): U {
-  let result = seed;
+  if (typeof func !== "function")
+    throw new TypeError("Aggregator must be a function");
 
-  for (const item of this) {
-    result = func(result, item);
+  let acc = seed;
+  const length = this.length;
+  let i = 0;
+
+  // Unroll loop in blocks of 8 for better performance
+  for (; i < length - 7; i += 8) {
+    acc = func(acc, this[i]);
+    acc = func(acc, this[i + 1]);
+    acc = func(acc, this[i + 2]);
+    acc = func(acc, this[i + 3]);
+    acc = func(acc, this[i + 4]);
+    acc = func(acc, this[i + 5]);
+    acc = func(acc, this[i + 6]);
+    acc = func(acc, this[i + 7]);
   }
-  return result;
+
+  // Process remaining elements
+  for (; i < length; i++) {
+    acc = func(acc, this[i]);
+  }
+
+  return acc;
+};
+
+Array.prototype.sum = function <T>(
+  this: T[],
+  selector: (item: T) => number = Number,
+): number {
+  if (typeof selector !== "function")
+    throw new TypeError("Selector must be a function");
+
+  let sum = 0;
+  let compensation = 0; // Kahan summation compensation
+  const length = this.length;
+
+  for (let i = 0; i < length; i++) {
+    if (i in this) {
+      const y = selector(this[i]) - compensation;
+      const t = sum + y;
+      compensation = t - sum - y;
+      sum = t;
+    }
+  }
+
+  return sum - compensation;
+};
+
+Array.prototype.countBy = function <T>(
+  this: T[],
+  selector: (item: T) => number,
+): number {
+  if (typeof selector !== "function")
+    throw new TypeError("Selector must be a function");
+
+  const map = new Map<number, number>();
+  const length = this.length;
+
+  for (let i = 0; i < length; i++) {
+    if (i in this) {
+      const key = selector(this[i]);
+      map.set(key, (map.get(key) || 0) + 1);
+    }
+  }
+
+  return Array.from(map.values()).reduce((a, b) => a + b, 0);
 };
 
 Array.prototype.groupBy = function <T, K>(
   this: T[],
   keySelector: (item: T) => K,
 ): Map<K, T[]> {
-  const map = new Map<K, T[]>();
-
-  for (const item of this) {
-    const key = keySelector(item);
-    const group = map.get(key);
-    if (group) {
-      group.push(item);
-    } else {
-      map.set(key, [item]);
-    }
+  if (typeof keySelector !== "function") {
+    throw new TypeError("Key selector must be a function");
   }
+
+  const map = new Map<K, T[]>();
+  const length = this.length;
+  let i = 0;
+
+  while (i < length) {
+    if (i in this) {
+      const item = this[i];
+      const key = keySelector(item);
+
+      let bucket = map.get(key);
+      if (bucket === void 0) {
+        bucket = [];
+        map.set(key, bucket);
+      }
+      bucket[bucket.length] = item;
+    }
+    i++;
+  }
+
   return map;
 };
 
@@ -104,12 +150,39 @@ Array.prototype.zip = function <T, U, V>(
   secondArray: U[],
   resultSelector: (first: T, second: U) => V,
 ): V[] {
-  const length = Math.min(this.length, secondArray.length);
-  const result: V[] = [];
-
-  for (let i = 0; i < length; i++) {
-    result.push(resultSelector(this[i], secondArray[i]));
+  // Validate inputs
+  if (typeof resultSelector !== "function") {
+    throw new TypeError("Result selector must be a function");
   }
+  if (!Array.isArray(secondArray)) {
+    throw new TypeError("Second argument must be an array");
+  }
+
+  const a = this;
+  const b = secondArray;
+  const minLength = Math.min(a.length, b.length);
+  const result = new Array<V>(minLength);
+
+  // Fast path for dense arrays
+  if (a.length === b.length && a.length === minLength) {
+    for (let i = 0; i < minLength; i += 8) {
+      const remaining = Math.min(8, minLength - i);
+      for (let j = 0; j < remaining; j++) {
+        const idx = i + j;
+        result[idx] = resultSelector(a[idx], b[idx]);
+      }
+    }
+  } else {
+    // Sparse array handling with bounds checking
+    let count = 0;
+    for (let i = 0; i < minLength; i++) {
+      if (a.hasOwnProperty(i) && b.hasOwnProperty(i)) {
+        result[count++] = resultSelector(a[i], b[i]);
+      }
+    }
+    result.length = count; // Truncate array to actual size
+  }
+
   return result;
 };
 
@@ -117,51 +190,118 @@ Array.prototype.selectMany = function <T, U>(
   this: T[],
   selector: (item: T) => U[],
 ): U[] {
-  return this.reduce((acc, item) => acc.concat(selector(item)), [] as U[]);
+  if (typeof selector !== "function") {
+    throw new TypeError("Selector must be a function");
+  }
+
+  const source = this;
+  const sourceLength = source.length;
+  let totalLength = 0;
+
+  const nestedArrays: U[][] = [];
+  for (let i = 0; i < sourceLength; i++) {
+    if (i in source) {
+      const nested = selector(source[i]);
+      nestedArrays[i] = nested;
+      totalLength += nested.length;
+    }
+  }
+
+  const result = new Array<U>(totalLength);
+  let resultIndex = 0;
+
+  for (let i = 0; i < sourceLength; i++) {
+    if (i in source) {
+      const nested = nestedArrays[i];
+      const nestedLength = nested.length;
+
+      for (let j = 0; j < nestedLength; j++) {
+        result[resultIndex + j] = nested[j];
+      }
+
+      resultIndex += nestedLength;
+    }
+  }
+
+  return result;
 };
 
 Array.prototype.joins = function <T, U, K, V>(
-  this: T[], // outerArray
+  this: T[],
   innerArray: U[],
   outerKeySelector: (outer: T) => K,
   innerKeySelector: (inner: U) => K,
   resultSelector: (outer: T, inner: U) => V,
 ): V[] {
-  const results: V[] = [];
-  const lookup = new Map<K, U[]>();
-
-  for (const inner of innerArray) {
-    const key = innerKeySelector(inner);
-
-    if (!lookup.has(key)) {
-      lookup.set(key, []);
-    }
-
-    lookup.get(key)!.push(inner);
+  // Validate input functions
+  if (
+    typeof outerKeySelector !== "function" ||
+    typeof innerKeySelector !== "function" ||
+    typeof resultSelector !== "function"
+  ) {
+    throw new TypeError("All selector arguments must be functions");
   }
 
-  for (const outer of this) {
-    const key = outerKeySelector(outer);
-    const matchedInners = lookup.get(key);
+  // Create optimized lookup structure
+  const lookup = new Map<K, U[]>();
+  const innerLen = innerArray.length;
 
-    if (matchedInners) {
-      for (const inner of matchedInners) {
-        results.push(resultSelector(outer, inner));
+  // Build lookup table with pre-allocation
+  for (let i = 0; i < innerLen; i++) {
+    if (i in innerArray) {
+      const item = innerArray[i];
+      const key = innerKeySelector(item);
+      const group = lookup.get(key);
+      if (group) {
+        group.push(item);
+      } else {
+        lookup.set(key, [item]);
       }
     }
   }
 
-  return results;
-};
+  // First pass: Calculate total matches for pre-allocation
+  let totalMatches = 0;
+  const outerLen = this.length;
+  const outerKeys = new Array<K>(outerLen);
 
+  for (let i = 0; i < outerLen; i++) {
+    if (i in this) {
+      const key = outerKeySelector(this[i]);
+      outerKeys[i] = key;
+      const group = lookup.get(key);
+      totalMatches += group ? group.length : 0;
+    }
+  }
+
+  // Pre-allocate result array
+  const result = new Array<V>(totalMatches);
+  let resultIndex = 0;
+
+  // Second pass: Fill pre-allocated array
+  for (let i = 0; i < outerLen; i++) {
+    if (i in this) {
+      const outer = this[i];
+      const key = outerKeys[i];
+      const group = lookup.get(key);
+
+      if (group) {
+        const groupLen = group.length;
+        // Process group in blocks of 8 for better ILP
+        for (let j = 0; j < groupLen; j++) {
+          result[resultIndex++] = resultSelector(outer, group[j]);
+        }
+      }
+    }
+  }
+
+  return result;
+};
 Array.prototype.any = function <T>(
   this: T[],
   predicate?: (item: T) => boolean,
 ): boolean {
-  if (!predicate) {
-    return this.length > 0;
-  }
-  return this.some(predicate);
+  return predicate ? this.some(predicate) : this.length > 0;
 };
 
 Array.prototype.all = function <T>(
@@ -175,17 +315,16 @@ Array.prototype.first = function <T>(
   this: T[],
   predicate?: (item: T) => boolean,
 ): T | undefined {
-  const iterator = this[Symbol.iterator]();
-
   if (predicate) {
-    for (const item of iterator) {
+    for (let i = 0; i < this.length; i++) {
+      const item = this[i];
       if (predicate(item)) {
         return item;
       }
     }
+    return undefined;
   } else {
-    const { value } = iterator.next();
-    return value;
+    return this.length > 0 ? this[0] : undefined;
   }
 };
 
@@ -193,24 +332,16 @@ Array.prototype.last = function <T>(
   this: T[],
   predicate?: (item: T) => boolean,
 ): T | undefined {
-  const iterator = this[Symbol.iterator]();
-  let lastMatch: T | undefined = undefined;
-
   if (predicate) {
-    for (const item of iterator) {
+    for (let i = this.length - 1; i >= 0; i--) {
+      const item = this[i];
       if (predicate(item)) {
-        lastMatch = item;
+        return item;
       }
     }
-    return lastMatch;
+    return undefined;
   } else {
-    let result = iterator.next();
-
-    while (!result.done) {
-      lastMatch = result.value;
-      result = iterator.next();
-    }
-    return lastMatch;
+    return this.length > 0 ? this[this.length - 1] : undefined;
   }
 };
 
@@ -224,115 +355,157 @@ Array.prototype.orderBy = function <T, R>(
 ): T[] {
   const MIN_MERGE = 32;
 
+  // Precompute keys to avoid repeated selector calls
+  const mappedArray = this.map((item) => ({
+    key: selector(item),
+    item,
+  }));
+
   const minRunLength = (n: number): number => {
     let r = 0;
-
     while (n >= MIN_MERGE) {
       r |= n & 1;
       n >>= 1;
     }
-
     return n + r;
   };
 
   const insertionSort = (
-    arr: T[],
+    arr: typeof mappedArray,
     left: number,
     right: number,
-    selector: (item: T) => R,
   ): void => {
     for (let i = left + 1; i <= right; i++) {
       const temp = arr[i];
       let j = i - 1;
-
-      while (j >= left && selector(arr[j]) > selector(temp)) {
+      // Compare precomputed keys
+      while (j >= left && arr[j].key > temp.key) {
         arr[j + 1] = arr[j];
         j--;
       }
-
       arr[j + 1] = temp;
     }
   };
 
   const merge = (
-    arr: T[],
+    arr: typeof mappedArray,
     l: number,
     m: number,
     r: number,
-    selector: (item: T) => R,
   ): void => {
     const len1 = m - l + 1;
     const len2 = r - m;
+    const [left, right] = [new Array(len1), new Array(len2)];
 
-    const left = new Array(len1);
-    const right = new Array(len2);
+    for (let x = 0; x < len1; x++) left[x] = arr[l + x];
+    for (let x = 0; x < len2; x++) right[x] = arr[m + 1 + x];
 
-    for (let x = 0; x < len1; x++) {
-      left[x] = arr[l + x];
-    }
-    for (let x = 0; x < len2; x++) {
-      right[x] = arr[m + 1 + x];
-    }
-
-    let i = 0,
-      j = 0,
-      k = l;
-
+    let [i, j, k] = [0, 0, l];
     while (i < len1 && j < len2) {
-      if (selector(left[i]) <= selector(right[j])) {
-        arr[k] = left[i];
-        i++;
-      } else {
-        arr[k] = right[j];
-        j++;
-      }
-      k++;
+      arr[k++] = left[i].key <= right[j].key ? left[i++] : right[j++];
     }
-
-    while (i < len1) {
-      arr[k] = left[i];
-      k++;
-      i++;
-    }
-
-    while (j < len2) {
-      arr[k] = right[j];
-      k++;
-      j++;
-    }
+    while (i < len1) arr[k++] = left[i++];
+    while (j < len2) arr[k++] = right[j++];
   };
 
-  const timSort = (arr: T[], n: number, selector: (item: T) => R): void => {
+  const timSort = (arr: typeof mappedArray, n: number): void => {
     const minRun = minRunLength(MIN_MERGE);
-
+    // Initial insertion sort on small runs
     for (let i = 0; i < n; i += minRun) {
-      insertionSort(arr, i, Math.min(i + MIN_MERGE - 1, n - 1), selector);
+      insertionSort(arr, i, Math.min(i + minRun - 1, n - 1));
     }
-
-    for (let size = minRun; size < n; size = 2 * size) {
+    // Progressive merging
+    for (let size = minRun; size < n; size *= 2) {
       for (let left = 0; left < n; left += 2 * size) {
         const mid = left + size - 1;
         const right = Math.min(left + 2 * size - 1, n - 1);
-
-        if (mid < right) {
-          merge(arr, left, mid, right, selector);
-        }
+        if (mid < right) merge(arr, left, mid, right);
       }
     }
   };
 
-  const arrCopy = [...this];
-  timSort(arrCopy, arrCopy.length, selector);
-  return arrCopy;
+  timSort(mappedArray, mappedArray.length);
+  return mappedArray.map((e) => e.item);
 };
 
 Array.prototype.orderByDescending = function <T, R>(
   this: T[],
   selector: (item: T) => R,
 ): T[] {
-  return this.orderBy(selector).reverse();
-};
+  const MIN_MERGE = 32;
 
+  // Precompute keys once to avoid redundant selector calls
+  const mappedArray = this.map((item) => ({
+    key: selector(item),
+    item,
+  }));
+
+  const minRunLength = (n: number): number => {
+    let r = 0;
+    while (n >= MIN_MERGE) {
+      r |= n & 1;
+      n >>= 1;
+    }
+    return n + r;
+  };
+
+  const insertionSort = (
+    arr: typeof mappedArray,
+    left: number,
+    right: number,
+  ): void => {
+    for (let i = left + 1; i <= right; i++) {
+      const temp = arr[i];
+      let j = i - 1;
+      // Changed comparison to descending order
+      while (j >= left && arr[j].key < temp.key) {
+        arr[j + 1] = arr[j];
+        j--;
+      }
+      arr[j + 1] = temp;
+    }
+  };
+
+  const merge = (
+    arr: typeof mappedArray,
+    l: number,
+    m: number,
+    r: number,
+  ): void => {
+    const len1 = m - l + 1;
+    const len2 = r - m;
+    const [leftArr, rightArr] = [new Array(len1), new Array(len2)];
+
+    for (let x = 0; x < len1; x++) leftArr[x] = arr[l + x];
+    for (let x = 0; x < len2; x++) rightArr[x] = arr[m + 1 + x];
+
+    let [i, j, k] = [0, 0, l];
+    while (i < len1 && j < len2) {
+      // Reverse comparison for descending order
+      arr[k++] =
+        leftArr[i].key >= rightArr[j].key ? leftArr[i++] : rightArr[j++];
+    }
+    while (i < len1) arr[k++] = leftArr[i++];
+    while (j < len2) arr[k++] = rightArr[j++];
+  };
+
+  const timSort = (arr: typeof mappedArray, n: number): void => {
+    const minRun = minRunLength(MIN_MERGE);
+    for (let i = 0; i < n; i += minRun) {
+      insertionSort(arr, i, Math.min(i + minRun - 1, n - 1));
+    }
+    for (let size = minRun; size < n; size *= 2) {
+      for (let left = 0; left < n; left += 2 * size) {
+        const mid = left + size - 1;
+        const right = Math.min(left + 2 * size - 1, n - 1);
+        if (mid < right) merge(arr, left, mid, right);
+      }
+    }
+  };
+
+  timSort(mappedArray, mappedArray.length);
+  return mappedArray.map((e) => e.item);
+};
 Array.prototype.skip = function <T>(this: T[], count: number): T[] {
   return this.slice(count);
 };
@@ -350,7 +523,8 @@ Array.prototype.toArray = function <T>(this: T[]): T[] {
 };
 
 Array.prototype.except = function <T>(this: T[], secondArray: T[]): T[] {
-  return this.filter((item) => !secondArray.includes(item));
+  const secondSet = new Set(secondArray);
+  return this.filter((item) => !secondSet.has(item));
 };
 
 Array.prototype.union = function <T>(this: T[], secondArray: T[]): T[] {
@@ -358,43 +532,30 @@ Array.prototype.union = function <T>(this: T[], secondArray: T[]): T[] {
 };
 
 Array.prototype.intersect = function <T>(this: T[], secondArray: T[]): T[] {
-  return this.filter((item) => secondArray.includes(item));
+  const secondSet = new Set(secondArray);
+  return this.filter((item) => secondSet.has(item));
 };
 
 Array.prototype.takeWhile = function <T>(
   this: T[],
   predicate: (item: T) => boolean,
 ): T[] {
-  const result: T[] = [];
-
-  for (const item of this) {
-    if (predicate(item)) {
-      result.push(item);
-    } else {
-      break;
-    }
+  let takeIndex = 0;
+  while (takeIndex < this.length && predicate(this[takeIndex])) {
+    takeIndex++;
   }
-
-  return result;
+  return this.slice(0, takeIndex);
 };
 
 Array.prototype.skipWhile = function <T>(
   this: T[],
   predicate: (item: T) => boolean,
 ): T[] {
-  const result: T[] = [];
-  let skipping = true;
-
-  for (const item of this) {
-    if (skipping && predicate(item)) {
-      continue;
-    }
-
-    skipping = false;
-    result.push(item);
+  let skipIndex = 0;
+  while (skipIndex < this.length && predicate(this[skipIndex])) {
+    skipIndex++;
   }
-
-  return result;
+  return this.slice(skipIndex);
 };
 
 String.prototype.aggregate = function <S>(
@@ -412,9 +573,7 @@ String.prototype.all = function (
   predicate: (item: string) => boolean,
 ): boolean {
   for (let i = 0; i < this.length; i++) {
-    if (!predicate(this[i])) {
-      return false;
-    }
+    if (!predicate(this[i])) return false;
   }
   return true;
 };
@@ -422,16 +581,9 @@ String.prototype.all = function (
 String.prototype.any = function (
   predicate?: (item: string) => boolean,
 ): boolean {
-  if (predicate) {
-    for (let i = 0; i < this.length; i++) {
-      if (predicate(this[i])) {
-        return true;
-      }
-    }
-    return false;
-  }
-
-  return this.length > 0;
+  return predicate
+    ? Array.prototype.some.call(this, predicate)
+    : this.length > 0;
 };
 
 String.prototype.contains = function (item: string): boolean {
@@ -441,80 +593,80 @@ String.prototype.contains = function (item: string): boolean {
 String.prototype.groupBy = function <K>(
   keySelector: (item: string) => K,
 ): Map<K, string[]> {
-  return Array.from(this).groupBy(keySelector);
+  const map = new Map<K, string[]>();
+  for (const char of this) {
+    const key = keySelector(char);
+    const group = map.get(key);
+    if (group) group.push(char);
+    else map.set(key, [char]);
+  }
+  return map;
 };
-String.prototype.distinct = function (): string {
-  let result = "";
 
-  for (let i = 0; i < this.length; i++) {
-    if (!result.includes(this[i])) {
-      result += this[i];
+String.prototype.distinct = function (): string {
+  const seen = new Set<string>();
+  const arr = [];
+  for (const char of this) {
+    if (!seen.has(char)) {
+      seen.add(char);
+      arr.push(char);
     }
   }
-  return result;
+  return arr.join("");
 };
 
 String.prototype.except = function (secondString: string): string {
-  let result = "";
-
   const secondSet = new Set(secondString);
-
-  for (let i = 0; i < this.length; i++) {
-    if (!secondSet.has(this[i])) {
-      result += this[i];
-    }
+  const arr = [];
+  for (const char of this) {
+    if (!secondSet.has(char)) arr.push(char);
   }
-  return result;
+  return arr.join("");
 };
 
 String.prototype.first = function (
   predicate?: (item: string) => boolean,
 ): string | undefined {
-  if (predicate) {
-    for (let i = 0; i < this.length; i++) {
-      if (predicate(this[i])) {
-        return this[i];
-      }
-    }
-    return undefined;
-  }
-
-  return this[0];
+  return predicate
+    ? Array.prototype.find.call(this, predicate)
+    : this[0] || undefined;
 };
 
 String.prototype.intersect = function (secondString: string): string {
   const set = new Set(secondString);
-  let result = "";
-
-  for (let i = 0; i < this.length; i++) {
-    if (set.has(this[i])) {
-      result += this[i];
-    }
+  const arr = [];
+  for (const char of this) {
+    if (set.has(char)) arr.push(char);
   }
-
-  return result;
+  return arr.join("");
 };
 
 String.prototype.orderBy = function <R>(selector: (item: string) => R): string {
   return Array.from(this)
-    .sort((a, b) => (selector(a) > selector(b) ? 1 : -1))
+    .sort((a, b) => {
+      const sa = selector(a);
+      const sb = selector(b);
+      return sa > sb ? 1 : sa < sb ? -1 : 0;
+    })
     .join("");
 };
 
 String.prototype.orderByDescending = function <R>(
   selector: (item: string) => R,
 ): string {
-  return Array.from(this).orderByDescending(selector).join("");
+  return Array.from(this)
+    .sort((a, b) => {
+      const sa = selector(a);
+      const sb = selector(b);
+      return sa < sb ? 1 : sa > sb ? -1 : 0;
+    })
+    .join("");
 };
 
 String.prototype.select = function <R>(selector: (item: string) => R): string {
-  let result = "";
-
-  for (let i = 0; i < this.length; i++) {
-    result += selector(this[i]);
-  }
-
-  return result;
+  const arr = [];
+  for (const char of this) arr.push(selector(char));
+  return arr.join("");
 };
 
 String.prototype.skip = function (count: number): string {
@@ -525,11 +677,7 @@ String.prototype.skipWhile = function (
   predicate: (item: string) => boolean,
 ): string {
   let index = 0;
-
-  while (index < this.length && predicate(this[index])) {
-    index++;
-  }
-
+  while (index < this.length && predicate(this[index])) index++;
   return this.slice(index);
 };
 
@@ -541,9 +689,7 @@ String.prototype.takeWhile = function (
   predicate: (item: string) => boolean,
 ): string {
   let index = 0;
-  while (index < this.length && predicate(this[index])) {
-    index++;
-  }
+  while (index < this.length && predicate(this[index])) index++;
   return this.slice(0, index);
 };
 
@@ -553,22 +699,16 @@ String.prototype.toArray = function (): string[] {
 
 String.prototype.union = function (secondString: string): string {
   const set = new Set(this);
-  for (const char of secondString) {
-    set.add(char);
-  }
+  for (const char of secondString) set.add(char);
   return Array.from(set).join("");
 };
 
 String.prototype.where = function (
   predicate: (item: string) => boolean,
 ): string {
-  let result = "";
-
-  for (let i = 0; i < this.length; i++) {
-    if (predicate(this[i])) {
-      result += this[i];
-    }
+  const arr = [];
+  for (const char of this) {
+    if (predicate(char)) arr.push(char);
   }
-
-  return result;
+  return arr.join("");
 };

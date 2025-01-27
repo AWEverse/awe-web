@@ -27,9 +27,8 @@ export const playMedia = async (
   mediaEl: HTMLMediaElement,
   options: { onError?: (err: Error) => void } = {},
 ): Promise<boolean> => {
-  const isPlaying = !mediaEl.paused && !mediaEl.ended;
-
-  if (isPlaying) {
+  // Early return if already playing
+  if (!mediaEl.paused && !mediaEl.ended) {
     return true;
   }
 
@@ -37,11 +36,23 @@ export const playMedia = async (
     await mediaEl.play();
     return true;
   } catch (err) {
-    if (options.onError) {
-      options.onError(err instanceof Error ? err : new Error(err as string));
-    } else if (DEBUG) {
-      console.warn("Playback error:", err, mediaEl);
+    // Handle AbortError specifically
+    const isAbortError =
+      err instanceof Error &&
+      (err.name === "AbortError" ||
+        err.message.includes("interrupted by a call to pause"));
+
+    if (isAbortError) {
+      return false; // Expected interruption, no need to log
     }
+
+    // Handle other errors
+    const error = err instanceof Error ? err : new Error(String(err));
+    options.onError?.(error);
+    if (DEBUG && !options.onError) {
+      console.warn("Playback error:", error, mediaEl);
+    }
+
     return false;
   }
 };

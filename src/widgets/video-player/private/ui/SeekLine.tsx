@@ -66,8 +66,6 @@ const SeekLine: FC<OwnProps> = ({
   const previewOffsetSignal = useSignal(0);
 
   useSignalEffect(bufferedRangesSignal, (ranges) => {
-    console.log(ranges);
-
     setBufferedRanges(ranges);
   });
 
@@ -120,50 +118,61 @@ const SeekLine: FC<OwnProps> = ({
   });
 
   return (
-    <div ref={seekerRef} className={s.container}>
+    <div
+      ref={seekerRef}
+      className={s.container}
+      itemScope
+      itemType="http://schema.org/MediaObject"
+    >
       {!isPreviewDisabled && (
         <CSSTransition nodeRef={previewRef} in={isReady} timeout={0}>
-          <div ref={previewRef} className={s.preview}>
+          <div
+            ref={previewRef}
+            className={s.preview}
+            aria-label="Media preview"
+          >
             <canvas
               className={s.previewCanvas}
               ref={previewCanvasRef}
               width={posterSize?.width}
               height={posterSize?.height}
+              aria-label="Media timeline preview"
+              role="img"
             />
-            <div className={s.previewTime}>
-              <span className={s.previewTimeText} ref={previewTimeRef} />
+            <div className={s.previewTime} aria-hidden="true">
+              <span
+                className={s.previewTimeText}
+                ref={previewTimeRef}
+                itemProp="timecode"
+              />
             </div>
           </div>
         </CSSTransition>
       )}
-      <div className={s.track}>
-        {/* {bufferedRanges.map(({ start, end }, index) => (
-          <div
-            key={`${index}_${start}_${end}`}
-            className={s.buffered}
-            style={buildStyle(
-              `left: ${start * 100}%;`,
-              `right: ${100 - end * 100}%;`,
-            )}
-          />
-        ))} */}
-      </div>
+
       <div
         className={s.track}
-        tabIndex={0}
         role="slider"
-        aria-label="Seek slider"
         aria-valuemin={0}
         aria-valuemax={duration}
-        draggable={false}
+        itemProp="duration"
       >
         <div
           ref={progressRef}
           className={buildClassName(s.played, isSeeking && s.seeking)}
           role="presentation"
         />
-        <div className={s.trackBg} />
+        <div className={s.trackBg} aria-hidden="true" />
       </div>
+
+      {/* Schema.org structured data */}
+      <meta itemProp="contentUrl" content={url} />
+      {posterSize && (
+        <>
+          <meta itemProp="width" content={String(posterSize.width)} />
+          <meta itemProp="height" content={String(posterSize.height)} />
+        </>
+      )}
     </div>
   );
 };

@@ -1,42 +1,102 @@
-*::-webkit-scrollbar {
-  width: 0;
-  padding: 0;
-  display: none;
+/* Cross-browser scrollbar reset */
+* {
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE/Edge */
 }
 
+*::-webkit-scrollbar {
+  display: none;
+  width: 0;
+  height: 0;
+}
+
+/* Custom scrollbar container */
 .awe-scrollbar {
-  --scrollbar-width: 8px;
-  overflow-y: scroll;
-  mask-size: 100% 20000px;
-  mask-position: left bottom;
+  --scrollbar-width: 10px;
+  --scrollbar-thumb-min-height: 60px;
+  --scrollbar-track-color: rgba(255, 255, 255, 0.1);
+  --scrollbar-thumb-color: linear-gradient(
+    45deg,
+    rgba(var(--awe-palette-primary-mainChannel), 0.8),
+    rgba(var(--awe-palette-secondary-mainChannel), 0.6)
+  );
+  --scrollbar-thumb-hover-color: linear-gradient(
+    45deg,
+    rgba(var(--awe-palette-primary-mainChannel), 1),
+    rgba(var(--awe-palette-secondary-mainChannel), 0.8)
+  );
+  
+  overflow-y: overlay;
+  scrollbar-gutter: stable;
+  
+  /* Firefox support */
+  scrollbar-width: thin;
+  scrollbar-color: var(--scrollbar-thumb-color) var(--scrollbar-track-color);
+}
 
-  &:hover {
-    -webkit-mask-position: left top;
-    mask-position: left top;
-  }
+.awe-scrollbar:hover {
+  mask-size: 100% 100%;
+  mask-position: 0 0;
+}
 
-  &::-webkit-scrollbar {
-    display: block !important;
-    width: var(--scrollbar-width);
-  }
+/* WebKit scrollbar styling */
+.awe-scrollbar::-webkit-scrollbar {
+  display: block !important;
+  width: var(--scrollbar-width);
+  background-color: var(--scrollbar-track-color);
+  border-radius: calc(var(--scrollbar-width) * 2);
+}
 
-  &::-webkit-scrollbar-thumb {
-    cursor: pointer;
-    background-color: rgba(var(--awe-palette-primary-mainChannel) / 0.3);
-    transition: background-color 150ms ease;
-    border-radius: 10px;
-  }
+.awe-scrollbar::-webkit-scrollbar-thumb {
+  background: var(--scrollbar-thumb-color);
+  border-radius: calc(var(--scrollbar-width) * 2);
+  border: 2px solid rgba(255, 255, 255, 0.1);
+  background-clip: padding-box;
+  min-height: var(--scrollbar-thumb-min-height);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  will-change: transform, background;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
 
-  &::-webkit-scrollbar-thumb:hover {
-    background-color: rgba(var(--awe-palette-primary-mainChannel) / 0.9);
-  }
+.awe-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: var(--scrollbar-thumb-hover-color);
+  transform: scaleX(1.2) scaleY(1.05);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
 
-  &::-webkit-scrollbar-track,
-  &::-webkit-scrollbar-corner {
-    border-radius: 10px;
-  }
+.awe-scrollbar::-webkit-scrollbar-track {
+  background: var(--scrollbar-track-color);
+  margin: 8px 0;
+  border-radius: calc(var(--scrollbar-width) * 2);
+  backdrop-filter: blur(4px);
+}
 
-  &::-webkit-scrollbar-corner {
-    background-color: transparent;
+/* Firefox styling */
+.awe-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: var(--scrollbar-thumb-color) var(--scrollbar-track-color);
+}
+
+/* Accessibility enhancements */
+@media (pointer: coarse) {
+  .awe-scrollbar {
+    --scrollbar-width: 14px;
+    --scrollbar-thumb-min-height: 80px;
   }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .awe-scrollbar {
+    transition: none;
+  }
+  
+  .awe-scrollbar::-webkit-scrollbar-thumb {
+    transition: none;
+  }
+}
+
+/* Colorful hover effect */
+.awe-scrollbar:hover::-webkit-scrollbar-thumb {
+  background: var(--scrollbar-thumb-hover-color);
+  border-color: rgba(255, 255, 255, 0.2);
 }

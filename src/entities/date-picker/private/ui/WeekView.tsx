@@ -18,64 +18,58 @@ const WeekView: React.FC<CalendarViewProps> = ({
 }) => {
   const { currentSystemDate, userSelectedDate } = date;
 
-  const currentDay = currentSystemDate.getDate();
-  const currentYear = currentSystemDate.getFullYear();
-  const currentMonth = currentSystemDate.getMonth();
-  const selectedDay = userSelectedDate.getDate();
-  const selectedMonth = userSelectedDate.getMonth();
+  // Memoize system date details
+  const [currentDay, currentYear, currentMonth] = useMemo(
+    () => [
+      currentSystemDate.getDate(),
+      currentSystemDate.getFullYear(),
+      currentSystemDate.getMonth(),
+    ],
+    [currentSystemDate],
+  );
 
-  // Memoize the calendar grids to avoid recalculating unless currentSystemDate changes
+  // Memoize user selected date details
+  const [selectedDay, selectedMonth] = useMemo(
+    () => [userSelectedDate.getDate(), userSelectedDate.getMonth()],
+    [userSelectedDate],
+  );
+
+  // Memoize calendar grids
   const { prevMonthGrid, currentMonthGrid, nextMonthGrid } = useMemo(
     () => buildCalendarGrid(currentSystemDate),
     [currentSystemDate],
   );
 
-  // Memoize getDayClassName to avoid unnecessary recalculation
-  const getDayClassName = useCallback(
-    (day: number, isCurrentMonth: boolean): string | undefined => {
-      const isCurrentDay =
-        day === currentDay && currentMonth === new Date().getMonth();
-      const isCurrentSelectedDay =
-        day === selectedDay && currentMonth === selectedMonth;
-      // Mode-based conditions
-      const isFutureMode = mode === "future" && day >= currentDay;
-      const isPastMode = mode === "past" && day <= currentDay;
-      const isAllMode = mode === "all";
-
-      return buildClassName(
-        !isCurrentMonth && "another",
-        isCurrentMonth && isCurrentSelectedDay && "selectedDay",
-        isCurrentMonth && isCurrentDay && "currentDay",
-      );
-    },
-    [currentDay, currentMonth, selectedDay, selectedMonth],
+  // Precompute date metadata for class names
+  const dateMetadata = useMemo(
+    () => ({
+      isCurrentMonth: currentMonth === new Date().getMonth(),
+      isSelectedMonth: currentMonth === selectedMonth,
+    }),
+    [currentMonth, selectedMonth],
   );
 
-  const longPressListeners = useLongPress({
-    onClick,
-    onStart: onLongPressStart,
-    onEnd: onLongPressEnd,
-    threshold: 300,
-  });
-
+  // Stable event handlers using data attributes
   const handleSelectDate = useCallback(
-    (day: number, type: TimeLapse = "current") => {
+    (e: React.MouseEvent) => {
+      const target = e.currentTarget as HTMLElement;
+      const day = parseInt(target.dataset.day || "0", 10);
+      const type = (target.dataset.type || "current") as TimeLapse;
+
       let newMonth = currentMonth;
       let newYear = currentYear;
 
       if (type === "prev") {
-        newMonth -= 1;
-
+        newMonth = currentMonth - 1;
         if (newMonth < 0) {
           newMonth = 11;
-          newYear -= 1;
+          newYear = currentYear - 1;
         }
       } else if (type === "next") {
-        newMonth += 1;
-
+        newMonth = currentMonth + 1;
         if (newMonth > 11) {
           newMonth = 0;
-          newYear += 1;
+          newYear = currentYear + 1;
         }
       }
 
@@ -85,33 +79,81 @@ const WeekView: React.FC<CalendarViewProps> = ({
   );
 
   const handleRightClick = useCallback(
-    (e: React.MouseEvent | React.TouchEvent, day: number) => {
+    (e: React.MouseEvent | React.TouchEvent) => {
       e.preventDefault();
+      const target = e.currentTarget as HTMLElement;
+      const day = parseInt(target.dataset.day || "0", 10);
+      const type = (target.dataset.type || "current") as TimeLapse;
 
-      onRightClick?.({ day, month: currentMonth, year: currentYear });
+      let month = currentMonth;
+      let year = currentYear;
+
+      if (type === "prev") {
+        month = currentMonth - 1;
+        if (month < 0) {
+          month = 11;
+          year = currentYear - 1;
+        }
+      } else if (type === "next") {
+        month = currentMonth + 1;
+        if (month > 11) {
+          month = 0;
+          year = currentYear + 1;
+        }
+      }
+
+      onRightClick?.({ day, month, year });
     },
     [currentMonth, currentYear, onRightClick],
   );
 
+  // Memoized long press listeners
+  const longPressListeners = useLongPress({
+    onClick,
+    onStart: onLongPressStart,
+    onEnd: onLongPressEnd,
+    threshold: 300,
+  });
+
+  // Memoized grid renderer
   const renderDays = useCallback(
     (days: number[], type: TimeLapse = "current") => {
-      return days.map((day) => (
-        <DayCell
-          key={day.toString()}
-          className={buildClassName(
-            "calendarCell",
-            "dayCell",
-            getDayClassName(day, type === "current"),
-          )}
-          onClick={() => handleSelectDate(day, type)}
-          onContextMenu={(event) => handleRightClick(event, day)}
-          {...longPressListeners}
-        >
-          {day}
-        </DayCell>
-      ));
+      return days.map((day) => {
+        const isCurrentMonth = type === "current";
+        const isCurrentDay =
+          isCurrentMonth && day === currentDay && dateMetadata.isCurrentMonth;
+        const isSelectedDay =
+          isCurrentMonth && day === selectedDay && dateMetadata.isSelectedMonth;
+
+        return (
+          <DayCell
+            key={`${type}-${day}`}
+            className={buildClassName(
+              "calendarCell",
+              "dayCell",
+              !isCurrentMonth && "another",
+              isSelectedDay && "selectedDay",
+              isCurrentDay && "currentDay",
+            )}
+            data-day={day}
+            data-type={type}
+            onClick={handleSelectDate}
+            onContextMenu={handleRightClick}
+            {...longPressListeners}
+          >
+            {day}
+          </DayCell>
+        );
+      });
     },
-    [getDayClassName, handleSelectDate, handleRightClick, longPressListeners],
+    [
+      currentDay,
+      selectedDay,
+      dateMetadata,
+      handleSelectDate,
+      handleRightClick,
+      longPressListeners,
+    ],
   );
 
   return (

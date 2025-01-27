@@ -232,6 +232,31 @@ interface Document {
   webkitFullscreenElement?: Element | null;
 }
 
+interface HTMLVideoElement {
+  // WebKit methods
+  webkitSetPresentationMode?(
+    mode: "picture-in-picture" | "inline" | "fullscreen",
+  ): Promise<void>;
+  webkitSupportsPresentationMode?(mode: string): boolean;
+  webkitRequestPictureInPicture?(): Promise<void>;
+
+  // Standard methods
+  requestPictureInPicture?(): Promise<void>;
+}
+
+interface Document {
+  // WebKit methods
+  webkitExitPictureInPicture?(): Promise<void>;
+
+  // Standard properties
+  pictureInPictureEnabled?: boolean;
+  pictureInPictureElement?: Element | null;
+}
+
+interface DocumentOrShadowRoot {
+  pictureInPictureElement?: Element | null;
+}
+
 /**
  * Represents the union of two types.
  * @template A - The first type.
