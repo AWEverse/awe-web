@@ -6,7 +6,7 @@ import { useDebouncedFunction } from "@/shared/hooks/shedulers";
 const THROTTLE = 250;
 
 export default function useWindowSize() {
-  const { width: initialWidth, height: initialHeight } = windowSize.get();
+  const { width: initialWidth, height: initialHeight } = windowSize.dimensions;
   const [width, setWidth] = useState(initialWidth);
   const [height, setHeight] = useState(initialHeight);
   const [isResizing, setIsResizing] = useState(false);
@@ -29,7 +29,7 @@ export default function useWindowSize() {
 
     const throttledSetSize = throttle(
       () => {
-        const { width: newWidth, height: newHeight } = windowSize.get();
+        const { width: newWidth, height: newHeight } = windowSize.dimensions;
         setWidth(newWidth);
         setHeight(newHeight);
         setIsResizingDebounced(false);

@@ -113,7 +113,9 @@ const VideoPlayer: React.FC<OwnProps> = ({
   });
 
   const isUnsupported = useUnsupportedMedia(videoRef);
-  useAmbilight(videoRef, canvasRef);
+  const isAmbilightDisabled = isFullscreen;
+
+  useAmbilight(videoRef, canvasRef, isAmbilightDisabled);
 
   const mediaSources = useMemo(() => {
     if (!mediaUrl) return null;
@@ -371,7 +373,11 @@ const VideoPlayer: React.FC<OwnProps> = ({
         onSeekEnd={handleSeekEnd}
       />
 
-      <canvas ref={canvasRef} className="CinematicLight" />
+      <canvas
+        data-disabled={isAmbilightDisabled}
+        ref={canvasRef}
+        className="CinematicLight"
+      />
       <div
         ref={bottomRef}
         className="VideoPlayerBottom"

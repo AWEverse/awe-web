@@ -1,27 +1,35 @@
 type PartsWithGlobals = (string | false | undefined | string[])[];
-type ClassNameBuilder = ((elementName: string, ...modifiers: PartsWithGlobals) => string) &
+type ClassNameBuilder = ((
+  elementName: string,
+  ...modifiers: PartsWithGlobals
+) => string) &
   Record<string, string>;
 
-type PartVarians = string | boolean | undefined | Record<string, boolean> | null;
+type PartVarians =
+  | string
+  | boolean
+  | undefined
+  | Record<string, boolean>
+  | null;
 
 type Parts = PartVarians[];
 
 function validateObject(obj: Record<string, boolean>): string {
   return Object.keys(obj)
-    .reduce((acc, key) => (obj[key] ? `${acc} ${key}` : acc), '')
+    .reduce((acc, key) => (obj[key] ? `${acc} ${key}` : acc), "")
     .trim();
 }
 
 function identifyFunction(part: PartVarians): string {
-  if (typeof part === 'string') {
+  if (typeof part === "string") {
     return part;
   }
 
-  if (typeof part === 'object' && part) {
+  if (typeof part === "object" && part) {
     return validateObject(part);
   }
 
-  return '';
+  return "";
 }
 
 export default function buildClassName(...parts: Parts): string {
@@ -35,12 +43,13 @@ export default function buildClassName(...parts: Parts): string {
 
       return classNames;
     }, [] as string[])
-    .join(' ');
+    .join(" ");
 }
 
 export function createClassNameBuilder(componentName: string) {
   return ((elementName: string, ...modifiers: PartsWithGlobals) => {
-    const baseName = elementName === '&' ? componentName : `${componentName}__${elementName}`;
+    const baseName =
+      elementName === "&" ? componentName : `${componentName}__${elementName}`;
 
     return modifiers
       .reduce<string[]>(
@@ -58,6 +67,6 @@ export function createClassNameBuilder(componentName: string) {
         },
         [baseName],
       )
-      .join(' ');
+      .join(" ");
   }) as ClassNameBuilder;
 }
