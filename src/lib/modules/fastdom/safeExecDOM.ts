@@ -1,85 +1,65 @@
 // #v-ifdef DEBUG
 // @ts-ignore
-import { DEBUG } from '@/lib/config/dev';
+import { DEBUG } from "@/lib/config/dev";
 // #v-endif
+import { getIsStrict, getPhase, setPhase } from "./stricterdom";
 
-import { getIsStrict, getPhase, setPhase } from './stricterdom';
+type DOMOperation<T = any> = () => T;
+type ErrorHandler = (error: Error) => void;
+type RollbackHandler = () => void;
 
-type DOMCallback = NoneToAnyFunction;
-type RollbackFunction = NoneToVoidFunction;
-
-interface ExecOptions {
-  rescue?: (err: Error) => void;
-  always?: NoneToVoidFunction;
+interface ExecutionConfig {
+  rescue?: ErrorHandler;
+  always?: () => void;
   strict?: boolean;
-  rollback?: RollbackFunction;
+  rollback?: RollbackHandler;
 }
 
-export default function safeExecDOM(
-  cb: DOMCallback,
-  { rescue, always, strict = false, rollback }: ExecOptions = {},
-) {
+const safeExecDOM = <T = any>(
+  operation: DOMOperation<T>,
+  config: ExecutionConfig = {},
+): T | undefined => {
+  const { rescue, always, strict = false, rollback } = config;
   const phase = getPhase();
   const isStrictMode = strict || getIsStrict();
+  let result: T | undefined;
+  let error: Error | undefined;
 
+  // Debug mode validation
   // #v-ifdef DEBUG
-  if (isStrictMode && phase !== 'mutate') {
-    console.warn('DOM mutations should only occur during the "mutate" phase');
+  if (isStrictMode && phase !== "mutate") {
+    console.warn('DOM mutations should only occur during "mutate" phase');
   }
   // #v-endif
 
-  let result: unknown;
-  let errorOccurred = false;
-
   try {
-    result = cb();
-  } catch (err: unknown) {
-    errorOccurred = true;
+    result = operation();
+  } catch (err) {
+    error = err instanceof Error ? err : new Error(String(err));
 
+    // Error handling pipeline
     // #v-ifdef DEBUG
-    console.error('Error during DOM manipulation', err);
+    console.error("DOM operation failed:", error);
     // #v-endif
 
-    rescue?.(err as Error);
+    rescue?.(error);
+    rollback?.();
 
     // #v-ifdef DEBUG
-    handleDOMError(err);
+    throw error; // Fail fast in development
     // #v-endif
-
-    if (rollback) {
-      // #v-ifdef DEBUG
-      console.log('Attempting rollback...');
-      // #v-endif
-
-      rollback();
-    }
-
-    result = undefined;
   } finally {
     always?.();
 
-    if (isStrictMode && errorOccurred) {
-      resetPhaseToSafeState();
+    if (isStrictMode && error) {
+      // #v-ifdef DEBUG
+      console.warn("Resetting to safe measure phase");
+      // #v-endif
+      setPhase("measure");
     }
   }
 
   return result;
-}
+};
 
-// #v-ifdef DEBUG
-function handleDOMError(err: unknown) {
-  if (err instanceof Error) {
-    throw err;
-  }
-
-  throw new Error(`DOM operation failed: ${err as string}`);
-}
-// #v-endif
-
-function resetPhaseToSafeState() {
-  // #v-ifdef DEBUG
-  console.warn("Reverting phase to 'measure'");
-  // #v-endif
-
-  setPhase('measure');
-}
+export default safeExecDOM;

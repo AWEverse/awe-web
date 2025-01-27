@@ -2,143 +2,109 @@ import safeExecDOM from "./safeExecDOM";
 import { setPhase } from "./stricterdom";
 import throttleWithRafFallback from "./throttleWithRafFallback";
 
-type NoneToReflowTaskFunction = () => NoneToVoidFunction | void;
+type TaskFunction = () => void;
+type ReflowTaskFunction = () => TaskFunction | void;
 
-let pendingMeasureTasks: Set<NoneToVoidFunction> = new Set();
-let pendingMutationTasks: Set<NoneToVoidFunction> = new Set();
-let pendingForceReflowTasks: Set<NoneToReflowTaskFunction> = new Set();
+// Configure error handling
+type ErrorHandler = (error: Error) => void;
+let handleError: ErrorHandler = (error) =>
+  console.error("DOM task error:", error);
 
-const runUpdatePassOnRaf = throttleWithRafFallback(async () => {
-  if (pendingMeasureTasks.size > 0) {
-    setPhase("measure");
-    const currentMeasureTasks = [...pendingMeasureTasks];
-    pendingMeasureTasks.clear();
+const measureTasks = new Set<TaskFunction>();
+const mutationTasks = new Set<TaskFunction>();
+const reflowTasks = new Set<ReflowTaskFunction>();
 
-    currentMeasureTasks.forEach((task) => {
-      safeExecDOM(task);
-    });
-  }
-
-  // We use promises to ensure correct order for Mutation Observer fn microtasks
-  await Promise.resolve();
-
-  if (pendingMutationTasks.size > 0) {
-    setPhase("mutate");
-    const currentMutationTasks = [...pendingMutationTasks];
-    pendingMutationTasks.clear();
-
-    currentMutationTasks.forEach((task) => {
-      safeExecDOM(task);
-    });
-  }
-
-  const pendingForceReflowMutationTasks: NoneToVoidFunction[] = [];
-
-  if (pendingForceReflowTasks.size > 0) {
-    setPhase("measure");
-    // Force reflows and add any additional mutation tasks that arise
-    for (const task of pendingForceReflowTasks) {
-      safeExecDOM(() => {
-        const mutationTask = task();
-        if (mutationTask) {
-          pendingForceReflowMutationTasks.push(mutationTask);
-        }
-      });
+const processTasks = <T>(tasks: Set<T>, handler: (task: T) => void) => {
+  const queue = Array.from(tasks);
+  tasks.clear();
+  for (const task of queue) {
+    try {
+      handler(task);
+    } catch (error) {
+      handleError(error as Error);
     }
-    pendingForceReflowTasks.clear();
   }
+};
 
-  if (pendingForceReflowMutationTasks.length > 0) {
-    setPhase("mutate");
-    pendingForceReflowMutationTasks.forEach((task) => {
-      safeExecDOM(task);
-    });
+const runUpdatePass = throttleWithRafFallback(async () => {
+  try {
+    // Measure phase
+    if (measureTasks.size) {
+      setPhase("measure");
+      processTasks(measureTasks, (task) => safeExecDOM(task));
+    }
+
+    await Promise.resolve(); // Allow microtasks
+
+    // Mutation phase
+    if (mutationTasks.size) {
+      setPhase("mutate");
+      processTasks(mutationTasks, (task) => safeExecDOM(task));
+    }
+
+    // Reflow phase
+    if (reflowTasks.size) {
+      setPhase("measure");
+      const followUp: TaskFunction[] = [];
+
+      processTasks(reflowTasks, (task) =>
+        safeExecDOM(() => {
+          const result = task();
+          if (result) followUp.push(result);
+        }),
+      );
+
+      if (followUp.length) {
+        setPhase("mutate");
+        processTasks(new Set(followUp), (task) => safeExecDOM(task));
+      }
+    }
+  } finally {
+    setPhase("measure");
   }
-
-  setPhase("measure");
 });
 
 /**
- * Request a task for the measure phase.
- *
- * This function schedules the provided fn to run during the 'measure' phase of the next animation frame.
- * Measure tasks are responsible for reading from the DOM (e.g., layout, style).
- *
- * @param {NoneToVoidFunction} fn - The function to be executed in the measure phase.
- *
+ * Queue DOM read operations (measure phase).
  * @example
- * requestMeasure(() => {
- *   const width = element.offsetWidth; // Example of reading layout information
- *   console.log(`Element width: ${width}`);
- * });
+ * requestMeasure(() => console.log("Element width:", element.offsetWidth));
  */
-export function requestMeasure(fn: NoneToVoidFunction) {
-  if (!pendingMeasureTasks.has(fn)) {
-    pendingMeasureTasks.add(fn); // Add task to the measure queue
-    runUpdatePassOnRaf(); // Schedule tasks via requestAnimationFrame
+export function requestMeasure(fn: TaskFunction) {
+  if (!measureTasks.has(fn)) {
+    measureTasks.add(fn);
+    runUpdatePass();
   }
 }
 
 /**
- * Request a task for the mutate phase.
- *
- * This function schedules the provided fn to run during the 'mutate' phase of the next animation frame.
- * Mutation tasks are responsible for writing to the DOM (e.g., changing styles or attributes).
- *
- * @param {NoneToVoidFunction} fn - The function to be executed in the mutate phase.
- *
+ * Queue DOM write operations (mutate phase).
  * @example
- * requestMutation(() => {
- *   element.style.backgroundColor = 'blue'; // Example of mutating the DOM
- * });
+ * requestMutation(() => element.style.color = "red");
  */
-export function requestMutation(fn: NoneToVoidFunction) {
-  if (!pendingMutationTasks.has(fn)) {
-    pendingMutationTasks.add(fn); // Add task to the mutate queue
-    runUpdatePassOnRaf(); // Schedule tasks via requestAnimationFrame
+export function requestMutation(fn: TaskFunction) {
+  if (!mutationTasks.has(fn)) {
+    mutationTasks.add(fn);
+    runUpdatePass();
   }
 }
 
 /**
- * Request a task for the next mutate phase, runs after the next measure phase.
- *
- * This function schedules a mutation task to be executed after the next measure phase, ensuring that the DOM has been read before making changes.
- * It first requests a measure task, and within that, requests a mutation task.
- *
- * @param {NoneToReflowTaskFunction} fn - The function to be executed in the next mutate phase, following the measure phase.
- *
+ * Queue measure-then-mutate operations.
  * @example
  * requestNextMutation(() => {
- *   element.style.height = `${element.offsetHeight + 10}px`; // Example of sequential measure and mutate
+ *   const height = element.offsetHeight;
+ *   return () => element.style.height = `${height}px`;
  * });
  */
-export function requestNextMutation(fn: NoneToReflowTaskFunction) {
-  requestMeasure(() => {
-    requestMutation(fn);
-  });
+export function requestNextMutation(fn: ReflowTaskFunction) {
+  if (!reflowTasks.has(fn)) {
+    reflowTasks.add(fn);
+    runUpdatePass();
+  }
 }
 
-/**
- * Request a forced reflow task, which executes after all measure/mutate tasks.
- *
- * This function forces a reflow (layout recalculation) by executing the fn after all scheduled measure and mutate tasks.
- * If the fn returns another mutation task, that mutation will be scheduled in the subsequent mutate phase.
- *
- * @param {NoneToReflowTaskFunction} fn - The function to be executed, which forces a reflow and potentially schedules mutation tasks.
- *
- * @example
- * requestForcedReflow(() => {
- *   const height = element.scrollHeight; // Forces a reflow by reading layout
- *   return () => {
- *     element.style.height = `${height}px`; // Optional follow-up mutation
- *   };
- * });
- */
-export function requestForcedReflow(fn: NoneToReflowTaskFunction) {
-  if (!pendingForceReflowTasks.has(fn)) {
-    pendingForceReflowTasks.add(fn); // Add forced reflow task
-    runUpdatePassOnRaf(); // Schedule tasks via requestAnimationFrame
-  }
+export function setTaskErrorHandler(handler: ErrorHandler) {
+  handleError = handler;
 }
 
 export * from "./stricterdom";
