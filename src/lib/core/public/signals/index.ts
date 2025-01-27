@@ -1,7 +1,10 @@
-import { glob } from "fs";
 import { MAX_INT32 } from "../math";
 
 const SIGNAL_SYMBOL = Symbol.for("signals");
+
+function incrementVersion(version: number): number {
+  return version === MAX_INT32 ? 1 : version + 1;
+}
 
 // Flags for Computed and Effect.
 const RUNNING = 1 << 0; // 1
@@ -384,8 +387,8 @@ Object.defineProperty(Signal.prototype, "value", {
       }
 
       this._value = value;
-      this._version = this._version === MAX_INT32 ? 1 : this._version + 1;
-      globalVersion = globalVersion === MAX_INT32 ? 1 : globalVersion + 1;
+      this._version = incrementVersion(this._version);
+      globalVersion = incrementVersion(globalVersion);
 
       /**@__INLINE__*/ startBatch();
       try {
@@ -609,12 +612,12 @@ Computed.prototype._refresh = function () {
     ) {
       this._value = value;
       this._flags &= ~HAS_ERROR;
-      this._version = this._version === MAX_INT32 ? 1 : this._version + 1;
+      this._version = incrementVersion(this._version);
     }
   } catch (err) {
     this._value = err;
     this._flags |= HAS_ERROR;
-    this._version = this._version === MAX_INT32 ? 1 : this._version + 1;
+    this._version = incrementVersion(this._version);
   }
 
   evalContext = prevContext;

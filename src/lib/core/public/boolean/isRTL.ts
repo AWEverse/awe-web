@@ -1,5 +1,5 @@
 import {
-  requestForcedReflow,
+  requestNextMutation,
   requestMutation,
 } from "@/lib/modules/fastdom/fastdom";
 

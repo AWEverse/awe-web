@@ -1,16 +1,16 @@
-import { FC } from 'react';
-import VideoTopic from './VideoTopic';
-import buildClassName from '@/shared/lib/buildClassName';
+import { FC } from "react";
+import VideoTopic from "./VideoTopic";
+import buildClassName from "@/shared/lib/buildClassName";
 
 interface OwnProps {
   className?: string;
 }
 
-const RightColumn: FC<OwnProps> = props => {
+const RightColumn: FC<OwnProps> = (props) => {
   const { className } = props;
 
   return (
-    <section className={buildClassName('flex flex-col gap-1', className)}>
+    <section className={buildClassName("flex flex-col gap-1", className)}>
       {Array.from({ length: 10 }).map((_, i) => (
         <VideoTopic
           key={i}

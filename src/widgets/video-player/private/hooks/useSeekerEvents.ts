@@ -1,6 +1,7 @@
 import { clamp } from "@/lib/core";
+import { requestMeasure } from "@/lib/modules/fastdom/fastdom";
 import { captureEvents } from "@/lib/utils/captureEvents";
-import useResizeObserver from "@/shared/hooks/DOM/useResizeObserver";
+import { useStableCallback } from "@/shared/hooks/base";
 import { useEffect } from "react";
 
 interface SeekerEventsProps {
@@ -24,71 +25,86 @@ const useSeekerEvents = ({
   isActive,
   duration,
 }: SeekerEventsProps) => {
-  // useResizeObserver(seekerRef, () => {});
+  // Using stable callback references to prevent unnecessary effect re-runs
+  const stableOnSeek = useStableCallback(onSeek);
+  const stableOnSeekStart = useStableCallback(onSeekStart);
+  const stableOnSeekEnd = useStableCallback(onSeekEnd);
 
   useEffect(() => {
-    let time = 0;
-    let offset = 0;
-
-    const calculatePreviewPosition = (e: MouseEvent | TouchEvent) => {
-      if (!seekerRef.current) {
-        return [0, 0];
-      }
-
-      const seeker = seekerRef.current;
-      const seekerSize = seeker.getBoundingClientRect();
-
-      const pageX = e instanceof MouseEvent ? e.pageX : e.touches[0].pageX;
-
-      time = clamp(
-        duration * ((pageX - seekerSize.left) / seekerSize.width),
-        0,
-        duration,
-      );
-
-      if (isPreviewDisabled) {
-        return [time, 0];
-      }
-
-      const preview = previewRef.current!;
-
-      offset = clamp(
-        pageX - seekerSize.left - preview.clientWidth / 2,
-        -4,
-        seekerSize.width - preview.clientWidth + 4,
-      );
-    };
-
-    if (!seekerRef.current) {
-      return undefined;
-    }
-
     const seeker = seekerRef.current;
+    const preview = previewRef.current;
+    if (!seeker || !isActive) return;
 
-    const handleSeek = (e: MouseEvent | TouchEvent) => {
-      calculatePreviewPosition(e);
-      onSeek?.(time);
+    // Cache frequently used values
+    let seekerRect: DOMRect;
+    let previewWidth = 0;
+    let minOffset = -4;
+    let maxOffset = 0;
+
+    const updateLayoutCache = () => {
+      requestMeasure(() => {
+        seekerRect = seeker.getBoundingClientRect();
+        previewWidth = preview?.clientWidth || 0;
+        maxOffset = seekerRect.width - previewWidth + 4;
+      });
     };
 
-    const handleStartSeek = () => {
-      onSeekStart?.();
+    const calculatePosition = (clientX: number): [number, number] => {
+      const relativeX = clamp(
+        (clientX - seekerRect.left) / seekerRect.width,
+        0,
+        1,
+      );
+      const time = relativeX * duration;
+
+      if (isPreviewDisabled || !preview) return [time, 0];
+
+      const offsetBase = clientX - seekerRect.left - previewWidth / 2;
+      return [time, clamp(offsetBase, minOffset, maxOffset)];
     };
 
-    const handleStopSeek = (e: MouseEvent | TouchEvent) => {
-      calculatePreviewPosition(e);
-      onSeek?.(time);
-      onSeekEnd?.(time);
+    const handleDrag = (e: MouseEvent | TouchEvent) => {
+      const clientX = "touches" in e ? e.touches[0].clientX : e.clientX;
+      const [time] = calculatePosition(clientX);
+
+      stableOnSeek?.(time);
     };
+
+    const handleStop = (e: MouseEvent | TouchEvent) => {
+      const clientX =
+        "touches" in e ? e.changedTouches?.[0]?.clientX : e.clientX;
+      const [time] = calculatePosition(clientX);
+
+      stableOnSeek?.(time);
+      stableOnSeekEnd?.(time);
+    };
+
+    // Initial layout measurement
+    updateLayoutCache();
 
     const cleanup = captureEvents(seeker, {
-      onCapture: handleStartSeek,
-      onRelease: handleStopSeek,
-      onClick: handleStopSeek,
-      onDrag: handleSeek,
+      onCapture: () => {
+        updateLayoutCache();
+        stableOnSeekStart?.();
+      },
+      onRelease: handleStop,
+      onClick: handleStop,
+      onDrag: handleDrag,
     });
 
-    return cleanup;
-  }, [duration, isActive, onSeek, onSeekStart, isPreviewDisabled]);
+    return () => {
+      cleanup?.();
+    };
+  }, [
+    isActive,
+    duration,
+    isPreviewDisabled,
+    seekerRef,
+    previewRef,
+    stableOnSeek,
+    stableOnSeekStart,
+    stableOnSeekEnd,
+  ]);
 };
 
 export default useSeekerEvents;

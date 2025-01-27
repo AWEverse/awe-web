@@ -1,4 +1,4 @@
-import { requestForcedReflow } from "@/lib/modules/fastdom/fastdom";
+import { requestNextMutation } from "@/lib/modules/fastdom/fastdom";
 import { useCallback, useLayoutEffect } from "react";
 import { addExtraClass, setExtraStyles } from "../../lib/extraClassHelpers";
 import { useStateRef } from "../base";
@@ -66,7 +66,7 @@ export default function useMenuPosition(
     if (!("getTriggerElement" in options)) {
       applyStaticOptions(containerRef!, bubbleRef!, options);
     } else {
-      requestForcedReflow(() => {
+      requestNextMutation(() => {
         const staticOptions = processDynamically(options);
 
         return () => {

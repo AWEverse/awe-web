@@ -7,18 +7,31 @@ type SharedSignal<T> = Signal<T> | ReadonlySignal<T>;
 
 const NO_DEPS = [] as const;
 
+type SharedSignalEffect<T = null> = (
+  value: T,
+) => ReturnType<React.EffectCallback>;
+
 const useSignalEffectBase = <T = any>(
   signal: SharedSignal<T>,
-  fn: (value: T) => void,
+  fn: SharedSignalEffect<T>,
   effectHook: EffectType,
-  deps?: DependencyList,
+  deps: DependencyList = NO_DEPS,
 ) => {
-  const memoizedFn = useCallback(fn, deps ?? NO_DEPS);
+  const memoizedFn = useCallback(
+    () => fn(signal.value),
+    [fn, signal.value, ...deps],
+  );
 
   effectHook(() => {
     const unsubscribe = signal.subscribe(memoizedFn);
 
     return () => {
+      const cleanup = memoizedFn();
+
+      if (typeof cleanup === "function") {
+        cleanup();
+      }
+
       unsubscribe();
     };
   }, [signal, memoizedFn]);
@@ -26,7 +39,7 @@ const useSignalEffectBase = <T = any>(
 
 const useSignalEffect = <T = any>(
   signal: SharedSignal<T>,
-  fn: (value: T) => void,
+  fn: SharedSignalEffect<T>,
   deps?: DependencyList,
 ) => {
   useSignalEffectBase(signal, fn, useEffect, deps);
@@ -34,7 +47,7 @@ const useSignalEffect = <T = any>(
 
 const useSignalLayoutEffect = <T = any>(
   signal: SharedSignal<T>,
-  fn: (value: T) => void,
+  fn: SharedSignalEffect<T>,
   deps?: DependencyList,
 ) => {
   useSignalEffectBase(signal, fn, useLayoutEffect, deps);

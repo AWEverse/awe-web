@@ -1,6 +1,6 @@
-import { requestIdleExecution, throttleWith } from '../schedulers';
-import { requestMeasure } from '@/lib/modules/fastdom/fastdom';
-import { signal } from '../signals';
+import { requestIdleExecution, throttleWith } from "../schedulers";
+import { requestMeasure } from "@/lib/modules/fastdom/fastdom";
+import { signal } from "../signals";
 
 const AUTO_END_TIMEOUT = 1000;
 
@@ -10,9 +10,15 @@ let counterBlocking = 0;
 const IsAnimating = signal(false);
 const IsBlockingAnimating = signal(false);
 
-export { IsAnimating as getIsHeavyAnimating, IsBlockingAnimating as getIsBlockingHeavyAnimating };
+export {
+  IsAnimating as getIsHeavyAnimating,
+  IsBlockingAnimating as getIsBlockingHeavyAnimating,
+};
 
-export function dispatchHeavyAnimation(duration = AUTO_END_TIMEOUT, isBlocking = false) {
+export function dispatchHeavyAnimation(
+  duration = AUTO_END_TIMEOUT,
+  isBlocking = false,
+) {
   counter++;
   IsAnimating.value = true;
 
@@ -39,9 +45,7 @@ export function onIdleComplete(callback: NoneToVoidFunction) {
     if (!IsAnimating.value) {
       callback();
     } else {
-      requestMeasure(() => {
-        onIdleComplete(callback);
-      });
+      requestAnimationFrame(() => onIdleComplete(callback));
     }
   });
 }

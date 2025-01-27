@@ -14,7 +14,7 @@ import buildClassName from "../lib/buildClassName";
 import { useRefInstead } from "@/shared/hooks/base";
 import {
   requestMutation,
-  requestForcedReflow,
+  requestNextMutation,
 } from "@/lib/modules/fastdom/fastdom";
 import { useStableCallback } from "@/shared/hooks/base";
 import { generateUniqueId } from "@/lib/hooks/utilities/useUniqueId";
@@ -129,7 +129,7 @@ const TextArea: FC<OwnProps> = ({
     requestMutation(() => {
       element.style.height = "0";
 
-      requestForcedReflow(() => {
+      requestNextMutation(() => {
         const maxHeight = parseFloat(element.style.maxHeight) || 0;
         const newHeight = element.scrollHeight;
 

@@ -124,21 +124,23 @@ export const setMediaMute = (
   mute: boolean = true,
   fadeDuration: number = 0,
 ): number => {
-  mediaEl.muted = mute;
+  const { dataset } = mediaEl;
+  const currentVolume = mediaEl.volume;
 
+  // Store the previous volume if muted and not already stored
   if (mute) {
-    if (!mediaEl.dataset.previousVolume) {
-      mediaEl.dataset.previousVolume = mediaEl.volume + "";
+    if (!dataset.previousVolume) {
+      dataset.previousVolume = currentVolume.toString();
     }
     setMediaVolume(mediaEl, 0, fadeDuration);
   } else {
-    const previousVolume = mediaEl.dataset.previousVolume
-      ? +mediaEl.dataset.previousVolume
-      : 1;
+    const previousVolume = dataset.previousVolume ? +dataset.previousVolume : 1;
+
     setMediaVolume(mediaEl, previousVolume, fadeDuration);
   }
 
-  return Number(mediaEl.dataset.previousVolume);
+  mediaEl.muted = mute;
+  return dataset.previousVolume ? +dataset.previousVolume : currentVolume;
 };
 
 /**

@@ -1,6 +1,6 @@
 import {
   requestMutation,
-  requestForcedReflow,
+  requestNextMutation,
 } from "@/lib/modules/fastdom/fastdom";
 import { FC, useRef, useLayoutEffect, useEffect, useMemo } from "react";
 import buildClassName from "../lib/buildClassName";

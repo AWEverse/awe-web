@@ -1,6 +1,6 @@
 import { throttle, IS_IOS } from "../core";
 import {
-  requestForcedReflow,
+  requestNextMutation,
   requestMeasure,
 } from "../modules/fastdom/fastdom";
 
@@ -43,7 +43,7 @@ if (IS_IOS) {
 export function updateSizes(): IDimensions {
   let height: number;
 
-  requestForcedReflow(() => {
+  requestNextMutation(() => {
     if (IS_IOS && window.visualViewport) {
       height = window.visualViewport.height + window.visualViewport.pageTop;
     } else {

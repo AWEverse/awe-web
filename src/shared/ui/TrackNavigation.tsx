@@ -3,7 +3,7 @@ import buildClassName from "../lib/buildClassName";
 import s from "./TrackNavigation.module.scss";
 import buildStyle from "../lib/buildStyle";
 import {
-  requestForcedReflow,
+  requestNextMutation,
   requestMeasure,
 } from "@/lib/modules/fastdom/fastdom";
 

@@ -77,6 +77,7 @@ const SeekLine: FC<OwnProps> = ({
       const progressEl = progressRef.current;
 
       if (progressEl) {
+        progressEl.style.willChange = "transform";
         progressEl.style.transform = moveX(time, duration);
         progressEl.setAttribute("aria-valuenow", `${round(time)}`);
       }

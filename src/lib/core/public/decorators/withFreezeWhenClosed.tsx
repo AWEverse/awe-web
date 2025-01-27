@@ -1,32 +1,34 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-import { FC, useRef } from "react";
+import { FC, useRef, ComponentProps } from "react";
 
 interface WithFreezeWhenClosedProps {
   isOpen: boolean;
 }
 
-type OwnProps<T extends FC<any>> = WithFreezeWhenClosedProps & Parameters<T>[0];
+export default function withFreezeWhenClosed<
+  T extends FC<WithFreezeWhenClosedProps & Record<string, unknown>>,
+>(WrappedComponent: T) {
+  type WrappedProps = ComponentProps<T>;
 
-export default function withFreezeWhenClosed<T extends FC<any>>(
-  CurrentComponent: T,
-): T {
-  function ComponentWrapper(props: OwnProps<T>) {
-    const newProps = useRef<OwnProps<T>>(props);
+  function ComponentWrapper(props: WrappedProps) {
+    const lastOpenProps = useRef<WrappedProps>(props);
+    const frozenProps = useRef<WrappedProps | null>(null);
 
     if (props.isOpen) {
-      // If `isOpen` is true, update `newProps` with the incoming props.
-      newProps.current = props;
-    } else {
-      // If `isOpen` is false, retain the previous props but explicitly set `isOpen` to false.
-      newProps.current = {
-        ...newProps.current, // Preserve the existing props
-        isOpen: false, // Ensure `isOpen` is set to false
+      lastOpenProps.current = props;
+      frozenProps.current = null;
+    } else if (!frozenProps.current) {
+      frozenProps.current = {
+        ...lastOpenProps.current,
+        isOpen: false,
       };
     }
 
-    // eslint-disable-next-line react/react-in-jsx-scope
-    return <CurrentComponent {...newProps.current} />;
+    const actualProps = props.isOpen
+      ? lastOpenProps.current
+      : frozenProps.current!;
+
+    return <WrappedComponent {...(actualProps as any)} />;
   }
 
-  return ComponentWrapper as T;
+  return ComponentWrapper as FC<WrappedProps>;
 }
