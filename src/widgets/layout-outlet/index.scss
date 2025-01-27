@@ -1,37 +1,77 @@
+:root {
+  --header-z-index: 1000;
+  --header-background: var(--awe-palette-background-default);
+  --header-border: 2px solid black;
+  --header-blur: blur(3px);
+  --header-mask-gradient: linear-gradient(to bottom, black 1px, transparent);
+  --layout-shadow: 0 4px 8px rgba(0, 0, 0, 0.05);
+}
+
 .LayoutHeader {
-  z-index: 1000;
-  background-color: transparent;
-  border-bottom: 2px solid black;
-
-  background-image: radial-gradient(transparent 1px, var(--awe-palette-background-default) 1px);
-  background-size: 4px 4px;
-
-  backdrop-filter: blur(3px);
-
-  // Fallback for browsers not supporting backdrop-filter
-  @supports not ((-webkit-backdrop-filter: none) or (backdrop-filter: none)) {
-    background-color: rgba(255, 255, 255, 0.8); // A fallback color for unsupported browsers
-  }
-
-  mask: linear-gradient(to bottom, black 60%, transparent);
-
+  z-index: var(--header-z-index);
+  position: relative;
   padding: 1rem;
   min-height: 2rem;
   max-height: 4rem;
-
-  // For older browsers (IE/Edge) that don't support the mask property
-  @supports not (mask: linear-gradient(to bottom, black 60%, transparent)) {
-    border-bottom: 1px solid var(--awe-palette-background-default); // A fallback for the mask effect
+  border-bottom: var(--header-border);
+  background: {
+    image: radial-gradient(transparent 1px, var(--header-background) 1px);
+    size: 4px 4px;
+    color: rgba(255, 255, 255, 0.8); // Fallback base
   }
+  
+  // Modern backdrop filter support
+  @supports (backdrop-filter: none) or (-webkit-backdrop-filter: none) {
+    background-color: transparent;
+    backdrop-filter: var(--header-blur);
+    -webkit-backdrop-filter: var(--header-blur);
+  }
+
+  &::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: var(--header-mask-gradient);
+    mask: var(--header-mask-gradient);
+    pointer-events: none;
+  }
+
+  transform: translateZ(0);
+  will-change: transform, backdrop-filter;
+  contain: layout style;
 }
 
 .LayoutOutlet {
   display: flex;
   flex-direction: column;
-  min-height: 100dvh;  
+  min-height: 100vh;
+  min-height: 100dvh;
+  isolation: isolate;
 }
 
 .LayoutBody {
   flex: 1;
-  box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.05);
+  position: relative;
+  box-shadow: var(--layout-shadow);
+  
+  &::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    box-shadow: var(--layout-shadow);
+    pointer-events: none;
+    z-index: -1;
+  }
+}
+
+@supports not (contain: layout) {
+  .LayoutHeader {
+    overflow: hidden;
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .LayoutHeader {
+    transition: backdrop-filter 0.3s ease;
+  }
 }

@@ -77,7 +77,12 @@ const MainScreen: FC<OwnProps> = ({ nodeRef, className }) => {
               key={i}
               alt=""
               src="https://picsum.photos/200"
-              style={{ width: "100%", height: "100%", padding: "2px" }}
+              style={{
+                width: "100%",
+                height: "100%",
+                padding: "1px",
+                borderRadius: "10px",
+              }}
             />
           ))}
         </Square>

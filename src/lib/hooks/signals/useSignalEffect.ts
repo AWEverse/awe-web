@@ -1,13 +1,15 @@
 import { ReadonlySignal, Signal } from "@/lib/core/public/signals";
-import { DependencyList, useEffect, useLayoutEffect, useCallback } from "react";
+import {
+  DependencyList,
+  useEffect,
+  useLayoutEffect,
+  useCallback,
+  useRef,
+} from "react";
 
 type EffectType = typeof useEffect | typeof useLayoutEffect;
-
 type SharedSignal<T> = Signal<T> | ReadonlySignal<T>;
-
-const NO_DEPS = [] as const;
-
-type SharedSignalEffect<T = null> = (
+type SharedSignalEffect<T = any> = (
   value: T,
 ) => ReturnType<React.EffectCallback>;
 
@@ -15,42 +17,44 @@ const useSignalEffectBase = <T = any>(
   signal: SharedSignal<T>,
   fn: SharedSignalEffect<T>,
   effectHook: EffectType,
-  deps: DependencyList = NO_DEPS,
+  deps: DependencyList = [],
 ) => {
-  const memoizedFn = useCallback(
-    () => fn(signal.value),
-    [fn, signal.value, ...deps],
-  );
+  const cleanupRef = useRef<ReturnType<React.EffectCallback>>(undefined);
+  const signalRef = useRef(signal);
+  signalRef.current = signal;
+
+  const stableFn = useCallback(fn, deps);
 
   effectHook(() => {
-    const unsubscribe = signal.subscribe(memoizedFn);
+    const handleUpdate = () => {
+      if (typeof cleanupRef.current === "function") {
+        cleanupRef.current();
+      }
+      cleanupRef.current = stableFn(signalRef.current.value);
+    };
+
+    const unsubscribe = signalRef.current.subscribe(handleUpdate);
+
+    handleUpdate();
 
     return () => {
-      const cleanup = memoizedFn();
-
-      if (typeof cleanup === "function") {
-        cleanup();
-      }
-
       unsubscribe();
+      if (typeof cleanupRef.current === "function") {
+        cleanupRef.current();
+      }
+      cleanupRef.current = undefined;
     };
-  }, [signal, memoizedFn]);
+  }, [stableFn, signal]);
 };
 
-const useSignalEffect = <T = any>(
+export const useSignalEffect = <T = any>(
   signal: SharedSignal<T>,
   fn: SharedSignalEffect<T>,
   deps?: DependencyList,
-) => {
-  useSignalEffectBase(signal, fn, useEffect, deps);
-};
+) => useSignalEffectBase(signal, fn, useEffect, deps);
 
-const useSignalLayoutEffect = <T = any>(
+export const useSignalLayoutEffect = <T = any>(
   signal: SharedSignal<T>,
   fn: SharedSignalEffect<T>,
   deps?: DependencyList,
-) => {
-  useSignalEffectBase(signal, fn, useLayoutEffect, deps);
-};
-
-export { useSignalEffect, useSignalLayoutEffect };
+) => useSignalEffectBase(signal, fn, useLayoutEffect, deps);

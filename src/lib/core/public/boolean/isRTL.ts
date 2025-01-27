@@ -1,59 +1,79 @@
-import {
-  requestNextMutation,
-  requestMutation,
-} from "@/lib/modules/fastdom/fastdom";
-
 /**
- * Detects if the given text is written in a right-to-left (RTL) script by analyzing
- * its layout in the DOM. This method uses `offsetLeft` to compare the relative positions
- * of identical text spans in the document, which has wider browser support than `getBoundingClientRect`.
+ * Robustly detects text direction using multiple strategies:
+ * 1. Unicode RTL character detection
+ * 2. Layout engine verification
+ * 3. Fallback to computed CSS direction
  *
- * @param {string} text - The text to be checked for RTL script.
- * @param {(result: boolean) => void} callback - The callback function to return the result asynchronously.
+ * @param text - Text to analyze
+ * @param callback - Returns true for RTL, false for LTR
  */
 export function isScriptRtl(
   text: string,
   callback: (result: boolean) => void,
 ): void {
-  if (
-    typeof document === "undefined" ||
-    !("offsetLeft" in document.documentElement)
-  ) {
+  // Immediate detection for empty strings
+  if (!text) {
     callback(false);
     return;
   }
 
-  requestMutation(() => {
-    const testDiv = document.createElement("div");
-    testDiv.style.cssText = `
+  // First-pass check using Unicode RTL character ranges
+  const hasStrongRtl =
+    /[\u0590-\u05FF\u0600-\u06FF\u0700-\u074F\u0780-\u07BF\u0860-\u086F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF]/.test(
+      text,
+    );
+  const hasWeakRtl = /[\u200F\u202B\u202E\u2067]/.test(text);
+
+  // Immediate answer for strong RTL indicators
+  if (hasStrongRtl) {
+    callback(true);
+    return;
+  }
+
+  // Fallback for environments without DOM
+  if (typeof document === "undefined" || !document.body) {
+    callback(hasWeakRtl);
+    return;
+  }
+
+  const testDiv = document.createElement("div");
+  testDiv.style.cssText = `
       position: absolute;
       visibility: hidden;
-      width: auto;
-      height: auto;
-      font-size: 10px;
-      font-family: 'Ahuramzda';
+      width: max-content;
+      font-size: 16px;
+      font-family: 'Arial', sans-serif;
+      direction: ltr;
+      white-space: nowrap;
     `;
 
-    const span1 = document.createElement("span");
-    const span2 = document.createElement("span");
+  const controlSpan = document.createElement("span");
+  const testSpan = document.createElement("span");
 
-    span1.appendChild(document.createTextNode(text));
-    span2.appendChild(document.createTextNode(text));
+  controlSpan.textContent = "\u202A|\u202C"; // LTR embedding
+  testSpan.textContent = `${text}\u200E`; // Add LRM to prevent trailing effects
 
-    testDiv.appendChild(span1);
-    testDiv.appendChild(span2);
+  testDiv.append(controlSpan, testSpan);
+  document.body.appendChild(testDiv);
 
-    document.body.appendChild(testDiv);
+  try {
+    const controlRect = controlSpan.getBoundingClientRect();
+    const testRect = testSpan.getBoundingClientRect();
 
-    requestForcedReflow(() => {
-      const offsetLeft1 = span1.offsetLeft;
-      const offsetLeft2 = span2.offsetLeft;
+    const isLogicalRtl = testRect.left < controlRect.left;
+    const isVisualRtl = testRect.right < controlRect.right;
 
-      callback(offsetLeft1 > offsetLeft2);
+    const layoutDetection = isLogicalRtl || isVisualRtl;
 
-      return () => {
-        document.body.removeChild(testDiv);
-      };
-    });
-  });
+    const computedDirection = window.getComputedStyle(
+      testSpan as Element,
+    ).direction;
+    const styleDetection = computedDirection === "rtl";
+
+    callback(layoutDetection || styleDetection);
+  } catch (error) {
+    callback(hasWeakRtl);
+  } finally {
+    document.body.removeChild(testDiv);
+  }
 }

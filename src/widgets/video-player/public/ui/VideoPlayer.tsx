@@ -97,10 +97,8 @@ const VideoPlayer: React.FC<OwnProps> = ({
   const [bufferedSingal, setBuffered] = useStateSignal<BufferedRange[]>([]);
   const [controlsSignal, toggleControls, lockControls] = useControlsSignal();
 
-  const [isFullscreen, enterFullscreen, exitFullscreen] = useFullscreen(
-    containerRef,
-    setPlaying,
-  );
+  const [isFullscreen, enterFullscreen, exitFullscreen] =
+    useFullscreen(containerRef);
 
   const handleEnterFullscreen = useStableCallback(() => {});
   const handleLeaveFullscreen = useStableCallback(() => {});

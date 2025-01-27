@@ -39,11 +39,11 @@
   display: block;
   width: 100%;
   height: auto;
-  object-fit: contain;
+  object-fit: cover;
   background: var(--video-bg-color) no-repeat 50% / contain;
   border-radius: inherit;
   outline: none;
-  transform: translateZ(0); // GPU layer promotion
+  transform: translateZ(0); 
   backface-visibility: hidden;
   touch-action: manipulation;
   user-select: none;
