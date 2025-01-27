@@ -1,14 +1,11 @@
-:root {
+.VideoPlayer {  
   --video-radius: 0.5rem;
   --video-bg-color: var(--color-black, #000);
-  --cinematic-blur: 3rem;
+  --cinematic-blur: 2.5rem;
   --cinematic-opacity: 0.85;
   --player-z-index: 10;
   --controls-z-index: 15;
   --light-z-index: -1;
-}
-
-.VideoPlayer {
   --max-player-height: calc(100dvh - 8.25rem);
   
   position: relative;
@@ -78,17 +75,32 @@
   
   position: absolute;
   pointer-events: none;
-  inset: 0;
+  top: 50%;
+  left: 50%;
   z-index: var(--light-z-index);
-  transform: scale(var(--scale-factor));
+  width: 100%;
+  height: 100%;
+  transform: 
+    translate(-50%, -50%)
+    scale(var(--scale-factor));
   filter: blur(var(--cinematic-blur));
   opacity: var(--cinematic-opacity);
-  will-change: filter, opacity;
+  will-change: transform, filter, opacity;
   mix-blend-mode: soft-light;
   transform-style: preserve-3d;
+  transform-origin: center center;
+  backface-visibility: hidden;
+
+  // Hardware accelerated fallback
+  @supports not (translate: 0) {
+    transform: 
+      translate(-50%, -50%)
+      scale(var(--scale-factor));
+  }
 
   @supports not (backdrop-filter: blur(1px)) {
     opacity: calc(var(--cinematic-opacity) * 0.8);
+    filter: blur(calc(var(--cinematic-blur) * 0.9));
   }
 }
 
