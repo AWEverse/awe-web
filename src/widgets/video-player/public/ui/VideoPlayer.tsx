@@ -216,18 +216,17 @@ const VideoPlayer: React.FC<OwnProps> = ({
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (isInPictureInPicture) return;
+      e.preventDefault();
+
       const video = videoRef.current!;
       const key = e.key || e.code;
 
       switch (key) {
         case EKeyboardKey.Space:
         case EKeyboardKey.Enter:
-          e.preventDefault();
           togglePlayState(e);
           break;
         case EKeyboardKey.ArrowLeft:
-          e.preventDefault();
           video.currentTime = clamp(
             video.currentTime - REWIND_STEP,
             0,
@@ -235,7 +234,6 @@ const VideoPlayer: React.FC<OwnProps> = ({
           );
           break;
         case EKeyboardKey.ArrowRight:
-          e.preventDefault();
           video.currentTime = clamp(
             video.currentTime + REWIND_STEP,
             0,
@@ -244,17 +242,14 @@ const VideoPlayer: React.FC<OwnProps> = ({
           break;
         case EKeyboardKey.ArrowUp:
         case EKeyboardKey.ArrowDown:
-          e.preventDefault();
           handleVolumeChange(
             clamp01(volume.value + (key === EKeyboardKey.ArrowUp ? 0.1 : -0.1)),
           );
           break;
         case EKeyboardKey.M:
-          e.preventDefault();
           handleMuteClick();
           break;
         case EKeyboardKey.F:
-          e.preventDefault();
           handleFullscreenChange();
           break;
       }
@@ -262,14 +257,7 @@ const VideoPlayer: React.FC<OwnProps> = ({
 
     document.addEventListener("keydown", handleKeyDown);
     return () => document.removeEventListener("keydown", handleKeyDown);
-  }, [
-    togglePlayState,
-    isFullscreen,
-    isInPictureInPicture,
-    handleVolumeChange,
-    handleMuteClick,
-    handleFullscreenChange,
-  ]);
+  }, [volume, duration, isPlaying]);
 
   const handlersBuffering = useMemo(
     () => ({

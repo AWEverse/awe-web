@@ -73,6 +73,7 @@ export default function useMenuPosition(
     } else {
       requestNextMutation(() => {
         const staticOptions = processDynamically(currentOptions);
+
         return () =>
           staticOptions &&
           applyStaticOptions(containerRef, bubbleRef, staticOptions);
@@ -137,12 +138,13 @@ function applyPositionConstraints(
   measurements: LayoutMeasurements,
   layout: Layout,
 ): PositionCalculation {
-  const { root, menu, viewport } = measurements;
+  const { menu, viewport } = measurements; // Убрали root из деструктуризации
   const { isDense, shouldAvoidNegativePosition } = layout;
 
   let { x, y } = position;
 
-  // Horizontal constraints
+  console.log(menu.width);
+
   x = Math.max(
     MENU_POSITION_VISUAL_COMFORT_SPACE_PX,
     Math.min(
@@ -151,9 +153,8 @@ function applyPositionConstraints(
     ),
   );
 
-  // Vertical constraints
   y = Math.max(
-    root.top + MENU_POSITION_VISUAL_COMFORT_SPACE_PX,
+    MENU_POSITION_VISUAL_COMFORT_SPACE_PX, // Используем константу вместо root.top
     Math.min(y, viewport.height - menu.height - MENU_POSITION_BOTTOM_MARGIN),
   );
 

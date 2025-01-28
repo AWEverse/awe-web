@@ -90,7 +90,7 @@ if (typeof window !== "undefined") {
   initializeMediaQueries();
 }
 
-export function useAppLayout(): LayoutState {
+export default function useAppLayout(): LayoutState {
   const [state, setState] = useState(currentState);
 
   useEffect(() => {

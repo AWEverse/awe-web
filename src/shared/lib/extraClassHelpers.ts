@@ -1,93 +1,66 @@
-type AnyLiteral = Record<string, any>;
 const extraClasses = new WeakMap<HTMLElement, Set<string>>();
 const extraStyles = new WeakMap<HTMLElement, Record<string, string>>();
 
-// Pre-defined empty sets/objects for reuse
-const EMPTY_SET = new Set<string>();
-const EMPTY_OBJECT: AnyLiteral = {};
-
-export function addExtraClass<T extends HTMLElement>(
-  element: T,
-  className: string,
-) {
-  const classList = extraClasses.get(element) || new Set();
-  if (classList.has(className)) return;
-
-  classList.add(className);
-  extraClasses.set(element, classList);
-
-  // Direct DOM update without checking existing classes
+export function addExtraClass(element: HTMLElement, className: string) {
   element.classList.add(className);
-}
 
-export function removeExtraClass<T extends HTMLElement>(
-  element: T,
-  className: string,
-) {
-  const classList = extraClasses.get(element) || EMPTY_SET;
-  if (!classList.has(className)) return;
-
-  classList.delete(className);
-  if (classList.size === 0) {
-    extraClasses.delete(element);
+  const classList = extraClasses.get(element);
+  if (classList) {
+    classList.add(className);
+  } else {
+    extraClasses.set(element, new Set([className]));
   }
-
-  element.classList.remove(className);
 }
 
-export function toggleExtraClass<T extends HTMLElement>(
-  element: T,
+export function removeExtraClass(element: HTMLElement, className: string) {
+  element.classList.remove(className);
+
+  const classList = extraClasses.get(element);
+  if (classList) {
+    classList.delete(className);
+
+    if (!classList.size) {
+      extraClasses.delete(element);
+    }
+  }
+}
+
+export function toggleExtraClass(
+  element: HTMLElement,
   className: string,
   force?: boolean,
 ) {
-  const classList = extraClasses.get(element) || EMPTY_SET;
-  const shouldAdd = force ?? !classList.has(className);
-
-  if (shouldAdd) {
+  if (force === true) {
     addExtraClass(element, className);
-  } else {
+  } else if (force === false) {
     removeExtraClass(element, className);
+  } else if (extraClasses.get(element)?.has(className)) {
+    removeExtraClass(element, className);
+  } else {
+    addExtraClass(element, className);
   }
 }
 
-// Style optimization helpers
-const CSS_VAR_PREFIX = "--";
-const isCSSVariable = (prop: string) => prop.startsWith(CSS_VAR_PREFIX);
-
-export function setExtraStyles<T extends HTMLElement>(
-  element: T,
+export function setExtraStyles(
+  element: HTMLElement,
   styles: Partial<CSSStyleDeclaration> & AnyLiteral,
 ) {
-  const prevStyles = extraStyles.get(element) || EMPTY_OBJECT;
-  const newStyles: Record<string, string> = {};
-  const styleUpdates: [string, string | null][] = [];
+  extraStyles.set(element, styles);
+  applyExtraStyles(element);
+}
 
-  // Batch style updates
-  Object.entries(styles).forEach(([prop, value]) => {
-    const stringValue = String(value ?? "");
-    newStyles[prop] = stringValue;
-
-    // Only update if value changed
-    if (prevStyles[prop] !== stringValue) {
-      styleUpdates.push([prop, stringValue]);
-    }
-  });
-
-  // Process removals for properties not in new styles
-  Object.keys(prevStyles)
-    .filter((prop) => !(prop in newStyles))
-    .forEach((prop) => styleUpdates.push([prop, null]));
-
-  // Apply batched updates
-  styleUpdates.forEach(([prop, value]) => {
-    if (isCSSVariable(prop)) {
+function applyExtraStyles(element: HTMLElement) {
+  const standardStyles = Object.entries(extraStyles.get(element)!).reduce<
+    Record<string, string>
+  >((acc, [prop, value]) => {
+    if (prop.startsWith("--")) {
       element.style.setProperty(prop, value);
-    } else if (value !== null) {
-      element.style[prop as any] = value;
     } else {
-      element.style.removeProperty(prop);
+      acc[prop] = value;
     }
-  });
 
-  extraStyles.set(element, newStyles);
+    return acc;
+  }, {});
+
+  Object.assign(element.style, standardStyles);
 }
