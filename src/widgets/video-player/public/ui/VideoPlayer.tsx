@@ -37,7 +37,7 @@ import { requestMeasure } from "@/lib/modules/fastdom/fastdom";
 import parseMediaSources from "../../private/lib/source/parseMediaSources";
 import ContextMenu from "@/entities/context-menu/public/ContextMenu";
 import { useFastClick } from "@/shared/hooks/mouse/useFastClick";
-import useContextMenuHandlers from "@/shared/hooks/DOM/useContextMenu";
+import useContextMenuHandlers from "@/entities/context-menu/public/hooks/useContextMenuHandlers";
 
 const TopPannel = lazy(() => import("../../private/ui/mobile/TopPannel"));
 
@@ -307,7 +307,7 @@ const VideoPlayer: React.FC<OwnProps> = ({
     handleContextMenuHide,
   } = useContextMenuHandlers(containerRef, false);
 
-  const { handleClick, handleMouseDown } = useFastClick(
+  const fastClickHandlers = useFastClick(
     (e: React.MouseEvent<HTMLDivElement>) => {
       if (e.button === EMouseButton.Secondary) {
         handleBeforeContextMenu(e);
@@ -328,8 +328,7 @@ const VideoPlayer: React.FC<OwnProps> = ({
           isFullscreen && "FullscreenMode",
         )}
         ref={containerRef}
-        onClick={handleClick}
-        onMouseDown={handleMouseDown}
+        {...fastClickHandlers}
         onContextMenu={handleContextMenu}
         onMouseMove={!isMobile ? handleVideoMove : undefined}
         onMouseOut={!isMobile ? handleVideoLeave : undefined}

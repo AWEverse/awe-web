@@ -1,9 +1,9 @@
 import ContextMenu from "@/entities/context-menu/public/ContextMenu";
 import { EMouseButton } from "@/lib/core";
-import useContextMenuHandlers from "@/shared/hooks/DOM/useContextMenu";
+import useContextMenuHandlers from "@/entities/context-menu/public/hooks/useContextMenuHandlers";
 import useMenuPosition, {
   MenuPositionOptions,
-} from "@/shared/hooks/DOM/useMenuPosition";
+} from "@/entities/context-menu/public/hooks/useMenuPosition";
 import { useFastClick } from "@/shared/hooks/mouse/useFastClick";
 import { useState, useRef } from "react";
 

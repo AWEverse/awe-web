@@ -1,13 +1,13 @@
 import { IS_TOUCH_ENV, IS_PWA, IS_IOS } from "@/lib/core";
-import { ReadonlySignal, Signal } from "@/lib/core/public/signals";
+import { ReadonlySignal } from "@/lib/core/public/signals";
 import { requestMutation } from "@/lib/modules/fastdom/fastdom";
 import {
   addExtraClass,
   removeExtraClass,
 } from "@/shared/lib/extraClassHelpers";
 import { RefObject, useState, useRef, useEffect } from "react";
-import useEffectSync from "../effects/useEffectSync";
-import { useStableCallback } from "../base";
+import useEffectSync from "../../../../shared/hooks/effects/useEffectSync";
+import { useStableCallback } from "../../../../shared/hooks/base";
 
 const LONG_TAP_DURATION_MS = 200;
 const IOS_PWA_CONTEXT_MENU_DELAY_MS = 100;
