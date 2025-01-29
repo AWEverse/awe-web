@@ -48,49 +48,51 @@ const useContextMenuHandlers = (
     contextMenuAnchorRef.current = contextMenuState.anchor;
   }, [isMenuDisabled, contextMenuState.anchor]);
 
-  const handleBeforeContextMenu = useStableCallback((e: React.MouseEvent<HTMLElement>) => {
-    if (!isMenuDisabledRef.current && e.button === 2) {
+  const handleBeforeContextMenu = useStableCallback(
+    (e: React.MouseEvent<HTMLElement>) => {
+      if (!isMenuDisabledRef.current && e.button === 2) {
+        requestMutation(() => {
+          addExtraClass(e.target as HTMLElement, "no-selection");
+        });
+      }
+    },
+  );
+
+  const handleContextMenu = useStableCallback(
+    (e: React.MouseEvent<HTMLElement>) => {
       requestMutation(() => {
-        addExtraClass(e.target as HTMLElement, "no-selection");
+        removeExtraClass(e.target as HTMLElement, "no-selection");
       });
-    }
-  });
 
-  const handleContextMenu = useStableCallback((e: React.MouseEvent<HTMLElement>) => {
-    requestMutation(() => {
-      removeExtraClass(e.target as HTMLElement, "no-selection");
-    });
-
-    if (
-      isMenuDisabledRef.current ||
-      (shouldDisableOnLink && (e.target as HTMLElement).matches("a[href]"))
-    ) {
-      return;
-    }
-
-    e.preventDefault();
-    e.stopPropagation();
-
-    setContextMenuState((prev) => {
-      // Only update state if the anchor position or target has changed
       if (
-        prev.anchor?.x === e.clientX &&
-        prev.anchor?.y === e.clientY &&
-        prev.target === e.target
+        isMenuDisabledRef.current ||
+        (shouldDisableOnLink && (e.target as HTMLElement).matches("a[href]"))
       ) {
-        return prev; // Return previous state if no changes are needed
+        return;
       }
 
-      console.log(prev);
+      e.preventDefault();
+      e.stopPropagation();
 
-      return {
-        ...prev,
-        isOpen: true,
-        anchor: { x: e.clientX, y: e.clientY },
-        target: e.target as HTMLElement,
-      };
-    });
-  });
+      setContextMenuState((prev) => {
+        // Only update state if the anchor position or target has changed
+        if (
+          prev.anchor?.x === e.clientX &&
+          prev.anchor?.y === e.clientY &&
+          prev.target === e.target
+        ) {
+          return prev; // Return previous state if no changes are needed
+        }
+
+        return {
+          ...prev,
+          isOpen: true,
+          anchor: { x: e.clientX, y: e.clientY },
+          target: e.target as HTMLElement,
+        };
+      });
+    },
+  );
 
   const handleContextMenuClose = useStableCallback(() => {
     setContextMenuState((prev) => ({ ...prev, isOpen: false }));
@@ -144,6 +146,7 @@ const useContextMenuHandlers = (
           capture: true,
         });
       };
+
       document.addEventListener("touchend", handlePreventClick, {
         capture: true,
       });

@@ -13,7 +13,7 @@ const extraStyles = new WeakMap<HTMLElement, Record<string, string>>();
 //     setExtraStyles(ref.current, { color: 'red', '--custom-var': 'blue' });
 //   }
 // }, []);
-export function useExtraStyles(refs: React.RefObject<HTMLElement>[]) {
+export function useExtraStyles(refs: React.RefObject<HTMLElement | null>[]) {
   useComponentDidMount(() => {
     return () => {
       refs.forEach((ref) => {

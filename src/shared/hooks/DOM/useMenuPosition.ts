@@ -100,7 +100,6 @@ function getLayoutMeasurements(
   menuElMinWidth: number,
 ): LayoutMeasurements {
   const rootRect = rootEl?.getBoundingClientRect() || EMPTY_RECT;
-
   return {
     root: rootRect,
     trigger: triggerEl.getBoundingClientRect(),
@@ -145,12 +144,10 @@ function applyPositionConstraints(
   measurements: LayoutMeasurements,
   layout: Layout,
 ): PositionCalculation {
-  const { menu, viewport } = measurements;
-  const { shouldAvoidNegativePosition } = layout;
+  const { menu, viewport } = measurements; // Убрали root из деструктуризации
+  const { isDense, shouldAvoidNegativePosition } = layout;
 
   let { x, y } = position;
-
-  console.log(menu.width);
 
   x = Math.max(
     MENU_POSITION_VISUAL_COMFORT_SPACE_PX,
@@ -270,7 +267,9 @@ function applyStaticOptions(
     transformOriginY,
   } = options;
 
-  if (style) containerEl.style.cssText = style;
+  if (style)
+    containerEl.style.cssText =
+      style + `transform-origin: ${positionX} ${positionY}`;
   if (heightStyle) bubbleEl.style.cssText = heightStyle;
 
   if (positionX) addExtraClass(bubbleEl, positionX);

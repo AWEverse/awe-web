@@ -13,6 +13,7 @@ import {
 import { pipe } from "@/lib/core/public/misc/Pipe";
 import { useRefInstead } from "../hooks/base";
 import { useLayoutEffectWithPreviousDeps } from "../hooks/effects/useEffectWithPreviousDependencies";
+import { useBoundaryCheck } from "../hooks/mouse/useBoundaryCheck";
 
 interface OwnTriggerProps<T = HTMLElement> extends React.HTMLAttributes<T> {
   onTrigger: NoneToVoidFunction;
@@ -66,9 +67,6 @@ const DropdownMenu: FC<OwnProps & OwnSharedProps> = ({
 
   const [isOpen, setIsOpen] = useState(false);
 
-  const isTop = position.startsWith("top");
-  const isLeft = position.endsWith("left");
-
   const handleTriggerClick = () => {
     setIsOpen((prev) => !prev);
 
@@ -104,47 +102,15 @@ const DropdownMenu: FC<OwnProps & OwnSharedProps> = ({
     }
   }, [shouldClose, isOpen]);
 
-  useEffect(() => {
-    const menu = dropdownRef.current;
-
-    if (!menu || !isOpen) return;
-
-    const position = menu!.getBoundingClientRect();
-
-    const handleMove = throttle((e: MouseEvent) => {
-      const { clientX: x, clientY: y } = e;
-
-      // TODO: Fix on diff alignments
-      // Check if pointer is inside the expanded area
-      // Scale factor is for forward compatibility
-      const factoredPosition = {
-        top: position.top / (isTop ? SCALE_FACTOR : 1),
-        left: position.left / (isLeft ? SCALE_FACTOR : 1),
-        right: position.right / (isLeft ? SCALE_FACTOR : 1),
-        bottom: position.bottom / (isTop ? SCALE_FACTOR : 1),
-      };
-
-      const adjTop = factoredPosition.top - OUTBOX_SIZE;
-      const adjLeft = factoredPosition.left - OUTBOX_SIZE;
-      const adjRight = factoredPosition.right + OUTBOX_SIZE;
-      const adjBottom = factoredPosition.bottom + OUTBOX_SIZE;
-
-      const isPointerInside =
-        x > adjLeft && x < adjRight && y > adjTop && y < adjBottom;
-
-      if (!isPointerInside) {
-        handleClose();
-      }
-    }, THROTTLE_INTERVAL);
-
-    const trapFocusCleanup = trapFocus(menu);
-    window.addEventListener("mousemove", handleMove);
-
-    return () => {
-      trapFocusCleanup();
-      window.removeEventListener("mousemove", handleMove);
-    };
-  }, [isOpen, handleClose]);
+  useBoundaryCheck({
+    elementRef: dropdownRef,
+    isActive: isOpen,
+    onExit: handleClose,
+    options: {
+      outboxSize: 50,
+      throttleInterval: 100,
+    },
+  });
 
   useLayoutEffectWithPreviousDeps(
     ([prevIsOpen]) => {

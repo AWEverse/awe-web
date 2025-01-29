@@ -400,13 +400,14 @@ const VideoPlayer: React.FC<OwnProps> = ({
       </div>
 
       <ContextMenu
-        rootRef={containerRef}
         isOpen={isContextMenuOpen}
         position={contextMenuAnchor!}
         onClose={handleContextMenuClose}
+        withPortal
       >
         <div style={{ padding: "8px" }}>
           <p>Context Menu</p>
+          <p>button 1</p>
           <button onClick={handleContextMenuClose}>Close</button>
         </div>
       </ContextMenu>

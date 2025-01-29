@@ -2,13 +2,11 @@ import {
   FC,
   ReactNode,
   useCallback,
-  useEffect,
   useRef,
-  useState,
   CSSProperties,
+  useState,
 } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { requestNextMutation } from "@/lib/modules/fastdom/fastdom";
 import { IVector2D } from "@/lib/utils/data-structures/Vector2d";
 import buildClassName from "@/shared/lib/buildClassName";
 import stopEvent from "@/lib/utils/stopEvent";
@@ -17,6 +15,7 @@ import useMenuPosition from "@/shared/hooks/DOM/useMenuPosition";
 import "./ContextMenu.scss";
 import { useClickAway } from "@/lib/hooks/history/events/useClick";
 import Portal from "@/shared/ui/Portal";
+import { useBoundaryCheck } from "@/shared/hooks/mouse/useBoundaryCheck";
 
 interface ContextMenuProps {
   isOpen: boolean;
@@ -49,6 +48,7 @@ const ContextMenu: FC<ContextMenuProps> = ({
 }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const bubbleRef = useRef<HTMLDivElement>(null);
+  const [isHovered, setIsHovered] = useState(false);
 
   useMenuPosition(isOpen, containerRef, bubbleRef, {
     anchor: position,
@@ -58,7 +58,7 @@ const ContextMenu: FC<ContextMenuProps> = ({
     getLayout: () => ({
       isDense,
       shouldAvoidNegativePosition: true,
-      withPortal,
+      withPortal: true,
       menuElMinWidth: noCompact ? 220 : 160,
     }),
     withMaxHeight: true,
@@ -69,43 +69,42 @@ const ContextMenu: FC<ContextMenuProps> = ({
     document.removeEventListener("scroll", handleClose, true);
   }, [onClose]);
 
-  const handleKeyDown = useCallback(
-    (e: KeyboardEvent) => e.key === "Escape" && handleClose(),
-    [handleClose],
-  );
-
-  useEffect(() => {
-    if (isOpen) {
-      document.addEventListener("keydown", handleKeyDown);
-      document.addEventListener("scroll", handleClose, true);
-    } else {
-    }
-
-    return () => {
-      document.removeEventListener("keydown", handleKeyDown);
-      document.removeEventListener("scroll", handleClose, true);
-    };
-  }, [isOpen, handleKeyDown, handleClose]);
-
   useClickAway(bubbleRef, handleClose);
 
+  useBoundaryCheck({
+    elementRef: containerRef,
+    isActive: isOpen,
+    onExit: handleClose,
+    options: {
+      outboxSize: 100,
+      throttleInterval: 100,
+    },
+  });
+
+  const menuEl = (
+    <motion.div
+      ref={containerRef}
+      className={buildClassName("context-menu-container", className)}
+      style={style}
+      initial={{ opacity: 0, scale: 0.85 }}
+      animate={{ opacity: 1, scale: 1 }}
+      exit={{ opacity: 0, scale: 0.85 }}
+      transition={{ duration: 0.2 }}
+      onContextMenu={stopEvent}
+    >
+      <div
+        className={buildClassName("context-menu-bubble", menuClassName)}
+        ref={bubbleRef}
+      >
+        {children}
+      </div>
+    </motion.div>
+  );
+
   return (
-    isOpen && (
-      <Portal>
-        <div
-          ref={containerRef}
-          className={buildClassName("context-menu-container", className)}
-          style={style}
-        >
-          <div
-            className={buildClassName("context-menu-bubble", menuClassName)}
-            ref={bubbleRef}
-          >
-            {children}
-          </div>
-        </div>
-      </Portal>
-    )
+    <AnimatePresence>
+      {isOpen && (withPortal ? <Portal>{menuEl}</Portal> : menuEl)}
+    </AnimatePresence>
   );
 };
 
