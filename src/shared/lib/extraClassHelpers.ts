@@ -1,25 +1,60 @@
+import { useComponentDidMount } from "../hooks/effects/useLifecycle";
+
 const extraClasses = new WeakMap<HTMLElement, Set<string>>();
 const extraStyles = new WeakMap<HTMLElement, Record<string, string>>();
 
-export function addExtraClass(element: HTMLElement, className: string) {
-  element.classList.add(className);
+// // Initialize the hook
+// useExtraStyles(ref);
 
-  const classList = extraClasses.get(element);
-  if (classList) {
-    classList.add(className);
-  } else {
-    extraClasses.set(element, new Set([className]));
+// // Example: Add a class and styles
+// React.useEffect(() => {
+//   if (ref.current) {
+//     addExtraClass(ref.current, 'my-class');
+//     setExtraStyles(ref.current, { color: 'red', '--custom-var': 'blue' });
+//   }
+// }, []);
+export function useExtraStyles(refs: React.RefObject<HTMLElement>[]) {
+  useComponentDidMount(() => {
+    return () => {
+      refs.forEach((ref) => {
+        if (ref.current) {
+          extraClasses.delete(ref.current);
+          extraStyles.delete(ref.current);
+        }
+      });
+    };
+  });
+}
+
+export function isValidCustomProperty(prop: string): boolean {
+  return /^--[a-zA-Z0-9-]+$/.test(prop);
+}
+
+function getClassSet(element: HTMLElement): Set<string> {
+  let classSet = extraClasses.get(element);
+
+  if (!classSet) {
+    classSet = new Set();
+    extraClasses.set(element, classSet);
+  }
+
+  return classSet;
+}
+
+export function addExtraClass(element: HTMLElement, className: string) {
+  const classSet = getClassSet(element);
+  if (!classSet.has(className)) {
+    element.classList.add(className);
+    classSet.add(className);
   }
 }
 
 export function removeExtraClass(element: HTMLElement, className: string) {
-  element.classList.remove(className);
-
-  const classList = extraClasses.get(element);
-  if (classList) {
-    classList.delete(className);
-
-    if (!classList.size) {
+  const classSet = extraClasses.get(element);
+  if (classSet?.has(className)) {
+    element.classList.remove(className);
+    classSet.delete(className);
+    if (classSet.size === 0) {
       extraClasses.delete(element);
     }
   }
@@ -30,37 +65,50 @@ export function toggleExtraClass(
   className: string,
   force?: boolean,
 ) {
-  if (force === true) {
+  const hasClass = extraClasses.get(element)?.has(className);
+  const shouldAdd = force ?? !hasClass;
+
+  if (shouldAdd) {
     addExtraClass(element, className);
-  } else if (force === false) {
-    removeExtraClass(element, className);
-  } else if (extraClasses.get(element)?.has(className)) {
-    removeExtraClass(element, className);
   } else {
-    addExtraClass(element, className);
+    removeExtraClass(element, className);
   }
+}
+
+export function batchStyles(
+  element: HTMLElement,
+  callback: (styles: Record<string, string>) => void,
+) {
+  const styles = { ...extraStyles.get(element) };
+  callback(styles);
+  setExtraStyles(element, styles);
 }
 
 export function setExtraStyles(
   element: HTMLElement,
   styles: Partial<CSSStyleDeclaration> & AnyLiteral,
 ) {
-  extraStyles.set(element, styles);
-  applyExtraStyles(element);
+  const currentStyles = extraStyles.get(element) || {};
+  const newStyles = { ...currentStyles, ...styles };
+
+  extraStyles.set(element, newStyles);
+  applyExtraStyles(element, newStyles);
 }
 
-function applyExtraStyles(element: HTMLElement) {
-  const standardStyles = Object.entries(extraStyles.get(element)!).reduce<
-    Record<string, string>
-  >((acc, [prop, value]) => {
-    if (prop.startsWith("--")) {
-      element.style.setProperty(prop, value);
-    } else {
-      acc[prop] = value;
+function applyExtraStyles(
+  element: HTMLElement,
+  styles: Record<string, string>,
+) {
+  const style = element.style;
+
+  requestAnimationFrame(() => {
+    for (const prop in styles) {
+      const value = styles[prop];
+      if (prop.startsWith("--")) {
+        style.setProperty(prop, value);
+      } else {
+        style[prop as any] = value;
+      }
     }
-
-    return acc;
-  }, {});
-
-  Object.assign(element.style, standardStyles);
+  });
 }

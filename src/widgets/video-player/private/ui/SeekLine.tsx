@@ -5,11 +5,9 @@ import { CSSTransition } from "react-transition-group";
 
 import s from "./SeekLine.module.scss";
 import buildClassName from "@/shared/lib/buildClassName";
-import buildStyle from "@/shared/lib/buildStyle";
 import { ReadonlySignal } from "@/lib/core/public/signals";
-import { clamp, IS_TOUCH_ENV, round } from "@/lib/core";
+import { IS_TOUCH_ENV, round } from "@/lib/core";
 import useSignal from "@/lib/hooks/signals/useSignal";
-import { captureEvents } from "@/lib/utils/captureEvents";
 import { useSignalEffect } from "@/lib/hooks/signals/useSignalEffect";
 import useSeekerEvents from "../hooks/useSeekerEvents";
 import { useStableCallback } from "@/shared/hooks/base";
@@ -75,7 +73,6 @@ const SeekLine: FC<OwnProps> = ({
       const progressEl = progressRef.current;
 
       if (progressEl) {
-        progressEl.style.willChange = "transform";
         progressEl.style.transform = moveX(time, duration);
         progressEl.setAttribute("aria-valuenow", `${round(time)}`);
       }
@@ -109,12 +106,12 @@ const SeekLine: FC<OwnProps> = ({
   useSeekerEvents({
     seekerRef,
     previewRef,
-    onSeek: handleSeek,
-    onSeekStart: handleSeekStart,
-    onSeekEnd: handleSeekEnd,
     isPreviewDisabled,
     isActive: isActive!,
     duration,
+    onSeek: handleSeek,
+    onSeekStart: handleSeekStart,
+    onSeekEnd: handleSeekEnd,
   });
 
   return (
@@ -159,7 +156,11 @@ const SeekLine: FC<OwnProps> = ({
       >
         <div
           ref={progressRef}
-          className={buildClassName(s.played, isSeeking && s.seeking)}
+          className={buildClassName(
+            s.played,
+            isPlaying && s.playing,
+            isSeeking && s.seeking,
+          )}
           role="presentation"
         />
         <div className={s.trackBg} aria-hidden="true" />

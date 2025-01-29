@@ -32,6 +32,8 @@ const TestPage: React.FC = () => {
     },
   );
 
+  console.log(contextMenuAnchor);
+
   return (
     <div
       ref={containerRef}
@@ -45,7 +47,8 @@ const TestPage: React.FC = () => {
       <ContextMenu
         rootRef={containerRef}
         isOpen={isContextMenuOpen}
-        position={contextMenuAnchor}
+        position={contextMenuAnchor!}
+        onClose={handleContextMenuClose}
       >
         <div style={{ padding: "8px" }}>
           <p>Context Menu</p>

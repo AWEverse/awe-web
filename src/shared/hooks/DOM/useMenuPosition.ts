@@ -63,6 +63,7 @@ export default function useMenuPosition(
   bubbleRef: React.RefObject<HTMLDivElement | null>,
   options: MenuPositionOptions,
 ) {
+  const { anchor } = options as DynamicPositionOptions;
   const optionsRef = useStateRef(options);
 
   const applyPositioning = useCallback(() => {
@@ -74,17 +75,22 @@ export default function useMenuPosition(
       requestNextMutation(() => {
         const staticOptions = processDynamically(currentOptions);
 
-        return () =>
-          staticOptions &&
-          applyStaticOptions(containerRef, bubbleRef, staticOptions);
+        return () => {
+          if (staticOptions) {
+            applyStaticOptions(containerRef, bubbleRef, staticOptions);
+          }
+        };
       });
     }
   }, [containerRef, bubbleRef, optionsRef]);
 
   useLayoutEffect(() => {
-    if (!isOpen) return;
+    if (!isOpen) {
+      return;
+    }
+
     applyPositioning();
-  }, [isOpen, applyPositioning]);
+  }, [isOpen, anchor, applyPositioning]);
 }
 
 function getLayoutMeasurements(
@@ -94,6 +100,7 @@ function getLayoutMeasurements(
   menuElMinWidth: number,
 ): LayoutMeasurements {
   const rootRect = rootEl?.getBoundingClientRect() || EMPTY_RECT;
+
   return {
     root: rootRect,
     trigger: triggerEl.getBoundingClientRect(),
@@ -138,8 +145,8 @@ function applyPositionConstraints(
   measurements: LayoutMeasurements,
   layout: Layout,
 ): PositionCalculation {
-  const { menu, viewport } = measurements; // Убрали root из деструктуризации
-  const { isDense, shouldAvoidNegativePosition } = layout;
+  const { menu, viewport } = measurements;
+  const { shouldAvoidNegativePosition } = layout;
 
   let { x, y } = position;
 

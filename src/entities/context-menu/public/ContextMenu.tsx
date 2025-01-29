@@ -15,6 +15,8 @@ import stopEvent from "@/lib/utils/stopEvent";
 import useMenuPosition from "@/shared/hooks/DOM/useMenuPosition";
 
 import "./ContextMenu.scss";
+import { useClickAway } from "@/lib/hooks/history/events/useClick";
+import Portal from "@/shared/ui/Portal";
 
 interface ContextMenuProps {
   isOpen: boolean;
@@ -26,7 +28,7 @@ interface ContextMenuProps {
   withPortal?: boolean;
   isDense?: boolean;
   noCompact?: boolean;
-  rootRef?: React.RefObject<HTMLElement>;
+  rootRef?: React.RefObject<HTMLElement | null>;
   onClose: () => void;
   onCloseAnimationEnd?: () => void;
 }
@@ -57,7 +59,7 @@ const ContextMenu: FC<ContextMenuProps> = ({
       isDense,
       shouldAvoidNegativePosition: true,
       withPortal,
-      menuElMinWidth: noCompact ? 200 : 160,
+      menuElMinWidth: noCompact ? 220 : 160,
     }),
     withMaxHeight: true,
   });
@@ -85,29 +87,25 @@ const ContextMenu: FC<ContextMenuProps> = ({
     };
   }, [isOpen, handleKeyDown, handleClose]);
 
-  const handleBackdropClick = useCallback(
-    (e: React.MouseEvent<HTMLDivElement>) => {
-      stopEvent(e);
-      handleClose();
-    },
-    [handleClose],
-  );
+  useClickAway(bubbleRef, handleClose);
 
   return (
-    <div
-      ref={containerRef}
-      className={buildClassName("context-menu-container", className)}
-      style={style}
-    >
-      {isOpen && (
+    isOpen && (
+      <Portal>
         <div
-          className={buildClassName("context-menu-bubble", menuClassName)}
-          ref={bubbleRef}
+          ref={containerRef}
+          className={buildClassName("context-menu-container", className)}
+          style={style}
         >
-          {children}
+          <div
+            className={buildClassName("context-menu-bubble", menuClassName)}
+            ref={bubbleRef}
+          >
+            {children}
+          </div>
         </div>
-      )}
-    </div>
+      </Portal>
+    )
   );
 };
 

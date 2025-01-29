@@ -1,0 +1,9 @@
+export const TimeConstants = {
+  SECONDS_IN_DAY: 86400,
+  SECONDS_IN_HOUR: 3600,
+  SECONDS_IN_MINUTE: 60,
+  MIN_TWO_DIGITS: 0,
+  DEFAULT_TIME_STRING: "00:00",
+  PAD_START_LENGTH: 2,
+  PAD_STRING: "0",
+} as const;

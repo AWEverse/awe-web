@@ -1,14 +1,14 @@
 type IHandlerName =
-  | 'Enter'
-  | 'Backspace'
-  | 'Delete'
-  | 'Esc'
-  | 'Up'
-  | 'Down'
-  | 'Left'
-  | 'Right'
-  | 'Tab'
-  | 'Space';
+  | "Enter"
+  | "Backspace"
+  | "Delete"
+  | "Esc"
+  | "Up"
+  | "Down"
+  | "Left"
+  | "Right"
+  | "Tab"
+  | "Space";
 
 type HandlerName = `on${IHandlerName}`;
 type Handler = (e: KeyboardEvent) => void | boolean;
@@ -16,102 +16,89 @@ type CaptureOptions = Partial<Record<HandlerName, Handler>>;
 type ReleaseListeners = () => void;
 
 const keyToHandlerName: Record<string, HandlerName> = {
-  Enter: 'onEnter',
-  Backspace: 'onBackspace',
-  Delete: 'onDelete',
-  Esc: 'onEsc',
-  Escape: 'onEsc',
-  ArrowUp: 'onUp',
-  ArrowDown: 'onDown',
-  ArrowLeft: 'onLeft',
-  ArrowRight: 'onRight',
-  Tab: 'onTab',
-  Space: 'onSpace',
+  Enter: "onEnter",
+  Backspace: "onBackspace",
+  Delete: "onDelete",
+  Esc: "onEsc",
+  Escape: "onEsc",
+  ArrowUp: "onUp",
+  ArrowDown: "onDown",
+  ArrowLeft: "onLeft",
+  ArrowRight: "onRight",
+  Tab: "onTab",
+  " ": "onSpace", // Corrected space key mapping
 };
 
-// space: [effect1, effect2, ...]
+// Initialize handlers dynamically
+const handlerNames = [
+  ...new Set(Object.values(keyToHandlerName)),
+] as HandlerName[];
 
-const handlers: Record<HandlerName, Handler[]> = {
-  onEnter: [],
-  onBackspace: [],
-  onDelete: [],
-  onEsc: [],
-  onUp: [],
-  onDown: [],
-  onLeft: [],
-  onRight: [],
-  onTab: [],
-  onSpace: [],
-};
+const handlers = handlerNames.reduce(
+  (acc, name) => {
+    acc[name] = [];
+    return acc;
+  },
+  {} as Record<HandlerName, Handler[]>,
+);
 
-export default function captureKeyboardListeners(options: CaptureOptions): ReleaseListeners {
-  if (!hasActiveHandlers()) {
-    document.addEventListener('keydown', handleKeyDown, true);
-  }
-
-  const keysArray = Object.keys(options) as Array<HandlerName>;
-
-  for (const handlerName of keysArray) {
-    const handler = options[handlerName];
-    if (!handler) {
-      continue;
-    }
-
-    const currentEventHandlers = handlers[handlerName];
-    if (currentEventHandlers) {
-      currentEventHandlers.push(handler);
-    }
-  }
-
-  return () => releaseKeyboardListener(options);
-}
+let activeHandlerCount = 0;
 
 function hasActiveHandlers() {
-  return Object.values(handlers).some(handlerArray => handlerArray.length > 0);
+  return activeHandlerCount > 0;
 }
 
 function handleKeyDown(e: KeyboardEvent) {
   const handlerName = keyToHandlerName[e.key];
-  if (!handlerName) {
-    return;
-  }
+  if (!handlerName) return;
 
-  const currentEventHandlers = handlers[handlerName];
-  const { length } = currentEventHandlers;
+  const handlersToCall = handlers[handlerName];
+  if (!handlersToCall?.length) return;
 
-  if (!length) {
-    return;
-  }
-
-  for (let i = length - 1; i >= 0; i--) {
-    const handler = currentEventHandlers[i]!;
-
-    if (handler(e) !== false) {
+  // Iterate from last added to first
+  for (let i = handlersToCall.length - 1; i >= 0; i--) {
+    const handler = handlersToCall[i];
+    if (handler?.(e) !== false) {
       e.stopPropagation();
       break;
     }
   }
 }
 
-function releaseKeyboardListener(options: CaptureOptions) {
-  const keysArray = Object.keys(options) as Array<HandlerName>;
+export default function captureKeyboardListeners(
+  options: CaptureOptions,
+): ReleaseListeners {
+  const addedHandlers: Array<{ handlerName: HandlerName; handler: Handler }> =
+    [];
+  const shouldAttachListener = !hasActiveHandlers();
 
-  for (const handlerName of keysArray) {
-    const handler = options[handlerName];
-    const currentEventHandlers = handlers[handlerName];
-
-    if (currentEventHandlers) {
-      const index = currentEventHandlers.findIndex(cb => cb === handler);
-
-      if (index !== -1) {
-        currentEventHandlers.splice(index, 1);
-      }
+  Object.entries(options).forEach(([key, handler]) => {
+    const handlerName = key as HandlerName;
+    if (handler && handlers[handlerName]) {
+      handlers[handlerName].push(handler);
+      addedHandlers.push({ handlerName, handler });
+      activeHandlerCount++;
     }
+  });
+
+  if (shouldAttachListener) {
+    document.addEventListener("keydown", handleKeyDown, true);
   }
 
-  if (!hasActiveHandlers()) {
-    document.removeEventListener('keydown', handleKeyDown, false);
-  }
+  return () => {
+    addedHandlers.forEach(({ handlerName, handler }) => {
+      const handlerList = handlers[handlerName];
+      const index = handlerList.indexOf(handler);
+      if (index > -1) {
+        handlerList.splice(index, 1);
+        activeHandlerCount--;
+      }
+    });
+
+    if (shouldAttachListener && !hasActiveHandlers()) {
+      document.removeEventListener("keydown", handleKeyDown, true);
+    }
+  };
 }
 
 export type { IHandlerName, HandlerName, CaptureOptions, ReleaseListeners };

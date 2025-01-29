@@ -2,6 +2,7 @@ import React from "react";
 import { DEBUG } from "../config/dev";
 
 type GenericEvent<T> =
+  | React.KeyboardEvent<T>
   | React.SyntheticEvent<T>
   | React.UIEvent<T>
   | React.MouseEvent<T>

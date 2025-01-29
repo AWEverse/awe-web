@@ -27,7 +27,7 @@ type ContextMenuState = {
 };
 
 const useContextMenuHandlers = (
-  elementRef: RefObject<HTMLElement>,
+  elementRef: RefObject<HTMLElement | null>,
   isMenuDisabled?: boolean,
   shouldDisableOnLink?: boolean,
   shouldDisableOnLongTap?: boolean,
@@ -48,7 +48,7 @@ const useContextMenuHandlers = (
     contextMenuAnchorRef.current = contextMenuState.anchor;
   }, [isMenuDisabled, contextMenuState.anchor]);
 
-  const handleBeforeContextMenu = useStableCallback((e: React.MouseEvent) => {
+  const handleBeforeContextMenu = useStableCallback((e: React.MouseEvent<HTMLElement>) => {
     if (!isMenuDisabledRef.current && e.button === 2) {
       requestMutation(() => {
         addExtraClass(e.target as HTMLElement, "no-selection");
@@ -56,7 +56,7 @@ const useContextMenuHandlers = (
     }
   });
 
-  const handleContextMenu = useStableCallback((e: React.MouseEvent) => {
+  const handleContextMenu = useStableCallback((e: React.MouseEvent<HTMLElement>) => {
     requestMutation(() => {
       removeExtraClass(e.target as HTMLElement, "no-selection");
     });
@@ -81,9 +81,11 @@ const useContextMenuHandlers = (
         return prev; // Return previous state if no changes are needed
       }
 
+      console.log(prev);
+
       return {
         ...prev,
-        isOpen: !prev.isOpen,
+        isOpen: true,
         anchor: { x: e.clientX, y: e.clientY },
         target: e.target as HTMLElement,
       };
