@@ -6,8 +6,10 @@
   min-width: 220px;
   max-height: 400px;
   overflow-y: auto;
-  z-index: 9997; /* Ensure it appears above other elements */
+  z-index: 9997; 
   background-color: var(--awe-palette-secondary-main);
+  will-change: opacity, transform;
+  
 }
 
 .context-menu-backdrop {

@@ -3,13 +3,7 @@ import { motion } from "framer-motion";
 import s from "./DropdownMenu.module.scss";
 import buildClassName from "../lib/buildClassName";
 import captureKeyboardListeners from "@/lib/utils/captureKeyboardListeners";
-import LightEffect from "./common/LightEffect";
-import trapFocus from "@/lib/utils/trapFocus";
-import {
-  dispatchHeavyAnimation,
-  throttle,
-  withFreezeWhenClosed,
-} from "@/lib/core";
+import { dispatchHeavyAnimation, withFreezeWhenClosed } from "@/lib/core";
 import { pipe } from "@/lib/core/public/misc/Pipe";
 import { useRefInstead } from "../hooks/base";
 import { useLayoutEffectWithPreviousDeps } from "../hooks/effects/useEffectWithPreviousDependencies";
@@ -169,7 +163,6 @@ const DropdownMenu: FC<OwnProps & OwnSharedProps> = ({
         <section className={buildClassName(s.dropdownBody, className)}>
           {children}
         </section>
-        <LightEffect gridRef={dropdownRef} lightSize={700} />
       </motion.div>
 
       {isOpen && (

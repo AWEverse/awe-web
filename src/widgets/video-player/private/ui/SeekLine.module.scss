@@ -115,6 +115,7 @@ body:global(.is-touch-env) .preview {
   border-radius: var(--border-radius-default);
   transition: transform 0.1s linear; 
   backface-visibility: hidden;
+  transform-origin: left center;
 
   &::after {
     content: "";

@@ -5,8 +5,21 @@ import {
   setExtraStyles,
 } from "../../../../shared/lib/extraClassHelpers";
 import { useStateRef } from "../../../../shared/hooks/base";
+import { clamp } from "@/lib/core";
 
 type IAnchorPosition = { x: number; y: number };
+
+interface Layout {
+  extraPaddingX?: number;
+  extraTopPadding?: number;
+  extraMarginTop?: number;
+  menuElMinWidth?: number;
+  deltaX?: number;
+  topShiftY?: number;
+  shouldAvoidNegativePosition?: boolean;
+  withPortal?: boolean;
+  isDense?: boolean;
+}
 
 interface StaticPositionOptions {
   positionX?: "left" | "right";
@@ -29,18 +42,6 @@ interface DynamicPositionOptions {
 export type MenuPositionOptions =
   | StaticPositionOptions
   | DynamicPositionOptions;
-
-interface Layout {
-  extraPaddingX?: number;
-  extraTopPadding?: number;
-  extraMarginTop?: number;
-  menuElMinWidth?: number;
-  deltaX?: number;
-  topShiftY?: number;
-  shouldAvoidNegativePosition?: boolean;
-  withPortal?: boolean;
-  isDense?: boolean;
-}
 
 interface LayoutMeasurements {
   root: DOMRect | { width: number; height: number; top: number; left: number };
@@ -102,21 +103,34 @@ function getLayoutMeasurements(
   menuEl: HTMLElement | null,
   menuElMinWidth: number,
 ): LayoutMeasurements {
-  const rootRect = rootEl?.getBoundingClientRect() || EMPTY_RECT;
+  const docEl = document.documentElement;
+
+  const rootRect = rootEl?.getBoundingClientRect() ?? EMPTY_RECT;
+  const triggerRect = triggerEl.getBoundingClientRect();
+
+  let menuWidth = 0;
+  let menuHeight = 0;
+  let menuMarginTop = 0;
+
+  if (menuEl) {
+    menuWidth = Math.max(menuEl.offsetWidth, menuElMinWidth);
+    menuHeight = menuEl.offsetHeight;
+
+    const computedStyle = getComputedStyle(menuEl as Element);
+    menuMarginTop = Number.parseFloat(computedStyle.marginTop) || 0;
+  }
+
   return {
     root: rootRect,
-    trigger: triggerEl.getBoundingClientRect(),
+    trigger: triggerRect,
     menu: {
-      width: menuEl ? Math.max(menuEl.offsetWidth, menuElMinWidth) : 0,
-      height: menuEl?.offsetHeight || 0,
-      marginTop: parseInt(
-        getComputedStyle(menuEl as Element).marginTop || "0",
-        10,
-      ),
+      width: menuWidth,
+      height: menuHeight,
+      marginTop: menuMarginTop,
     },
     viewport: {
-      width: document.documentElement.clientWidth,
-      height: document.documentElement.clientHeight,
+      width: docEl.clientWidth,
+      height: docEl.clientHeight,
     },
   };
 }
@@ -147,22 +161,21 @@ function applyPositionConstraints(
   measurements: LayoutMeasurements,
   layout: Layout,
 ): PositionCalculation {
-  const { menu, viewport } = measurements; // Убрали root из деструктуризации
-  const { isDense, shouldAvoidNegativePosition } = layout;
+  const { menu, viewport } = measurements;
+  const { shouldAvoidNegativePosition } = layout;
 
   let { x, y } = position;
 
-  x = Math.max(
+  x = clamp(
+    x,
     MENU_POSITION_VISUAL_COMFORT_SPACE_PX,
-    Math.min(
-      x,
-      viewport.width - menu.width - MENU_POSITION_VISUAL_COMFORT_SPACE_PX,
-    ),
+    viewport.width - menu.width - MENU_POSITION_VISUAL_COMFORT_SPACE_PX,
   );
 
-  y = Math.max(
-    MENU_POSITION_VISUAL_COMFORT_SPACE_PX, // Используем константу вместо root.top
-    Math.min(y, viewport.height - menu.height - MENU_POSITION_BOTTOM_MARGIN),
+  y = clamp(
+    y,
+    MENU_POSITION_VISUAL_COMFORT_SPACE_PX,
+    viewport.height - menu.height - MENU_POSITION_BOTTOM_MARGIN,
   );
 
   if (shouldAvoidNegativePosition) {
@@ -174,26 +187,26 @@ function applyPositionConstraints(
 }
 
 function calculateFinalPosition(
-  position: PositionCalculation,
+  initialPosition: PositionCalculation,
   measurements: LayoutMeasurements,
   layout: Layout,
 ) {
   const { trigger, menu } = measurements;
   const { deltaX = 0, topShiftY = 0, withPortal } = layout;
 
-  const portalOffsetX = withPortal ? trigger.left : 0;
-  const portalOffsetY = withPortal ? trigger.top : 0;
+  const portalXOffset = withPortal ? trigger.left : 0;
+  const portalYOffset = withPortal ? trigger.top : 0;
 
-  const offsetX = position.x - trigger.left + portalOffsetX;
-  const offsetY = position.y - trigger.top + portalOffsetY;
+  const relativeX = initialPosition.x - trigger.left + portalXOffset;
+  const relativeY = initialPosition.y - trigger.top + portalYOffset;
 
   return {
-    left: position.x + deltaX - portalOffsetX,
-    top: position.y + topShiftY - portalOffsetY,
+    left: initialPosition.x + deltaX - portalXOffset,
+    top: initialPosition.y + topShiftY - portalYOffset,
     transformOriginX:
-      position.positionX === "left" ? offsetX : menu.width - offsetX,
+      initialPosition.positionX === "left" ? relativeX : menu.width - relativeX,
     transformOriginY:
-      position.positionY === "top" ? offsetY : menu.height - offsetY,
+      initialPosition.positionY === "top" ? relativeY : menu.height - relativeY,
   };
 }
 
@@ -234,11 +247,13 @@ function processDynamically(options: DynamicPositionOptions) {
   );
 
   let maxHeightStyle = "";
+
   if (withMaxHeight) {
     const maxHeight =
       measurements.viewport.height -
       finalPosition.top -
       MENU_POSITION_BOTTOM_MARGIN;
+
     maxHeightStyle = `max-height: ${maxHeight}px;`;
   }
 
@@ -271,8 +286,7 @@ function applyStaticOptions(
   } = options;
 
   if (style)
-    containerEl.style.cssText =
-      style + `transform-origin: ${positionX} ${positionY}`;
+    containerEl.style.cssText = `${style} transform-origin: ${positionX} ${positionY}`;
   if (heightStyle) bubbleEl.style.cssText = heightStyle;
 
   if (positionX) addExtraClass(bubbleEl, positionX);

@@ -35,9 +35,8 @@ import { DEBUG } from "@/lib/config/dev";
 import { useBooleanState } from "@/shared/hooks/state";
 import { requestMeasure } from "@/lib/modules/fastdom/fastdom";
 import parseMediaSources from "../../private/lib/source/parseMediaSources";
-import ContextMenu from "@/entities/context-menu/public/ContextMenu";
 import { useFastClick } from "@/shared/hooks/mouse/useFastClick";
-import useContextMenuHandlers from "@/entities/context-menu/public/hooks/useContextMenuHandlers";
+import ContextMenu, { useContextMenuHandlers } from "@/entities/context-menu";
 
 const TopPannel = lazy(() => import("../../private/ui/mobile/TopPannel"));
 
@@ -227,18 +226,10 @@ const VideoPlayer: React.FC<OwnProps> = ({
           togglePlayState(e);
           break;
         case EKeyboardKey.ArrowLeft:
-          video.currentTime = clamp(
-            video.currentTime - REWIND_STEP,
-            0,
-            duration,
-          );
+          handleSeek(clamp(video.currentTime - REWIND_STEP, 0, duration));
           break;
         case EKeyboardKey.ArrowRight:
-          video.currentTime = clamp(
-            video.currentTime + REWIND_STEP,
-            0,
-            duration,
-          );
+          handleSeek(clamp(video.currentTime + REWIND_STEP, 0, duration));
           break;
         case EKeyboardKey.ArrowUp:
         case EKeyboardKey.ArrowDown:
@@ -307,7 +298,7 @@ const VideoPlayer: React.FC<OwnProps> = ({
     handleContextMenuHide,
   } = useContextMenuHandlers(containerRef, false);
 
-  const fastClickHandlers = useFastClick(
+  const { handleClick, handleMouseDown } = useFastClick(
     (e: React.MouseEvent<HTMLDivElement>) => {
       if (e.button === EMouseButton.Secondary) {
         handleBeforeContextMenu(e);
@@ -328,7 +319,8 @@ const VideoPlayer: React.FC<OwnProps> = ({
           isFullscreen && "FullscreenMode",
         )}
         ref={containerRef}
-        {...fastClickHandlers}
+        onClick={handleClick}
+        onMouseDown={handleMouseDown}
         onContextMenu={handleContextMenu}
         onMouseMove={!isMobile ? handleVideoMove : undefined}
         onMouseOut={!isMobile ? handleVideoLeave : undefined}
@@ -406,6 +398,15 @@ const VideoPlayer: React.FC<OwnProps> = ({
       >
         <div style={{ padding: "8px" }}>
           <p>Context Menu</p>
+          <p>button 1</p>
+          <p>button 1</p>
+          <p>button 1</p>
+          <p>button 1</p>
+          <p>button 1</p>
+          <p>button 1</p>
+          <p>button 1</p>
+          <p>button 1</p>
+          <p>button 1</p>
           <p>button 1</p>
           <button onClick={handleContextMenuClose}>Close</button>
         </div>

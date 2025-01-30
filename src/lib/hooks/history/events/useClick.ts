@@ -57,7 +57,10 @@ const useClickHandler = <E extends EventType = EventType>(
 function useClickAway<E extends EventType = EventType>(
   ref: RefObject<HTMLElement | null>,
   onClickAway: (event: E) => void,
+  disabled = false,
 ) {
+  if (disabled) return;
+
   const condition = useStableCallback(
     (el: HTMLElement, target: Node) => !el.contains(target),
   );
@@ -68,7 +71,10 @@ function useClickAway<E extends EventType = EventType>(
 function useClickInside<E extends EventType = EventType>(
   ref: RefObject<HTMLElement | null>,
   onClickInside: (event: E) => void,
+  disabled = false,
 ) {
+  if (disabled) return;
+
   const condition = useStableCallback((el: HTMLElement, target: Node) =>
     el.contains(target),
   );

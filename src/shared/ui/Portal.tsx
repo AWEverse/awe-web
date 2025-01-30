@@ -1,5 +1,5 @@
-import { FC, useEffect, ReactNode } from 'react';
-import { createPortal } from 'react-dom';
+import { FC, useEffect, ReactNode } from "react";
+import { createPortal } from "react-dom";
 
 type OwnProps = {
   containerId?: string;
@@ -7,7 +7,11 @@ type OwnProps = {
   children: ReactNode;
 };
 
-const Portal: FC<OwnProps> = ({ containerId = 'modals-root', className, children }) => {
+const Portal: FC<OwnProps> = ({
+  containerId = "modals-root",
+  className,
+  children,
+}) => {
   useEffect(() => {
     const container = document.querySelector(`#${containerId}`);
 
