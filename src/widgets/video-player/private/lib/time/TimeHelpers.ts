@@ -60,8 +60,6 @@ const formatTimeSegment = (value: number, forceTwoDigits: boolean): string => {
   const shouldPad = forceTwoDigits || value >= TimeConstants.MIN_TWO_DIGITS;
   const normalizedValue = round(value);
 
-  console.log([0, 1, 2].at(1));
-
   return shouldPad
     ? String(normalizedValue).padStart(
         TimeConstants.PAD_START_LENGTH,

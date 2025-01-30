@@ -13,7 +13,6 @@ interface UseBoundaryCheckParams {
 
 const DEFAULT_OUTBOX_SIZE = 50;
 const DEFAULT_THROTTLE_INTERVAL = 100;
-const SCALE_FACTOR = 1.2;
 
 export function useBoundaryCheck({
   elementRef,
@@ -30,13 +29,11 @@ export function useBoundaryCheck({
     if (!isActive || !elementRef.current) return;
 
     const element = elementRef.current;
-    let lastPosition: DOMRect | null = null;
 
     const handleMove = throttle((e: MouseEvent) => {
       if (!element) return;
 
       const position = element.getBoundingClientRect();
-      lastPosition = position;
 
       const boundaries = {
         top: position.top - outboxSize,
@@ -45,7 +42,6 @@ export function useBoundaryCheck({
         bottom: position.bottom + outboxSize,
       };
 
-      // Check if pointer is outside expanded boundaries
       const isOutside =
         e.clientX < boundaries.left ||
         e.clientX > boundaries.right ||

@@ -154,6 +154,7 @@ const useAmbilight = (
 
     resizeObserverRef.current = new ResizeObserver(() => {
       updateCanvasDimensions();
+
       if (!videoElement.paused) {
         paintFrame();
       }

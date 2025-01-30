@@ -1,4 +1,4 @@
-import { IS_TOUCH_ENV, IS_PWA, IS_IOS } from "@/lib/core";
+import { IS_TOUCH_ENV, IS_PWA, IS_IOS, EMouseButton } from "@/lib/core";
 import { ReadonlySignal } from "@/lib/core/public/signals";
 import { requestMutation } from "@/lib/modules/fastdom/fastdom";
 import {
@@ -50,7 +50,7 @@ const useContextMenuHandlers = (
 
   const handleBeforeContextMenu = useStableCallback(
     (e: React.MouseEvent<HTMLElement>) => {
-      if (!isMenuDisabledRef.current && e.button === 2) {
+      if (!isMenuDisabledRef.current && e.button === EMouseButton.Secondary) {
         requestMutation(() => {
           addExtraClass(e.target as HTMLElement, "no-selection");
         });
@@ -75,15 +75,6 @@ const useContextMenuHandlers = (
       e.stopPropagation();
 
       setContextMenuState((prev) => {
-        // Only update state if the anchor position or target has changed
-        if (
-          prev.anchor?.x === e.clientX &&
-          prev.anchor?.y === e.clientY &&
-          prev.target === e.target
-        ) {
-          return prev; // Return previous state if no changes are needed
-        }
-
         return {
           ...prev,
           isOpen: true,
@@ -106,7 +97,6 @@ const useContextMenuHandlers = (
     }));
   });
 
-  // Touch device context menu handling
   useEffect(() => {
     if (
       isMenuDisabled ||
@@ -139,7 +129,6 @@ const useContextMenuHandlers = (
 
       if (contextMenuAnchorRef.current || shouldDisable) return;
 
-      // Prevent immediate click events
       const handlePreventClick = (e: Event) => {
         stopEvent(e);
         document.removeEventListener("touchend", handlePreventClick, {
@@ -151,7 +140,6 @@ const useContextMenuHandlers = (
         capture: true,
       });
 
-      // iOS PWA context menu workaround
       if (IS_PWA && IS_IOS) {
         const preventInteraction = (e: Event) => {
           stopEvent(e);

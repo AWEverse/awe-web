@@ -21,7 +21,7 @@ const ANIMATION_PROPS = {
   initial: { opacity: 0, scale: 0.85 },
   animate: { opacity: 1, scale: 1 },
   exit: { opacity: 0, scale: 0.85 },
-  transition: { duration: 0.15 },
+  transition: { duration: 0.125 },
 };
 
 interface ContextMenuProps {
@@ -89,12 +89,12 @@ const ContextMenu: FC<ContextMenuProps> = ({
         className={buildClassName("context-menu-container", className)}
         style={style}
         {...ANIMATION_PROPS}
-        onContextMenu={stopEvent}
         onAnimationEnd={onCloseAnimationEnd}
       >
         <div
           className={buildClassName("context-menu-bubble", menuClassName)}
           ref={bubbleRef}
+          onContextMenu={stopEvent}
         >
           {children}
         </div>
@@ -104,7 +104,7 @@ const ContextMenu: FC<ContextMenuProps> = ({
   );
 
   return (
-    <AnimatePresence mode="wait">
+    <AnimatePresence>
       {isOpen && (withPortal ? <Portal>{menuEl}</Portal> : menuEl)}
     </AnimatePresence>
   );
