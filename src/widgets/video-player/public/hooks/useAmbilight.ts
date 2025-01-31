@@ -36,6 +36,7 @@ const useAmbilight = (
   const updateCanvasDimensions = useCallback(() => {
     const video = getVideoElement();
     const canvas = getCanvasElement();
+
     if (video && canvas) {
       const dpr = window.devicePixelRatio || 1;
       const width = video.clientWidth * dpr;
@@ -59,10 +60,14 @@ const useAmbilight = (
     try {
       requestMeasure(() => {
         updateCanvasDimensions();
+
         const ctx = canvasElement.getContext("2d", {
           willReadFrequently: false,
         });
-        if (!ctx) return;
+
+        if (!ctx) {
+          return;
+        }
 
         ctx.clearRect(0, 0, canvasElement.width, canvasElement.height);
         ctx.drawImage(
@@ -94,6 +99,7 @@ const useAmbilight = (
         callbackId.current = requestAnimationFrame(paintFrame);
       } else {
         const remaining = intervalMs - elapsed;
+
         callbackId.current = setTimeout(() => {
           callbackId.current = requestAnimationFrame(paintFrame);
         }, remaining);
@@ -115,6 +121,7 @@ const useAmbilight = (
 
     isRVFCSupported.current =
       "requestVideoFrameCallback" in HTMLVideoElement.prototype;
+
     updateCanvasDimensions();
 
     if (isRVFCSupported.current) {
@@ -137,7 +144,6 @@ const useAmbilight = (
     const canvasElement = getCanvasElement();
     if (!videoElement || !canvasElement) return;
 
-    // Set up observers and event listeners
     const handleVisibilityChange = () => {
       if (document.visibilityState === "hidden") {
         stopAmbilightRepaint();
@@ -148,6 +154,7 @@ const useAmbilight = (
 
     resizeObserverRef.current = new ResizeObserver(() => {
       updateCanvasDimensions();
+
       if (!videoElement.paused) {
         paintFrame();
       }
@@ -192,7 +199,6 @@ const useAmbilight = (
     if (isDisabled) stopAmbilightRepaint();
   }, [isDisabled, stopAmbilightRepaint]);
 
-  // Cleanup on unmount
   useEffect(() => () => stopAmbilightRepaint(), [stopAmbilightRepaint]);
 };
 

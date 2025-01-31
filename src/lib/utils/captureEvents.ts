@@ -121,7 +121,7 @@ export function captureEvents(element: HTMLElement, options: CaptureOptions) {
     x: false,
     y: false,
   };
-  const currentWindowSize = windowSize.get();
+  const currentWindowSize = windowSize.dimensions;
   let initialTouchCenter = {
     x: currentWindowSize.width / 2,
     y: currentWindowSize.height / 2,
@@ -264,7 +264,7 @@ export function captureEvents(element: HTMLElement, options: CaptureOptions) {
       x: false,
       y: false,
     };
-    const newWindowSize = windowSize.get();
+    const newWindowSize = windowSize.dimensions;
     initialTouchCenter = {
       x: newWindowSize.width / 2,
       y: newWindowSize.height / 2,
@@ -349,7 +349,7 @@ export function captureEvents(element: HTMLElement, options: CaptureOptions) {
       const x = (e as RealTouchEvent).touches[0].pageX;
       if (
         x <= IOS_SCREEN_EDGE_THRESHOLD ||
-        x >= windowSize.get().width - IOS_SCREEN_EDGE_THRESHOLD
+        x >= windowSize.dimensions.width - IOS_SCREEN_EDGE_THRESHOLD
       ) {
         return false;
       }

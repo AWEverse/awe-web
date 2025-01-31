@@ -46,7 +46,23 @@ export const isBetween = (num: number, min: number, max: number): boolean => {
  */
 export const round = (num: number, decimals: number = 0): number => {
   const factor = 10 ** decimals;
-  return Math.round((num + Number.EPSILON) * factor) / factor;
+  return Math.round(num * factor) / factor;
+};
+
+export const roundWithPrecision = (
+  num: number,
+  decimals: number = 0,
+): number => {
+  const precision = Math.floor(decimals);
+  if (precision === 0) return Math.round(num);
+
+  const factor = 10 ** precision;
+  const scaled = num * factor;
+  const correction = Number(
+    (Math.sign(num) * Number.EPSILON).toFixed(Math.max(0, precision)),
+  );
+
+  return Math.round(scaled + correction) / factor;
 };
 
 /**

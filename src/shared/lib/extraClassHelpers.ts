@@ -1,95 +1,114 @@
-const extraClasses = new WeakMap<Element, Set<string>>();
-const extraStyles = new WeakMap<Element, Record<string, string>>();
+import { useComponentDidMount } from "../hooks/effects/useLifecycle";
 
-/**
- * Adds an extra class to the specified element and stores it in a WeakMap.
- * @param element - The HTML element to which the class will be added.
- * @param className - The class name to add.
- */
-export function addExtraClass<T extends HTMLElement>(element: T, className: string) {
-  const classList = extraClasses.get(element) || new Set();
+const extraClasses = new WeakMap<HTMLElement, Set<string>>();
+const extraStyles = new WeakMap<HTMLElement, Record<string, string>>();
 
-  classList.add(className);
-  extraClasses.set(element, classList);
+// // Initialize the hook
+// useExtraStyles(ref);
 
-  element.classList.add(className);
+// // Example: Add a class and styles
+// React.useEffect(() => {
+//   if (ref.current) {
+//     addExtraClass(ref.current, 'my-class');
+//     setExtraStyles(ref.current, { color: 'red', '--custom-var': 'blue' });
+//   }
+// }, []);
+export function useExtraStyles(refs: React.RefObject<HTMLElement | null>[]) {
+  useComponentDidMount(() => {
+    return () => {
+      refs.forEach((ref) => {
+        if (ref.current) {
+          extraClasses.delete(ref.current);
+          extraStyles.delete(ref.current);
+        }
+      });
+    };
+  });
 }
 
-/**
- * Removes an extra class from the specified element and cleans up the WeakMap if needed.
- * @param element - The HTML element from which the class will be removed.
- * @param className - The class name to remove.
- */
-export function removeExtraClass<T extends HTMLElement>(element: T, className: string) {
-  const classList = extraClasses.get(element);
+export function isValidCustomProperty(prop: string): boolean {
+  return /^--[a-zA-Z0-9-]+$/.test(prop);
+}
 
-  if (classList) {
-    classList.delete(className);
-    if (classList.size === 0) {
+function getClassSet(element: HTMLElement): Set<string> {
+  let classSet = extraClasses.get(element);
+
+  if (!classSet) {
+    classSet = new Set();
+    extraClasses.set(element, classSet);
+  }
+
+  return classSet;
+}
+
+export function addExtraClass(element: HTMLElement, className: string) {
+  const classSet = getClassSet(element);
+  if (!classSet.has(className)) {
+    element.classList.add(className);
+    classSet.add(className);
+  }
+}
+
+export function removeExtraClass(element: HTMLElement, className: string) {
+  const classSet = extraClasses.get(element);
+  if (classSet?.has(className)) {
+    element.classList.remove(className);
+    classSet.delete(className);
+    if (classSet.size === 0) {
       extraClasses.delete(element);
     }
   }
-
-  element.classList.remove(className);
 }
 
-/**
- * Toggles an extra class on the specified element based on the force parameter or current state.
- * @param element - The HTML element on which the class will be toggled.
- * @param className - The class name to toggle.
- * @param force - A boolean to force adding or removing the class. If undefined, it toggles based on the current state.
- */
-export function toggleExtraClass<T extends HTMLElement>(
-  element: T,
+export function toggleExtraClass(
+  element: HTMLElement,
   className: string,
   force?: boolean,
 ) {
-  const classList = extraClasses.get(element);
-  const classExists = classList?.has(className) ?? false;
+  const hasClass = extraClasses.get(element)?.has(className);
+  const shouldAdd = force ?? !hasClass;
 
-  if (force || (force === undefined && !classExists)) {
+  if (shouldAdd) {
     addExtraClass(element, className);
-  } else if (!force || (force === undefined && classExists)) {
+  } else {
     removeExtraClass(element, className);
   }
 }
 
-/**
- * Sets additional CSS styles to an element and stores them in a WeakMap.
- * @param element - The HTML element to which the styles will be applied.
- * @param styles - A record of CSS properties and their values to apply to the element.
- */
-export function setExtraStyles<T extends HTMLElement>(
-  element: T,
-  styles: Partial<CSSStyleDeclaration> & AnyLiteral,
+export function batchStyles(
+  element: HTMLElement,
+  callback: (styles: Record<string, string>) => void,
 ) {
-  extraStyles.set(element, styles);
-  applyExtraStyles(element, styles);
+  const styles = { ...extraStyles.get(element) };
+  callback(styles);
+  setExtraStyles(element, styles);
 }
 
-/**
- * Applies the stored styles to an element, separating custom properties (CSS variables) and regular styles.
- * @param element - The HTML element to which the styles will be applied.
- * @param styles - A record of CSS properties and their values to apply to the element.
- */
-function applyExtraStyles<T extends HTMLElement>(
-  element: T,
+export function setExtraStyles(
+  element: HTMLElement,
   styles: Partial<CSSStyleDeclaration> & AnyLiteral,
 ) {
-  const styleEntries = Object.entries(styles);
+  const currentStyles = extraStyles.get(element) || {};
+  const newStyles = { ...currentStyles, ...styles };
 
-  const standardStyles: Record<string, string> = {};
+  extraStyles.set(element, newStyles);
+  applyExtraStyles(element, newStyles);
+}
 
-  styleEntries.forEach(([prop, value]) => {
-    if (prop.startsWith('--')) {
-      // If the property is a CSS variable, set it using setProperty
-      element.style.setProperty(prop, value as string);
-    } else {
-      // Otherwise, add it to standard styles
-      standardStyles[prop] = value as string;
+function applyExtraStyles(
+  element: HTMLElement,
+  styles: Record<string, string>,
+) {
+  const style = element.style;
+
+  requestAnimationFrame(() => {
+    for (const prop in styles) {
+      const value = styles[prop];
+      if (prop.startsWith("--")) {
+        style.setProperty(prop, value);
+      } else {
+        style[prop as any] = value;
+      }
     }
   });
-
-  // Apply the standard styles all at once for better performance
-  Object.assign(element.style, standardStyles);
 }

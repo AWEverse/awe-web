@@ -1,10 +1,25 @@
 .container {
- --border-radius-default: 0.25rem;
+  --border-radius-default: 0.25rem;
+  --transition-duration: 0.2s;
+  --timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  
   position: absolute;
   height: 1rem;
   touch-action: none;
   cursor: pointer;
   border-radius: var(--border-radius-default);
+  transform: translateZ(0);
+  will-change: transform;
+
+  &:hover {
+    .track {
+      height: 8px;
+    }
+
+    .played::after {
+      transform:  translate(50%, -50%) scale(1);
+    }
+  }
 
   @media (min-width: 649px) {
     top: 0;
@@ -21,16 +36,6 @@
   :global(body.is-electron) & {
     cursor: auto;
   }
-
-  &:hover {
-    .track {
-      height: 8px;
-    }
-
-    .played::after {
-      transform:  translate(50%, -50%) scale(1);
-    }
-  }
 }
 
 .preview {
@@ -41,12 +46,16 @@
   border-radius: var(--border-radius-default);
   overflow: hidden;
   background: #000;
+  transform: translateZ(0);
+  will-change: transform, opacity;
+  transition: opacity var(--transition-duration) var(--timing-function);
 }
 
 .previewCanvas {
   width: 100%;
   height: 100%;
   display: block;
+
 }
 
 body:global(.is-touch-env) .preview {
@@ -82,15 +91,18 @@ body:global(.is-touch-env) .preview {
   touch-action: none;
   outline: none;
   overflow: hidden;
+  transition: height var(--transition-duration) var(--timing-function);
+  transform: translateZ(0);
+  will-change: height;
 }
 
 .buffered {
-  position: absolute;
-  background-color: rgba(255, 255, 255, 0.5);
-  top: 0;
-  left: 0;
-  height: 100%;
-  border-radius: var(--border-radius-default);
+  will-change: transform;
+  transform: translateZ(0);
+}
+
+.playing {
+  will-change: transform;
 }
 
 .played {
@@ -101,6 +113,9 @@ body:global(.is-touch-env) .preview {
   height: 100%;
   width: 100%;
   border-radius: var(--border-radius-default);
+  transition: transform 0.1s linear; 
+  backface-visibility: hidden;
+  transform-origin: left center;
 
   &::after {
     content: "";
@@ -112,18 +127,25 @@ body:global(.is-touch-env) .preview {
     right: 0;
     top: 50%;
     transform: translate(50%, -50%) scale(1);
-    transition: transform 0.2s ease;
-    will-change: transform;
+    transition: all var(--transition-duration) var(--timing-function);
+    will-change: transform, width;
   }
 }
 
-// .seeking {
-//   transition: none !important;
-// }
-
-body:global(.is-touch-env) .seeking {
+.seeking {
+  transition: none;
+  
   &::after {
-    transform: translate(50%, -50%) scale(2);
-    width: 2px;
+    transition-duration: 0.1s;
+  }
+}
+
+body:global(.is-touch-env) {
+  .seeking::after {
+    transition: all 0.15s var(--timing-function);
+  }
+  
+  .track {
+    height: 4px !important; 
   }
 }

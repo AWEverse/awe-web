@@ -1,82 +1,62 @@
-import React, { useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import "./styles.scss";
+import ContextMenu from "@/entities/context-menu/public/ContextMenu";
+import { EMouseButton } from "@/lib/core";
+import useContextMenuHandlers from "@/entities/context-menu/public/hooks/useContextMenuHandlers";
+import useMenuPosition, {
+  MenuPositionOptions,
+} from "@/entities/context-menu/public/hooks/useMenuPosition";
+import { useFastClick } from "@/shared/hooks/mouse/useFastClick";
+import { useState, useRef } from "react";
 
-interface GalleryProps {
-  items: string[];
-  setIndex: React.Dispatch<React.SetStateAction<number | false>>;
-}
+const TestPage: React.FC = () => {
+  const containerRef = useRef<HTMLDivElement>(null);
 
-interface SingleImageProps {
-  color: string;
-  onClick: () => void;
-}
+  const {
+    isContextMenuOpen,
+    contextMenuAnchor,
+    contextMenuTarget,
+    handleBeforeContextMenu,
+    handleContextMenu,
+    handleContextMenuClose,
+    handleContextMenuHide,
+  } = useContextMenuHandlers(containerRef, false);
 
-const Gallery: React.FC<GalleryProps> = ({ items, setIndex }) => {
-  return (
-    <motion.ul className="gallery-container" layout>
-      {items.map((color, i) => (
-        <motion.li
-          className="gallery-item"
-          key={color}
-          onClick={() => setIndex(i)}
-          style={{ backgroundColor: color, willChange: "transform" }}
-          layoutId={color}
-        >
-          <img src={"https://picsum.photos/100/100"} />
-        </motion.li>
-      ))}
-    </motion.ul>
+  const { handleClick, handleMouseDown } = useFastClick(
+    (e: React.MouseEvent<HTMLDivElement>) => {
+      if (e.button === EMouseButton.Secondary) {
+        handleBeforeContextMenu(e);
+      }
+
+      if (e.type === "mousedown" && e.button !== EMouseButton.Main) {
+        return;
+      }
+    },
   );
-};
 
-const SingleImage: React.FC<SingleImageProps> = ({ color, onClick }) => {
+  console.log(contextMenuAnchor);
+
   return (
-    <div className="single-image-container" onClick={onClick}>
-      <motion.div
-        layoutId={color}
-        className="single-image"
-        style={{ backgroundColor: color }}
+    <div
+      ref={containerRef}
+      onClick={handleClick}
+      onMouseDown={handleMouseDown}
+      onContextMenu={handleContextMenu}
+      style={{ height: "100vh", padding: 20 }}
+    >
+      <p>Right-click or long-press here to open the context menu.</p>
+
+      <ContextMenu
+        rootRef={containerRef}
+        isOpen={isContextMenuOpen}
+        position={contextMenuAnchor!}
+        onClose={handleContextMenuClose}
       >
-        <img src={"https://picsum.photos/500/300"} />
-      </motion.div>
+        <div style={{ padding: "8px" }}>
+          <p>Context Menu</p>
+          <button onClick={handleContextMenuClose}>Close</button>
+        </div>
+      </ContextMenu>
     </div>
   );
 };
-
-const TestPage: React.FC = () => {
-  const [index, setIndex] = useState<number | false>(false);
-
-  return (
-    <>
-      <Gallery items={colors} setIndex={setIndex} />
-      <AnimatePresence>
-        {index !== false && (
-          <>
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 0.6 }}
-              exit={{ opacity: 0 }}
-              key="overlay"
-              className="overlay"
-              onClick={() => setIndex(false)}
-            />
-            <SingleImage
-              key="image"
-              color={colors[index]}
-              onClick={() => setIndex(false)}
-            />
-          </>
-        )}
-      </AnimatePresence>
-    </>
-  );
-};
-
-const numColors = 4 * 4;
-const makeColor = (hue: number): string => `hsl(${hue}, 100%, 50%)`;
-const colors: string[] = Array.from(Array(numColors)).map((_, i) =>
-  makeColor(Math.round((360 / numColors) * i)),
-);
 
 export default TestPage;

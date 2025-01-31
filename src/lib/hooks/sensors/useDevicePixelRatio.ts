@@ -1,37 +1,35 @@
-import { useState, useEffect } from 'react';
-import { createCallbackManager } from '../../utils/callbacks';
+import { useState } from "react";
+import { createCallbackManager } from "../../utils/callbacks";
+import { useComponentDidMount } from "@/shared/hooks/effects/useLifecycle";
 
 const callbacks = createCallbackManager();
+let dpr = window.devicePixelRatio;
 
 function createListener() {
-  const mediaQuery = window.matchMedia(`(resolution: ${window.devicePixelRatio}dppx)`);
+  const mediaQuery = window.matchMedia(`(resolution: ${dpr}dppx)`);
 
-  const changeHandler = () => {
+  const handler = () => {
+    dpr = window.devicePixelRatio;
     callbacks.runCallbacks();
-    mediaQuery.removeEventListener('change', changeHandler); // Clean up
-    createListener(); // Set up a new listener for the next change
+    mediaQuery.removeEventListener("change", handler);
+    createListener();
   };
 
-  mediaQuery.addEventListener('change', changeHandler, { once: true });
+  mediaQuery.addEventListener("change", handler, { once: true });
 }
 
+createListener();
+
 export default function useDevicePixelRatio() {
-  const [dpr, setDpr] = useState(window.devicePixelRatio);
+  const [_, forceUpdate] = useState(0);
 
-  useEffect(() => {
-    const updateDpr = () => {
-      setDpr(window.devicePixelRatio);
-    };
-
-    callbacks.addCallback(updateDpr);
-
-    return () => {
-      callbacks.removeCallback(updateDpr);
-    };
-  }, []);
+  useComponentDidMount(() => {
+    const update = () => forceUpdate((v) => v + 1);
+    const release = callbacks.addCallback(update);
+    return release;
+  });
 
   return dpr;
 }
 
-// Initialize the listener once
-createListener();
+export const getDevicePixelRatio = () => dpr;

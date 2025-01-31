@@ -1,7 +1,7 @@
-import DropdownMenu, { TriggerProps } from '@/shared/ui/DropdownMenu';
-import IconButton from '@/shared/ui/IconButton';
-import { ManageSearchRounded } from '@mui/icons-material';
-import { FC, memo, useMemo } from 'react';
+import DropdownMenu, { TriggerProps } from "@/shared/ui/dropdown";
+import IconButton from "@/shared/ui/IconButton";
+import { ManageSearchRounded } from "@mui/icons-material";
+import { FC, memo, useMemo } from "react";
 
 interface OwnProps {}
 
@@ -12,7 +12,12 @@ const SearchHistoryDropdown: FC<OwnProps & StateProps> = () => {
     () =>
       ({ isOpen, onTrigger }) => {
         return (
-          <IconButton active={isOpen} aria-pressed={isOpen} onClick={onTrigger} size="small">
+          <IconButton
+            active={isOpen}
+            aria-pressed={isOpen}
+            onClick={onTrigger}
+            size="small"
+          >
             <ManageSearchRounded />
           </IconButton>
         );

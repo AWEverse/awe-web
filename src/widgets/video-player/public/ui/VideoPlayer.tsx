@@ -5,6 +5,7 @@ import {
   clamp01,
   EKeyboardKey,
   EMediaReadyState,
+  EMouseButton,
   IS_TOUCH_ENV,
   isMediaReadyToPlay,
   pauseMedia,
@@ -33,6 +34,9 @@ import useStateSignal from "@/lib/hooks/signals/useStateSignal";
 import { DEBUG } from "@/lib/config/dev";
 import { useBooleanState } from "@/shared/hooks/state";
 import { requestMeasure } from "@/lib/modules/fastdom/fastdom";
+import parseMediaSources from "../../private/lib/source/parseMediaSources";
+import { useFastClick } from "@/shared/hooks/mouse/useFastClick";
+import ContextMenu, { useContextMenuHandlers } from "@/entities/context-menu";
 
 const TopPannel = lazy(() => import("../../private/ui/mobile/TopPannel"));
 
@@ -45,7 +49,7 @@ type OwnProps = {
   isAdsMessage?: boolean;
   isViewerOpen?: boolean;
   isGif?: boolean;
-  mediaUrl?: string | string[];
+  mediaUrl?: string;
   progressPercentage?: number;
   totalFileSize: number;
   playbackSpeed: number;
@@ -113,17 +117,14 @@ const VideoPlayer: React.FC<OwnProps> = ({
   });
 
   const isUnsupported = useUnsupportedMedia(videoRef);
-  useAmbilight(videoRef, canvasRef);
+  const isAmbilightDisabled = isFullscreen;
 
-  const mediaSources = useMemo(() => {
-    if (!mediaUrl) return null;
-    const urls = Array.isArray(mediaUrl) ? mediaUrl : [mediaUrl];
-    return urls.map((url) => <source key={url} src={url} />);
-  }, [mediaUrl]);
+  useAmbilight(videoRef, canvasRef, isAmbilightDisabled);
 
   const handleTimeUpdate = useStableCallback(
     (e: React.SyntheticEvent<HTMLVideoElement>) => {
       const { currentTime: ct, duration: d, readyState } = e.currentTarget;
+
       const normalizedTime = round(ct);
       const normalizedDuration = round(d);
 
@@ -159,7 +160,7 @@ const VideoPlayer: React.FC<OwnProps> = ({
     },
   );
 
-  const handleClick = useStableCallback(
+  const handleVideoClick = useStableCallback(
     async (e: React.MouseEvent<HTMLVideoElement, MouseEvent>) => {
       if (isAdsMessage) onAdsClick?.(true);
       if (!disableClickActions) await togglePlayState(e);
@@ -214,45 +215,32 @@ const VideoPlayer: React.FC<OwnProps> = ({
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (isInPictureInPicture) return;
+      e.preventDefault();
+
       const video = videoRef.current!;
       const key = e.key || e.code;
 
       switch (key) {
         case EKeyboardKey.Space:
         case EKeyboardKey.Enter:
-          e.preventDefault();
           togglePlayState(e);
           break;
         case EKeyboardKey.ArrowLeft:
-          e.preventDefault();
-          video.currentTime = clamp(
-            video.currentTime - REWIND_STEP,
-            0,
-            duration,
-          );
+          handleSeek(clamp(video.currentTime - REWIND_STEP, 0, duration));
           break;
         case EKeyboardKey.ArrowRight:
-          e.preventDefault();
-          video.currentTime = clamp(
-            video.currentTime + REWIND_STEP,
-            0,
-            duration,
-          );
+          handleSeek(clamp(video.currentTime + REWIND_STEP, 0, duration));
           break;
         case EKeyboardKey.ArrowUp:
         case EKeyboardKey.ArrowDown:
-          e.preventDefault();
           handleVolumeChange(
             clamp01(volume.value + (key === EKeyboardKey.ArrowUp ? 0.1 : -0.1)),
           );
           break;
         case EKeyboardKey.M:
-          e.preventDefault();
           handleMuteClick();
           break;
         case EKeyboardKey.F:
-          e.preventDefault();
           handleFullscreenChange();
           break;
       }
@@ -260,14 +248,7 @@ const VideoPlayer: React.FC<OwnProps> = ({
 
     document.addEventListener("keydown", handleKeyDown);
     return () => document.removeEventListener("keydown", handleKeyDown);
-  }, [
-    togglePlayState,
-    isFullscreen,
-    isInPictureInPicture,
-    handleVolumeChange,
-    handleMuteClick,
-    handleFullscreenChange,
-  ]);
+  }, [volume, duration, isPlaying]);
 
   const handlersBuffering = useMemo(
     () => ({
@@ -285,6 +266,7 @@ const VideoPlayer: React.FC<OwnProps> = ({
   function updateBuffering(e: Event | React.SyntheticEvent<HTMLMediaElement>) {
     const media = e.currentTarget as HTMLMediaElement;
     const ranges = BTimeRanges.getBufferedInfo(media.buffered);
+
     setBuffered(ranges);
     setReady((current) => current || isMediaReadyToPlay(media));
   }
@@ -307,77 +289,130 @@ const VideoPlayer: React.FC<OwnProps> = ({
 
   const handleSeekEnd = useStableCallback(() => {});
 
+  const {
+    isContextMenuOpen,
+    contextMenuAnchor,
+    contextMenuTarget,
+    handleBeforeContextMenu,
+    handleContextMenu,
+    handleContextMenuClose,
+    handleContextMenuHide,
+  } = useContextMenuHandlers(containerRef, false);
+
+  const { handleClick, handleMouseDown } = useFastClick(
+    (e: React.MouseEvent<HTMLDivElement>) => {
+      if (e.button === EMouseButton.Secondary) {
+        handleBeforeContextMenu(e);
+      }
+
+      if (e.type === "mousedown" && e.button !== EMouseButton.Main) {
+        return;
+      }
+    },
+  );
+
   return (
-    <div
-      id="media-player"
-      className={buildClassName(
-        "VideoPlayer",
-        isFullscreen && "FullscreenMode",
-      )}
-      ref={containerRef}
-      onMouseMove={!isMobile ? handleVideoMove : undefined}
-      onMouseOut={!isMobile ? handleVideoLeave : undefined}
-      onMouseOver={!isMobile ? handleVideoEnter : undefined}
-    >
-      {isMobile && <TopPannel />}
-
-      <video
-        id="media-viewer-video"
-        ref={videoRef}
-        className={buildClassName("Video", IS_TOUCH_ENV && "is-touch-env")}
-        controls={false}
-        controlsList="nodownload"
-        playsInline
-        muted={isGif || isAudioMuted}
-        {...handlersBuffering}
-        onWaiting={() => setWaiting(true)}
-        onContextMenu={stopEvent}
-        onEnded={handleEnded}
-        onClick={!isMobile ? handleClick : undefined}
-        onTouchStart={isMobile ? handleTouch : undefined}
-        onDoubleClick={!IS_TOUCH_ENV ? handleFullscreenChange : undefined}
-        onPlay={() => setPlaying(true)}
-        onPause={() => setPlaying(false)}
-        onTimeUpdate={handleTimeUpdate}
-      >
-        {mediaSources}
-      </video>
-
-      <VideoPlayerControls
-        isPlaying={isPlaying}
-        currentTimeSignal={currentTime}
-        volumeSignal={volume}
-        controlsSignal={controlsSignal}
-        duration={duration}
-        playbackRate={playbackSpeed}
-        isMuted={Boolean(videoRef.current?.muted)}
-        bufferedRangesSignal={bufferedSingal}
-        isReady={isReady}
-        fileSize={totalFileSize}
-        waitingSignal={waitingSignal}
-        isForceMobileVersion={isMobile}
-        isFullscreen={isFullscreen}
-        isFullscreenSupported={Boolean(enterFullscreen)}
-        isPictureInPictureSupported={isPictureInPictureSupported}
-        onPictureInPictureChange={enterPictureInPicture}
-        onChangeFullscreen={handleFullscreenChange}
-        onVolumeClick={handleMuteClick}
-        onVolumeChange={handleVolumeChange}
-        onPlaybackRateChange={handlePlaybackRateChange}
-        onToggleControls={toggleControls}
-        onPlayPause={togglePlayState}
-        onSeek={handleSeek}
-        onSeekStart={handleSeekStart}
-        onSeekEnd={handleSeekEnd}
-      />
-
-      <canvas ref={canvasRef} className="CinematicLight" />
+    <>
       <div
-        ref={bottomRef}
-        className="VideoPlayerBottom"
-        aria-label="Video Player Bottom"
-      />
-    </div>
+        id="media-player"
+        className={buildClassName(
+          "VideoPlayer",
+          isFullscreen && "FullscreenMode",
+        )}
+        ref={containerRef}
+        onClick={handleClick}
+        onMouseDown={handleMouseDown}
+        onContextMenu={handleContextMenu}
+        onMouseMove={!isMobile ? handleVideoMove : undefined}
+        onMouseOut={!isMobile ? handleVideoLeave : undefined}
+        onMouseOver={!isMobile ? handleVideoEnter : undefined}
+      >
+        {isMobile && <TopPannel />}
+
+        <video
+          id="media-viewer-video"
+          ref={videoRef}
+          className={buildClassName("Video", IS_TOUCH_ENV && "is-touch-env")}
+          controls={false}
+          controlsList="nodownload"
+          playsInline
+          muted={isGif || isAudioMuted}
+          {...handlersBuffering}
+          onWaiting={() => setWaiting(true)}
+          onContextMenu={stopEvent}
+          onEnded={handleEnded}
+          onClick={!isMobile ? handleVideoClick : undefined}
+          onTouchStart={isMobile ? handleTouch : undefined}
+          onDoubleClick={!IS_TOUCH_ENV ? handleFullscreenChange : undefined}
+          onPlay={() => setPlaying(true)}
+          onPause={() => setPlaying(false)}
+          onTimeUpdate={handleTimeUpdate}
+        >
+          {parseMediaSources(mediaUrl)}
+        </video>
+
+        <VideoPlayerControls
+          isPlaying={isPlaying}
+          currentTimeSignal={currentTime}
+          volumeSignal={volume}
+          controlsSignal={controlsSignal}
+          duration={duration}
+          playbackRate={playbackSpeed}
+          isMuted={Boolean(videoRef.current?.muted)}
+          bufferedRangesSignal={bufferedSingal}
+          isReady={isReady}
+          fileSize={totalFileSize}
+          waitingSignal={waitingSignal}
+          isForceMobileVersion={isMobile}
+          isFullscreen={isFullscreen}
+          isFullscreenSupported={Boolean(enterFullscreen)}
+          isPictureInPictureSupported={isPictureInPictureSupported}
+          onPictureInPictureChange={enterPictureInPicture}
+          onChangeFullscreen={handleFullscreenChange}
+          onVolumeClick={handleMuteClick}
+          onVolumeChange={handleVolumeChange}
+          onPlaybackRateChange={handlePlaybackRateChange}
+          onToggleControls={toggleControls}
+          onPlayPause={togglePlayState}
+          onSeek={handleSeek}
+          onSeekStart={handleSeekStart}
+          onSeekEnd={handleSeekEnd}
+        />
+
+        <canvas
+          data-disabled={isAmbilightDisabled}
+          ref={canvasRef}
+          className="CinematicLight"
+        />
+        <div
+          ref={bottomRef}
+          className="VideoPlayerBottom"
+          aria-label="Video Player Bottom"
+        />
+      </div>
+
+      <ContextMenu
+        isOpen={isContextMenuOpen}
+        position={contextMenuAnchor!}
+        onClose={handleContextMenuClose}
+        withPortal
+      >
+        <div style={{ padding: "8px" }}>
+          <p>Context Menu</p>
+          <p>button 1</p>
+          <p>button 1</p>
+          <p>button 1</p>
+          <p>button 1</p>
+          <p>button 1</p>
+          <p>button 1</p>
+          <p>button 1</p>
+          <p>button 1</p>
+          <p>button 1</p>
+          <p>button 1</p>
+          <button onClick={handleContextMenuClose}>Close</button>
+        </div>
+      </ContextMenu>
+    </>
   );
 };
 

@@ -1,213 +1,113 @@
-import { useStableCallback } from "@/shared/hooks/base";
-import { useRefInstead } from "@/shared/hooks/base";
-import { IVector2D } from "@/lib/utils/data-structures/Vector2d";
-import { throttle } from "@/lib/utils/schedulers";
-import stopEvent from "@/lib/utils/stopEvent";
-import buildClassName from "@/shared/lib/buildClassName";
-import buildStyle from "@/shared/lib/buildStyle";
 import {
-  CSSProperties,
   FC,
   ReactNode,
   useCallback,
-  useEffect,
   useRef,
-  useState,
+  CSSProperties,
+  useMemo,
+  memo,
 } from "react";
-import { CSSTransition } from "react-transition-group";
-import useContextMenu from "./hooks/useContextMenu";
-import { requestMeasure } from "@/lib/modules/fastdom/fastdom";
-import { calculateContextMenuPosition } from "../private/utils";
+import { motion, AnimatePresence } from "framer-motion";
+import { IVector2D } from "@/lib/utils/data-structures/Vector2d";
+import buildClassName from "@/shared/lib/buildClassName";
+import stopEvent from "@/lib/utils/stopEvent";
+import useMenuPosition from "@/entities/context-menu/public/hooks/useMenuPosition";
 
-const TRANSITION_DURATION = 300;
+import "./ContextMenu.scss";
+import Portal from "@/shared/ui/Portal";
+import useMenuClosure from "./hooks/useMenuClosure";
 
-interface OwnProps {
-  // Reference to the root element of the context menu which is used to position the context menu
-  // or called if portal active as well
-  rootRef?: React.RefObject<HTMLDivElement>;
-  // Reference to the container of the context menu
-  containerRef?: React.RefObject<HTMLDivElement>;
-
-  isOpen: boolean;
-  // Positioning and offsets
-  // Parent property that is applied to the context menu from the window similar to padding and immediately relative to the isWindowRoot
-  rootOffset?: number;
-  // This property will make part of the menu hidden if that part of the menu
-  // is not the root of the window. Quite similar to "overflow: hidden"
-  isWindowRoot?: boolean;
-  // Positioning flags depending on the position of the context menu from the dot on the screen
-  // that where the context menu was opened
-  position: { x: number; y: number };
-
-  onClose: () => void;
-  onKeyDown?: (e: React.KeyboardEvent<HTMLDivElement>) => void;
-  onCloseAnimationEnd?: () => void;
-
-  // Mouse events
-  onMouseEnter?: (e: React.MouseEvent<HTMLDivElement, MouseEvent>) => void;
-  onMouseLeave?: (e: React.MouseEvent<HTMLDivElement, MouseEvent>) => void;
-  onMouseEnterBackdrop?: (
-    e: React.MouseEvent<HTMLDivElement, MouseEvent>,
-  ) => void;
-
-  // Miscellaneous
-  id?: string;
-  className?: string;
-  bubbleClassName?: string;
-  style?: CSSProperties;
-  bubbleStyle?: string;
-
-  // Behavior flags
-  autoClose?: boolean;
-  shouldCloseFast?: boolean;
-  shouldSkipTransition?: boolean;
-  noCloseOnLeave?: boolean;
-  noCloseOnBackdrop?: boolean;
-  noCompact?: boolean;
-  withPortal?: boolean;
-
-  // ARIA
-  ariaLabelledBy?: string;
-  ariaDescribedBy?: string;
-
-  // Children
-  children?: ReactNode;
-}
-
-const initialPosition = {
-  x: 0,
-  y: 0,
+const ANIMATION_PROPS = {
+  initial: { opacity: 0, scale: 0.85 },
+  animate: { opacity: 1, scale: 1 },
+  exit: { opacity: 0, scale: 0.85 },
+  transition: { duration: 0.125 },
 };
 
-const MENU_POSITION_VISUAL_COMFORT_SPACE_PX = 16;
-const MENU_POSITION_BOTTOM_MARGIN = 12;
+interface ContextMenuProps {
+  isOpen: boolean;
+  position: IVector2D;
+  children: ReactNode;
+  className?: string;
+  menuClassName?: string;
+  style?: CSSProperties;
+  withPortal?: boolean;
+  isDense?: boolean;
+  noCompact?: boolean;
+  rootRef?: React.RefObject<HTMLElement | null>;
+  onClose: () => void;
+  onCloseAnimationEnd?: () => void;
+}
 
-const ContextMenuComponent: FC<OwnProps> = ({
-  rootRef,
-  containerRef: innerContainerRef,
+const ContextMenu: FC<ContextMenuProps> = ({
   isOpen,
-  rootOffset,
-  isWindowRoot,
   position,
-  onClose,
-  onKeyDown,
-  onCloseAnimationEnd,
-  onMouseEnter,
-  onMouseLeave,
-  onMouseEnterBackdrop,
-  id,
-  className,
-  bubbleClassName,
-  style,
-  bubbleStyle,
-  autoClose,
-  shouldCloseFast = false,
-  shouldSkipTransition = false,
-  noCloseOnLeave,
-  noCloseOnBackdrop,
-  noCompact,
-  withPortal,
-  ariaLabelledBy,
-  ariaDescribedBy,
   children,
+  className,
+  menuClassName,
+  style,
+  withPortal,
+  isDense,
+  noCompact,
+  rootRef,
+  onClose,
+  onCloseAnimationEnd,
 }) => {
-  const cntxRef = useRef<HTMLDivElement>(null);
-  const [transformOrigin, setTransformOrigin] = useState<{
-    x: string;
-    y: string;
-  }>({
-    x: "left",
-    y: "top",
-  });
+  const containerRef = useRef<HTMLDivElement>(null);
+  const bubbleRef = useRef<HTMLDivElement>(null);
 
-  const handleOutsideClick = useStableCallback((e: MouseEvent) => {
-    if (cntxRef.current && !cntxRef.current.contains(e.target as Node)) {
-      onClose();
-    }
-  });
+  const handleClose = useCallback(() => {
+    onClose();
+    document.removeEventListener("scroll", handleClose, true);
+  }, [onClose]);
 
-  const handleKeyDown = useStableCallback((e: KeyboardEvent) => {
-    if (e.key === "Escape") {
-      onClose();
-    }
-  });
-
-  useEffect(() => {
-    if (isOpen) {
-      document.addEventListener("mousedown", handleOutsideClick);
-      document.addEventListener("keydown", handleKeyDown);
-      return () => {
-        document.removeEventListener("mousedown", handleOutsideClick);
-        document.removeEventListener("keydown", handleKeyDown);
-      };
-    }
-  }, [isOpen, handleOutsideClick, handleKeyDown]);
-
-  useEffect(() => {
-    if (isOpen) {
-      requestMeasure(() => {
-        const { transformOrigin: newTransformOrigin } =
-          calculateContextMenuPosition(position, cntxRef);
-        setTransformOrigin(newTransformOrigin);
-      });
-    }
-  }, [isOpen, position]);
-
-  const styles = buildStyle(
-    `--transform-origin-x: ${transformOrigin.x}`,
-    `--transform-origin-y: ${transformOrigin.y}`,
-    `position: absolute`,
-    `top: ${position.y}px`,
-    `left: ${position.x}px`,
-    `border: 1px solid red`,
+  const positionConfig = useMemo(
+    () => ({
+      anchor: position,
+      getTriggerElement: () => rootRef?.current || document.body,
+      getRootElement: () => containerRef.current,
+      getMenuElement: () => bubbleRef.current,
+      getLayout: () => ({
+        isDense,
+        shouldAvoidNegativePosition: true,
+        withPortal: true,
+        menuElMinWidth: noCompact ? 220 : 160,
+      }),
+      withMaxHeight: true,
+    }),
+    [position, isDense, noCompact, rootRef],
   );
 
-  const onMouseMove = useStableCallback(
-    throttle((e: React.MouseEvent<HTMLDivElement, MouseEvent>) => {
-      const menu = cntxRef.current;
+  useMenuPosition(isOpen, containerRef, bubbleRef, positionConfig);
+  useMenuClosure(isOpen, containerRef, handleClose);
 
-      console.log("cntxRef.current", menu);
-
-      if (!menu) return;
-
-      const { clientX: x, clientY: y } = e;
-      const { top, bottom, left, right } = menu.getBoundingClientRect();
-      const borderSize = 60;
-
-      const isPointerInside =
-        x >= left - borderSize &&
-        x <= right + borderSize &&
-        y >= top - borderSize &&
-        y <= bottom + borderSize;
-
-      if (!isPointerInside) {
-        onClose();
-      }
-    }, 250),
+  const menuEl = useMemo(
+    () => (
+      <motion.div
+        key={"context-menu"}
+        ref={containerRef}
+        className={buildClassName("context-menu-container", className)}
+        style={style}
+        {...ANIMATION_PROPS}
+        onAnimationEnd={onCloseAnimationEnd}
+      >
+        <div
+          className={buildClassName("context-menu-bubble", menuClassName)}
+          ref={bubbleRef}
+          onContextMenu={stopEvent}
+        >
+          {children}
+        </div>
+      </motion.div>
+    ),
+    [className, menuClassName, style, children, onCloseAnimationEnd],
   );
 
   return (
-    <>
-      <CSSTransition
-        unmountOnExit
-        classNames="context-menu"
-        in={isOpen}
-        nodeRef={cntxRef}
-        timeout={300}
-      >
-        <div ref={cntxRef} className="ContextMenu" style={styles}>
-          {children}
-        </div>
-      </CSSTransition>
-      {isOpen && (
-        <div
-          className={"ContextBackdrop"}
-          onClick={onMouseEnterBackdrop}
-          onMouseMove={onMouseMove}
-        />
-      )}
-    </>
+    <AnimatePresence>
+      {isOpen && (withPortal ? <Portal>{menuEl}</Portal> : menuEl)}
+    </AnimatePresence>
   );
 };
 
-export default ContextMenuComponent;
+export default memo(ContextMenu);

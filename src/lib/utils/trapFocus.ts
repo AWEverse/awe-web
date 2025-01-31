@@ -1,24 +1,26 @@
-import { requestMeasure } from '../modules/fastdom/fastdom';
-import stopEvent from './stopEvent';
+import { requestMeasure } from "../modules/fastdom/fastdom";
+import stopEvent from "./stopEvent";
 
 const SELECTABLE =
   'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])' as const;
 
 export default function trapFocus(element: HTMLElement) {
   function handleKeyDown(e: KeyboardEvent) {
-    if (e.key !== 'Tab') {
+    if (e.key !== "Tab") {
       return;
     }
 
     stopEvent(e);
 
-    const focusableElements = Array.from(element.querySelectorAll(SELECTABLE)) as HTMLElement[];
+    const focusableElements = Array.from(
+      element.querySelectorAll(SELECTABLE),
+    ) as HTMLElement[];
 
     if (!focusableElements.length) {
       return;
     }
 
-    const currentFocusedIndex = focusableElements.findIndex(em =>
+    const currentFocusedIndex = focusableElements.findIndex((em) =>
       em.isSameNode(document.activeElement),
     );
 
@@ -43,9 +45,9 @@ export default function trapFocus(element: HTMLElement) {
     });
   }
 
-  document.addEventListener('keydown', handleKeyDown, false);
+  document.addEventListener("keydown", handleKeyDown, false);
 
   return () => {
-    document.removeEventListener('keydown', handleKeyDown, false);
+    document.removeEventListener("keydown", handleKeyDown, false);
   };
 }

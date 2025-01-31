@@ -3,67 +3,61 @@ import { ReadonlySignal, signal } from "@/lib/core/public/signals";
 import { areDeepEqual } from "@/lib/utils/areDeepEqual";
 import { useRef } from "react";
 import { useStableCallback } from "@/shared/hooks/base";
+import { useComponentWillUnmount } from "@/shared/hooks/effects/useLifecycle";
 
-type SignalSetter<T> = (value: T | ((prevValue: T | undefined) => T)) => void;
-
+type SignalSetter<T> = (value: T | ((prevValue: T) => T)) => void;
 type SignalReturn<T> = [ReadonlySignal<T>, SignalSetter<T>];
 
-export default function useStateSignal<T = null>(
+export default function useStateSignal<T = undefined>(
   initialValue?: T,
   logMessage?: string,
 ): SignalReturn<T> {
-  const _signal = useRef(signal<T | undefined>(initialValue));
-  const _previous = useRef<T | undefined>(initialValue);
+  const _signal = useRef(signal(initialValue));
+  const _isMounted = useRef(true);
+
+  useComponentWillUnmount(() => {
+    _isMounted.current = false;
+  });
 
   const setSignal: SignalSetter<T> = useStableCallback((value) => {
-    const prevValue = _signal.current.value;
-    _previous.current = prevValue;
+    const currentValue = _signal.current.value;
 
-    let newValue: T;
-
-    if (typeof value === "function") {
-      newValue = (value as (prevValue: T | undefined) => T)(prevValue);
-    } else {
-      newValue = value;
-    }
-
-    // If the new value is a promise, handle it asynchronously
-    const handleNewValue = async (newValue: T) => {
-      try {
-        const resolvedValue = await newValue;
-        if (!areDeepEqual(resolvedValue, prevValue)) {
-          updateSignal(resolvedValue);
-        }
-      } catch (error) {
-        handleSignalError(error);
-      }
-    };
+    const newValue =
+      typeof value === "function"
+        ? (value as (prevValue: T | undefined) => T)(currentValue)
+        : value;
 
     if (newValue instanceof Promise) {
-      handleNewValue(newValue);
-    } else {
-      if (!areDeepEqual(newValue, prevValue)) {
-        updateSignal(newValue);
-      }
+      newValue
+        .then((resolvedValue) => {
+          if (!_isMounted.current) return;
+          if (!areDeepEqual(resolvedValue, _signal.current.value)) {
+            updateSignal(resolvedValue);
+          }
+        })
+        .catch((error) => {
+          if (_isMounted.current) {
+            handleSignalError(error, currentValue);
+          }
+        });
+    } else if (!areDeepEqual(newValue, currentValue)) {
+      updateSignal(newValue);
     }
   });
 
   const updateSignal = (newValue: T) => {
-    if (logMessage && DEBUG) {
-      console.log(
-        "useSignal.ts: Changes detected. Signal value updated: " + logMessage,
-      );
+    if (DEBUG && logMessage) {
+      console.log(`useSignal: ${logMessage}`, newValue);
     }
     _signal.current.value = newValue;
   };
 
-  const handleSignalError = (error: any) => {
-    if (logMessage && DEBUG) {
-      console.error("useSignal.ts: Error updating signal value:", error);
+  const handleSignalError = (error: unknown, previousValue: T | undefined) => {
+    if (DEBUG && logMessage) {
+      console.error(`useSignal error: ${logMessage}`, error);
     }
-
-    _signal.current.value = _previous.current;
+    _signal.current.value = previousValue;
   };
 
-  return [_signal.current as ReadonlySignal<T>, setSignal] as const;
+  return [_signal.current as ReadonlySignal<T>, setSignal];
 }

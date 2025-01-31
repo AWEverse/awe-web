@@ -213,7 +213,7 @@ declare const Boolean: BooleanConstructor;
 /**
  * Extends the HTMLElement interface to include cross-browser fullscreen support methods.
  */
-interface HTMLElement {
+interface HTMLElement extends Element {
   requestFullscreen?: () => Promise<void>;
   msRequestFullscreen?: () => Promise<void>;
   mozRequestFullScreen?: () => Promise<void>;

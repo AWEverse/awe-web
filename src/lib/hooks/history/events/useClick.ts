@@ -1,53 +1,85 @@
-import { RefObject, useEffect, MouseEvent, TouchEvent } from 'react';
-import { off, on } from '../../utils/listener';
+import { useStableCallback } from "@/shared/hooks/base";
+import { RefObject, useEffect, useCallback, useRef } from "react";
 
 type EventType = MouseEvent | TouchEvent;
 
-const defaultEvents: string[] = ['mousedown', 'touchstart'];
+const defaultEvents: string[] = ["mousedown", "touchstart"];
 
 const useClickHandler = <E extends EventType = EventType>(
   ref: RefObject<HTMLElement | null>,
   onClick: (event: E) => void,
   condition: (el: HTMLElement, target: Node) => boolean,
 ) => {
-  const handler = (event: Event) => {
-    const { current: el } = ref;
-
-    if (el) {
-      if (condition(el, event.target as Node)) {
-        onClick(event as unknown as E);
-      }
-    }
-  };
+  const onClickRef = useRef(onClick);
+  const conditionRef = useRef(condition);
 
   useEffect(() => {
-    const addEventListeners = () => {
-      defaultEvents.forEach(eventName => on(document, eventName, handler));
-    };
+    onClickRef.current = onClick;
+    conditionRef.current = condition;
+  }, [onClick, condition]);
 
-    const removeEventListeners = () => {
-      defaultEvents.forEach(eventName => off(document, eventName, handler));
-    };
+  const handler = useCallback(
+    (event: Event) => {
+      if (window.TouchEvent && event instanceof TouchEvent) {
+        if (event.touches.length > 1) return;
+      }
 
-    addEventListeners();
+      const { current: el } = ref;
+      const target = event.target as Node;
 
-    return removeEventListeners;
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+      if (el && target instanceof Node) {
+        if (conditionRef.current(el, target)) {
+          onClickRef.current(event as unknown as E);
+        }
+      }
+    },
+    [ref],
+  );
+
+  useEffect(() => {
+    const addListeners = () =>
+      defaultEvents.forEach((eventName) => {
+        const options =
+          eventName === "touchstart" ? { passive: true } : undefined;
+        document.addEventListener(eventName, handler, options);
+      });
+
+    const removeListeners = () =>
+      defaultEvents.forEach((eventName) => {
+        document.removeEventListener(eventName, handler);
+      });
+
+    addListeners();
+    return removeListeners;
+  }, [handler]);
 };
 
 function useClickAway<E extends EventType = EventType>(
   ref: RefObject<HTMLElement | null>,
   onClickAway: (event: E) => void,
+  disabled = false,
 ) {
-  useClickHandler(ref, onClickAway, (el, target) => !el.contains(target));
+  if (disabled) return;
+
+  const condition = useStableCallback(
+    (el: HTMLElement, target: Node) => !el.contains(target),
+  );
+
+  useClickHandler(ref, onClickAway, condition);
 }
 
 function useClickInside<E extends EventType = EventType>(
   ref: RefObject<HTMLElement | null>,
   onClickInside: (event: E) => void,
+  disabled = false,
 ) {
-  useClickHandler(ref, onClickInside, (el, target) => el.contains(target));
+  if (disabled) return;
+
+  const condition = useStableCallback((el: HTMLElement, target: Node) =>
+    el.contains(target),
+  );
+
+  useClickHandler(ref, onClickInside, condition);
 }
 
 export { useClickAway, useClickInside };

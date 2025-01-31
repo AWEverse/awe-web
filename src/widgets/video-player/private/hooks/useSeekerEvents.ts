@@ -57,9 +57,12 @@ const useSeekerEvents = ({
       );
       const time = relativeX * duration;
 
-      if (isPreviewDisabled || !preview) return [time, 0];
+      if (isPreviewDisabled || !preview) {
+        return [time, 0];
+      }
 
       const offsetBase = clientX - seekerRect.left - previewWidth / 2;
+
       return [time, clamp(offsetBase, minOffset, maxOffset)];
     };
 
@@ -79,7 +82,6 @@ const useSeekerEvents = ({
       stableOnSeekEnd?.(time);
     };
 
-    // Initial layout measurement
     updateLayoutCache();
 
     const cleanup = captureEvents(seeker, {

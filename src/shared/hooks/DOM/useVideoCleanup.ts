@@ -1,6 +1,6 @@
-import { useEffect } from 'react';
-import { onIdleComplete } from '@/lib/core';
-import unloadVideo from '@/lib/utils/unloadVideo';
+import { useEffect } from "react";
+import { onIdleComplete } from "@/lib/core";
+import unloadVideo from "@/lib/utils/unloadVideo";
 
 /**
  * Custom hook to manage video cleanup by removing event listeners and unloading video resources.
@@ -42,27 +42,27 @@ export default function useVideoCleanup(
 
 export function resolveEventType(propName: string, element: Element) {
   const eventType = propName
-    .replace(/^on/, '')
-    .replace(/Capture$/, '')
+    .replace(/^on/, "")
+    .replace(/Capture$/, "")
     .toLowerCase();
 
-  if (eventType === 'change' && element.tagName !== 'SELECT') {
+  if (eventType === "change" && element.tagName !== "SELECT") {
     // React behavior repeated here.
     // https://stackoverflow.com/questions/38256332/in-react-whats-the-difference-between-onchange-and-oninput
-    return 'input';
+    return "input";
   }
 
-  if (eventType === 'doubleclick') {
-    return 'dblclick';
+  if (eventType === "doubleclick") {
+    return "dblclick";
   }
 
   // Replace focus/blur by their "bubbleable" versions
-  if (eventType === 'focus') {
-    return 'focusin';
+  if (eventType === "focus") {
+    return "focusin";
   }
 
-  if (eventType === 'blur') {
-    return 'focusout';
+  if (eventType === "blur") {
+    return "focusout";
   }
 
   return eventType;

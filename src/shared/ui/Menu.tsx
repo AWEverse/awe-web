@@ -9,7 +9,7 @@ import { FC, useRef, useEffect, memo } from "react";
 import useKeyboardListNavigation from "../hooks/keyboard/useKeyboardListNavigation";
 import useMenuPosition, {
   MenuPositionOptions,
-} from "../hooks/DOM/useMenuPosition";
+} from "../../entities/context-menu/public/hooks/useMenuPosition";
 import useVirtualBackdrop, {
   BACKDROP_CLASSNAME,
 } from "../hooks/DOM/useVirtualBackdrop";

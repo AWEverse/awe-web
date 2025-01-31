@@ -18,7 +18,6 @@ import {
 } from "@mui/icons-material";
 import { useStableCallback } from "@/shared/hooks/base";
 import { IS_TOUCH_ENV } from "@/lib/core";
-import { formatMediaDuration } from "../lib/utils";
 import buildClassName from "@/shared/lib/buildClassName";
 import stopEvent from "@/lib/utils/stopEvent";
 import useBodyClass from "@/shared/hooks/DOM/useBodyClass";
@@ -30,6 +29,7 @@ import SettingsDropdown from "./controls/SettingsDropdown";
 import { TriggerProps } from "@/shared/ui/DropdownMenu";
 import { useDebouncedFunction } from "@/shared/hooks/shedulers";
 import s from "./VideoPlayerControls.module.scss";
+import { formatMediaDuration } from "../lib/time/formatMediaDuration";
 
 type OwnProps = {
   // Playback Control

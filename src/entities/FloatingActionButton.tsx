@@ -1,11 +1,14 @@
-import buildClassName from '@/shared/lib/buildClassName';
-import ActionButton from '@/shared/ui/ActionButton';
-import DropdownMenu, { DropdopwnSharedProps, TriggerProps } from '@/shared/ui/DropdownMenu';
-import IconButton, { IconButtonSharedProps } from '@/shared/ui/IconButton';
-import { FC, memo, useCallback } from 'react';
-import s from './FloatingActionButton.module.scss';
-import buildStyle from '@/shared/lib/buildStyle';
-import MenuSeparator from '@/shared/ui/MenuSeparator';
+import buildClassName from "@/shared/lib/buildClassName";
+import ActionButton from "@/shared/ui/ActionButton";
+import DropdownMenu, {
+  DropdopwnSharedProps,
+  TriggerProps,
+} from "@/shared/ui/dropdown";
+import IconButton, { IconButtonSharedProps } from "@/shared/ui/IconButton";
+import { FC, memo, useCallback } from "react";
+import s from "./FloatingActionButton.module.scss";
+import buildStyle from "@/shared/lib/buildStyle";
+import MenuSeparator from "@/shared/ui/MenuSeparator";
 
 type IFloatingAction =
   | {
@@ -13,9 +16,9 @@ type IFloatingAction =
       label: string;
       onClick: NoneToVoidFunction;
     }
-  | '-'
-  | '='
-  | '==';
+  | "-"
+  | "="
+  | "==";
 
 interface FloatinActionButtonProps {
   icon: React.ReactNode;
@@ -28,15 +31,17 @@ interface FloatinActionButtonProps {
   isButtonVisible?: boolean;
 }
 
-type OwnProps = FloatinActionButtonProps & IconButtonSharedProps & DropdopwnSharedProps;
+type OwnProps = FloatinActionButtonProps &
+  IconButtonSharedProps &
+  DropdopwnSharedProps;
 
 const FloatingActionButton: React.FC<OwnProps> = ({
   icon,
   className,
   actions = [],
   position,
-  size = 'medium',
-  variant = 'plain',
+  size = "medium",
+  variant = "plain",
   transformOrigin = 0,
   transformOriginX,
   transformOriginY,
@@ -59,8 +64,17 @@ const FloatingActionButton: React.FC<OwnProps> = ({
 
   return (
     <div
-      className={buildClassName(s.FabContainer, s[position], s[size], className)}
-      style={applyTransformOriginStyles(transformOrigin, transformOriginX, transformOriginY)}
+      className={buildClassName(
+        s.FabContainer,
+        s[position],
+        s[size],
+        className,
+      )}
+      style={applyTransformOriginStyles(
+        transformOrigin,
+        transformOriginX,
+        transformOriginY,
+      )}
     >
       <DropdownMenu
         position={position}
@@ -71,11 +85,11 @@ const FloatingActionButton: React.FC<OwnProps> = ({
           const key = +action | index;
 
           switch (action) {
-            case '-':
+            case "-":
               return <MenuSeparator key={key} size="thin" />;
-            case '=':
+            case "=":
               return <MenuSeparator key={key} size="thick" />;
-            case '==':
+            case "==":
               return <MenuSeparator key={key} size="thicker" />;
             default:
               return <ActionButton key={key} {...action} />;
@@ -94,7 +108,10 @@ const applyTransformOriginStyles = (
   const x = transformOrigin ?? transformOriginX;
   const y = transformOrigin ?? transformOriginY;
 
-  return buildStyle(`--transform-origin-x: ${x}px`, `--transform-origin-y: ${y}px`);
+  return buildStyle(
+    `--transform-origin-x: ${x}px`,
+    `--transform-origin-y: ${y}px`,
+  );
 };
 
 export default memo(FloatingActionButton);

@@ -5,16 +5,16 @@ import { CSSTransition } from "react-transition-group";
 
 import s from "./SeekLine.module.scss";
 import buildClassName from "@/shared/lib/buildClassName";
-import buildStyle from "@/shared/lib/buildStyle";
 import { ReadonlySignal } from "@/lib/core/public/signals";
-import { clamp, IS_TOUCH_ENV, round } from "@/lib/core";
+import { IS_TOUCH_ENV, round } from "@/lib/core";
 import useSignal from "@/lib/hooks/signals/useSignal";
-import { captureEvents } from "@/lib/utils/captureEvents";
 import { useSignalEffect } from "@/lib/hooks/signals/useSignalEffect";
-import useSeekerEvents from "../hooks/useSeekerEvents";
 import { useStableCallback } from "@/shared/hooks/base";
+import useResizeObserver from "@/shared/hooks/DOM/useResizeObserver";
+import useSeekerEvents from "../hooks/useSeekerEvents";
+import useBufferedCanvas from "../hooks/useBufferedCanvas";
 
-interface OwnProps {
+interface SeekLineProps {
   waitingSignal: ReadonlySignal<boolean>;
   currentTimeSignal: ReadonlySignal<number>;
   bufferedRangesSignal: ReadonlySignal<BufferedRange[]>;
@@ -31,10 +31,10 @@ interface OwnProps {
   onSeekEnd: () => void;
 }
 
-const LOCK_TIMEOUT = 250;
-const DEBOUNCE = 200;
+const LOCK_TIMEOUT_MS = 250;
+const SEEK_DEBOUNCE_MS = 200;
 
-const SeekLine: FC<OwnProps> = ({
+const SeekLine: FC<SeekLineProps> = ({
   waitingSignal,
   currentTimeSignal,
   bufferedRangesSignal,
@@ -50,41 +50,41 @@ const SeekLine: FC<OwnProps> = ({
   onSeekStart,
   onSeekEnd,
 }) => {
-  const isLockedRef = useRef<boolean>(false);
-  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const isLocked = useRef<boolean>(false);
+  const canvasElement = useRef<HTMLCanvasElement>(null);
 
-  const seekerRef = useRef<HTMLDivElement | null>(null);
-  const previewCanvasRef = useRef<HTMLCanvasElement | null>(null);
-  const previewRef = useRef<HTMLDivElement | null>(null);
-  const progressRef = useRef<HTMLDivElement | null>(null);
-  const previewTimeRef = useRef<HTMLDivElement | null>(null);
+  const seekerContainer = useRef<HTMLDivElement | null>(null);
+  const previewCanvas = useRef<HTMLCanvasElement | null>(null);
+  const previewContainer = useRef<HTMLDivElement | null>(null);
+  const progressBar = useRef<HTMLDivElement | null>(null);
+  const previewTimeDisplay = useRef<HTMLDivElement | null>(null);
 
-  const [previewVisibleSignal, setPreviewVisible] = useState(false);
+  const [isPreviewVisible, setIsPreviewVisible] = useState(false);
   const [isSeeking, setIsSeeking] = useState(false);
   const [bufferedRanges, setBufferedRanges] = useState<BufferedRange[]>([]);
 
-  const previewOffsetSignal = useSignal(0);
+  const previewOffset = useSignal(0);
 
-  useSignalEffect(bufferedRangesSignal, (ranges) => {
-    setBufferedRanges(ranges);
-  });
+  const bufferedCanvas = useBufferedCanvas(bufferedRanges, duration);
+
+  useSignalEffect(bufferedRangesSignal, setBufferedRanges);
 
   useSignalEffect(
     currentTimeSignal,
     (time) => {
-      const progressEl = progressRef.current;
-
-      if (progressEl) {
-        progressEl.style.willChange = "transform";
-        progressEl.style.transform = moveX(time, duration);
-        progressEl.setAttribute("aria-valuenow", `${round(time)}`);
+      if (progressBar.current) {
+        progressBar.current.style.transform = calculateXPosition(
+          time,
+          duration,
+        );
+        progressBar.current.setAttribute("aria-valuenow", `${round(time)}`);
       }
     },
     [duration],
   );
 
   const handleSeek = useStableCallback((position: number) => {
-    setPreviewVisible(true);
+    setIsPreviewVisible(true);
     onSeek?.(position);
   });
 
@@ -93,47 +93,47 @@ const SeekLine: FC<OwnProps> = ({
     onSeekStart?.();
   });
 
-  const handleSeekEnd = useStableCallback((endPoint: number) => {
-    isLockedRef.current = true;
-    setPreviewVisible(false);
+  const handleSeekEnd = useStableCallback((position: number) => {
+    isLocked.current = true;
+    setIsPreviewVisible(false);
     setIsSeeking(false);
 
-    onSeek?.(endPoint);
+    onSeek?.(position);
     onSeekEnd?.();
 
     setTimeout(() => {
-      isLockedRef.current = false;
-    }, LOCK_TIMEOUT);
+      isLocked.current = false;
+    }, LOCK_TIMEOUT_MS);
   });
 
   useSeekerEvents({
-    seekerRef,
-    previewRef,
-    onSeek: handleSeek,
-    onSeekStart: handleSeekStart,
-    onSeekEnd: handleSeekEnd,
+    seekerRef: seekerContainer,
+    previewRef: previewContainer,
     isPreviewDisabled,
     isActive: isActive!,
     duration,
+    onSeek: handleSeek,
+    onSeekStart: handleSeekStart,
+    onSeekEnd: handleSeekEnd,
   });
 
   return (
     <div
-      ref={seekerRef}
+      ref={seekerContainer}
       className={s.container}
       itemScope
       itemType="http://schema.org/MediaObject"
     >
       {!isPreviewDisabled && (
-        <CSSTransition nodeRef={previewRef} in={isReady} timeout={0}>
+        <CSSTransition nodeRef={previewContainer} in={isReady} timeout={0}>
           <div
-            ref={previewRef}
+            ref={previewContainer}
             className={s.preview}
             aria-label="Media preview"
           >
             <canvas
               className={s.previewCanvas}
-              ref={previewCanvasRef}
+              ref={previewCanvas}
               width={posterSize?.width}
               height={posterSize?.height}
               aria-label="Media timeline preview"
@@ -142,7 +142,7 @@ const SeekLine: FC<OwnProps> = ({
             <div className={s.previewTime} aria-hidden="true">
               <span
                 className={s.previewTimeText}
-                ref={previewTimeRef}
+                ref={previewTimeDisplay}
                 itemProp="timecode"
               />
             </div>
@@ -157,9 +157,18 @@ const SeekLine: FC<OwnProps> = ({
         aria-valuemax={duration}
         itemProp="duration"
       >
+        <canvas
+          ref={bufferedCanvas}
+          height={10}
+          style={{ width: "100%", height: "100%" }}
+        />
         <div
-          ref={progressRef}
-          className={buildClassName(s.played, isSeeking && s.seeking)}
+          ref={progressBar}
+          className={buildClassName(
+            s.played,
+            isPlaying && s.playing,
+            isSeeking && s.seeking,
+          )}
           role="presentation"
         />
         <div className={s.trackBg} aria-hidden="true" />
@@ -177,7 +186,7 @@ const SeekLine: FC<OwnProps> = ({
   );
 };
 
-const moveX = (value: number, duration: number) =>
-  `translateX(${round((value / duration) * 100, 1)}%)`;
+const calculateXPosition = (value: number, duration: number) =>
+  `translateX(${round((value / duration) * 100)}%)`;
 
 export default memo(SeekLine);

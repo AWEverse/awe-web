@@ -1,67 +1,95 @@
-import { throttle, IS_IOS } from "../core";
-import {
-  requestNextMutation,
-  requestMeasure,
-} from "../modules/fastdom/fastdom";
+import { IS_IOS, throttle } from "../core";
+import { requestNextMutation } from "../modules/fastdom/fastdom";
 
 interface IDimensions {
   height: number;
   width: number;
 }
 
-const WINDOW_ORIENTATION_CHANGE_THROTTLE_MS = 100;
-const WINDOW_RESIZE_THROTTLE_MS = 250;
+const RESIZE_THROTTLE_MS = 150;
+let rafId: number | null = null;
 
-let initialHeight = window.innerHeight;
-let currentWindowSize = updateSizes();
+const visualViewport = typeof window !== "undefined" && window.visualViewport;
+const isIOS = typeof window !== "undefined" && IS_IOS;
 
-const handleResize = throttle(
-  () => {
-    currentWindowSize = updateSizes();
-  },
-  WINDOW_RESIZE_THROTTLE_MS,
-  true,
-);
+const dimensions: IDimensions = {
+  height: typeof window !== "undefined" ? window.innerHeight : 0,
+  width: typeof window !== "undefined" ? window.innerWidth : 0,
+};
 
-const handleOrientationChange = throttle(
-  () => {
-    initialHeight = window.innerHeight;
-    handleResize();
-  },
-  WINDOW_ORIENTATION_CHANGE_THROTTLE_MS,
-  false,
-);
+let initialHeight = dimensions.height;
 
-window.addEventListener("orientationchange", handleOrientationChange);
-
-if (IS_IOS) {
-  window.visualViewport!.addEventListener("resize", handleResize);
-} else {
-  window.addEventListener("resize", handleResize);
+function updateCssVars() {
+  const vh = dimensions.height * 0.01;
+  document.documentElement.style.setProperty("--vh", `${vh}px`);
 }
 
-export function updateSizes(): IDimensions {
-  let height: number;
-
-  requestNextMutation(() => {
-    if (IS_IOS && window.visualViewport) {
-      height = window.visualViewport.height + window.visualViewport.pageTop;
-    } else {
-      height = window.innerHeight;
-    }
-
-    return () => {
-      document.documentElement.style.setProperty("--vh", `${height * 0.01}px`);
-    };
-  });
+function getVisualViewportDimensions(): IDimensions {
+  if (!visualViewport) return dimensions;
 
   return {
-    width: window.innerWidth,
-    height: window.innerHeight,
+    width: Math.round(visualViewport.width),
+    height: Math.round(visualViewport.height),
   };
 }
 
+function handleViewportChange() {
+  if (rafId) cancelAnimationFrame(rafId);
+
+  rafId = requestAnimationFrame(() => {
+    const newDimensions = isIOS
+      ? getVisualViewportDimensions()
+      : { width: window.innerWidth, height: window.innerHeight };
+
+    if (
+      newDimensions.width !== dimensions.width ||
+      newDimensions.height !== dimensions.height
+    ) {
+      Object.assign(dimensions, newDimensions);
+      requestNextMutation(updateCssVars);
+    }
+  });
+}
+
+function handleOrientationChange() {
+  initialHeight = window.innerHeight;
+  handleViewportChange();
+}
+
+const throttledResize = throttle(
+  handleViewportChange,
+  RESIZE_THROTTLE_MS,
+  true,
+);
+
+export function initializeViewportListeners() {
+  if (typeof window === "undefined") return;
+
+  window.addEventListener("resize", throttledResize, { passive: true });
+  window.addEventListener("orientationchange", handleOrientationChange, {
+    passive: true,
+  });
+
+  if (visualViewport) {
+    visualViewport.addEventListener("resize", throttledResize, {
+      passive: true,
+    });
+  }
+
+  updateCssVars();
+}
+
+// Initialize automatically in non-SSR environments
+if (typeof window !== "undefined") {
+  initializeViewportListeners();
+}
+
 export default {
-  get: () => currentWindowSize,
-  getIsKeyboardVisible: () => initialHeight > currentWindowSize.height,
+  get dimensions() {
+    return { ...dimensions };
+  },
+  get isKeyboardVisible() {
+    return isIOS && initialHeight > dimensions.height;
+  },
+  update: handleViewportChange,
 };
