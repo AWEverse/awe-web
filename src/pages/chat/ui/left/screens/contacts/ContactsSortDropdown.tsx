@@ -1,5 +1,5 @@
 import ActionButton from "@/shared/ui/ActionButton";
-import DropdownMenu, { TriggerProps } from "@/shared/ui/dropdown";
+import DropdownMenu, { TriggerProps } from "@/shared/ui/DropdownMenu";
 import IconButton from "@/shared/ui/IconButton";
 import { SortByAlpha } from "@mui/icons-material";
 import { FC, memo, useState } from "react";

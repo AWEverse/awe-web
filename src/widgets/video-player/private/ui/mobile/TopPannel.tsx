@@ -3,7 +3,7 @@ import { FC, memo, ReactNode } from "react";
 import s from "./TopPannel.module.scss";
 import SettingsDropdown from "../controls/SettingsDropdown";
 import buildClassName from "@/shared/lib/buildClassName";
-import { TriggerProps } from "@/shared/ui/dropdown";
+import { TriggerProps } from "@/shared/ui/DropdownMenu";
 import {
   ArrowDownward,
   ArrowDownwardRounded,

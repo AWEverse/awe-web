@@ -26,7 +26,7 @@ import {
   useSignalLayoutEffect,
 } from "@/lib/hooks/signals/useSignalEffect";
 import SettingsDropdown from "./controls/SettingsDropdown";
-import { TriggerProps } from "@/shared/ui/dropdown";
+import { TriggerProps } from "@/shared/ui/DropdownMenu";
 import { useDebouncedFunction } from "@/shared/hooks/shedulers";
 import s from "./VideoPlayerControls.module.scss";
 import { formatMediaDuration } from "../lib/time/formatMediaDuration";

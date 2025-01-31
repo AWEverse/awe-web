@@ -6,7 +6,7 @@ import AnimationIcon from "@mui/icons-material/Animation";
 import BugReportIcon from "@mui/icons-material/BugReport";
 import AppsIcon from "@mui/icons-material/Apps";
 import DownloadIcon from "@mui/icons-material/Download";
-import DropdownMenu, { TriggerProps } from "@/shared/ui/dropdown";
+import DropdownMenu, { TriggerProps } from "@/shared/ui/DropdownMenu";
 import {
   ArrowForwardIosRounded,
   DarkModeRounded,

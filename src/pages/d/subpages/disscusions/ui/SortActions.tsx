@@ -4,7 +4,7 @@ import SortByUp02Icon from "@/shared/common/icons/SortByUp02Icon";
 
 import s from "./SortActions.module.scss";
 import { useStableCallback } from "@/shared/hooks/base";
-import DropdownMenu, { TriggerProps } from "@/shared/ui/dropdown";
+import DropdownMenu, { TriggerProps } from "@/shared/ui/DropdownMenu";
 import IconButton from "@/shared/ui/IconButton";
 import ActionButton from "@/shared/ui/ActionButton";
 import { AccountCircle, AccountBox, Logout } from "@mui/icons-material";
