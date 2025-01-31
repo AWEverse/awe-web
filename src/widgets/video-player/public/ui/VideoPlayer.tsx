@@ -266,6 +266,7 @@ const VideoPlayer: React.FC<OwnProps> = ({
   function updateBuffering(e: Event | React.SyntheticEvent<HTMLMediaElement>) {
     const media = e.currentTarget as HTMLMediaElement;
     const ranges = BTimeRanges.getBufferedInfo(media.buffered);
+
     setBuffered(ranges);
     setReady((current) => current || isMediaReadyToPlay(media));
   }

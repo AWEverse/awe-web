@@ -1,5 +1,5 @@
 import ActionButton from "@/shared/ui/ActionButton";
-import DropdownMenu, { TriggerProps } from "@/shared/ui/DropdownMenu";
+import DropdownMenu, { TriggerProps } from "@/shared/ui/dropdown";
 import { FC, memo, useCallback, useState } from "react";
 import s from "./SettingsDropdown.module.scss";
 import { useStableCallback } from "@/shared/hooks/base";

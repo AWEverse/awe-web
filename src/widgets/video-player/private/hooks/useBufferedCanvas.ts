@@ -1,6 +1,10 @@
 import { useEffect, useRef, useCallback } from "react";
 import { BufferedRange } from "@/lib/hooks/ui/useBuffering";
 import { requestMutation } from "@/lib/modules/fastdom/fastdom";
+import useDevicePixelRatio, {
+  getDevicePixelRatio,
+} from "@/lib/hooks/sensors/useDevicePixelRatio";
+import useResizeObserver from "@/shared/hooks/DOM/useResizeObserver";
 
 const drawBufferedRanges = (
   canvasRef: React.RefObject<HTMLCanvasElement | null>,
@@ -49,32 +53,23 @@ const useBufferedCanvas = (
     });
   }, [bufferedRanges, duration]);
 
-  useEffect(() => {
-    updateCanvas();
-  }, [updateCanvas]);
-
-  useEffect(() => {
+  useResizeObserver(bufferedCanvas, (entry) => {
     const canvas = bufferedCanvas.current;
     if (!canvas) return;
 
-    const observer = new ResizeObserver((entries) => {
-      const entry = entries[0];
-      if (!entry) return;
+    const { width } = entry.contentRect;
+    const scale = getDevicePixelRatio();
+    const newWidth = Math.floor(width * scale);
 
-      const { width } = entry.contentRect;
-      const scale = window.devicePixelRatio || 1;
-      const newWidth = Math.floor(width * scale);
+    if (canvas.width !== newWidth) {
+      canvas.width = newWidth;
+      canvas.height = 10;
+      updateCanvas();
+    }
+  });
 
-      if (canvas.width !== newWidth) {
-        canvas.width = newWidth;
-        canvas.height = 10;
-        updateCanvas();
-      }
-    });
-
-    observer.observe(canvas as Element);
-
-    return () => observer.disconnect();
+  useEffect(() => {
+    updateCanvas();
   }, [updateCanvas]);
 
   return bufferedCanvas;

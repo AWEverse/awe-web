@@ -1,4 +1,6 @@
-export function createCallbackManager<T extends AnyToVoidFunction = AnyToVoidFunction>(): {
+export function createCallbackManager<
+  T extends AnyToVoidFunction = AnyToVoidFunction,
+>(): {
   addCallback: (callback: T) => () => void;
   removeCallback: (callback: T) => void;
   runCallbacks: (...args: Parameters<T>) => void;
@@ -6,33 +8,33 @@ export function createCallbackManager<T extends AnyToVoidFunction = AnyToVoidFun
   runCallbacksAsync: (...args: Parameters<T>) => void;
 } {
   const callbacks = new Set<T>();
-  let hasCallbackFlag = false;
 
   const addCallback = (callback: T): (() => void) => {
     callbacks.add(callback);
-    hasCallbackFlag = true;
     return () => removeCallback(callback);
   };
 
   const removeCallback = (callback: T): void => {
-    if (callbacks.delete(callback)) {
-      hasCallbackFlag = callbacks.size > 0;
-    }
+    callbacks.delete(callback);
   };
 
   const runCallbacks = (...args: Parameters<T>): void => {
-    callbacks.forEach(callback => callback(...args));
+    try {
+      callbacks.forEach((callback) => callback(...args));
+    } catch (e) {
+      console.error("Error executing callback:", e);
+    }
   };
 
   // when the callbacks might be time-consuming, and you don't want them to block the main execution thread.
   // This is how we work with a sequence of macro tasks
   const runCallbacksAsync = (...args: Parameters<T>): void => {
     setTimeout(() => {
-      callbacks.forEach(callback => callback(...args));
+      runCallbacks(...args);
     }, 0);
   };
 
-  const hasCallbacks = () => hasCallbackFlag;
+  const hasCallbacks = () => callbacks.size > 0;
 
   return {
     addCallback,
@@ -43,6 +45,5 @@ export function createCallbackManager<T extends AnyToVoidFunction = AnyToVoidFun
   };
 }
 
-export type CallbackManager<T extends AnyToVoidFunction = AnyToVoidFunction> = ReturnType<
-  typeof createCallbackManager<T>
->;
+export type CallbackManager<T extends AnyToVoidFunction = AnyToVoidFunction> =
+  ReturnType<typeof createCallbackManager<T>>;

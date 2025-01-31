@@ -39,16 +39,16 @@ export default function useResizeObserver(
       callbackManager = createCallbackManager();
       observer = new ResizeObserver(callbackManager.runCallbacks);
       elementObserverMap.set(element, [observer, callbackManager]);
-      observer.observe(element);
+      observer.observe(element as Element);
     }
 
-    callbackManager!.addCallback(callback);
+    const removeCallback = callbackManager!.addCallback(callback);
 
     return () => {
-      callbackManager!.removeCallback(callback);
+      removeCallback();
 
       if (!callbackManager!.hasCallbacks()) {
-        observer!.unobserve(element);
+        observer!.unobserve(element as Element);
         observer!.disconnect();
       }
     };

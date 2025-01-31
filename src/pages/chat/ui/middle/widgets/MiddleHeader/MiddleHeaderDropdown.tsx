@@ -13,7 +13,7 @@ import {
 import s from "./MiddleHeaderDropdown.module.scss";
 import { withStateProps } from "@/lib/core";
 import buildClassName from "@/shared/lib/buildClassName";
-import DropdownMenu, { TriggerProps } from "@/shared/ui/DropdownMenu";
+import DropdownMenu, { TriggerProps } from "@/shared/ui/dropdown";
 import IconButton from "@/shared/ui/IconButton";
 import { useIntl } from "react-intl";
 import ChatActionButton from "../../common/ChatActionButton";

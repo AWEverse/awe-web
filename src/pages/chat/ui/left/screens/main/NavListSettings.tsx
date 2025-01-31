@@ -1,11 +1,11 @@
-import DropdownMenu, { TriggerProps } from '@/shared/ui/DropdownMenu';
-import { FC } from 'react';
+import DropdownMenu, { TriggerProps } from "@/shared/ui/dropdown";
+import { FC } from "react";
 
 interface OwnProps {
   trigger: FC<TriggerProps>;
 }
 
-const NavListSettings: FC<OwnProps> = props => {
+const NavListSettings: FC<OwnProps> = (props) => {
   const { trigger } = props;
 
   return (
