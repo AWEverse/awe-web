@@ -1,5 +1,4 @@
 import { requestIdleExecution, throttleWith } from "../schedulers";
-import { requestMeasure } from "@/lib/modules/fastdom/fastdom";
 import { signal } from "../signals";
 
 const AUTO_END_TIMEOUT = 1000;

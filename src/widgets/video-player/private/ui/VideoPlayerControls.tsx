@@ -26,8 +26,7 @@ import {
   useSignalLayoutEffect,
 } from "@/lib/hooks/signals/useSignalEffect";
 import SettingsDropdown from "./controls/SettingsDropdown";
-import { TriggerProps } from "@/shared/ui/DropdownMenu";
-import { useDebouncedFunction } from "@/shared/hooks/shedulers";
+import { TriggerProps } from "@/shared/ui/dropdown";
 import s from "./VideoPlayerControls.module.scss";
 import { formatMediaDuration } from "../lib/time/formatMediaDuration";
 
@@ -38,7 +37,7 @@ type OwnProps = {
   volumeSignal: ReadonlySignal<number>;
   controlsSignal: ReadonlySignal<boolean>;
   duration: number;
-  playbackRate: number;
+  playbackRate: ReadonlySignal<number>;
   isMuted: boolean;
 
   // Buffered Media Info

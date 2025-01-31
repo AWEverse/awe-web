@@ -1,10 +1,8 @@
 :root {
   --header-z-index: 1000;
   --header-background: var(--awe-palette-background-default);
-  --header-border: 2px solid black;
+  --header-border: 1px solid black;
   --header-blur: blur(3px);
-  --header-mask-gradient: linear-gradient(to bottom, black 1px, transparent);
-  --layout-shadow: 0 4px 8px rgba(0, 0, 0, 0.05);
 }
 
 .LayoutHeader {
@@ -31,8 +29,6 @@
     content: '';
     position: absolute;
     inset: 0;
-    background: var(--header-mask-gradient);
-    mask: var(--header-mask-gradient);
     pointer-events: none;
   }
 

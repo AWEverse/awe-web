@@ -2,7 +2,7 @@ import { IS_IOS, IS_REQUEST_FULLSCREEN_SUPPORTED } from "@/lib/core";
 import { useStableCallback } from "@/shared/hooks/base";
 import React, { useState, useLayoutEffect, useCallback } from "react";
 
-type FullscreenControls = [boolean, () => Promise<void>, () => Promise<void>];
+type FullscreenControls = [boolean, () => Promise<void>];
 
 const FULLSCREEN_EVENTS = [
   "fullscreenchange",
@@ -113,7 +113,11 @@ export default function useFullscreen(
     }
   }, [isFullscreen]);
 
-  return isSupported ? [isFullscreen, setFullscreen, exitFullscreen] : [false];
+  const toggleFullscreen = async () => {
+    await (isFullscreen ? exitFullscreen?.() : setFullscreen?.());
+  };
+
+  return isSupported ? [isFullscreen, toggleFullscreen] : [false];
 }
 
 export function useFullscreenStatus() {

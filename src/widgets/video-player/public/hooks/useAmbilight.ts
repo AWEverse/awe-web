@@ -1,3 +1,4 @@
+import { getIsMobile } from "@/lib/hooks/ui/useAppLayout";
 import { requestMeasure } from "@/lib/modules/fastdom/fastdom";
 import { useRef, useEffect, useMemo, useCallback } from "react";
 
