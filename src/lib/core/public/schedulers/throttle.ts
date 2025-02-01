@@ -3,30 +3,30 @@ export default function throttle<F extends AnyToVoidFunction>(
   ms: number,
   shouldRunFirst = true,
 ) {
-  let interval: number | undefined;
+  let timeout: number | undefined;
   let isPending: boolean;
   let args: Parameters<F>;
+
+  const execute = () => {
+    if (isPending) {
+      isPending = false;
+      fn(...args);
+      timeout = self.setTimeout(execute, ms);
+    } else {
+      timeout = undefined;
+    }
+  };
 
   return (..._args: Parameters<F>) => {
     isPending = true;
     args = _args;
 
-    if (!interval) {
+    if (!timeout) {
       if (shouldRunFirst) {
         isPending = false;
         fn(...args);
       }
-
-      interval = self.setInterval(() => {
-        if (!isPending) {
-          self.clearInterval(interval!);
-          interval = undefined;
-          return;
-        }
-
-        isPending = false;
-        fn(...args);
-      }, ms);
+      timeout = self.setTimeout(execute, ms);
     }
   };
 }

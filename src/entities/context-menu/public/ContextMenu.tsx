@@ -12,12 +12,11 @@ import { IVector2D } from "@/lib/utils/data-structures/Vector2d";
 import buildClassName from "@/shared/lib/buildClassName";
 import stopEvent from "@/lib/utils/stopEvent";
 import useMenuPosition from "@/entities/context-menu/public/hooks/useMenuPosition";
-
-import "./ContextMenu.scss";
 import Portal from "@/shared/ui/Portal";
-import useMenuClosure from "./hooks/useMenuClosure";
 import { useClickAway } from "@/lib/hooks/history/events/useClick";
 import { useBoundaryCheck } from "@/shared/hooks/mouse/useBoundaryCheck";
+
+import "./ContextMenu.scss";
 
 const ANIMATION_PROPS = {
   initial: { opacity: 0, scale: 0.85 },
@@ -80,14 +79,16 @@ const ContextMenu: FC<ContextMenuProps> = ({
     [position, isDense, noCompact, rootRef],
   );
 
-  useMenuPosition(isOpen, containerRef, bubbleRef, positionConfig);
   useClickAway(containerRef, onClose);
+
+  useMenuPosition(isOpen, containerRef, bubbleRef, positionConfig);
 
   useBoundaryCheck({
     elementRef: containerRef,
     isActive: isOpen,
     onExit: onClose,
     position,
+    extraPaddingX: 0,
     options: { outboxSize: 60, throttleInterval: 250 },
   });
 
