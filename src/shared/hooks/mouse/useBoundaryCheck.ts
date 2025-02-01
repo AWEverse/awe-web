@@ -5,6 +5,7 @@ interface UseBoundaryCheckParams {
   elementRef: RefObject<HTMLElement | null>;
   isActive: boolean;
   onExit: () => void;
+  position?: { x: number; y: number };
   options?: {
     outboxSize?: number;
     throttleInterval?: number;
@@ -17,6 +18,7 @@ const DEFAULT_THROTTLE_INTERVAL = 100;
 export function useBoundaryCheck({
   elementRef,
   isActive,
+  position,
   onExit,
   options,
 }: UseBoundaryCheckParams) {
@@ -31,16 +33,21 @@ export function useBoundaryCheck({
     const element = elementRef.current;
 
     const handleMove = throttle((e: MouseEvent) => {
-      if (!element) return;
+      const rect = element.getBoundingClientRect();
 
-      const position = element.getBoundingClientRect();
-
-      const boundaries = {
-        top: position.top - outboxSize,
-        left: position.left - outboxSize,
-        right: position.right + outboxSize,
-        bottom: position.bottom + outboxSize,
-      };
+      const boundaries = position
+        ? {
+            top: position.y - outboxSize,
+            left: position.x - outboxSize,
+            right: position.x + rect.width + outboxSize,
+            bottom: position.y + rect.height + outboxSize,
+          }
+        : {
+            top: rect.top - outboxSize,
+            left: rect.left - outboxSize,
+            right: rect.right + outboxSize,
+            bottom: rect.bottom + outboxSize,
+          };
 
       const isOutside =
         e.clientX < boundaries.left ||
@@ -49,6 +56,7 @@ export function useBoundaryCheck({
         e.clientY > boundaries.bottom;
 
       if (isOutside) {
+        console.log("outside");
         onExit();
       }
     }, throttleInterval);

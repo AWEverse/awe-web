@@ -14,7 +14,11 @@ import useUnsupportedMedia from "../hooks/useSupportCheck";
 import useControlsSignal from "../../private/hooks/useControlsSignal";
 import stopEvent from "@/lib/utils/stopEvent";
 import useAmbilight from "../hooks/useAmbilight";
-import { ObserveFn } from "@/shared/hooks/DOM/useIntersectionObserver";
+import {
+  ObserveFn,
+  useIsIntersecting,
+  useOnIntersect,
+} from "@/shared/hooks/DOM/useIntersectionObserver";
 import VideoPlayerControls from "../../private/ui/VideoPlayerControls";
 import "./VideoPlayer.scss";
 import { ApiDimensions } from "@/@types/api/types/messages";
@@ -33,6 +37,14 @@ import { useVideoPlayback } from "../../private/hooks/useVideoPlayback";
 import { noop } from "@/lib/utils/listener";
 import { useTimeLine } from "../../private/hooks/useTimeLine";
 import { useTouchControls } from "../../private/hooks/useTouchControls";
+import {
+  CloseRounded,
+  LinkRounded,
+  LoopRounded,
+  RepeatOutlined,
+} from "@mui/icons-material";
+import { IconButton } from "@mui/material";
+import ActionButton from "@/shared/ui/ActionButton";
 
 const TopPannel = lazy(() => import("../../private/ui/mobile/TopPannel"));
 
@@ -73,6 +85,9 @@ const VideoPlayer: React.FC<OwnProps> = ({
   isAudioMuted,
   totalFileSize,
   onAdsClick,
+  observeIntersectionForBottom,
+  observeIntersectionForLoading,
+  observeIntersectionForPlaying,
 }) => {
   const { isMobile } = useAppLayout();
   const containerRef = useRef<HTMLDivElement>(null);
@@ -219,7 +234,7 @@ const VideoPlayer: React.FC<OwnProps> = ({
     handleBeforeContextMenu,
     handleContextMenu,
     handleContextMenuClose,
-  } = useContextMenuHandlers(containerRef, false);
+  } = useContextMenuHandlers(containerRef, false, false, false);
 
   const { handleClick, handleMouseDown } = useFastClick(
     (e: React.MouseEvent<HTMLDivElement>) => {
@@ -232,6 +247,19 @@ const VideoPlayer: React.FC<OwnProps> = ({
       }
     },
   );
+
+  const isIntersectingForLoading = useIsIntersecting(
+    containerRef,
+    observeIntersectionForLoading,
+  );
+
+  const isIntersectingForPlaying =
+    useIsIntersecting(containerRef, observeIntersectionForPlaying) &&
+    isIntersectingForLoading;
+
+  useOnIntersect(bottomRef, observeIntersectionForBottom, () => {
+    // some logic when bottom is intersection
+  });
 
   return (
     <>
@@ -314,21 +342,18 @@ const VideoPlayer: React.FC<OwnProps> = ({
         position={contextMenuAnchor!}
         onClose={handleContextMenuClose}
         withPortal
+        menuClassName="p-2"
       >
-        <div style={{ padding: "8px" }}>
-          <p>Context Menu</p>
-          <p>button 1</p>
-          <p>button 1</p>
-          <p>button 1</p>
-          <p>button 1</p>
-          <p>button 1</p>
-          <p>button 1</p>
-          <p>button 1</p>
-          <p>button 1</p>
-          <p>button 1</p>
-          <p>button 1</p>
-          <button onClick={handleContextMenuClose}>Close</button>
-        </div>
+        <ActionButton size="sm" variant="contained" fullWidth>
+          <LoopRounded /> <span>Loop</span>
+        </ActionButton>
+        <ActionButton size="sm" variant="contained" fullWidth>
+          <RepeatOutlined />
+          <span>Repeat</span>
+        </ActionButton>
+        <ActionButton size="sm" variant="contained" fullWidth>
+          <LinkRounded /> <span>Copy video url</span>
+        </ActionButton>
       </ContextMenu>
     </>
   );

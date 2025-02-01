@@ -69,7 +69,7 @@ const ActionButton: FC<OwnProps> = ({
   label,
   labelClassName,
   variant = "contained",
-  size = "sm",
+  size = "md",
   color = "primary",
   loading = false,
   fullWidth,

@@ -10,8 +10,8 @@ interface UseMenuClosureOptions {
 }
 
 const DEFAULT_OPTIONS: UseMenuClosureOptions = {
-  outboxSize: 100,
-  throttleInterval: 100,
+  outboxSize: 40,
+  throttleInterval: 75,
 };
 
 /**

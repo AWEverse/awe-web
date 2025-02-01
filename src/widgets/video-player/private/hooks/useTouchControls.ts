@@ -211,7 +211,7 @@ export const useTouchControls = (
     }
   });
 
-  const handleTouchEnd = useStableCallback((e: TouchEvent) => {
+  const handleTouchEnd = useStableCallback((_: TouchEvent) => {
     if (!touchState.current) return;
 
     lastTouchTime.current = Date.now();

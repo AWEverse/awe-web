@@ -27,11 +27,11 @@
   position: relative;
   display: inline-flex;
   align-items: center;
-  justify-content: center;
   vertical-align: middle;
   white-space: nowrap;
   user-select: none;
-  
+  width: min-content;
+
   // Typography
   font-family: var(--btn-font-family);
   font-weight: var(--btn-font-weight);
@@ -116,32 +116,32 @@
   &--size {
     &--xs { 
       font-size: 0.75rem;
-      padding: 0.25rem 0.5rem; 
-      min-height: 24px;
+      padding: 0.15rem 0.5rem; 
+      min-height: 20px;
     }
     
     &--sm { 
       font-size: 0.875rem;
-      padding: 0.5rem 0.75rem; 
-      min-height: 32px;
+      padding: 0.25rem 0.75rem; 
+      min-height: 24px;
     }
     
     &--md { 
       font-size: 1rem;
-      padding: 0.5rem 1rem; 
-      min-height: 40px;
+      padding: 0.4rem 1rem; 
+      min-height: 32px;
     }
     
     &--lg { 
       font-size: 1.125rem;
       padding: 1rem 1.5rem; 
-      min-height: 48px;
+      min-height: 42px;
     }
     
     &--xl { 
       font-size: 1.25rem;
       padding: 1.25rem 2.25rem; 
-      min-height: 56px;
+      min-height: 48px;
     }
 
     // Custom sizes
@@ -165,7 +165,5 @@
 
   &.fullWidth {
     width: 100%;
-    justify-content: center;
   }
-
 }

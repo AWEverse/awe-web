@@ -74,13 +74,10 @@ const useContextMenuHandlers = (
       e.preventDefault();
       e.stopPropagation();
 
-      setContextMenuState((prev) => {
-        return {
-          ...prev,
-          isOpen: true,
-          anchor: { x: e.clientX, y: e.clientY },
-          target: e.target as HTMLElement,
-        };
+      setContextMenuState({
+        isOpen: true,
+        anchor: { x: e.clientX, y: e.clientY },
+        target: e.target as HTMLElement,
       });
     },
   );

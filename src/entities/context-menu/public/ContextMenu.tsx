@@ -16,6 +16,8 @@ import useMenuPosition from "@/entities/context-menu/public/hooks/useMenuPositio
 import "./ContextMenu.scss";
 import Portal from "@/shared/ui/Portal";
 import useMenuClosure from "./hooks/useMenuClosure";
+import { useClickAway } from "@/lib/hooks/history/events/useClick";
+import { useBoundaryCheck } from "@/shared/hooks/mouse/useBoundaryCheck";
 
 const ANIMATION_PROPS = {
   initial: { opacity: 0, scale: 0.85 },
@@ -79,7 +81,15 @@ const ContextMenu: FC<ContextMenuProps> = ({
   );
 
   useMenuPosition(isOpen, containerRef, bubbleRef, positionConfig);
-  useMenuClosure(isOpen, containerRef, handleClose);
+  useClickAway(containerRef, onClose);
+
+  useBoundaryCheck({
+    elementRef: containerRef,
+    isActive: isOpen,
+    onExit: onClose,
+    position,
+    options: { outboxSize: 60, throttleInterval: 250 },
+  });
 
   const menuEl = useMemo(
     () => (
