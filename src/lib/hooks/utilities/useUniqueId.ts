@@ -1,29 +1,49 @@
-import { useEffect, useRef } from 'react';
+import { useRef } from "react";
 
-function toBase36(num: number, length: number): string {
-  return num.toString(36).padStart(length, '0');
+const BASE36_CHARS = "0123456789abcdefghijklmnopqrstuvwxyz";
+
+function generateRandomString(length: number): string {
+  let result = "";
+  for (let i = 0; i < length; i++) {
+    result += BASE36_CHARS[Math.floor(Math.random() * 36)];
+  }
+  return result;
 }
 
-function generateUniqueId(prefix: string = '', suffix: string = '', length: number = 16): string {
-  const now = Date.now();
+function generateUniqueId(
+  prefix: string = "",
+  suffix: string = "",
+  length: number = 16,
+): string {
+  const timestamp = Date.now().toString(36);
+  const fixedPart = `${prefix}${timestamp}${suffix}`;
+  const separatorCount = [prefix, timestamp, suffix].filter(Boolean).length - 1;
+  const fixedLength = fixedPart.length + separatorCount;
 
-  const array = new Uint32Array(4);
-  crypto.getRandomValues(array);
+  const randomLength = Math.max(length - fixedLength, 1);
 
-  const timePart = toBase36(now, 8);
-  const randomPart = Array.from(array, num => toBase36(num, 8))
-    .join('')
-    .slice(0, length - 8);
+  const randomPart = generateRandomString(randomLength);
 
-  return `${prefix}-${timePart}-${randomPart}-${suffix}`;
+  const parts = [prefix, timestamp, randomPart, suffix].filter(Boolean);
+  return parts.join("-").slice(0, length);
 }
 
-function useUniqueId(prefix: string = '', suffix: string = '', length: number = 16): string {
-  const idRef = useRef<string>('');
+function useUniqueId(
+  prefix: string = "",
+  suffix: string = "",
+  length: number = 16,
+): string {
+  const idRef = useRef<string>(generateUniqueId(prefix, suffix, length));
+  const depsRef = useRef<[string, string, number]>([prefix, suffix, length]);
 
-  useEffect(() => {
+  if (
+    depsRef.current[0] !== prefix ||
+    depsRef.current[1] !== suffix ||
+    depsRef.current[2] !== length
+  ) {
     idRef.current = generateUniqueId(prefix, suffix, length);
-  }, [prefix, suffix, length]);
+    depsRef.current = [prefix, suffix, length];
+  }
 
   return idRef.current;
 }

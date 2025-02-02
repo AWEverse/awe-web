@@ -1,5 +1,5 @@
 import { requestIdleExecution, throttleWith } from "../schedulers";
-import { signal } from "../signals";
+import { ReadonlySignal, signal } from "../signals";
 
 const AUTO_END_TIMEOUT = 1000;
 
@@ -13,8 +13,11 @@ const blockingAnimationState = {
   isActive: signal(false),
 };
 
-export const getIsHeavyAnimating = animationState.isActive;
-export const getIsBlockingHeavyAnimating = blockingAnimationState.isActive;
+export const getIsHeavyAnimating: ReadonlySignal<boolean> =
+  animationState.isActive;
+
+export const getIsBlockingHeavyAnimating: ReadonlySignal<boolean> =
+  blockingAnimationState.isActive;
 
 export function dispatchHeavyAnimation(
   duration = AUTO_END_TIMEOUT,

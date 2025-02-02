@@ -87,6 +87,7 @@ export class Lethargy {
     ) {
       return direction;
     }
+
     return false;
   }
 }

@@ -1,94 +1,92 @@
-import { requestMutation } from "@/lib/modules/fastdom/fastdom";
-import { animate } from "./animate";
+/**
+ * A WeakMap to track any ongoing animations for a container.
+ * The key is the container, and the value is a token indicating if the animation was cancelled.
+ */
+const ongoingAnimations = new WeakMap<HTMLElement, { cancelled: boolean }>();
 
-const DEFAULT_DURATION = 300;
+/**
+ * Cancels any ongoing horizontal scroll animation on the container.
+ *
+ * @param container - The HTMLElement whose animation should be cancelled.
+ */
+function cancelOngoingAnimation(container: HTMLElement): void {
+  const token = ongoingAnimations.get(container);
 
-// Using [0, 1] interval
-const START_DURATION = 0;
-const END_DURATION = 1;
+  if (token) {
+    token.cancelled = true;
+    ongoingAnimations.delete(container);
+  }
+}
 
-const stopById: Map<string, NoneToVoidFunction> = new Map();
+// k controls the spring's response; k ~ 4.6 produces a smooth yet prompt transition.
+const k = 4.6;
 
+/**
+ * Smoothly animates the horizontal scroll of a container to a target position
+ * using a physics-based critically damped spring easing.
+ *
+ * The easing function is defined as:
+ *   e(t) = (1 - (1 + k*t) * exp(-k*t)) / (1 - (1 + k) * exp(-k))
+ *
+ * where:
+ * - t is the normalized time (0 <= t <= 1)
+ * - k is a constant (recommended ~4.6) that controls the stiffness/damping.
+ *
+ * @param container - The HTMLElement whose scroll position will be animated.
+ * @param targetLeft - The desired final scrollLeft value.
+ * @param duration - The animation duration in milliseconds (default: 300).
+ * @returns A promise that resolves when the animation completes (or is cancelled).
+ */
 export default function animateHorizontalScroll(
   container: HTMLElement,
-  left: number,
-  duration = DEFAULT_DURATION,
-) {
-  if (!duration) {
-    duration = START_DURATION;
-  }
+  targetLeft: number,
+  duration = 150,
+): Promise<void> {
+  cancelOngoingAnimation(container);
 
-  const isRtl = container.getAttribute("dir") === "rtl";
-  const {
-    scrollLeft,
-    offsetWidth: containerWidth,
-    scrollWidth,
-    dataset: { scrollId },
-  } = container;
+  // no need for fastdom remaining scrollLeft attr cause already in microtasks
+  return new Promise((resolve) => {
+    const startLeft = container.scrollLeft;
+    const change = targetLeft - startLeft;
 
-  let path = left - scrollLeft;
+    if (change === 0 || duration <= 0) {
+      container.scrollLeft = targetLeft;
+      resolve();
+      return;
+    }
 
-  if (path < START_DURATION) {
-    path = Math.max(path, -scrollLeft * (isRtl ? -1 : 1));
-  } else if (path > START_DURATION) {
-    path = Math.min(path, scrollWidth - (scrollLeft + containerWidth));
-  }
+    const startTime = performance.now();
+    const token = { cancelled: false };
+    ongoingAnimations.set(container, token);
 
-  if (path === START_DURATION) {
-    return Promise.resolve();
-  }
+    // Critically damped spring easing function normalized to [0,1]
+    // springEase(t) = (1 - (1 + k*t) * exp(-k*t)) / (1 - (1 + k) * exp(-k))
+    const springEase = (t: number): number => {
+      const numerator = 1 - (1 + k * t) * Math.exp(-k * t);
+      const denominator = 1 - (1 + k) * Math.exp(-k);
+      return numerator / denominator;
+    };
 
-  if (scrollId && stopById.has(scrollId)) {
-    stopById.get(scrollId)!();
-  }
-
-  const target = scrollLeft + path;
-
-  return new Promise<void>((resolve) => {
-    requestMutation(() => {
-      if (duration === START_DURATION) {
-        container.scrollLeft = target;
+    const step = (currentTime: number) => {
+      if (token.cancelled) {
         resolve();
         return;
       }
 
-      let isStopped = false;
-      const id = Math.random().toString();
-      container.dataset.scrollId = id;
+      const elapsed = currentTime - startTime;
+      const progress = Math.min(elapsed / duration, 1);
+      const easedProgress = springEase(progress);
 
-      stopById.set(id, () => {
-        isStopped = true;
-      });
+      container.scrollLeft = startLeft + change * easedProgress;
 
-      container.style.scrollSnapType = "none";
-      container.style.scrollBehavior = "smooth";
+      if (progress < 1) {
+        requestAnimationFrame(step);
+      } else {
+        ongoingAnimations.delete(container);
+        resolve();
+      }
+    };
 
-      const startAt = Date.now();
-
-      animate(requestMutation, () => {
-        if (isStopped) {
-          return false;
-        }
-
-        const elapsedTime = (Date.now() - startAt) / duration;
-        const t = Math.min(elapsedTime, END_DURATION);
-        const currentPath = path * (END_DURATION - transition(t));
-        container.scrollLeft = Math.round(target - currentPath);
-
-        if (t >= END_DURATION) {
-          container.style.scrollSnapType = "";
-          container.style.scrollBehavior = "";
-          delete container.dataset.scrollId;
-          stopById.delete(id);
-          resolve();
-        }
-
-        return t < END_DURATION;
-      });
-    });
+    requestAnimationFrame(step);
   });
-}
-
-function transition(t: number) {
-  return END_DURATION - (END_DURATION - t) ** 3.5;
 }

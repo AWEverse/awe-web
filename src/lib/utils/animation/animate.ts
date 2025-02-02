@@ -1,17 +1,23 @@
-import { Scheduler } from '@/lib/core';
+import { Scheduler } from "@/lib/core";
 
-export function animate(schedulerFn: Scheduler, tick: NoneToAnyFunction) {
-  schedulerFn(() => {
+export function animate(schedulerFn: Scheduler, tick: () => any) {
+  const frame = () => {
     if (tick()) {
-      animate(schedulerFn, tick);
+      schedulerFn(frame);
     }
-  });
+  };
+
+  schedulerFn(frame);
 }
 
-export function animateInstantly(schedulerFn: Scheduler, tick: NoneToAnyFunction) {
+export function animateInstantly(schedulerFn: Scheduler, tick: () => any) {
+  const frame = () => {
+    if (tick()) {
+      schedulerFn(frame);
+    }
+  };
+
   if (tick()) {
-    schedulerFn(() => {
-      animateInstantly(schedulerFn, tick);
-    });
+    schedulerFn(frame);
   }
 }

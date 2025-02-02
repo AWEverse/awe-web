@@ -20,6 +20,7 @@ import "./ContextMenu.scss";
 import { useEffectWithPreviousDeps } from "@/shared/hooks/effects/useEffectWithPreviousDependencies";
 import { dispatchHeavyAnimation } from "@/lib/core";
 import useBodyClass from "@/shared/hooks/DOM/useBodyClass";
+import useHeavyAnimationCheck from "@/lib/hooks/sensors/useHeavyAnimationCheck";
 
 const ANIMATION_DURATION = 0.125;
 
@@ -54,7 +55,7 @@ const ContextMenu: FC<ContextMenuProps> = ({
   style,
   withPortal,
   isDense,
-  noCompact,
+  noCompact = false,
   triggerRef,
   onClose,
   onCloseAnimationEnd,
@@ -77,7 +78,7 @@ const ContextMenu: FC<ContextMenuProps> = ({
         isDense,
         shouldAvoidNegativePosition: true,
         withPortal: true,
-        menuElMinWidth: noCompact ? 220 : 160,
+        menuElMinWidth: noCompact ? 220 : 120,
       }),
       withMaxHeight: true,
     }),
@@ -102,7 +103,7 @@ const ContextMenu: FC<ContextMenuProps> = ({
   useEffectWithPreviousDeps(
     ([wasOpen]) => {
       if (isOpen !== wasOpen) {
-        dispatchHeavyAnimation(ANIMATION_DURATION);
+        return dispatchHeavyAnimation(ANIMATION_DURATION);
       }
     },
     [isOpen],

@@ -7,8 +7,10 @@ import { capitalize } from "@/lib/utils/helpers/string/stringFormaters";
 import { EMouseButton } from "@/lib/core";
 import ContextMenu, { useContextMenuHandlers } from "@/entities/context-menu";
 import ActionButton from "./ActionButton";
+import useUniqueId from "@/lib/hooks/utilities/useUniqueId";
 
 type OwnProps = {
+  layoutId: string;
   className?: string;
   title: string;
   isActive?: boolean;
@@ -29,19 +31,17 @@ const classNames = {
 };
 
 const Tab: FC<OwnProps> = ({
+  layoutId,
   className,
   title,
   isActive,
   isBlocked,
   badgeCount,
   isBadgeActive,
-  // previousActiveTab is no longer needed for animation with Framer Motion
-  previousActiveTab,
   onClick,
   clickArg,
   variant = "pannels",
   tabIndex = 0,
-  contextRootElementSelector,
 }) => {
   const tabRef = useRef<HTMLButtonElement>(null);
 
@@ -114,9 +114,9 @@ const Tab: FC<OwnProps> = ({
 
           {isActive && (
             <motion.i
-              layoutId="platformIndicator"
+              key={title}
+              layoutId={layoutId}
               className={buildClassName("platform", `platform-${variant}`)}
-              initial={false}
               transition={{ type: "spring", stiffness: 500, damping: 30 }}
             >
               <span className="platform-inner-pannels" />
@@ -131,8 +131,15 @@ const Tab: FC<OwnProps> = ({
         onClose={handleContextMenuClose}
         onCloseAnimationEnd={handleContextMenuHide}
         withPortal
+        menuClassName="p-2"
       >
-        <ActionButton>Edit folder</ActionButton>
+        <ActionButton size="sm" fullWidth>
+          Edit folder
+        </ActionButton>
+
+        <ActionButton color="error" variant="text" size="sm" fullWidth>
+          Remove folder
+        </ActionButton>
       </ContextMenu>
     </>
   );
