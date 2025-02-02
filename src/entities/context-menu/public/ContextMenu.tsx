@@ -17,12 +17,17 @@ import { useClickAway } from "@/lib/hooks/history/events/useClick";
 import { useBoundaryCheck } from "@/shared/hooks/mouse/useBoundaryCheck";
 
 import "./ContextMenu.scss";
+import { useEffectWithPreviousDeps } from "@/shared/hooks/effects/useEffectWithPreviousDependencies";
+import { dispatchHeavyAnimation } from "@/lib/core";
+import useBodyClass from "@/shared/hooks/DOM/useBodyClass";
+
+const ANIMATION_DURATION = 0.125;
 
 const ANIMATION_PROPS = {
   initial: { opacity: 0, scale: 0.85 },
   animate: { opacity: 1, scale: 1 },
   exit: { opacity: 0, scale: 0.85 },
-  transition: { duration: 0.125 },
+  transition: { duration: ANIMATION_DURATION },
 };
 
 interface ContextMenuProps {
@@ -35,7 +40,7 @@ interface ContextMenuProps {
   withPortal?: boolean;
   isDense?: boolean;
   noCompact?: boolean;
-  rootRef?: React.RefObject<HTMLElement | null>;
+  triggerRef?: React.RefObject<HTMLElement | null>;
   onClose: () => void;
   onCloseAnimationEnd?: () => void;
 }
@@ -50,7 +55,7 @@ const ContextMenu: FC<ContextMenuProps> = ({
   withPortal,
   isDense,
   noCompact,
-  rootRef,
+  triggerRef,
   onClose,
   onCloseAnimationEnd,
 }) => {
@@ -65,7 +70,7 @@ const ContextMenu: FC<ContextMenuProps> = ({
   const positionConfig = useMemo(
     () => ({
       anchor: position,
-      getTriggerElement: () => rootRef?.current || document.body,
+      getTriggerElement: () => triggerRef?.current || document.body,
       getRootElement: () => containerRef.current,
       getMenuElement: () => bubbleRef.current,
       getLayout: () => ({
@@ -76,10 +81,12 @@ const ContextMenu: FC<ContextMenuProps> = ({
       }),
       withMaxHeight: true,
     }),
-    [position, isDense, noCompact, rootRef],
+    [position, isDense, noCompact, triggerRef],
   );
 
   useClickAway(containerRef, onClose);
+
+  useBodyClass("has-open-dialog", isOpen);
 
   useMenuPosition(isOpen, containerRef, bubbleRef, positionConfig);
 
@@ -91,6 +98,15 @@ const ContextMenu: FC<ContextMenuProps> = ({
     extraPaddingX: 0,
     options: { outboxSize: 60, throttleInterval: 250 },
   });
+
+  useEffectWithPreviousDeps(
+    ([wasOpen]) => {
+      if (isOpen !== wasOpen) {
+        dispatchHeavyAnimation(ANIMATION_DURATION);
+      }
+    },
+    [isOpen],
+  );
 
   const menuEl = useMemo(
     () => (

@@ -87,43 +87,41 @@ export function useBoundaryCheck({
 function calculateAdjustedBoundaries(
   position: { x: number; y: number },
   outboxSize: number,
-  extraPaddingX: number,
+  paddingX: number,
   viewport: { width: number; height: number },
   rect: DOMRect,
 ) {
   // X-axis adjustment
-  const availableSpaceRight = viewport.width - position.x;
-  const requiredWidthRight = rect.width + extraPaddingX;
+  const spaceRight = viewport.width - position.x;
+  const spaceLeft = position.x;
+  const totalWidth = rect.width + paddingX;
+
   let adjustedX = position.x;
 
-  if (requiredWidthRight <= availableSpaceRight) {
-    adjustedX += extraPaddingX;
+  if (totalWidth <= spaceRight) {
+    adjustedX += paddingX;
   } else {
-    const requiredWidthLeft = rect.width + extraPaddingX;
-    const availableSpaceLeft = position.x;
-
-    if (requiredWidthLeft <= availableSpaceLeft) {
-      adjustedX -= requiredWidthLeft;
+    const totalWidthLeft = rect.width + paddingX;
+    if (totalWidthLeft <= spaceLeft) {
+      adjustedX -= totalWidthLeft;
     } else {
-      adjustedX =
-        availableSpaceRight > availableSpaceLeft
-          ? viewport.width - rect.width
-          : 0;
+      adjustedX = spaceRight > spaceLeft ? viewport.width - rect.width : 0;
     }
   }
 
   // Y-axis adjustment
-  const availableSpaceBottom = viewport.height - position.y;
+  const spaceBottom = viewport.height - position.y;
+  const spaceTop = position.y;
+
   let adjustedY = position.y;
 
-  if (rect.height <= availableSpaceBottom) {
+  if (rect.height <= spaceBottom) {
     adjustedY = position.y;
   } else {
-    const availableSpaceTop = position.y;
     adjustedY =
-      rect.height <= availableSpaceTop
+      rect.height <= spaceTop
         ? position.y - rect.height
-        : availableSpaceBottom > availableSpaceTop
+        : spaceBottom > spaceTop
           ? viewport.height - rect.height
           : 0;
   }
@@ -132,7 +130,6 @@ function calculateAdjustedBoundaries(
   adjustedX = Math.max(0, Math.min(adjustedX, viewport.width - rect.width));
   adjustedY = Math.max(0, Math.min(adjustedY, viewport.height - rect.height));
 
-  // Calculate boundaries with outboxSize and clamping
   return {
     left: Math.max(adjustedX - outboxSize, 0),
     right: Math.min(adjustedX + rect.width + outboxSize, viewport.width),

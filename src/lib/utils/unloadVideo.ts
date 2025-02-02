@@ -5,10 +5,20 @@ export function stopVideo(video: HTMLVideoElement) {
     video.pause();
   }
 
-  video.removeAttribute('src');
-  video.src = 'unloaded';
+  if (video.src) {
+    try {
+      const url = new URL(video.src);
+      if (url.protocol === "blob:") {
+        URL.revokeObjectURL(url.href);
+      }
+    } catch (e) {
+      // ignore
+    }
+  }
 
-  if ('srcObject' in video) {
+  video.src = "";
+
+  if ("srcObject" in video) {
     video.srcObject = null;
   }
 
@@ -19,13 +29,13 @@ export function clearVideoElement(video: HTMLVideoElement) {
   if (!video) return;
 
   while (video.firstChild) {
-    video.firstChild.remove();
+    video.removeChild(video.firstChild);
   }
 }
 
 export default function unloadVideo(video: HTMLVideoElement) {
   if (!video) return;
 
-  stopVideo(video);
   clearVideoElement(video);
+  stopVideo(video);
 }

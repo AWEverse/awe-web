@@ -5,6 +5,7 @@ import useBuffering, {
 } from "@/lib/hooks/ui/useBuffering";
 import { useRef, useMemo, memo } from "react";
 import useEffectSync from "../hooks/effects/useEffectSync";
+import useVideoCleanup from "../hooks/DOM/useVideoCleanup";
 
 type VideoProps = React.DetailedHTMLProps<
   React.VideoHTMLAttributes<HTMLVideoElement>,
@@ -112,7 +113,7 @@ function Video({
 
   // TODO: Fix cleanup hook
   // Something went wrong with that hook, actually it immediately unmounts the video after the first render
-  // useVideoCleanup(videoRef, mergedOtherBufferingHandlers);
+  useVideoCleanup(videoRef, mergedOtherBufferingHandlers);
 
   return (
     // eslint-disable-next-line react/jsx-props-no-spreading

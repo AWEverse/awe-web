@@ -1,23 +1,4 @@
-/**
- * Lethargy help distinguish between scroll events initiated by the user, and those by inertial scrolling.
- * Lethargy does not have external dependencies.
- *
- * @param stability - Specifies the length of the rolling average.
- * In effect, the larger the value, the smoother the curve will be.
- * This attempts to prevent anomalies from firing 'real' events. Valid values are all positive integers,
- * but in most cases, you would need to stay between 5 and around 30.
- *
- * @param sensitivity - Specifies the minimum value for wheelDelta for it to register as a valid scroll event.
- * Because the tail of the curve have low wheelDelta values,
- * this will stop them from registering as valid scroll events.
- * The unofficial standard wheelDelta is 120, so valid values are positive integers below 120.
- *
- * @param tolerance - Prevent small fluctuations from affecting results.
- * Valid values are decimals from 0, but should ideally be between 0.05 and 0.3.
- *
- */
-
-import { WheelEvent } from 'react';
+import { CircularBuffer } from "../core";
 
 export type LethargyConfig = {
   stability?: number;
@@ -27,15 +8,14 @@ export type LethargyConfig = {
 };
 
 export class Lethargy {
-  stability: number;
-  sensitivity: number;
-  tolerance: number;
-  delay: number;
-
-  lastUpDelta: number = 0;
-  lastDownDelta: number = 0;
-  lastUpTimestamp: number = 0;
-  lastDownTimestamp: number = 0;
+  private stability: number;
+  private sensitivity: number;
+  private tolerance: number;
+  private delay: number;
+  private totalSamples: number;
+  private upDeltas: CircularBuffer<number>;
+  private downDeltas: CircularBuffer<number>;
+  private tsBuffer: CircularBuffer<number>;
 
   constructor({
     stability = 8,
@@ -47,52 +27,66 @@ export class Lethargy {
     this.sensitivity = sensitivity;
     this.tolerance = tolerance;
     this.delay = delay;
+    this.totalSamples = stability * 2;
+    this.upDeltas = new CircularBuffer(this.totalSamples);
+    this.downDeltas = new CircularBuffer(this.totalSamples);
+    this.tsBuffer = new CircularBuffer(this.totalSamples);
   }
 
-  check(e: WheelEvent | Event) {
-    let lastDelta: number = -1;
-    const event = e as WheelEvent;
-
-    if (event.deltaY !== undefined) {
+  public check(event: any): number | false {
+    let lastDelta: number;
+    event = event.originalEvent || event;
+    if (event.wheelDelta !== undefined) {
+      lastDelta = event.wheelDelta;
+    } else if (event.deltaY !== undefined) {
       lastDelta = event.deltaY * -40;
     } else if (event.detail !== undefined || event.detail === 0) {
       lastDelta = event.detail * -40;
-    }
-
-    const currentTime = Date.now();
-
-    if (lastDelta > 0) {
-      return this.isInertia(1, lastDelta, currentTime);
     } else {
-      return this.isInertia(-1, lastDelta, currentTime);
-    }
-  }
-
-  isInertia(direction: number, delta: number, currentTime: number) {
-    const lastTimestamp = direction === 1 ? this.lastUpTimestamp : this.lastDownTimestamp;
-    const lastDelta = direction === 1 ? this.lastUpDelta : this.lastDownDelta;
-
-    if (currentTime - lastTimestamp < this.delay && delta === lastDelta) {
       return false;
     }
 
-    const newAverage = delta;
+    this.tsBuffer.put(Date.now());
+
+    if (lastDelta > 0) {
+      this.upDeltas.put(lastDelta);
+      return this.isInertia(1, this.upDeltas);
+    } else {
+      this.downDeltas.put(lastDelta);
+      return this.isInertia(-1, this.downDeltas);
+    }
+  }
+
+  private isInertia(
+    direction: number,
+    deltaBuffer: CircularBuffer<number>,
+  ): number | false {
+    const orderedDeltas = deltaBuffer.getAll();
+
+    if (orderedDeltas.length < this.totalSamples) {
+      return direction;
+    }
+
+    const tsOrdered = this.tsBuffer.getAll();
+    if (
+      tsOrdered[tsOrdered.length - 2] + this.delay > Date.now() &&
+      orderedDeltas[0] === orderedDeltas[orderedDeltas.length - 1]
+    ) {
+      return false;
+    }
+
+    const oldDeltas = orderedDeltas.slice(0, this.stability);
+    const newDeltas = orderedDeltas.slice(this.stability, this.totalSamples);
+
+    const oldAvg = oldDeltas.sum() / oldDeltas.length;
+    const newAvg = newDeltas.sum() / newDeltas.length;
 
     if (
-      Math.abs(newAverage) <= Math.abs(lastDelta * this.tolerance) &&
-      this.sensitivity < Math.abs(newAverage)
+      Math.abs(oldAvg) <= Math.abs(newAvg) * this.tolerance &&
+      Math.abs(newAvg) > this.sensitivity
     ) {
-      return true;
+      return direction;
     }
-
-    if (direction === 1) {
-      this.lastUpDelta = delta;
-      this.lastUpTimestamp = currentTime;
-    } else {
-      this.lastDownDelta = delta;
-      this.lastDownTimestamp = currentTime;
-    }
-
     return false;
   }
 }

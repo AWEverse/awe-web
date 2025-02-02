@@ -2,8 +2,8 @@ import { RefObject, useEffect, useState } from "react";
 import { useStableCallback } from "@/shared/hooks/base";
 import { isSafariPatchInProgress } from "../../utils/patchSafariProgressiveAudio";
 import { areDeepEqual } from "../../utils/areDeepEqual";
-import { isMediaReadyToPlay } from "@/lib/core/public/buffering/MediaControls";
 import { useDebouncedFunction } from "@/shared/hooks/shedulers";
+import { isMediaReadyToPlay } from "@/lib/core";
 
 // Avoid flickering when re-mounting previously buffered video
 const DEBOUNCE = 200;

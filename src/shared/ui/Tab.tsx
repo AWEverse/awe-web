@@ -1,14 +1,12 @@
-import {
-  requestMutation,
-  requestNextMutation,
-} from "@/lib/modules/fastdom/fastdom";
-import { FC, useRef, useLayoutEffect, useEffect, useMemo } from "react";
+import { FC, useMemo, useRef } from "react";
+import { motion } from "framer-motion";
 import buildClassName from "../lib/buildClassName";
 import "./Tab.scss";
 import { useFastClick } from "../hooks/mouse/useFastClick";
 import { capitalize } from "@/lib/utils/helpers/string/stringFormaters";
 import { EMouseButton } from "@/lib/core";
-import { useStableCallback } from "../hooks/base";
+import ContextMenu, { useContextMenuHandlers } from "@/entities/context-menu";
+import ActionButton from "./ActionButton";
 
 type OwnProps = {
   className?: string;
@@ -30,8 +28,6 @@ const classNames = {
   badgeActive: "Tab-badge-active",
 };
 
-const ANIMATE_KEY = "animate";
-
 const Tab: FC<OwnProps> = ({
   className,
   title,
@@ -39,6 +35,7 @@ const Tab: FC<OwnProps> = ({
   isBlocked,
   badgeCount,
   isBadgeActive,
+  // previousActiveTab is no longer needed for animation with Framer Motion
   previousActiveTab,
   onClick,
   clickArg,
@@ -47,79 +44,6 @@ const Tab: FC<OwnProps> = ({
   contextRootElementSelector,
 }) => {
   const tabRef = useRef<HTMLButtonElement>(null);
-
-  useLayoutEffect(() => {
-    const tabEl = tabRef.current;
-    const bShouldAddActiveClass = isActive && !previousActiveTab && tabEl;
-
-    if (bShouldAddActiveClass) {
-      tabEl.classList.add(classNames.active);
-    }
-  }, [isActive, previousActiveTab]);
-
-  useEffect(() => {
-    if (!isActive || previousActiveTab === undefined) {
-      return;
-    }
-
-    const tabEl = tabRef.current!;
-
-    if (!tabEl) {
-      return;
-    }
-
-    const prevTabEl = tabEl.parentElement!.children[previousActiveTab];
-
-    if (!prevTabEl) {
-      const bShouldAddActiveClass = !tabEl.classList.contains(
-        classNames.active,
-      );
-
-      if (bShouldAddActiveClass) {
-        requestMutation(() => {
-          tabEl.classList.add(classNames.active);
-        });
-      }
-
-      return;
-    }
-
-    const platformEl = tabEl.querySelector<HTMLElement>(".platform")!;
-    const prevPlatformEl = prevTabEl.querySelector<HTMLElement>(".platform")!;
-
-    if (!prevPlatformEl.parentElement || !platformEl.parentElement) {
-      return;
-    }
-
-    requestMutation(() => {
-      prevPlatformEl.classList.remove(ANIMATE_KEY);
-
-      platformEl.classList.remove(ANIMATE_KEY);
-      platformEl.style.transform = buildTransform(prevPlatformEl, platformEl);
-
-      requestForcedReflow(() => {
-        forceReflow(platformEl);
-
-        return () => {
-          platformEl.classList.add(ANIMATE_KEY);
-          platformEl.style.transform = "none";
-
-          prevTabEl.classList.remove(classNames.active);
-          tabEl.classList.add(classNames.active);
-        };
-      });
-    });
-  }, [isActive, previousActiveTab]);
-
-  const { handleClick, handleMouseDown } = useFastClick(
-    (e: React.MouseEvent<HTMLButtonElement>) => {
-      if (e.type === "mousedown" && e.button !== EMouseButton.Main) {
-        return;
-      }
-
-      onClick?.(clickArg!);
-    },
-  );
 
   const renderBadge = useMemo(() => {
     if (badgeCount) {
@@ -139,66 +63,79 @@ const Tab: FC<OwnProps> = ({
     return null;
   }, [badgeCount, isBadgeActive]);
 
-  const getTriggerElement = useStableCallback(() => tabRef.current);
-  const getRootElement = useStableCallback(() =>
-    contextRootElementSelector
-      ? tabRef.current!.closest(contextRootElementSelector)
-      : document.body,
+  const {
+    isContextMenuOpen,
+    contextMenuAnchor,
+    handleBeforeContextMenu,
+    handleContextMenu,
+    handleContextMenuHide,
+    handleContextMenuClose,
+  } = useContextMenuHandlers(tabRef, false, false, false);
+
+  const { handleClick, handleMouseDown } = useFastClick(
+    (e: React.MouseEvent<HTMLButtonElement>) => {
+      if (e.button === EMouseButton.Secondary) {
+        handleBeforeContextMenu(e);
+      }
+      if (e.type === "mousedown" && e.button !== EMouseButton.Main) {
+        return;
+      }
+      onClick?.(clickArg!);
+    },
   );
-  const getMenuElement = useStableCallback(() =>
-    document
-      .querySelector("#portals")!
-      .querySelector(".Tab-context-menu .bubble"),
-  );
-  const getLayout = useStableCallback(() => ({ withPortal: true }));
 
   return (
-    <button
-      ref={tabRef}
-      aria-label={title}
-      aria-selected={isActive}
-      className={buildClassName("Tab", onClick && "Tab-interactive", className)}
-      role="tab"
-      tabIndex={tabIndex}
-      onClick={handleClick}
-      onMouseDown={handleMouseDown}
-    >
-      <span
-        className={buildClassName("TabInner", capitalize(variant))}
-        data-active={isActive}
-      >
-        {title}
-        {renderBadge}
-        {isBlocked && (
-          <i aria-hidden="true" className="icon icon-lock-badge blocked" />
+    <>
+      <button
+        ref={tabRef}
+        aria-label={title}
+        aria-selected={isActive}
+        className={buildClassName(
+          "Tab",
+          onClick && "Tab-interactive",
+          isActive && classNames.active,
+          className,
         )}
-        <i className={buildClassName("platform", `platform-${variant}`)}>
-          <span className="platform-inner-pannels" />
-        </i>
-      </span>
-    </button>
+        role="tab"
+        tabIndex={tabIndex}
+        onClick={handleClick}
+        onMouseDown={handleMouseDown}
+        onContextMenu={handleContextMenu}
+      >
+        <span
+          className={buildClassName("TabInner", capitalize(variant))}
+          data-active={isActive}
+        >
+          {title}
+          {renderBadge}
+          {isBlocked && (
+            <i aria-hidden="true" className="icon icon-lock-badge blocked" />
+          )}
+
+          {isActive && (
+            <motion.i
+              layoutId="platformIndicator"
+              className={buildClassName("platform", `platform-${variant}`)}
+              initial={false}
+              transition={{ type: "spring", stiffness: 500, damping: 30 }}
+            >
+              <span className="platform-inner-pannels" />
+            </motion.i>
+          )}
+        </span>
+      </button>
+
+      <ContextMenu
+        isOpen={isContextMenuOpen}
+        position={contextMenuAnchor!}
+        onClose={handleContextMenuClose}
+        onCloseAnimationEnd={handleContextMenuHide}
+        withPortal
+      >
+        <ActionButton>Edit folder</ActionButton>
+      </ContextMenu>
+    </>
   );
-};
-
-function forceReflow(element: HTMLElement) {
-  element.offsetWidth;
-}
-
-const buildTransform = (
-  prevPlatformEl: HTMLElement,
-  currPlatformEl: HTMLElement,
-) => {
-  const prevParent = prevPlatformEl.parentElement;
-  const currParent = currPlatformEl.parentElement;
-
-  if (!prevParent || !currParent) {
-    return "none";
-  }
-
-  const shiftLeft = prevParent.offsetLeft - currParent.offsetLeft;
-  const scaleFactor = prevPlatformEl.clientWidth / currPlatformEl.clientWidth;
-
-  return `translate3d(${shiftLeft}px, 0, 0) scale3d(${scaleFactor}, 1, 1)`;
 };
 
 export default Tab;

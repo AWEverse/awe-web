@@ -1,68 +1,35 @@
 import { EffectCallback, useEffect, useLayoutEffect, useRef } from "react";
 
-/**
- * Utility type for representing read-only arrays.
- */
-type ReadonlyArrayOfAny = readonly any[];
+type ReadonlyArray<T = unknown> = readonly T[];
 
-/**
- * A utility function that manages effects (either useEffect or useLayoutEffect)
- * and passes previous dependencies to the provided callback.
- *
- * @template T - A readonly array type representing the dependencies.
- * @param {Function} callback - A function that receives the previous dependencies.
- * @param {Function} effectHook - The React effect hook (either useEffect or useLayoutEffect).
- * @param {T} dependencies - The array of current dependencies for the effect.
- */
-function useEffectWithPreviousDependenciesBase<
-  const T extends ReadonlyArrayOfAny,
->(
-  callback: (previousDeps: T | readonly []) => void,
+function useEffectWithPreviousDependenciesBase<const T extends ReadonlyArray>(
+  callback: (previousDeps: T | ReadonlyArray) => void,
   effectHook: (effect: EffectCallback, deps?: T) => void,
   dependencies: T,
 ) {
-  // Store the reference to the previous dependencies
-  const previousDepsRef = useRef<T | null>(null);
+  const previousDepsRef = useRef<T | ReadonlyArray>([]);
 
-  // Use the provided effect hook (useEffect or useLayoutEffect)
   effectHook(() => {
     const previousDeps = previousDepsRef.current;
+    // Update ref before execution to ensure fresh values in potential cleanups
     previousDepsRef.current = dependencies;
 
-    // Execute the callback with previous dependencies or an empty array if no previous deps exist
-    callback(previousDeps || []);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    callback(previousDeps);
+
+    // Clear ref on unmount to prevent stale closures
+    return () => {
+      previousDepsRef.current = [];
+    };
   }, dependencies);
 }
 
-/**
- * A custom hook that uses `useEffect` and passes previous dependencies
- * to the provided callback function.
- *
- * @template T - A readonly array type representing the dependencies.
- * @param {Function} callback - A function that receives the previous dependencies.
- * @param {T} dependencies - The array of current dependencies for the effect.
- * @returns {void}
- */
-export const useEffectWithPreviousDeps = <const T extends ReadonlyArrayOfAny>(
-  callback: (previousDeps: T | readonly []) => void,
+export const useEffectWithPreviousDeps = <const T extends ReadonlyArray>(
+  callback: (previousDeps: T | ReadonlyArray) => void,
   dependencies: T,
-): void =>
-  useEffectWithPreviousDependenciesBase(callback, useEffect, dependencies);
+) => useEffectWithPreviousDependenciesBase(callback, useEffect, dependencies);
 
-/**
- * A custom hook that uses `useLayoutEffect` and passes previous dependencies
- * to the provided callback function.
- *
- * @template T - A readonly array type representing the dependencies.
- * @param {Function} callback - A function that receives the previous dependencies.
- * @param {T} dependencies - The array of current dependencies for the effect.
- * @returns {void}
- */
-export const useLayoutEffectWithPreviousDeps = <
-  const T extends ReadonlyArrayOfAny,
->(
-  callback: (previousDeps: T | readonly []) => void,
+export const useLayoutEffectWithPreviousDeps = <const T extends ReadonlyArray>(
+  callback: (previousDeps: T | ReadonlyArray) => void,
   dependencies: T,
 ) =>
   useEffectWithPreviousDependenciesBase(

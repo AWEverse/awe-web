@@ -9,11 +9,11 @@ import {
   playMedia,
 } from "@/lib/core";
 import { useStableCallback } from "@/shared/hooks/base";
-import useFullscreen from "../hooks/useFullScreen";
-import useUnsupportedMedia from "../hooks/useSupportCheck";
+import useFullscreen from "../../private/hooks/useFullScreen";
+import useUnsupportedMedia from "../../private/hooks/useSupportCheck";
 import useControlsSignal from "../../private/hooks/useControlsSignal";
 import stopEvent from "@/lib/utils/stopEvent";
-import useAmbilight from "../hooks/useAmbilight";
+import useAmbilight from "../../private/hooks/useAmbilight";
 import {
   ObserveFn,
   useIsIntersecting,
@@ -23,7 +23,7 @@ import VideoPlayerControls from "../../private/ui/VideoPlayerControls";
 import "./VideoPlayer.scss";
 import { ApiDimensions } from "@/@types/api/types/messages";
 import useAppLayout from "@/lib/hooks/ui/useAppLayout";
-import usePictureInPicture from "../hooks/usePictureInPicture";
+import usePictureInPicture from "../../private/hooks/usePictureInPicture";
 import buildClassName from "@/shared/lib/buildClassName";
 import useStateSignal from "@/lib/hooks/signals/useStateSignal";
 import { DEBUG } from "@/lib/config/dev";
@@ -77,7 +77,7 @@ const MAX_LOOP_DURATION = 30;
 const REWIND_STEP = 5;
 
 const VideoPlayer: React.FC<OwnProps> = ({
-  mediaUrl = "/video_test/Интерстеллар.mp4",
+  mediaUrl = "/video_test/got.mp4",
   playbackSpeed = 1,
   isAdsMessage,
   disableClickActions,
@@ -95,7 +95,7 @@ const VideoPlayer: React.FC<OwnProps> = ({
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
 
-  const [isAmbient, markAmbientOn, markAmbientOff] = useBooleanState();
+  const [isAmbient, markAmbientOn, markAmbientOff] = useBooleanState(true);
 
   const [waitingSignal, setWaiting] = useStateSignal(false);
   const [controlsSignal, toggleControls, lockControls] = useControlsSignal();
@@ -139,7 +139,7 @@ const VideoPlayer: React.FC<OwnProps> = ({
   });
 
   const isUnsupported = useUnsupportedMedia(videoRef);
-  const isAmbilightDisabled = isFullscreen;
+  const isAmbilightDisabled = isAmbient && isFullscreen;
 
   useAmbilight(videoRef, canvasRef, isAmbilightDisabled);
 

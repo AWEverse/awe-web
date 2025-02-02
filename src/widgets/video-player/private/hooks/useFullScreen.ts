@@ -113,9 +113,9 @@ export default function useFullscreen(
     }
   }, [isFullscreen]);
 
-  const toggleFullscreen = async () => {
+  const toggleFullscreen = useCallback(async () => {
     await (isFullscreen ? exitFullscreen?.() : setFullscreen?.());
-  };
+  }, [isFullscreen, exitFullscreen, setFullscreen]);
 
   return isSupported ? [isFullscreen, toggleFullscreen] : [false];
 }
