@@ -6,11 +6,8 @@ class CircularBuffer<T> {
   private full = false;
 
   constructor(capacity: number) {
-    if (capacity < 2) {
-      throw new Error(
-        "Capacity must be at least 2 to store at least one item.",
-      );
-    }
+    this.checkCapacity();
+
     this.capacity = capacity;
     this.buffer = new Array<T | undefined>(capacity);
   }
@@ -49,6 +46,7 @@ class CircularBuffer<T> {
     while (index !== this.writeIndex || this.full) {
       items.push(this.buffer[index] as T);
       index = (index + 1) % this.capacity;
+
       if (index === this.writeIndex) {
         break;
       }
@@ -82,6 +80,14 @@ class CircularBuffer<T> {
     this.readIndex = 0;
     this.full = false;
     this.buffer.fill(undefined);
+  }
+
+  private checkCapacity(): void {
+    if (this.capacity < 2) {
+      throw new Error(
+        "Capacity must be at least 2 to store at least one item.",
+      );
+    }
   }
 }
 

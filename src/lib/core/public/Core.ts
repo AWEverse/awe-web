@@ -1,4 +1,4 @@
-// export * from './algo';
+export * from "./algo";
 export * from "./animation";
 export * from "./data-structures";
 export * from "./decorators";
