@@ -1,4 +1,10 @@
-import { IS_TOUCH_ENV, IS_PWA, IS_IOS, EMouseButton } from "@/lib/core";
+import {
+  IS_TOUCH_ENV,
+  IS_PWA,
+  IS_IOS,
+  EMouseButton,
+  IVector2,
+} from "@/lib/core";
 import { ReadonlySignal } from "@/lib/core/public/signals";
 import { requestMutation } from "@/lib/modules/fastdom/fastdom";
 import {
@@ -18,11 +24,9 @@ function stopEvent(e: Event) {
   e.stopPropagation();
 }
 
-type IAnchorPosition = { x: number; y: number };
-
 type ContextMenuState = {
   isOpen: boolean;
-  anchor: IAnchorPosition | undefined;
+  anchor: IVector2 | undefined;
   target: HTMLElement | undefined;
 };
 

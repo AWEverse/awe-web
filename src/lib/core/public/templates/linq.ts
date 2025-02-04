@@ -1,44 +1,55 @@
-Array.prototype.select = function <T, S>(
-  this: T[],
-  selector: (item: T) => S,
-): S[] {
-  if (typeof selector !== "function")
-    throw new TypeError("Selector must be a function");
+if (!Array.prototype.select) {
+  Object.defineProperty(Array.prototype, "select", {
+    value: function <T, S>(
+      this: T[],
+      selector: (item: T, index: number, array: T[]) => S,
+    ): S[] {
+      if (typeof selector !== "function")
+        throw new TypeError("Selector must be a function");
 
-  const length = this.length;
-  const result = new Array<S>(length);
+      const length = this.length;
+      const result = new Array<S>(length);
+      let count = 0;
 
-  for (let i = 0; i < length; i++) {
-    if (i in this) {
-      // Handle sparse arrays
-      result[i] = selector(this[i]);
-    }
-  }
+      for (let i = 0; i < length; i++) {
+        if (i in this) {
+          result[count++] = selector(this[i], i, this);
+        }
+      }
 
-  return result;
-};
+      result.length = count;
+      return result;
+    },
+    writable: true,
+    configurable: true,
+    enumerable: false,
+  });
+}
 
-Array.prototype.where = function <T>(
-  this: T[],
-  predicate: (item: T) => boolean,
-): T[] {
-  if (typeof predicate !== "function")
-    throw new TypeError("Predicate must be a function");
+if (!Array.prototype.where) {
+  Object.defineProperty(Array.prototype, "where", {
+    value: function <T>(
+      this: T[],
+      predicate: (item: T, index: number, array: T[]) => boolean,
+    ): T[] {
+      if (typeof predicate !== "function")
+        throw new TypeError("Predicate must be a function");
 
-  const length = this.length;
-  const result: T[] = [];
-  result.length = length; // Pre-allocate memory
-
-  let count = 0;
-  for (let i = 0; i < length; i++) {
-    if (i in this && predicate(this[i])) {
-      result[count++] = this[i];
-    }
-  }
-
-  result.length = count; // Truncate to actual size
-  return result;
-};
+      const length = this.length;
+      const result: T[] = [];
+      // Loop over the array and push items that satisfy the predicate
+      for (let i = 0; i < length; i++) {
+        if (i in this && predicate(this[i], i, this)) {
+          result.push(this[i]);
+        }
+      }
+      return result;
+    },
+    writable: true,
+    configurable: true,
+    enumerable: false,
+  });
+}
 
 Array.prototype.aggregate = function <T, U>(
   this: T[],

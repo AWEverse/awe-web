@@ -92,7 +92,7 @@ const FloatingActionButton: React.FC<OwnProps> = ({
             case "==":
               return <MenuSeparator key={key} size="thicker" />;
             default:
-              return <ActionButton key={key} {...action} />;
+              return <ActionButton key={key} {...action} fullWidth />;
           }
         })}
       </DropdownMenu>

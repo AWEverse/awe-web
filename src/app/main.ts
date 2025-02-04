@@ -9,6 +9,7 @@ import { STRICTERDOM_ENABLED } from "@/lib/config/dev";
 import "@/styles/global.scss";
 import "@/styles/index.css";
 import "@/styles/reboot.css";
+import "@/styles/output.css";
 
 // if (STRICTERDOM_ENABLED) {
 //   enableStrict();

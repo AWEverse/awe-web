@@ -6,9 +6,9 @@ import {
   CSSProperties,
   useMemo,
   memo,
+  useEffect,
 } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { IVector2D } from "@/lib/utils/data-structures/Vector2d";
 import buildClassName from "@/shared/lib/buildClassName";
 import stopEvent from "@/lib/utils/stopEvent";
 import useMenuPosition from "@/entities/context-menu/public/hooks/useMenuPosition";
@@ -18,9 +18,8 @@ import { useBoundaryCheck } from "@/shared/hooks/mouse/useBoundaryCheck";
 
 import "./ContextMenu.scss";
 import { useEffectWithPreviousDeps } from "@/shared/hooks/effects/useEffectWithPreviousDependencies";
-import { dispatchHeavyAnimation } from "@/lib/core";
+import { dispatchHeavyAnimation, IVector2 } from "@/lib/core";
 import useBodyClass from "@/shared/hooks/DOM/useBodyClass";
-import useHeavyAnimationCheck from "@/lib/hooks/sensors/useHeavyAnimationCheck";
 
 const ANIMATION_DURATION = 0.125;
 
@@ -33,7 +32,7 @@ const ANIMATION_PROPS = {
 
 interface ContextMenuProps {
   isOpen: boolean;
-  position: IVector2D;
+  position: IVector2;
   children: ReactNode;
   className?: string;
   menuClassName?: string;
@@ -65,7 +64,6 @@ const ContextMenu: FC<ContextMenuProps> = ({
 
   const handleClose = useCallback(() => {
     onClose();
-    document.removeEventListener("scroll", handleClose, true);
   }, [onClose]);
 
   const positionConfig = useMemo(
@@ -108,6 +106,18 @@ const ContextMenu: FC<ContextMenuProps> = ({
     },
     [isOpen],
   );
+
+  useEffect(() => {
+    if (isOpen) {
+      document.addEventListener("scroll", handleClose, true);
+    } else {
+      document.removeEventListener("scroll", handleClose, true);
+    }
+
+    return () => {
+      document.removeEventListener("scroll", handleClose, true);
+    };
+  }, [isOpen, handleClose]);
 
   const menuEl = useMemo(
     () => (

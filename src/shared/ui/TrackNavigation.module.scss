@@ -2,7 +2,7 @@
   position: relative;
   height: var(--mask-height);
   margin: 0.125rem 0;
-  width: 0.15rem;
+  width: 100%;
   min-width: 0.125rem;
   overflow-y: hidden;
 }
@@ -21,7 +21,7 @@
 
 .trackNavigationBorderWrapper1 {
   height: 100%;
-  width: 0.15rem;
+  width: 100%;
   border-radius: 0.0625rem;
   background: var(--awe-palette-primary-main);
 }
@@ -38,7 +38,6 @@
   left: 0;
   right: 0;
   top: 0;
-  width: 0.15rem;
   background: var(--awe-palette-primary-main);
   border-radius: 0.0625rem;
   will-change: transform;

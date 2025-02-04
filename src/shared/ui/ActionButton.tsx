@@ -32,7 +32,6 @@ type ButtonVariant = "contained" | "outlined" | "text" | "icon";
 interface OwnProps {
   ref?: React.RefObject<HTMLElement | null>;
   ["as"]?: ElementType;
-  onClick?: (event: MouseEvent<HTMLButtonElement>) => void;
   title?: string;
   active?: boolean;
   disabled?: boolean;
@@ -55,6 +54,9 @@ interface OwnProps {
   "aria-label"?: string;
   "aria-labelledby"?: string;
   "aria-describedby"?: string;
+  onClick?: (e: React.MouseEvent<HTMLElement>) => void;
+  onMouseEnter?: (e: React.MouseEvent<HTMLElement>) => void;
+  onMouseLeave?: (e: React.MouseEvent<HTMLElement>) => void;
 }
 
 const ActionButton: FC<OwnProps> = ({
@@ -72,7 +74,7 @@ const ActionButton: FC<OwnProps> = ({
   size = "md",
   color = "primary",
   loading = false,
-  fullWidth,
+  fullWidth = true,
   children,
   startDecorator,
   endDecorator,
@@ -158,3 +160,4 @@ export default memo(ActionButton, (prevProps, nextProps) => {
       prevProps[key as keyof OwnProps] === nextProps[key as keyof OwnProps],
   );
 });
+export { type OwnProps as ActionButtonProps };

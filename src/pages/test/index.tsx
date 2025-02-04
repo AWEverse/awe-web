@@ -7,11 +7,27 @@ import useMenuPosition, {
 import { useFastClick } from "@/shared/hooks/mouse/useFastClick";
 import { useState, useRef } from "react";
 import Video from "@/shared/ui/Video";
+import SlideButton from "@/entities/SlideButton";
 
 const TestPage: React.FC = () => {
   const containerRef = useRef<HTMLDivElement>(null);
 
-  return <Video src="https://www.w3schools.com/html/mov_bbb.mp4" canPlay />;
+  return (
+    <SlideButton>
+      <p>1 20 0210rfwf</p>
+      <p>2 20 0210rfwвфівфівf</p>
+      <p>3 20 0210rfwf</p>
+      <p>4 20 0210rfwf</p>
+      <p>5 20 0210rfwf</p>
+      <p>6 20 0210rfwвфівфівf</p>
+      <p>7 20 0210rfwf</p>
+      <p>8 20 0210rfwf</p>
+      <p>9 20 0210rfwf</p>
+      <p>10 20 0210rfwвфівфівf</p>
+      <p>11 20 0210rfwf</p>
+      <p>12 20 0210rfwf</p>
+    </SlideButton>
+  );
 };
 
 export default TestPage;

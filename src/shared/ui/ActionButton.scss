@@ -2,7 +2,7 @@
 
 .button {
   // Transition
-  --btn-transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  --btn-transition: background-color 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   
   // Typography
   --btn-font-family: system-ui, -apple-system, sans-serif;
@@ -41,26 +41,20 @@
   // Visual
   border: var(--btn-border-width) solid transparent;
   border-radius: var(--btn-border-radius);
-  transition: var(--btn-transition);
   
   // Spacing
   gap: var(--btn-icon-spacing);
   outline: none;
   cursor: pointer;
-  
+      transition: var(--btn-transition);
+
   // Reset
   appearance: none;
   -webkit-tap-highlight-color: transparent;
   
-  &:hover:not(:disabled) {
+  &:hover:not(:disabled) {  
     background-color: rgba(var(--color-primary) / 0.7);
-    transform: translateY(-1px);
   }
-  
-  &:active:not(:disabled) {
-    transform: translateY(0);
-  }
-
   // Variants
   &--variant {
      &--contained {

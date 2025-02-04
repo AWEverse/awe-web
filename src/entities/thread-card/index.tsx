@@ -3,6 +3,7 @@ import { Avatar, Typography } from "@mui/material";
 import { VerticalDivider } from "@/shared/ui/Divider";
 import Linkify from "@/shared/ui/Linkify";
 import s from "./index.module.scss";
+import { ROUTES } from "@/shared/config/routes/constants";
 
 interface ThreadCardProps {
   userAvatarSrc: string;
@@ -32,7 +33,7 @@ const ThreadCard: FC<ThreadCardProps> = ({
       <a
         className={s.link}
         draggable={false}
-        href="/thread/1"
+        href={ROUTES.DIALOGS.BASE}
         title={`Go to ${userName}'s thread`}
       ></a>
       <div className={s.content}>
@@ -80,11 +81,7 @@ const ThreadCard: FC<ThreadCardProps> = ({
               <div className={s.actionDecorator}>{actionDecorator}</div>
             )}
 
-            {metaText && (
-              <Typography className={s.metaContent}>
-                <Linkify text={metaText} />
-              </Typography>
-            )}
+            {metaText && <Linkify markdown={metaText} />}
           </section>
         </div>
       </div>
