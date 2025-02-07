@@ -1,10 +1,12 @@
-import { FC, memo } from 'react';
-import ChatLayout from './layout/ChatLayout';
-import MiddleHeader from './widgets/MiddleHeader';
-import MessagesBackdrop from './placeholder/MessagesBackdrop';
+import { FC, memo } from "react";
+import ChatLayout from "./layout/ChatLayout";
+import MiddleHeader from "./widgets/MiddleHeader";
+import MessagesBackdrop from "./placeholder/MessagesBackdrop";
 
-import EmptyChat from './placeholder/EmptyChat';
-import s from './MiddleColumn.module.scss';
+import EmptyChat from "./placeholder/EmptyChat";
+import s from "./MiddleColumn.module.scss";
+import MiddleMessageList from "./widgets/MiddleMessageList/MiddleMessageList";
+import MiddleInput from "./widgets/MiddleInput";
 
 interface OwnProps {}
 
@@ -15,9 +17,9 @@ const MiddleColumn: FC<OwnProps & StateProps> = () => {
     <ChatLayout.MainContainer>
       <MiddleHeader />
       <MessagesBackdrop />
-      <EmptyChat className={s.EmptyChats} />
-      {/* <MiddleMessageList />
-      <MiddleInput /> */}
+      {/* <EmptyChat className={s.EmptyChats} /> */}
+      <MiddleMessageList />
+      <MiddleInput />
     </ChatLayout.MainContainer>
   );
 };

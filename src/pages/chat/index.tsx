@@ -19,8 +19,6 @@ const ChatPage: FC = () => {
         <RightColumn />
       </ChatLayout.Main>
 
-      <ClickSpark />
-
       <ChatLayout.Footer>
         <Box
           sx={{
