@@ -102,6 +102,7 @@ function calculateAdjustedBoundaries(
     adjustedX += paddingX;
   } else {
     const totalWidthLeft = rect.width + paddingX;
+
     if (totalWidthLeft <= spaceLeft) {
       adjustedX -= totalWidthLeft;
     } else {

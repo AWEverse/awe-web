@@ -20,6 +20,7 @@ import "./ContextMenu.scss";
 import { useEffectWithPreviousDeps } from "@/shared/hooks/effects/useEffectWithPreviousDependencies";
 import { dispatchHeavyAnimation, IVector2 } from "@/lib/core";
 import useBodyClass from "@/shared/hooks/DOM/useBodyClass";
+import useKeyboardListeners from "@/lib/hooks/history/events/useKeyboardListeners";
 
 const ANIMATION_DURATION = 0.125;
 
@@ -30,7 +31,7 @@ const ANIMATION_PROPS = {
   transition: { duration: ANIMATION_DURATION },
 };
 
-interface ContextMenuProps {
+interface OwnProps {
   isOpen: boolean;
   position: IVector2;
   children: ReactNode;
@@ -45,7 +46,7 @@ interface ContextMenuProps {
   onCloseAnimationEnd?: () => void;
 }
 
-const ContextMenu: FC<ContextMenuProps> = ({
+const ContextMenu: FC<OwnProps> = ({
   isOpen,
   position,
   children,
@@ -66,28 +67,25 @@ const ContextMenu: FC<ContextMenuProps> = ({
     onClose();
   }, [onClose]);
 
-  const positionConfig = useMemo(
-    () => ({
-      anchor: position,
-      getTriggerElement: () => triggerRef?.current || document.body,
-      getRootElement: () => containerRef.current,
-      getMenuElement: () => bubbleRef.current,
-      getLayout: () => ({
-        isDense,
-        shouldAvoidNegativePosition: true,
-        withPortal: true,
-        menuElMinWidth: noCompact ? 220 : 120,
-      }),
-      withMaxHeight: true,
-    }),
-    [position, isDense, noCompact, triggerRef],
-  );
-
-  useClickAway(containerRef, onClose);
+  useClickAway(containerRef, onClose, !isOpen);
 
   useBodyClass("has-open-dialog", isOpen);
 
-  useMenuPosition(isOpen, containerRef, bubbleRef, positionConfig);
+  useKeyboardListeners({ onEsc: onClose });
+
+  useMenuPosition(isOpen, containerRef, bubbleRef, {
+    anchor: position,
+    getTriggerElement: () => triggerRef?.current || document.body,
+    getRootElement: () => containerRef.current,
+    getMenuElement: () => bubbleRef.current,
+    getLayout: () => ({
+      isDense,
+      shouldAvoidNegativePosition: true,
+      withPortal: true,
+      menuElMinWidth: noCompact ? 220 : 120,
+    }),
+    withMaxHeight: true,
+  });
 
   useBoundaryCheck({
     elementRef: containerRef,
@@ -149,3 +147,4 @@ const ContextMenu: FC<ContextMenuProps> = ({
 };
 
 export default memo(ContextMenu);
+export { type OwnProps as ContextMenuProps };

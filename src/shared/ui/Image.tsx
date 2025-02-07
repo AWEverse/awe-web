@@ -1,4 +1,4 @@
-import { FC, memo, useCallback, useRef, useState } from "react";
+import { FC, memo, useCallback, useEffect, useRef, useState } from "react";
 import buildClassName from "@/shared/lib/buildClassName";
 import {
   ObserveFn,
@@ -18,33 +18,28 @@ interface OwnProps {
   sizes?: string;
   onError?: () => void;
   observeIntersectionForLoading?: ObserveFn;
-  width: number; // Added for better layout control
-  height: number; // Added for better layout control
+  width: number; // For layout control
+  height: number; // For layout control
 }
 
 /**
  * Image component with lazy loading, fallback support, and optional caption.
  *
- * Props:
+ * ### Props
  *
- * | **Property**               | **Example**                                      | **Type**                          | **Status**        |
- * |----------------------------|-------------------------------------------------|-----------------------------------|-------------------|
- * | `src`                       | `src="/profile.png"`                             | String                            | Required          |
- * | `width`                     | `width={500}`                                   | Integer (px)                      | Required          |
- * | `height`                    | `height={500}`                                  | Integer (px)                      | Required          |
- * | `alt`                       | `alt="Picture of the author"`                   | String                            | Required          |
- * | `loader`                    | `loader={imageLoader}`                          | Function                          | -                 |
- * | `fill`                      | `fill={true}`                                   | Boolean                           | -                 |
- * | `sizes`                     | `sizes="(max-width: 768px) 100vw, 33vw"`        | String                            | -                 |
- * | `quality`                   | `quality={80}`                                  | Integer (1-100)                   | -                 |
- * | `priority`                  | `priority={true}`                               | Boolean                           | -                 |
- * | `placeholder`               | `placeholder="blur"`                            | String                            | -                 |
- * | `style`                     | `style={{objectFit: "contain"}}`                | Object                            | -                 |
- * | `onLoad`                    | `onLoad={event => done())}`                     | Function                          | -                 |
- * | `onError`                   | `onError={event => fail()}`                     | Function                          | -                 |
- * | `loading`                   | `loading="lazy"`                                | String                            | -                 |
- * | `blurDataURL`               | `blurDataURL="data:image/jpeg..."`              | String                            | -                 |
- * | `overrideSrc`               | `overrideSrc="/seo.png"`                        | String                            | -                 |
+ * | Property                        | Example                                        | Type               | Status   |
+ * |---------------------------------|------------------------------------------------|--------------------|----------|
+ * | `src`                           | `src="/profile.png"`                           | String             | Required |
+ * | `width`                         | `width={500}`                                  | Integer (px)       | Required |
+ * | `height`                        | `height={500}`                                 | Integer (px)       | Required |
+ * | `alt`                           | `alt="Picture of the author"`                  | String             | Required |
+ * | `fallbackSrc`                   | `fallbackSrc="https://via.placeholder.com/150"`| String             | Optional |
+ * | `loading`                       | `loading="lazy"`                               | "lazy" or "eager"   | Optional |
+ * | `decoding`                      | `decoding="async"`                             | "async", "auto", "sync" | Optional |
+ * | `srcSet`                        | `srcSet="..."`                                 | String             | Optional |
+ * | `sizes`                         | `sizes="(max-width: 768px) 100vw, 33vw"`         | String             | Optional |
+ * | `onError`                       | `onError={() => {}}`                           | Function           | Optional |
+ * | `observeIntersectionForLoading` | `observeIntersectionForLoading={...}`         | Function           | Optional |
  */
 const Image: FC<OwnProps> = ({
   src,
@@ -60,9 +55,18 @@ const Image: FC<OwnProps> = ({
   onError,
   observeIntersectionForLoading,
 }) => {
-  const [imgSrc, setImgSrc] = useState<string>(src);
+  const [imgSrc, setImgSrc] = useState<string>("");
   const [isLoaded, setIsLoaded] = useState<boolean>(false);
   const imageRef = useRef<HTMLImageElement | null>(null);
+
+  useEffect(() => {
+    setIsLoaded(false);
+    if (!observeIntersectionForLoading) {
+      setImgSrc(src);
+    } else {
+      setImgSrc("");
+    }
+  }, [src, observeIntersectionForLoading]);
 
   const handleError = useCallback(() => {
     setImgSrc(fallbackSrc);
@@ -73,11 +77,16 @@ const Image: FC<OwnProps> = ({
     setIsLoaded(true);
   });
 
-  useOnIntersect(imageRef, observeIntersectionForLoading, (entry) => {
-    if (entry.isIntersecting) {
-      setImgSrc(src);
-    }
-  });
+  const onIntersect = useCallback(
+    (entry: IntersectionObserverEntry) => {
+      if (entry.isIntersecting) {
+        setImgSrc(src);
+      }
+    },
+    [src],
+  );
+
+  useOnIntersect(imageRef, observeIntersectionForLoading, onIntersect);
 
   return (
     <img
@@ -90,7 +99,10 @@ const Image: FC<OwnProps> = ({
       sizes={sizes}
       onError={handleError}
       onLoad={handleImageLoad}
-      style={isLoaded ? {} : { opacity: 0 }}
+      style={{
+        opacity: isLoaded ? 1 : 0,
+        transition: "opacity 0.3s ease-in-out",
+      }}
       loading={loading === "lazy" ? "lazy" : "eager"}
       width={width}
       height={height}

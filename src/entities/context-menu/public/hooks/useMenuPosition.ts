@@ -87,6 +87,8 @@ export default function useMenuPosition(
       const dynamicStyles = processDynamically(
         currentOptions as DynamicPositionOptions,
       );
+
+      // mutation phrase
       return () => {
         if (dynamicStyles) {
           applyStaticOptions(containerRef, bubbleRef, dynamicStyles);
@@ -223,7 +225,9 @@ function processDynamically(options: DynamicPositionOptions) {
   const rootEl = getRootElement();
   const layout = getLayout?.() || {};
 
-  if (!triggerEl || !menuEl || !rootEl) return null;
+  if (!triggerEl || !menuEl || !rootEl) {
+    return null;
+  }
 
   const measurements = getLayoutMeasurements(
     rootEl,
@@ -233,11 +237,13 @@ function processDynamically(options: DynamicPositionOptions) {
   );
 
   const basePosition = calculatePosition(anchor, measurements, layout);
+
   const constrainedPosition = applyPositionConstraints(
     basePosition,
     measurements,
     layout,
   );
+
   const finalPosition = calculateFinalPosition(
     constrainedPosition,
     measurements,
@@ -248,10 +254,12 @@ function processDynamically(options: DynamicPositionOptions) {
     ? `max-height: ${measurements.viewport.height - finalPosition.top - MENU_POSITION_BOTTOM_MARGIN}px;`
     : "";
 
+  const styles = `left: ${finalPosition.left}px; top: ${finalPosition.top}px;`;
+
   return {
     positionX: constrainedPosition.positionX,
     positionY: constrainedPosition.positionY,
-    style: `left: ${finalPosition.left}px; top: ${finalPosition.top}px;`,
+    style: styles,
     heightStyle: maxHeightStyle,
     transformOriginX: finalPosition.transformOriginX,
     transformOriginY: finalPosition.transformOriginY,

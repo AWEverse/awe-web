@@ -1,4 +1,4 @@
-import React, { lazy, memo, useEffect, useRef } from "react";
+import React, { lazy, memo, useCallback, useEffect, useRef } from "react";
 import {
   clamp,
   clamp01,
@@ -38,13 +38,22 @@ import { noop } from "@/lib/utils/listener";
 import { useTimeLine } from "../../private/hooks/useTimeLine";
 import { useTouchControls } from "../../private/hooks/useTouchControls";
 import {
+  ArrowCircleLeft,
+  ArrowLeftRounded,
+  ArrowRightRounded,
+  AttractionsRounded,
   CloseRounded,
+  ControlPointDuplicateSharp,
+  LibraryAddRounded,
   LinkRounded,
   LoopRounded,
   RepeatOutlined,
 } from "@mui/icons-material";
 import { IconButton } from "@mui/material";
 import ActionButton from "@/shared/ui/ActionButton";
+import branch from "@/lib/core/public/misc/Branch";
+import MenuSeparator from "@/shared/ui/MenuSeparator";
+import VideoPlayerContextMenu from "../../private/ui/VideoPlayerContextMenu";
 
 const TopPannel = lazy(() => import("../../private/ui/mobile/TopPannel"));
 
@@ -107,13 +116,8 @@ const VideoPlayer: React.FC<OwnProps> = ({
 
   const { isReady, bufferedRanges, handlersBuffering } = useVideoBuffering();
 
-  const {
-    currentTime,
-    duration,
-    handleSeek,
-    handleTimeUpdate,
-    setCurrentTime,
-  } = useTimeLine(videoRef);
+  const { currentTime, duration, handleSeek, handleTimeUpdate } =
+    useTimeLine(videoRef);
 
   const isLooped = isGif || duration <= MAX_LOOP_DURATION;
 
@@ -142,6 +146,10 @@ const VideoPlayer: React.FC<OwnProps> = ({
   const isAmbilightDisabled = isAmbient && isFullscreen;
 
   useAmbilight(videoRef, canvasRef, isAmbilightDisabled);
+
+  const toggleAmbientLight = useStableCallback(() => {
+    !isAmbient ? markAmbientOn() : markAmbientOff();
+  });
 
   const handleEnded = useStableCallback(() => {
     if (!isLooped && isPlaying) handlePlay();
@@ -326,6 +334,7 @@ const VideoPlayer: React.FC<OwnProps> = ({
           onSeek={handleSeek}
           onSeekStart={handleSeekStart}
           onSeekEnd={handleSeekEnd}
+          onAmbientModeClick={toggleAmbientLight}
         />
 
         <AmbientLight canvasRef={canvasRef} disabled={isAmbilightDisabled} />
@@ -337,24 +346,13 @@ const VideoPlayer: React.FC<OwnProps> = ({
         />
       </div>
 
-      <ContextMenu
+      <VideoPlayerContextMenu
         isOpen={isContextMenuOpen}
         position={contextMenuAnchor!}
         onClose={handleContextMenuClose}
         withPortal
         menuClassName="p-2"
-      >
-        <ActionButton size="sm" variant="contained" fullWidth>
-          <LoopRounded /> <span>Loop</span>
-        </ActionButton>
-        <ActionButton size="sm" variant="contained" fullWidth>
-          <RepeatOutlined />
-          <span>Repeat</span>
-        </ActionButton>
-        <ActionButton size="sm" variant="contained" fullWidth>
-          <LinkRounded /> <span>Copy video url</span>
-        </ActionButton>
-      </ContextMenu>
+      />
     </>
   );
 };

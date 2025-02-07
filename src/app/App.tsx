@@ -35,7 +35,6 @@ const App: FC<StateProps> = ({ themeKey = "dark" }) => {
             disableTransitionOnChange
           >
             <CssBaseline />
-
             <BrowserRouter>
               <AWERoutesBrowserRouter />
             </BrowserRouter>

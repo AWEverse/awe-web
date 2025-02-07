@@ -27,7 +27,7 @@ interface Response {
 }
 
 interface useIntersectionObserverProps {
-  rootRef: RefObject<HTMLDivElement>;
+  rootRef: RefObject<HTMLElement>;
   throttleMs?: number;
   throttleScheduler?: Scheduler;
   debounceMs?: number;

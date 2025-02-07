@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import {
   MOBILE_SCREEN_MAX_WIDTH,
   MOBILE_SCREEN_LANDSCAPE_MAX_WIDTH,
@@ -6,7 +6,6 @@ import {
   MIN_SCREEN_WIDTH_FOR_STATIC_LEFT_COLUMN,
 } from "../../config/app";
 import { debounce, IS_IOS } from "@/lib/core";
-import { createCallbackManager } from "../../utils/callbacks";
 
 enum EMediaQueryKey {
   Mobile = "mobile",
@@ -23,94 +22,133 @@ type LayoutState = {
   isTouchScreen: boolean;
 };
 
-const mediaQueryCache = new Map<EMediaQueryKey, MediaQueryList>();
-const callbacks = createCallbackManager();
-const DEBOUNCE_MS = 100;
-
 const QUERIES = {
-  [EMediaQueryKey.Mobile]: `(max-width: ${MOBILE_SCREEN_MAX_WIDTH}px), \
-  (max-width: ${MOBILE_SCREEN_LANDSCAPE_MAX_WIDTH}px and max-height: ${MOBILE_SCREEN_LANDSCAPE_MAX_HEIGHT}px)`,
+  [EMediaQueryKey.Mobile]: `(max-width: ${MOBILE_SCREEN_MAX_WIDTH}px), (max-width: ${MOBILE_SCREEN_LANDSCAPE_MAX_WIDTH}px) and (max-height: ${MOBILE_SCREEN_LANDSCAPE_MAX_HEIGHT}px)`,
   [EMediaQueryKey.Tablet]: `(max-width: ${MIN_SCREEN_WIDTH_FOR_STATIC_LEFT_COLUMN}px)`,
   [EMediaQueryKey.Landscape]: IS_IOS
     ? "(orientation: landscape)"
-    : "screen and (min-device-aspect-ratio: 1/1) and (orientation: landscape)",
+    : "(orientation: landscape) and (min-device-aspect-ratio: 1/1)",
   [EMediaQueryKey.Touch]: "(pointer: coarse)",
 };
 
-let currentState: LayoutState = {
-  isMobile: false,
-  isTablet: false,
-  isLandscape: false,
-  isDesktop: false,
-  isTouchScreen: false,
-};
+class LayoutManager {
+  static #instance: LayoutManager;
 
-function initializeMediaQueries() {
-  if (typeof window === "undefined") return;
-
-  Object.entries(QUERIES).forEach(([key, query]) => {
-    const cacheKey = key as EMediaQueryKey;
-    if (!mediaQueryCache.has(cacheKey)) {
-      const mq = window.matchMedia(query);
-      mediaQueryCache.set(cacheKey, mq);
-      mq.addEventListener("change", debouncedHandleMediaQueryChange);
-    }
-  });
-
-  updateLayoutState();
-}
-
-const debouncedHandleMediaQueryChange = debounce(() => {
-  updateLayoutState();
-  callbacks.runCallbacks();
-}, DEBOUNCE_MS);
-
-function updateLayoutState() {
-  if (typeof window === "undefined") return;
-
-  const prevState = { ...currentState };
-
-  currentState = {
-    isMobile: mediaQueryCache.get(EMediaQueryKey.Mobile)?.matches ?? false,
-    isTablet: mediaQueryCache.get(EMediaQueryKey.Tablet)?.matches ?? false,
-    isLandscape:
-      mediaQueryCache.get(EMediaQueryKey.Landscape)?.matches ?? false,
-    isTouchScreen: mediaQueryCache.get(EMediaQueryKey.Touch)?.matches ?? false,
-    get isDesktop() {
-      return !this.isMobile && !this.isTablet;
-    },
+  private mediaQueryCache: Map<EMediaQueryKey, MediaQueryList> = new Map();
+  private state: LayoutState = {
+    isMobile: false,
+    isTablet: false,
+    isLandscape: false,
+    isTouchScreen: false,
+    isDesktop: false,
   };
+  private subscribers: Set<() => void> = new Set();
+  private readonly DEBOUNCE_MS = 100;
+  private debouncedHandleMediaQueryChange: () => void;
 
-  if (JSON.stringify(prevState) !== JSON.stringify(currentState)) {
-    callbacks.runCallbacks();
+  private constructor() {
+    this.debouncedHandleMediaQueryChange = debounce(() => {
+      this.updateLayoutState();
+    }, this.DEBOUNCE_MS);
+
+    if (typeof window !== "undefined") {
+      this.initializeMediaQueries();
+    }
+  }
+
+  public static getInstance(): LayoutManager {
+    if (!LayoutManager.#instance) {
+      LayoutManager.#instance = new LayoutManager();
+    }
+    return LayoutManager.#instance;
+  }
+
+  private initializeMediaQueries() {
+    Object.entries(QUERIES).forEach(([key, query]) => {
+      const mq = window.matchMedia(query);
+      this.mediaQueryCache.set(key as EMediaQueryKey, mq);
+      mq.addEventListener("change", this.debouncedHandleMediaQueryChange);
+    });
+
+    this.updateLayoutState();
+  }
+
+  private updateLayoutState() {
+    if (typeof window === "undefined") return;
+
+    const newState: LayoutState = {
+      isMobile:
+        this.mediaQueryCache.get(EMediaQueryKey.Mobile)?.matches ?? false,
+      isTablet:
+        this.mediaQueryCache.get(EMediaQueryKey.Tablet)?.matches ?? false,
+      isLandscape:
+        this.mediaQueryCache.get(EMediaQueryKey.Landscape)?.matches ?? false,
+      isTouchScreen:
+        this.mediaQueryCache.get(EMediaQueryKey.Touch)?.matches ?? false,
+      isDesktop: false,
+    };
+
+    newState.isDesktop = !newState.isMobile && !newState.isTablet;
+
+    if (JSON.stringify(this.state) !== JSON.stringify(newState)) {
+      this.state = newState;
+      this.notifySubscribers();
+    }
+  }
+
+  private notifySubscribers() {
+    this.subscribers.forEach((callback) => callback());
+  }
+
+  public subscribe(callback: () => void): () => void {
+    this.subscribers.add(callback);
+
+    return () => {
+      this.subscribers.delete(callback);
+    };
+  }
+
+  public getState(): LayoutState {
+    return this.state;
   }
 }
 
-if (typeof window !== "undefined") {
-  initializeMediaQueries();
+export function getIsMobile(): boolean {
+  if (typeof window === "undefined") return false;
+  return LayoutManager.getInstance().getState().isMobile;
+}
+
+export function getIsTablet(): boolean {
+  if (typeof window === "undefined") return false;
+  return LayoutManager.getInstance().getState().isTablet;
+}
+
+export function getIsLandscape(): boolean {
+  if (typeof window === "undefined") return false;
+  return LayoutManager.getInstance().getState().isLandscape;
+}
+
+export function getIsDesktop(): boolean {
+  if (typeof window === "undefined") return false;
+  return LayoutManager.getInstance().getState().isDesktop;
+}
+
+export function getIsTouchScreen(): boolean {
+  if (typeof window === "undefined") return false;
+  return LayoutManager.getInstance().getState().isTouchScreen;
 }
 
 export default function useAppLayout(): LayoutState {
-  const [state, setState] = useState(currentState);
+  const layoutManager = LayoutManager.getInstance();
+  const [state, setState] = useState<LayoutState>(layoutManager.getState());
 
   useEffect(() => {
-    const callbackId = callbacks.addCallback(() => {
-      setState({ ...currentState });
+    const unsubscribe = layoutManager.subscribe(() => {
+      setState({ ...layoutManager.getState() });
     });
 
-    return () => {
-      callbacks.removeCallback(callbackId);
-    };
-  }, []);
+    return unsubscribe;
+  }, [layoutManager]);
 
-  return useMemo(() => state, [state]);
-}
-
-// Optional SSR-safe getters
-export function getIsMobile() {
-  return typeof window !== "undefined" ? currentState.isMobile : false;
-}
-
-export function getIsTablet() {
-  return typeof window !== "undefined" ? currentState.isTablet : false;
+  return state;
 }

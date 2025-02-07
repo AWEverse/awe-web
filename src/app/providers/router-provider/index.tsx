@@ -21,9 +21,6 @@ import RouteFallback from "./ui/RouteFallback";
 import HomePage from "@/pages/home/ui/HomePage";
 import LayoutOutlet from "@/widgets/layout-outlet";
 
-// Loading fallback component
-const LoadingFallback = () => <div>Loading...</div>;
-
 const { HOME, MAIN, USER_PROFILE, CHAT, DIALOGS, DISCUS, VIDEO } = ROUTES;
 
 interface RouteConfig {
@@ -32,12 +29,23 @@ interface RouteConfig {
   nestedRoutes?: RouteConfig[];
 }
 
-const renderRouteElements = (routes: RouteConfig[]): JSX.Element[] =>
-  routes.map(({ path, element }) => (
-    <Route key={path} element={element} path={path} />
+// A recursive function to render routes including any nested routes
+const renderRoutes = (routes: RouteConfig[]): JSX.Element[] =>
+  routes.map(({ path, element, nestedRoutes }) => (
+    <Route key={path} path={path} element={element}>
+      {nestedRoutes && renderRoutes(nestedRoutes)}
+    </Route>
   ));
 
-const HOME_ROUTES = [
+// Define global (non-nested) routes
+const globalRoutes: RouteConfig[] = [
+  { path: CHAT.BASE, element: <ChatPage /> },
+  { path: "test", element: <TestPage /> },
+  { path: "*", element: <NotFoundPage /> },
+];
+
+// Define routes nested under the LayoutOutlet (for HOME.BASE)
+const homeRoutes: RouteConfig[] = [
   { path: HOME.BASE, element: <HomePage /> },
   { path: MAIN, element: <ThreadPage /> },
   { path: USER_PROFILE.BASE, element: <ProfilePage /> },
@@ -58,30 +66,15 @@ const HOME_ROUTES = [
   { path: VIDEO.THREAD_ID, element: <SingleThread /> },
 ];
 
-const renderRoutes = () => (
-  <>
-    {renderRouteElements([
-      { path: CHAT.BASE, element: <ChatPage /> },
-      { path: "test", element: <TestPage /> },
-      { path: "*", element: <NotFoundPage /> },
-    ])}
-    <Route element={<LayoutOutlet />} path={HOME.BASE}>
-      {renderRouteElements(HOME_ROUTES)}
-      {HOME_ROUTES.filter((route) => route.nestedRoutes).map(
-        ({ path, element, nestedRoutes }) => (
-          <Route key={path} element={element} path={path}>
-            {nestedRoutes && renderRouteElements(nestedRoutes)}
-          </Route>
-        ),
-      )}
-    </Route>
-  </>
-);
-
 export const AWERoutesBrowserRouter = () => {
   return (
     <Suspense fallback={<RouteFallback />}>
-      <Routes>{renderRoutes()}</Routes>
+      <Routes>
+        {renderRoutes(globalRoutes)}
+        <Route element={<LayoutOutlet />} path={HOME.BASE}>
+          {renderRoutes(homeRoutes)}
+        </Route>
+      </Routes>
     </Suspense>
   );
 };

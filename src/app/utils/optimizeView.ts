@@ -1,6 +1,6 @@
-import { fastRaf, IS_IOS, median } from '@/lib/core';
-import { requestMutation } from '@/lib/modules/fastdom/fastdom';
-import { animate } from '@/lib/utils/animation/animate';
+import { fastRaf, IS_IOS, median } from "@/lib/core";
+import { requestMutation } from "@/lib/modules/fastdom/fastdom";
+import { animate } from "@/lib/utils/animation/animate";
 
 const TEST_INTERVAL = 5000; // 5 sec
 const FRAMES_TO_TEST = 10;
@@ -20,7 +20,7 @@ export function optimizeView() {
     interval = window.setInterval(testAndImprove, TEST_INTERVAL);
   }
 
-  window.addEventListener('focus', () => {
+  window.addEventListener("focus", () => {
     const now = Date.now();
     if (now - lastFocusAt < 100) return; // iOS triggers two `focus` events for some reason
     lastFocusAt = now;
@@ -29,7 +29,7 @@ export function optimizeView() {
     testAndImprove();
   });
 
-  window.addEventListener('blur', () => {
+  window.addEventListener("blur", () => {
     clearInterval(interval);
     interval = undefined;
   });
@@ -49,7 +49,7 @@ async function testAndImprove() {
 }
 
 function testFps() {
-  return new Promise<number>(resolve => {
+  return new Promise<number>((resolve) => {
     const frames: number[] = [];
     let lastFrameAt = performance.now();
 
@@ -72,8 +72,8 @@ function improveView() {
   if (isImproved) return; // Ensure this function runs only once
   isImproved = true;
 
-  const containerEl = document.createElement('div');
-  const boosterEl = document.createElement('div');
+  const containerEl = document.createElement("div");
+  const boosterEl = document.createElement("div");
 
   requestMutation(() => {
     // Apply styles once to reduce layout thrashing
@@ -93,18 +93,18 @@ function improveView() {
       transform: translateX(100%);
       transition: transform 100ms;
     `;
-    boosterEl.innerHTML = '&nbsp;';
+    boosterEl.innerHTML = "&nbsp;";
 
     containerEl.appendChild(boosterEl);
     document.body.appendChild(containerEl);
 
     requestAnimationFrame(() => {
-      boosterEl.addEventListener('transitionend', () => {
+      boosterEl.addEventListener("transitionend", () => {
         containerEl.remove();
       });
 
       requestAnimationFrame(() => {
-        boosterEl.style.transform = 'translateX(0)';
+        boosterEl.style.transform = "translateX(0)";
       });
     });
   });

@@ -1,11 +1,11 @@
-import { useRef } from 'react';
-import { useIsomorphicEffect } from '../effects/useIsomorphicEffect';
+import { useIsomorphicEffect } from "@/shared/hooks/effects/useIsomorphicEffect";
+import { useRef } from "react";
 
 function useDocumentTitle(title: string) {
   const prevTitle = useRef<string>(document.title);
 
   useIsomorphicEffect(() => {
-    if (typeof title === 'string' && title.trim().length > 0) {
+    if (typeof title === "string" && title.trim().length > 0) {
       const newTitle = title.trim();
 
       if (newTitle !== prevTitle.current) {
@@ -13,7 +13,7 @@ function useDocumentTitle(title: string) {
         prevTitle.current = newTitle;
       }
     } else {
-      prevTitle.current = '';
+      prevTitle.current = "";
     }
   }, [title]);
 }

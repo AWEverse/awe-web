@@ -70,6 +70,7 @@ type OwnProps = {
   onSeek: (position: number) => void;
   onSeekStart: () => void;
   onSeekEnd: () => void;
+  onAmbientModeClick: () => void;
 };
 
 const HIDE_CONTROLS_TIMEOUT_MS = 3000;
@@ -83,8 +84,6 @@ const TriggerButton: FC<TriggerProps> = ({ onTrigger }) => (
     <SettingsRounded className={s.icon} />
   </IconButton>
 );
-
-// ReadonlySignals only change values ​​in the root component in the input file. Revised the ability to switch to a read-only readonlysignal
 
 const VideoPlayerControls: FC<OwnProps> = ({
   isPlaying,
@@ -115,6 +114,7 @@ const VideoPlayerControls: FC<OwnProps> = ({
   onVolumeClick,
   onSeekStart,
   onSeekEnd,
+  onAmbientModeClick,
 }) => {
   const inputRef = useRef<HTMLInputElement>(null);
   const timeRef = useRef<HTMLTimeElement>(null);
@@ -276,6 +276,7 @@ const VideoPlayerControls: FC<OwnProps> = ({
             position="bottom-right"
             triggerButton={TriggerButton}
             onPlaybackSpeedClick={onPlaybackRateChange}
+            onAmbientModeClick={onAmbientModeClick}
           />
 
           {isPictureInPictureSupported && (

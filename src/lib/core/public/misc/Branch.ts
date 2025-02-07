@@ -1,22 +1,40 @@
-type BranchCases<
-  Key extends string,
-  Value extends string,
-  Callback extends NoneToAnyFunction,
-> = {
-  [K in Key]: Record<Value, Callback>;
+// Тип для вложенной конфигурации ветвления:
+// Каждая конфигурация — это объект с единственным ключом,
+// значение которого представляет словарь: ключи — строковые литералы,
+// а значения — либо функция, либо снова вложенная конфигурация.
+type BranchConfig = {
+  [key: string]: {
+    [value: string]: NoneToAnyFunction | BranchConfig;
+  };
 };
 
-const branch = <
-  K extends string,
-  V extends string,
-  C extends BranchCases<K, V, NoneToAnyFunction>,
->(
-  cases: C,
-) => {
-  const key = Object.keys(cases)[0] as K;
+// Рекурсивная функция branch: она принимает конфигурацию, проверяет,
+// что на данном уровне имеется ровно один ключ, и возвращает функцию,
+// которая принимает объект запроса. При этом, если найденный кейс — функция,
+// она вызывается; если объект — значит, это вложенное ветвление, и
+// функция вызывает себя рекурсивно.
+const branch = (cases: BranchConfig) => {
+  const keys = Object.keys(cases);
 
-  return (request: { [P in K]: V }): ReturnType<C[K][V]> =>
-    cases[key][request[key]]?.();
+  if (keys.length !== 1) {
+    throw new Error(
+      "A branching configuration must consist of a single key at the peer level",
+    );
+  }
+
+  const key = keys[0];
+
+  return (request: Record<string, string>): any => {
+    const value = request[key];
+    const chosen = cases[key][value];
+
+    if (!chosen)
+      throw new Error(`No handler for key "${key}" with value "${value}"`);
+
+    if (typeof chosen === "function") {
+      return chosen();
+    } else {
+      return branch(chosen)(request);
+    }
+  };
 };
-
-export default branch;
