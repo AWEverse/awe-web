@@ -20,11 +20,12 @@ const itemTransition = {
 };
 
 interface OwnProps {
-  containerRef: React.RefObject<HTMLDivElement>;
+  containerRef?: React.RefObject<HTMLDivElement>;
   currentColumn?: number;
   className?: string;
   children: React.ReactNode;
   onMouseOver?: () => void;
+  visible?: "all" | "count";
 }
 
 const Square: FC<OwnProps> = memo(
@@ -52,7 +53,6 @@ const Square: FC<OwnProps> = memo(
                 <motion.div
                   key={`square-item-${index}`}
                   layout
-                  layoutScroll
                   transition={springConfig}
                   initial={{ opacity: 0, scale: 0.9 }}
                   animate={{

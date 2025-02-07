@@ -1,66 +1,43 @@
-import { FC, JSX, memo } from 'react';
+import React, { FC, memo, useMemo } from "react";
+import { marked, MarkedOptions } from "marked";
+import DOMPurify from "dompurify";
 
-interface OwnLinkProps {
-  href?: string;
-  target?: string;
-  rel?: string;
-  children: React.ReactNode;
-  title?: string;
-  onClick?: () => void;
+export interface MarkdownRendererProps {
+  /** Markdown text to render */
+  markdown?: string;
+  /** Optional CSS class name */
   className?: string;
+  /** Optionally, you can pass marked options */
+  markedOptions?: MarkedOptions;
 }
 
-interface LinkifyProps {
-  text?: string | undefined;
-  renderLink?: FC<OwnLinkProps>;
-}
+/**
+ * MarkdownRenderer renders Markdown as sanitized HTML using marked and DOMPurify.
+ * It disables code highlighting by not setting a highlight option.
+ */
+const MarkdownRenderer: FC<MarkdownRendererProps> = ({
+  markdown = "",
+  className = "",
+  markedOptions = {},
+}) => {
+  const htmlContent = useMemo(() => {
+    const options: MarkedOptions = {
+      gfm: true,
+      breaks: true,
+      ...markedOptions,
+    };
 
-const LINK_REG = /\[([^\]]+)\]\((https?:\/\/[^\s]+)(?:\s+"([^"]+)")?\)|<((https?:\/\/[^\s]+))>/g;
+    marked.setOptions(options);
+    const rawHtml = marked.parse(markdown) as string;
+    return DOMPurify.sanitize(rawHtml);
+  }, [markdown, markedOptions]);
 
-const DefaultLink: FC<OwnLinkProps> = ({ children, ...props }) => <a {...props}>{children}</a>;
-
-const processText = (text: string | undefined, Link: FC<OwnLinkProps>) => {
-  if (!text) return [];
-
-  const parts: (string | JSX.Element)[] = [];
-  let lastIndex = 0;
-  let match: RegExpExecArray | null;
-
-  while ((match = LINK_REG.exec(text)) !== null) {
-    const [fullMatch, linkText, url, title] = match;
-    const matchStart = match.index;
-
-    if (lastIndex < matchStart) {
-      parts.push(text.slice(lastIndex, matchStart));
-    }
-
-    parts.push(
-      <Link
-        key={matchStart}
-        className="AnchorLink"
-        href={url || match[4]}
-        rel="noopener noreferrer"
-        target="_blank"
-        title={title || ''}
-      >
-        {linkText || match[4]}
-      </Link>,
-    );
-
-    lastIndex = matchStart + fullMatch.length;
-  }
-
-  if (lastIndex < text.length) {
-    parts.push(text.slice(lastIndex));
-  }
-
-  return parts;
+  return (
+    <div
+      className={className}
+      dangerouslySetInnerHTML={{ __html: htmlContent }}
+    />
+  );
 };
 
-const Linkify: FC<LinkifyProps> = props => {
-  const { text, renderLink = DefaultLink } = props;
-
-  return processText(text, renderLink);
-};
-
-export default memo(Linkify);
+export default memo(MarkdownRenderer);

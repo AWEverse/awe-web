@@ -1,53 +1,69 @@
 import { createCallbackManager } from "@/lib/utils/callbacks";
-import { useEffect } from "react";
 import { useStableCallback } from "@/shared/hooks/base";
+import { useEffect } from "react";
 
-const blurCallbacks = createCallbackManager();
-const focusCallbacks = createCallbackManager();
+const blurCallbacks = createCallbackManager<NoneToVoidFunction>();
+const focusCallbacks = createCallbackManager<NoneToVoidFunction>();
 
-let isFocused = document.hasFocus();
+let isFocused = typeof document !== "undefined" && document.hasFocus();
 
-window.addEventListener("blur", () => {
-  if (!isFocused) {
-    return;
-  }
-
+const handleWindowBlur = () => {
+  if (!isFocused) return;
   isFocused = false;
   blurCallbacks.runCallbacks();
-});
+};
 
-window.addEventListener("focus", () => {
+const handleWindowFocus = () => {
+  if (isFocused) return;
   isFocused = true;
   focusCallbacks.runCallbacks();
-});
+};
 
+if (typeof window !== "undefined") {
+  window.removeEventListener("blur", handleWindowBlur);
+  window.removeEventListener("focus", handleWindowFocus);
+
+  window.addEventListener("blur", handleWindowBlur, { passive: true });
+  window.addEventListener("focus", handleWindowFocus, { passive: true });
+}
+
+/**
+ * Хук для отслеживания ухода страницы в фоновый режим и возвращения фокуса.
+ * @param onBlur Функция, вызываемая при потере фокуса.
+ * @param onFocus Функция, вызываемая при возврате фокуса.
+ * @param isDisabled Флаг для отключения отслеживания.
+ */
 export default function useBackgroundMode(
-  onBlur?: AnyToVoidFunction,
-  onFocus?: AnyToVoidFunction,
-  isDisabled = false,
+  onBlur?: NoneToVoidFunction,
+  onFocus?: NoneToVoidFunction,
+  isDisabled: boolean = false,
 ) {
-  const handleBlur = useStableCallback(onBlur);
-  const handleFocus = useStableCallback(onFocus);
+  const lastOnBlur = useStableCallback(onBlur);
+  const lastOnFocus = useStableCallback(onFocus);
 
   useEffect(() => {
     if (isDisabled) {
-      return undefined;
+      return;
     }
 
     if (!isFocused) {
-      handleBlur();
+      lastOnBlur();
     }
 
-    blurCallbacks.addCallback(handleBlur);
-    focusCallbacks.addCallback(handleFocus);
+    const removeblurCallbacks = blurCallbacks.addCallback(lastOnBlur);
+    const removefocusCallbacks = focusCallbacks.addCallback(lastOnFocus);
 
     return () => {
-      focusCallbacks.removeCallback(handleFocus);
-      blurCallbacks.removeCallback(handleBlur);
+      removeblurCallbacks();
+      removefocusCallbacks();
     };
-  }, [isDisabled, handleBlur, handleFocus]);
+  }, [isDisabled, lastOnBlur, lastOnFocus]);
 }
 
-export function isBackgroundModeActive() {
+/**
+ * Функция для проверки, находится ли страница в фоновом режиме.
+ * @returns true, если страница НЕ в фокусе, иначе false.
+ */
+export function isBackgroundModeActive(): boolean {
   return !isFocused;
 }

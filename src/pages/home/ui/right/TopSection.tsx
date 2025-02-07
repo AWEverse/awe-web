@@ -38,15 +38,15 @@ const TopSection: FC<OwnProps & StateProps> = () => {
       />
 
       <div>
-        <ActionButton variant="outlined">Media</ActionButton>
-        <ActionButton variant="outlined">Gallery</ActionButton>
-        <ActionButton variant="outlined">Videos</ActionButton>
-        <ActionButton variant="outlined">Dialogs</ActionButton>
-        <ActionButton variant="outlined">Forums</ActionButton>
+        <ActionButton variant="text">Media</ActionButton>
+        <ActionButton variant="text">Gallery</ActionButton>
+        <ActionButton variant="text">Videos</ActionButton>
+        <ActionButton variant="text">Dialogs</ActionButton>
+        <ActionButton variant="text">Forums</ActionButton>
       </div>
 
       <ActionButton
-        size="custom-large"
+        size="md"
         endDecorator={renderLink({ children: "View All" })}
       >
         Latest thread

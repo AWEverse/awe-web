@@ -6,27 +6,34 @@ import {
   CSSProperties,
   useMemo,
   memo,
+  useEffect,
 } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { IVector2D } from "@/lib/utils/data-structures/Vector2d";
 import buildClassName from "@/shared/lib/buildClassName";
 import stopEvent from "@/lib/utils/stopEvent";
 import useMenuPosition from "@/entities/context-menu/public/hooks/useMenuPosition";
+import Portal from "@/shared/ui/Portal";
+import { useClickAway } from "@/lib/hooks/history/events/useClick";
+import { useBoundaryCheck } from "@/shared/hooks/mouse/useBoundaryCheck";
 
 import "./ContextMenu.scss";
-import Portal from "@/shared/ui/Portal";
-import useMenuClosure from "./hooks/useMenuClosure";
+import { useEffectWithPreviousDeps } from "@/shared/hooks/effects/useEffectWithPreviousDependencies";
+import { dispatchHeavyAnimation, IVector2 } from "@/lib/core";
+import useBodyClass from "@/shared/hooks/DOM/useBodyClass";
+import useKeyboardListeners from "@/lib/hooks/history/events/useKeyboardListeners";
+
+const ANIMATION_DURATION = 0.125;
 
 const ANIMATION_PROPS = {
   initial: { opacity: 0, scale: 0.85 },
   animate: { opacity: 1, scale: 1 },
   exit: { opacity: 0, scale: 0.85 },
-  transition: { duration: 0.125 },
+  transition: { duration: ANIMATION_DURATION },
 };
 
-interface ContextMenuProps {
+interface OwnProps {
   isOpen: boolean;
-  position: IVector2D;
+  position: IVector2;
   children: ReactNode;
   className?: string;
   menuClassName?: string;
@@ -34,12 +41,12 @@ interface ContextMenuProps {
   withPortal?: boolean;
   isDense?: boolean;
   noCompact?: boolean;
-  rootRef?: React.RefObject<HTMLElement | null>;
+  triggerRef?: React.RefObject<HTMLElement | null>;
   onClose: () => void;
   onCloseAnimationEnd?: () => void;
 }
 
-const ContextMenu: FC<ContextMenuProps> = ({
+const ContextMenu: FC<OwnProps> = ({
   isOpen,
   position,
   children,
@@ -48,8 +55,8 @@ const ContextMenu: FC<ContextMenuProps> = ({
   style,
   withPortal,
   isDense,
-  noCompact,
-  rootRef,
+  noCompact = false,
+  triggerRef,
   onClose,
   onCloseAnimationEnd,
 }) => {
@@ -58,28 +65,57 @@ const ContextMenu: FC<ContextMenuProps> = ({
 
   const handleClose = useCallback(() => {
     onClose();
-    document.removeEventListener("scroll", handleClose, true);
   }, [onClose]);
 
-  const positionConfig = useMemo(
-    () => ({
-      anchor: position,
-      getTriggerElement: () => rootRef?.current || document.body,
-      getRootElement: () => containerRef.current,
-      getMenuElement: () => bubbleRef.current,
-      getLayout: () => ({
-        isDense,
-        shouldAvoidNegativePosition: true,
-        withPortal: true,
-        menuElMinWidth: noCompact ? 220 : 160,
-      }),
-      withMaxHeight: true,
+  useClickAway(containerRef, onClose, !isOpen);
+
+  useBodyClass("has-open-dialog", isOpen);
+
+  useKeyboardListeners({ onEsc: onClose });
+
+  useMenuPosition(isOpen, containerRef, bubbleRef, {
+    anchor: position,
+    getTriggerElement: () => triggerRef?.current || document.body,
+    getRootElement: () => containerRef.current,
+    getMenuElement: () => bubbleRef.current,
+    getLayout: () => ({
+      isDense,
+      shouldAvoidNegativePosition: true,
+      withPortal: true,
+      menuElMinWidth: noCompact ? 220 : 120,
     }),
-    [position, isDense, noCompact, rootRef],
+    withMaxHeight: true,
+  });
+
+  useBoundaryCheck({
+    elementRef: containerRef,
+    isActive: isOpen,
+    onExit: onClose,
+    position,
+    extraPaddingX: 0,
+    options: { outboxSize: 60, throttleInterval: 250 },
+  });
+
+  useEffectWithPreviousDeps(
+    ([wasOpen]) => {
+      if (isOpen !== wasOpen) {
+        return dispatchHeavyAnimation(ANIMATION_DURATION);
+      }
+    },
+    [isOpen],
   );
 
-  useMenuPosition(isOpen, containerRef, bubbleRef, positionConfig);
-  useMenuClosure(isOpen, containerRef, handleClose);
+  useEffect(() => {
+    if (isOpen) {
+      document.addEventListener("scroll", handleClose, true);
+    } else {
+      document.removeEventListener("scroll", handleClose, true);
+    }
+
+    return () => {
+      document.removeEventListener("scroll", handleClose, true);
+    };
+  }, [isOpen, handleClose]);
 
   const menuEl = useMemo(
     () => (
@@ -111,3 +147,4 @@ const ContextMenu: FC<ContextMenuProps> = ({
 };
 
 export default memo(ContextMenu);
+export { type OwnProps as ContextMenuProps };

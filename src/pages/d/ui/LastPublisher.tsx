@@ -1,10 +1,10 @@
-import { FC } from 'react';
+import { FC } from "react";
 
-import Linkify from '@/shared/ui/Linkify';
-import { Avatar } from '@mui/material';
-import buildClassName from '@/shared/lib/buildClassName';
+import Linkify from "@/shared/ui/Linkify";
+import { Avatar } from "@mui/material";
+import buildClassName from "@/shared/lib/buildClassName";
 
-import s from './LastPublisher.module.scss';
+import s from "./LastPublisher.module.scss";
 
 type OwnProps = {
   publisherClassName?: string;
@@ -16,7 +16,7 @@ type OwnProps = {
   endDecorator?: React.ReactNode;
 };
 
-const LastPublisher: FC<OwnProps> = props => {
+const LastPublisher: FC<OwnProps> = (props) => {
   const {
     title,
     dateText,
@@ -37,13 +37,13 @@ const LastPublisher: FC<OwnProps> = props => {
         <Avatar
           sizes="small"
           alt="Avatar"
-          className={buildClassName(s.avatar, 'awe-avatar')}
+          className={buildClassName(s.avatar, "awe-avatar")}
           src={avatarSrc}
         />
         <div className={s.info}>
           <p className={s.title}>{title}</p>
           <span className={s.date}>
-            <Linkify text={dateText} />
+            <Linkify markdown={dateText} />
           </span>
         </div>
       </div>

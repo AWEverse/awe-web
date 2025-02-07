@@ -1,0 +1,44 @@
+import { IS_ANDROID } from "@/lib/core";
+import { getIsMobile } from "@/lib/hooks/ui/useAppLayout";
+import useBackgroundMode from "@/lib/hooks/ui/useBackgroundMode";
+import { useIntersectionObserver } from "@/shared/hooks/DOM/useIntersectionObserver";
+import React, { ReactNode } from "react";
+import { ScrollContext } from "../../lib/contex";
+
+const INTERSECTION_THROTTLE_FOR_MEDIA = IS_ANDROID ? 1000 : 350;
+const INTERSECTION_MARGIN_FOR_LOADING = getIsMobile() ? 300 : 500;
+
+interface OwnProps {
+  containerRef: React.RefObject<HTMLElement>;
+  children: ReactNode;
+}
+
+export const ScrollProvider = ({ children, containerRef }: OwnProps) => {
+  const {
+    observe: observeIntersectionForLoading,
+    freeze,
+    unfreeze,
+  } = useIntersectionObserver({
+    rootRef: containerRef,
+    throttleMs: INTERSECTION_THROTTLE_FOR_MEDIA,
+    margin: INTERSECTION_MARGIN_FOR_LOADING,
+  });
+
+  const { observe: observeIntersectionForPlaying } = useIntersectionObserver({
+    rootRef: containerRef,
+    throttleMs: INTERSECTION_THROTTLE_FOR_MEDIA,
+  });
+
+  useBackgroundMode(freeze, unfreeze);
+
+  return (
+    <ScrollContext.Provider
+      value={{
+        observeIntersectionForLoading,
+        observeIntersectionForPlaying,
+      }}
+    >
+      {children}
+    </ScrollContext.Provider>
+  );
+};

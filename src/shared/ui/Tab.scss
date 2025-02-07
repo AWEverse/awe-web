@@ -10,12 +10,14 @@
   user-select: none;
   cursor: pointer;
 
-  &,
-  &:active,
+  // Remove focus outlines for button states
+  &, 
+  &:active, 
   &:focus {
     outline: none;
   }
 
+  // Active state styling
   &-active {
     .TabInner {
       color: var(--awe-palette-primary-main);
@@ -25,7 +27,6 @@
     }
   }
 
-
   .TabInner {
     position: relative;
     display: flex;
@@ -33,9 +34,14 @@
     white-space: nowrap;
     z-index: 1;
 
-    &.Pannels {
+    // Common padding for "Pannels" and "Fill" variants
+    &.Pannels,
+    &.Fill {
       padding: 0.225rem 1.125rem 0.45rem;
+    }
 
+    &.Pannels {
+      // Hover state for inactive pannels tabs
       &[data-active=false]:hover::before {
         opacity: 1 !important;
       }
@@ -44,9 +50,9 @@
         content: '';
         position: absolute;
         inset: 0;
-        background-color: rgba(var(--awe-palette-primary-mainChannel) / 0.3);
-        border-radius: 0.75rem;
         margin: 0 0.2325rem 0.225rem;
+        border-radius: 0.75rem;
+        background-color: rgba(var(--awe-palette-primary-mainChannel) / 0.3);
         transition: opacity 0.3s ease;
         opacity: 0;
       }
@@ -61,19 +67,15 @@
         background-color: rgba(var(--awe-palette-primary-mainChannel) / 0.5);
       }
     }
-
-    &.Fill {
-      padding: 0.225rem 1.125rem 0.45rem;
-    }
   }
 
   .badge {
     min-width: 1.25rem;
     height: 1.25rem;
     margin-inline-start: 0.5rem;
+    padding: 0 0.3125rem;
     background: var(--awe-palette-primary-main);
     border-radius: 0.75rem;
-    padding: 0 0.3125rem;
     color: var(--awe-palette-text-primary);
     font-size: 0.875rem;
     line-height: 1.3125rem;
@@ -82,13 +84,14 @@
     flex-shrink: 0;
     z-index: 5;
 
+    &-active {
+      background: var(--awe-palette-primary-main) !important;
+    }
+
+    // Adjust line-height for specific platforms
     body.is-ios &,
     body.is-macos & {
       line-height: 1.25rem;
-    }
-
-    &-active {
-      background: var(--awe-palette-primary-main) !important;
     }
   }
 
@@ -118,27 +121,27 @@
     }
   }
 
-  .platform-inner-pannels {
+  // Shared styles for platform variants with horizontal padding
+  .platform-inner-pannels,
+  .platform-folders {
     position: absolute;
     bottom: 0;
-    height: 0.25rem;
-    background-color: var(--awe-palette-primary-main);
     left: 1rem;
     right: 1rem;
+    height: 0.25rem;
+    background-color: var(--awe-palette-primary-main);
+  }
+
+  .platform-inner-pannels {
     border-radius: 0.1875rem;
   }
 
   .platform-folders {
-    position: absolute;
-    bottom: 0;
-    height: 0.25rem;
-    background-color: var(--awe-palette-primary-main);
     border-radius: 0.1875rem 0.1875rem 0 0;
-    left: 1rem;
-    right: 1rem;
   }
 
   .platform-pannels {
+    position: absolute;
     top: 0;
     left: 0;
     right: 0;
@@ -150,9 +153,9 @@
     &::after {
       content: '';
       position: absolute;
+      bottom: 0;
       height: 15px;
       width: 30px;
-      bottom: 0;
       background-color: transparent;
       user-select: none;
     }
@@ -171,6 +174,7 @@
   }
 
   .platform-fill {
+    position: absolute;
     top: 0;
     left: 0;
     right: 0;

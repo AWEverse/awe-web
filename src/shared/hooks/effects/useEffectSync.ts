@@ -1,4 +1,4 @@
-import { useRef } from "react";
+import { useCallback, useEffect, useRef } from "react";
 
 import { usePrevious } from "../base";
 import { useComponentWillUnmount } from "./useLifecycle";
@@ -12,13 +12,19 @@ export default function <const T extends Readonly<AnyArray>>(
   const prevDeps = usePrevious<T>(deps);
   const cleanupRef = useRef<NoneToVoidFunction | undefined>(null);
 
-  if (
-    !prevDeps ||
-    deps.some((currentDeps, order) => currentDeps !== prevDeps[order])
-  ) {
-    cleanupRef.current?.();
-    cleanupRef.current = effect(prevDeps || NO_DEPS) ?? undefined;
-  }
+  const memoizedEffect = useCallback(() => {
+    if (
+      !prevDeps ||
+      deps.some((currentDep, index) => currentDep !== prevDeps[index])
+    ) {
+      cleanupRef.current?.();
+      cleanupRef.current = effect(prevDeps || NO_DEPS) ?? undefined;
+    }
+  }, [deps, prevDeps, effect]);
+
+  useEffect(() => {
+    memoizedEffect();
+  }, [memoizedEffect]);
 
   useComponentWillUnmount(() => {
     cleanupRef.current?.();

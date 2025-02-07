@@ -1,15 +1,43 @@
 .SlideButtonRoot {
   position: relative;
+  overflow: hidden;
 
-  width: 100%;
-  height: 100%;
+
+  &:hover .SlideChild {
+    filter: brightness(1.05);
+  }
 }
 
 .SlideChild {
   position: absolute;
-  top: 0;
-  left: 0;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  will-change: transform, opacity;
+}
+
+.HiddenChild {
+  visibility: hidden;
+  pointer-events: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.SlideContent {
   width: 100%;
   height: 100%; 
-  overflow: hidden;
+}
+
+.SlideTrack {
+  position: absolute;
+}
+
+.mark {
+  position: absolute;
+  bottom: 2px;
+  right: 2px;
+  font-size: small;
 }

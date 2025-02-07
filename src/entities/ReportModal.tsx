@@ -1,31 +1,31 @@
-import { ApiRestrictionReason } from '@/@types/api/types/chats';
-import Modal, { ModalProps } from '@/shared/ui/Modal';
-import { FC, Suspense, useCallback, useMemo } from 'react';
+import { ApiRestrictionReason } from "@/@types/api/types/chats";
+import Modal, { ModalProps } from "@/shared/ui/Modal";
+import { FC, Suspense, useCallback, useMemo } from "react";
 
-import s from './ReportModal.module.scss';
-import { mergeArraysUnique } from '@/lib/utils/iteratees';
-import ActionButton from '@/shared/ui/ActionButton';
+import s from "./ReportModal.module.scss";
+import { mergeArraysUnique } from "@/lib/utils/iteratees";
+import ActionButton from "@/shared/ui/ActionButton";
 
 const RESTRICT_REASONS: ApiRestrictionReason[] = [
   {
-    text: 'Report',
-    reason: 'report',
+    text: "Report",
+    reason: "report",
   },
   {
-    text: 'Spam',
-    reason: 'spam',
+    text: "Spam",
+    reason: "spam",
   },
   {
-    text: 'Nudity',
-    reason: 'nudity',
+    text: "Nudity",
+    reason: "nudity",
   },
   {
-    text: 'Violence',
-    reason: 'violence',
+    text: "Violence",
+    reason: "violence",
   },
   {
-    text: 'Hate speech',
-    reason: 'hate_speech',
+    text: "Hate speech",
+    reason: "hate_speech",
   },
 ];
 
@@ -77,7 +77,6 @@ const ReportModal: FC<OwnProps & StateProps> = ({
             className={s.reasonCard}
             onClick={handleSelect(reason)}
             aria-label={`Select reason: ${reason}`}
-            size="custom-large"
           >
             {text}
           </ActionButton>

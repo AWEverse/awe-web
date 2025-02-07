@@ -1,5 +1,4 @@
-import React, {
-  CSSProperties,
+import {
   FC,
   memo,
   MouseEvent,
@@ -13,10 +12,11 @@ import Portal from "./Portal";
 import trapFocus from "@/lib/utils/trapFocus";
 import captureKeyboardListeners from "@/lib/utils/captureKeyboardListeners";
 import { useStableCallback } from "@/shared/hooks/base";
-import { useLayoutEffectWithPreviousDeps } from "../hooks/effects/useEffectWithPreviousDependencies";
+import { useEffectWithPreviousDeps } from "../hooks/effects/useEffectWithPreviousDependencies";
 import buildClassName from "../lib/buildClassName";
 import useUniqueId from "@/lib/hooks/utilities/useUniqueId";
-import { dispatchHeavyAnimation, withFreezeWhenClosed } from "@/lib/core";
+import { dispatchHeavyAnimation } from "@/lib/core";
+import useBodyClass from "../hooks/DOM/useBodyClass";
 
 const ANIMATION_DURATION = 0.15;
 
@@ -100,19 +100,13 @@ const Modal: FC<OwnProps> = ({
     }
   }, [isOpen, onClose, handleEnter]);
 
-  useLayoutEffectWithPreviousDeps(
-    ([prevIsOpen]) => {
-      document.body.classList.toggle("has-open-dialog", isOpen);
+  useBodyClass("has-open-dialog", isOpen);
 
-      const isOpened = prevIsOpen && !isOpen;
-
-      if (isOpen || isOpened) {
+  useEffectWithPreviousDeps(
+    ([wasOpen]) => {
+      if (isOpen !== wasOpen) {
         dispatchHeavyAnimation(ANIMATION_DURATION);
       }
-
-      return () => {
-        document.body.classList.remove("has-open-dialog");
-      };
     },
     [isOpen],
   );
@@ -164,6 +158,5 @@ const Modal: FC<OwnProps> = ({
   );
 };
 
-export default memo(withFreezeWhenClosed(Modal));
-export const ModalUnfreeze = memo(Modal);
+export default memo(Modal);
 export type { OwnProps as ModalProps };

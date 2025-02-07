@@ -34,9 +34,9 @@ export const IS_PROGRESSIVE_SUPPORTED = IS_SERVICE_WORKER_SUPPORTED;
  * Check if the `filter` property is supported on canvas elements.
  * This is not available in test environments.
  */
-export const IS_CANVAS_FILTER_SUPPORTED =
-  !IS_TEST &&
-  "filter" in (document.createElement("canvas").getContext("2d") || {});
+// export const IS_CANVAS_FILTER_SUPPORTED =
+//   !IS_TEST &&
+//   "filter" in (document.createElement("canvas")!.getContext("2d") || {});
 
 /**
  * Check if the browser supports `requestFullscreen` for elements.
@@ -77,14 +77,16 @@ export const IS_OPFS_SUPPORTED = Boolean(navigator.storage?.getDirectory);
 /**
  * Check if the `offset-rotate` property is supported in CSS.
  */
-export const IS_OFFSET_PATH_SUPPORTED = CSS.supports("offset-rotate: 0deg");
-
+export const IS_OFFSET_PATH_SUPPORTED =
+  typeof CSS !== "undefined" ? CSS.supports("offset-rotate: 0deg") : false;
 /**
  * Check if backdrop blur effect is supported in CSS.
  */
 export const IS_BACKDROP_BLUR_SUPPORTED =
-  CSS.supports("backdrop-filter: blur(0px)") ||
-  CSS.supports("-webkit-backdrop-filter: blur(0px)");
+  typeof CSS !== "undefined"
+    ? CSS.supports("backdrop-filter: blur(0px)") ||
+      CSS.supports("-webkit-backdrop-filter: blur(0px)")
+    : false;
 
 /**
  * Check if the install prompt is supported (usually for PWAs).

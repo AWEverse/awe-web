@@ -26,8 +26,7 @@ import {
   useSignalLayoutEffect,
 } from "@/lib/hooks/signals/useSignalEffect";
 import SettingsDropdown from "./controls/SettingsDropdown";
-import { TriggerProps } from "@/shared/ui/DropdownMenu";
-import { useDebouncedFunction } from "@/shared/hooks/shedulers";
+import { TriggerProps } from "@/shared/ui/dropdown";
 import s from "./VideoPlayerControls.module.scss";
 import { formatMediaDuration } from "../lib/time/formatMediaDuration";
 
@@ -38,7 +37,7 @@ type OwnProps = {
   volumeSignal: ReadonlySignal<number>;
   controlsSignal: ReadonlySignal<boolean>;
   duration: number;
-  playbackRate: number;
+  playbackRate: ReadonlySignal<number>;
   isMuted: boolean;
 
   // Buffered Media Info
@@ -71,6 +70,7 @@ type OwnProps = {
   onSeek: (position: number) => void;
   onSeekStart: () => void;
   onSeekEnd: () => void;
+  onAmbientModeClick: () => void;
 };
 
 const HIDE_CONTROLS_TIMEOUT_MS = 3000;
@@ -84,8 +84,6 @@ const TriggerButton: FC<TriggerProps> = ({ onTrigger }) => (
     <SettingsRounded className={s.icon} />
   </IconButton>
 );
-
-// ReadonlySignals only change values ​​in the root component in the input file. Revised the ability to switch to a read-only readonlysignal
 
 const VideoPlayerControls: FC<OwnProps> = ({
   isPlaying,
@@ -116,6 +114,7 @@ const VideoPlayerControls: FC<OwnProps> = ({
   onVolumeClick,
   onSeekStart,
   onSeekEnd,
+  onAmbientModeClick,
 }) => {
   const inputRef = useRef<HTMLInputElement>(null);
   const timeRef = useRef<HTMLTimeElement>(null);
@@ -277,6 +276,7 @@ const VideoPlayerControls: FC<OwnProps> = ({
             position="bottom-right"
             triggerButton={TriggerButton}
             onPlaybackSpeedClick={onPlaybackRateChange}
+            onAmbientModeClick={onAmbientModeClick}
           />
 
           {isPictureInPictureSupported && (

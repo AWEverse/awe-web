@@ -74,26 +74,33 @@ export default function useMenuPosition(
     const currentOptions = optionsRef.current;
 
     if (!("getTriggerElement" in currentOptions)) {
-      applyStaticOptions(containerRef, bubbleRef, currentOptions);
-    } else {
-      requestNextMutation(() => {
-        const staticOptions = processDynamically(currentOptions);
-
-        return () => {
-          if (staticOptions) {
-            applyStaticOptions(containerRef, bubbleRef, staticOptions);
-          }
-        };
-      });
-    }
-  }, [containerRef, bubbleRef, optionsRef]);
-
-  useLayoutEffect(() => {
-    if (!isOpen) {
+      applyStaticOptions(
+        containerRef,
+        bubbleRef,
+        currentOptions as StaticPositionOptions,
+      );
       return;
     }
 
-    applyPositioning();
+    // For dynamic positioning, schedule a DOM mutation
+    requestNextMutation(() => {
+      const dynamicStyles = processDynamically(
+        currentOptions as DynamicPositionOptions,
+      );
+
+      // mutation phrase
+      return () => {
+        if (dynamicStyles) {
+          applyStaticOptions(containerRef, bubbleRef, dynamicStyles);
+        }
+      };
+    });
+  }, [containerRef, bubbleRef, optionsRef]);
+
+  useLayoutEffect(() => {
+    if (isOpen) {
+      applyPositioning();
+    }
   }, [isOpen, anchor, applyPositioning]);
 }
 
@@ -104,7 +111,6 @@ function getLayoutMeasurements(
   menuElMinWidth: number,
 ): LayoutMeasurements {
   const docEl = document.documentElement;
-
   const rootRect = rootEl?.getBoundingClientRect() ?? EMPTY_RECT;
   const triggerRect = triggerEl.getBoundingClientRect();
 
@@ -115,9 +121,8 @@ function getLayoutMeasurements(
   if (menuEl) {
     menuWidth = Math.max(menuEl.offsetWidth, menuElMinWidth);
     menuHeight = menuEl.offsetHeight;
-
-    const computedStyle = getComputedStyle(menuEl as Element);
-    menuMarginTop = Number.parseFloat(computedStyle.marginTop) || 0;
+    menuMarginTop =
+      parseFloat(getComputedStyle(menuEl as Element).marginTop) || 0;
   }
 
   return {
@@ -157,15 +162,10 @@ function calculatePosition(
 }
 
 function applyPositionConstraints(
-  position: PositionCalculation,
-  measurements: LayoutMeasurements,
-  layout: Layout,
+  { x, y, ...rest }: PositionCalculation,
+  { menu, viewport }: LayoutMeasurements,
+  { shouldAvoidNegativePosition }: Layout,
 ): PositionCalculation {
-  const { menu, viewport } = measurements;
-  const { shouldAvoidNegativePosition } = layout;
-
-  let { x, y } = position;
-
   x = clamp(
     x,
     MENU_POSITION_VISUAL_COMFORT_SPACE_PX,
@@ -183,7 +183,7 @@ function applyPositionConstraints(
     y = Math.max(y, 0);
   }
 
-  return { ...position, x, y };
+  return { ...rest, x, y };
 }
 
 function calculateFinalPosition(
@@ -225,7 +225,9 @@ function processDynamically(options: DynamicPositionOptions) {
   const rootEl = getRootElement();
   const layout = getLayout?.() || {};
 
-  if (!triggerEl || !menuEl || !rootEl) return null;
+  if (!triggerEl || !menuEl || !rootEl) {
+    return null;
+  }
 
   const measurements = getLayoutMeasurements(
     rootEl,
@@ -235,32 +237,29 @@ function processDynamically(options: DynamicPositionOptions) {
   );
 
   const basePosition = calculatePosition(anchor, measurements, layout);
+
   const constrainedPosition = applyPositionConstraints(
     basePosition,
     measurements,
     layout,
   );
+
   const finalPosition = calculateFinalPosition(
     constrainedPosition,
     measurements,
     layout,
   );
 
-  let maxHeightStyle = "";
+  const maxHeightStyle = withMaxHeight
+    ? `max-height: ${measurements.viewport.height - finalPosition.top - MENU_POSITION_BOTTOM_MARGIN}px;`
+    : "";
 
-  if (withMaxHeight) {
-    const maxHeight =
-      measurements.viewport.height -
-      finalPosition.top -
-      MENU_POSITION_BOTTOM_MARGIN;
-
-    maxHeightStyle = `max-height: ${maxHeight}px;`;
-  }
+  const styles = `left: ${finalPosition.left}px; top: ${finalPosition.top}px;`;
 
   return {
     positionX: constrainedPosition.positionX,
     positionY: constrainedPosition.positionY,
-    style: `left: ${finalPosition.left}px; top: ${finalPosition.top}px;`,
+    style: styles,
     heightStyle: maxHeightStyle,
     transformOriginX: finalPosition.transformOriginX,
     transformOriginY: finalPosition.transformOriginY,
@@ -277,25 +276,27 @@ function applyStaticOptions(
   if (!containerEl || !bubbleEl) return;
 
   const {
-    style,
-    heightStyle,
-    positionX,
-    positionY,
+    style = "",
+    heightStyle = "",
+    positionX = "",
+    positionY = "",
     transformOriginX,
     transformOriginY,
   } = options;
 
-  if (style)
-    containerEl.style.cssText = `${style} transform-origin: ${positionX} ${positionY}`;
-  if (heightStyle) bubbleEl.style.cssText = heightStyle;
+  containerEl.style.cssText = `${style} transform-origin: ${positionX} ${positionY}`;
+
+  if (heightStyle) {
+    bubbleEl.style.cssText = heightStyle;
+  }
 
   if (positionX) addExtraClass(bubbleEl, positionX);
   if (positionY) addExtraClass(bubbleEl, positionY);
 
   setExtraStyles(bubbleEl, {
     transformOrigin: [
-      transformOriginX ? `${transformOriginX}px` : positionX,
-      transformOriginY ? `${transformOriginY}px` : positionY,
+      transformOriginX != null ? `${transformOriginX}px` : positionX,
+      transformOriginY != null ? `${transformOriginY}px` : positionY,
     ].join(" "),
   });
 }

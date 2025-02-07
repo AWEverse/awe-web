@@ -2,7 +2,7 @@
 
 .button {
   // Transition
-  --btn-transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  --btn-transition: background-color 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   
   // Typography
   --btn-font-family: system-ui, -apple-system, sans-serif;
@@ -18,7 +18,7 @@
   --btn-focus-ring: 0 0 0 3px rgba(66, 153, 225, 0.5);
   
   // Colors
-  --color-primary: var(--awe-palette-primary-main);
+  --color-primary: var(--awe-palette-primary-mainChannel);
   --color-primary-dark: rgba(var(--awe-palette-primary-mainChannel) / 0.7);
   --color-on-primary: var(--awe-palette-text-primary);
   --color-error: var(--awe-palette-error-main);
@@ -27,11 +27,11 @@
   position: relative;
   display: inline-flex;
   align-items: center;
-  justify-content: center;
   vertical-align: middle;
   white-space: nowrap;
   user-select: none;
-  
+  width: min-content;
+
   // Typography
   font-family: var(--btn-font-family);
   font-weight: var(--btn-font-weight);
@@ -41,31 +41,25 @@
   // Visual
   border: var(--btn-border-width) solid transparent;
   border-radius: var(--btn-border-radius);
-  transition: var(--btn-transition);
   
   // Spacing
   gap: var(--btn-icon-spacing);
   outline: none;
   cursor: pointer;
-  
+      transition: var(--btn-transition);
+
   // Reset
   appearance: none;
   -webkit-tap-highlight-color: transparent;
   
+  &:hover:not(:disabled) {  
+    background-color: rgba(var(--color-primary) / 0.7);
+  }
   // Variants
   &--variant {
      &--contained {
       background-color: var(--color-primary);
       color: var(--color-on-primary);
-      
-      &:hover:not(:disabled) {
-        background-color: var(--color-primary-dark);
-        transform: translateY(-1px);
-      }
-      
-      &:active:not(:disabled) {
-        transform: translateY(0);
-      }
     }
 
     &--outlined {
@@ -74,25 +68,24 @@
       color: var(--color-primary);
 
       &:hover:not(:disabled) {
-        background-color: rgba(var(--color-primary), 0.1);
+        background-color: rgba(var(--color-primary) / 0.1);
       }
 
       &:active:not(:disabled) {
-        background-color: rgba(var(--color-primary), 0.2);
+        background-color: rgba(var(--color-primary) / 0.2);
       }
     }
 
     &--text {
-      background-color: transparent;
       color: var(--color-primary);
       border-radius: 4px;
 
       &:hover:not(:disabled) {
-        background-color: rgba(var(--color-primary), 0.1);
+        background-color: rgba(var(--color-primary) / 0.1);
       }
 
       &:active:not(:disabled) {
-        background-color: rgba(var(--color-primary), 0.2);
+        background-color: rgba(var(--color-primary) / 0.2);
       }
     }
 
@@ -111,37 +104,43 @@
     }
   }
 
+  &--color {
+    &--error {
+      color: var(--color-error)
+    }
+  }
+
   // Sizes
   // @TODO: Replace with taiwlind sizes
   &--size {
     &--xs { 
       font-size: 0.75rem;
-      padding: 0.25rem 0.5rem; 
-      min-height: 24px;
+      padding: 0.15rem 0.5rem; 
+      min-height: 20px;
     }
     
     &--sm { 
       font-size: 0.875rem;
-      padding: 0.5rem 0.75rem; 
-      min-height: 32px;
+      padding: 0.25rem 0.75rem; 
+      min-height: 24px;
     }
     
     &--md { 
       font-size: 1rem;
-      padding: 0.5rem 1rem; 
-      min-height: 40px;
+      padding: 0.4rem 1rem; 
+      min-height: 32px;
     }
     
     &--lg { 
       font-size: 1.125rem;
       padding: 1rem 1.5rem; 
-      min-height: 48px;
+      min-height: 42px;
     }
     
     &--xl { 
       font-size: 1.25rem;
       padding: 1.25rem 2.25rem; 
-      min-height: 56px;
+      min-height: 48px;
     }
 
     // Custom sizes
@@ -165,7 +164,5 @@
 
   &.fullWidth {
     width: 100%;
-    justify-content: center;
   }
-
 }

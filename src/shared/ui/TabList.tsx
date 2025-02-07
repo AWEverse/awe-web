@@ -6,6 +6,7 @@ import Tab, { TabProps } from "./Tab";
 import { capitalize } from "@/lib/utils/helpers/string/stringFormaters";
 import "./TabList.scss";
 import { usePrevious } from "../hooks/base";
+import useUniqueId from "@/lib/hooks/utilities/useUniqueId";
 
 type TabProperty = "title" | "badgeCount" | "isBlocked" | "isBadgeActive";
 type TabWithProperties = { id: number | string } & Pick<TabProps, TabProperty>;
@@ -33,8 +34,8 @@ const TabList: FC<OwnProps> = (props) => {
     disableScroll = false,
   } = props;
 
+  const uuid = useUniqueId("tab");
   const containerRef = useRef<HTMLDivElement>(null);
-  const previousActiveTab = usePrevious(activeTab);
 
   const isFolderVariant = variant === "folders";
   const tabListClassName = buildClassName(
@@ -44,7 +45,12 @@ const TabList: FC<OwnProps> = (props) => {
     className,
   );
 
-  useHorizontalScroll(containerRef, disableScroll, true);
+  useHorizontalScroll(containerRef, {
+    isDisabled: disableScroll,
+    shouldPreventDefault: true,
+    scrollSpeedMultiplier: 1,
+  });
+
   useHorizontalScrollToContanier(containerRef, activeTab);
 
   return (
@@ -64,11 +70,11 @@ const TabList: FC<OwnProps> = (props) => {
 
           return (
             <Tab
+              layoutId={uuid}
               key={`${id}_${title}`}
               aria-selected={isActive}
               clickArg={index}
               isActive={isActive}
-              previousActiveTab={previousActiveTab}
               tabIndex={tabIndex}
               title={currentTitle}
               variant={variant}

@@ -1,23 +1,36 @@
-import { FC, ReactNode } from 'react';
-import buildClassName from '../lib/buildClassName';
+import { FC, ReactNode } from "react";
+import buildClassName from "../lib/buildClassName";
+import s from "./IconExpand.module.scss";
 
-import s from './IconExpand.module.scss';
+type DivProps = React.DetailedHTMLProps<
+  React.HTMLAttributes<HTMLDivElement>,
+  HTMLDivElement
+>;
 
 interface OwnProps {
-  className?: string;
   icon: ReactNode;
   label?: ReactNode;
   checked?: boolean;
-  onClick?: () => void;
 }
 
-const IconExpand: FC<OwnProps> = props => {
-  const { icon, label, className, checked, onClick } = props;
-
+const IconExpand: FC<OwnProps & DivProps> = ({
+  icon,
+  label,
+  className,
+  checked = false,
+  onClick,
+  ...rest
+}) => {
   const classNames = buildClassName(s.iconContainer, className);
 
   return (
-    <div className={classNames} data-open={`${checked ?? false}`} tabIndex={0} onClick={onClick}>
+    <div
+      className={classNames}
+      data-open={checked}
+      tabIndex={0}
+      onClick={onClick}
+      {...rest}
+    >
       <span className={s.iconSVG}>{icon}</span>
       <span className={s.iconLabel}>{label}</span>
     </div>

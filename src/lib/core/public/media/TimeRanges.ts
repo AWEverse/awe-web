@@ -119,7 +119,6 @@ export default class BTimeRanges {
       time < end ? end - Math.max(start, time) : 0,
     );
   }
-
   /**
    * Determines if the given time is inside a gap between buffered ranges.
    *
@@ -133,23 +132,41 @@ export default class BTimeRanges {
     time: number,
     threshold: number,
   ): number | null {
-    if (!b || !b.length) {
+    // Return null if there are no ranges or the buffer is negligible.
+    if (!b || b.length === 0 || this._isBufferNegligible(b)) {
       return null;
     }
 
-    if (this._isBufferNegligible(b)) {
-      return null;
-    }
-
+    // Convert TimeRanges to a sorted array of buffered range objects.
     const ranges = this.getBufferedInfo(b);
 
-    const idx = ranges.findIndex((item, i, arr) => {
-      const prev = arr[i - 1];
+    // Use binary search to find the first range with start > time.
+    let low = 0;
+    let high = ranges.length - 1;
+    let candidate = -1;
 
-      return item.start > time && (i === 0 || prev.end - time <= threshold);
-    });
+    while (low <= high) {
+      const mid = Math.floor((low + high) / 2);
+      if (ranges[mid].start > time) {
+        candidate = mid;
+        high = mid - 1; // Look further left for the first occurrence.
+      } else {
+        low = mid + 1;
+      }
+    }
 
-    return idx >= 0 ? idx : null;
+    // If no candidate is found, return null.
+    if (candidate === -1) {
+      return null;
+    }
+
+    // Check if the gap condition is satisfied:
+    // Either this is the first range, or the gap from the previous range's end to the time is within threshold.
+    if (candidate === 0 || ranges[candidate - 1].end - time <= threshold) {
+      return candidate;
+    }
+
+    return null;
   }
 
   /**
@@ -164,7 +181,6 @@ export default class BTimeRanges {
     }
 
     const result: IBufferedRange[] = [];
-
     for (let i = 0; i < b.length; i++) {
       result.push({ start: b.start(i), end: b.end(i) });
     }
@@ -177,7 +193,7 @@ export default class BTimeRanges {
    *
    * This operation can be potentially EXPENSIVE and should only be done in
    * debug builds for debugging purposes.
-   * The algorithm is O(n^2) in the worst case, where n is the number of ranges.
+   * The algorithm is optimized to O(n) in the worst case, where n is the number of ranges.
    *
    * @param {TimeRanges|null} oldRanges - The previous buffer ranges.
    * @param {TimeRanges|null} newRanges - The new buffer ranges.
@@ -187,55 +203,51 @@ export default class BTimeRanges {
     oldRanges: TimeRanges | null,
     newRanges: TimeRanges | null,
   ): IBufferedRange | null {
-    if (!oldRanges || !oldRanges.length) {
+    // Specification Guarantee: The TimeRanges object is defined to have its ranges in increasing order
+    // (i.e., start(0) ≤ start(1) ≤ ...).
+    const oldBuffered = this.getBufferedInfo(oldRanges);
+    const newBuffered = this.getBufferedInfo(newRanges);
+
+    if (!oldBuffered.length) {
+      // Nothing to compare with.
       return null;
     }
 
-    if (!newRanges || !newRanges.length) {
-      return this.getBufferedInfo(newRanges).pop() || null;
+    if (!newBuffered.length) {
+      // If newRanges is empty, return the very last (if any).
+      return newBuffered.pop() || null;
     }
 
-    const newRangesReversed = this.getBufferedInfo(newRanges).reverse();
-    const oldRangesReversed = this.getBufferedInfo(oldRanges).reverse();
+    // Use two pointers starting from the end (i.e. highest times) of both arrays.
+    let i = newBuffered.length - 1;
+    let j = oldBuffered.length - 1;
 
-    for (const newRange of newRangesReversed) {
-      let foundOverlap = false;
+    // Iterate through new ranges from the latest one backwards.
+    while (i >= 0) {
+      const newRange = newBuffered[i];
 
-      for (const oldRange of oldRangesReversed) {
-        if (newRange.start <= oldRange.end && oldRange.end <= newRange.end) {
-          foundOverlap = true;
-
-          // If the new range goes beyond the corresponding old one, the difference is newly added.
-          if (oldRange.end < newRange.end) {
-            return { start: oldRange.end, end: newRange.end };
-          }
-        }
+      // Move the old pointer while the current old range ends after the new range.
+      while (j >= 0 && oldBuffered[j].end > newRange.end) {
+        j--;
       }
 
-      if (!foundOverlap) {
+      // If no old range remains or the candidate old range ends before newRange starts,
+      // then this entire newRange is new.
+      if (j < 0 || oldBuffered[j].end < newRange.start) {
         return newRange;
       }
+
+      // At this point, we have an old range whose end is between newRange.start and newRange.end.
+      // If that old range doesn’t completely cover newRange, return the extra part.
+      if (oldBuffered[j].end < newRange.end) {
+        return { start: oldBuffered[j].end, end: newRange.end };
+      }
+
+      // Otherwise, the new range is completely contained in the old range.
+      // Check the next new range.
+      i--;
     }
 
     return null;
   }
 }
-
-// Предположим, у нас есть два массива диапазонов:
-
-// oldRanges (старые диапазоны):
-
-// [1, 5] [6, 10] [12, 15]
-// newRanges (новые диапазоны):
-// [4, 8] [9, 12] [14, 18]
-
-// 1___4.5.6_8.9.10_12_14.15___18
-//     |                        |
-
-// В нашем примере:
-
-// newRangesReversed = [{ start: 14, end: 18 }, { start: 9, end: 12 }, { start: 4, end: 8 }]
-// oldRangesReversed = [{ start: 12, end: 15 }, { start: 6, end: 10 }, { start: 1, end: 5 }]
-
-// Для этого примера, новый диапазон [14, 18]
-// не пересекается с какими-либо старими диапазонами, поэтому он и будет возвращен как результат.

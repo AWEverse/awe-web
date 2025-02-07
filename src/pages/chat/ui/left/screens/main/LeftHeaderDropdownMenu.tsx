@@ -6,7 +6,7 @@ import AnimationIcon from "@mui/icons-material/Animation";
 import BugReportIcon from "@mui/icons-material/BugReport";
 import AppsIcon from "@mui/icons-material/Apps";
 import DownloadIcon from "@mui/icons-material/Download";
-import DropdownMenu, { TriggerProps } from "@/shared/ui/DropdownMenu";
+import DropdownMenu, { TriggerProps } from "@/shared/ui/dropdown";
 import {
   ArrowForwardIosRounded,
   DarkModeRounded,
@@ -29,6 +29,7 @@ import { useBooleanState } from "@/shared/hooks/state";
 import { Avatar } from "@mui/material";
 import buildClassName from "@/shared/lib/buildClassName";
 import MenuSeparator from "@/shared/ui/MenuSeparator";
+import SlideButton from "@/entities/SlideButton";
 
 interface OwnProps {}
 
@@ -139,11 +140,22 @@ const LeftHeaderDropdownMenu: FC<OwnProps & StateProps> = () => {
           icon={<GroupAddRounded />}
           label="Create group"
         />
-        <ActionButton
-          className="btn-menu-item"
-          icon={<AnimationIcon />}
-          label="Анимация"
-        />
+
+        <SlideButton classNames={{ child: "flex gap-2 items-center" }}>
+          <>
+            <AnimationIcon />
+            <span data-level="disabled">No Animations</span>
+          </>
+          <>
+            <AnimationIcon />
+            <span data-level="basic">Fast Animations</span>
+          </>
+          <>
+            <AnimationIcon />
+            <span data-level="advanced">Full Animations</span>
+          </>
+        </SlideButton>
+
         <ActionButton
           className="btn-menu-item"
           icon={<DownloadIcon />}

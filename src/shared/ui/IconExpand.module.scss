@@ -1,29 +1,21 @@
 .iconContainer {
   height: 30px;
-  width: 30px;
-  padding: 0px 5px;
+  padding: 0 5px;
   border-radius: 8px;
   display: flex;
-  flex-direction: row;
   align-items: center;
   white-space: nowrap;
   cursor: pointer;
   user-select: none;
   overflow: hidden;
-  width: auto;
   max-width: 30px;
-  transition-property: max-width;
-  transition:
-    max-width 300ms ease-in-out 0s,
-    background-color 300ms linear 300ms;
-    
+  transition: max-width 300ms ease-in-out, background-color 300ms linear 300ms;
+
   &:hover,
-  &:focus-visible {  
+  &:focus-visible {
     background-color: rgba(var(--awe-palette-primary-mainChannel) / 0.3);
     max-width: 200px;
-    transition:
-      max-width 300ms ease-in-out 0s,
-      background-color 300ms linear 100ms;  
+    transition: max-width 300ms ease-in-out, background-color 300ms linear 100ms;
   }
 
   &:focus-visible {
@@ -42,7 +34,7 @@
   }
 
   .iconSVG {
-    aspect-ratio: 1 / 1;
+    aspect-ratio: 1;
   }
 
   .iconSpacer {
@@ -63,13 +55,6 @@
 }
 
 @keyframes fadeIn {
-  0% {
-    opacity: 0;
-  }
-  50% {
-    opacity: 0;
-  }
-  100% {
-    opacity: 1;
-  }
+  from { opacity: 0; }
+  to   { opacity: 1; }
 }

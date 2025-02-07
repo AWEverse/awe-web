@@ -9,6 +9,10 @@ import {
 import buildClassName from "@/shared/lib/buildClassName";
 import { useRefInstead } from "@/shared/hooks/base";
 import s from "./Dropdown.module.scss";
+import { dispatchHeavyAnimation } from "@/lib/core";
+import useBodyClass from "@/shared/hooks/DOM/useBodyClass";
+import { useBoundaryCheck } from "@/shared/hooks/mouse/useBoundaryCheck";
+import { useEffectWithPreviousDeps } from "@/shared/hooks/effects/useEffectWithPreviousDependencies";
 
 interface OwnTriggerProps<T = HTMLElement> extends React.HTMLAttributes<T> {
   onTrigger: NoneToVoidFunction;
@@ -40,7 +44,7 @@ interface OwnProps {
 }
 
 const SCALE_FACTOR = 0.85; //%
-const TRANSITION_DURATION = 0.15;
+const ANIMATION_DURATION = 0.15;
 
 const DropdownMenu: FC<OwnProps & OwnSharedProps> = ({
   ref,
@@ -69,11 +73,23 @@ const DropdownMenu: FC<OwnProps & OwnSharedProps> = ({
     onEnter,
   });
 
-  useDropdownEffects({
-    isOpen,
-    dropdownRef,
-    handleClose,
+  useBodyClass("has-open-dialog", isOpen);
+
+  useBoundaryCheck({
+    elementRef: dropdownRef,
+    isActive: isOpen,
+    onExit: handleClose,
+    options: { outboxSize: 60, throttleInterval: 250 },
   });
+
+  useEffectWithPreviousDeps(
+    ([wasOpen]) => {
+      if (isOpen !== wasOpen) {
+        dispatchHeavyAnimation(ANIMATION_DURATION);
+      }
+    },
+    [isOpen],
+  );
 
   const renderBackdrop = useCallback(
     () =>
@@ -101,7 +117,7 @@ const DropdownMenu: FC<OwnProps & OwnSharedProps> = ({
             animate={{ scale: 1, opacity: 1 }}
             exit={{ scale: SCALE_FACTOR, opacity: 0 }}
             transition={{
-              duration: TRANSITION_DURATION,
+              duration: ANIMATION_DURATION,
               ease: "easeInOut",
             }}
             role="menu"

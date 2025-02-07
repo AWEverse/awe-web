@@ -5,6 +5,7 @@ import useBuffering, {
 } from "@/lib/hooks/ui/useBuffering";
 import { useRef, useMemo, memo } from "react";
 import useEffectSync from "../hooks/effects/useEffectSync";
+import useVideoCleanup from "../hooks/DOM/useVideoCleanup";
 
 type VideoProps = React.DetailedHTMLProps<
   React.VideoHTMLAttributes<HTMLVideoElement>,
@@ -19,6 +20,14 @@ type OwnProps = {
   onReady?: NoneToVoidFunction;
   onBroken?: NoneToVoidFunction;
 } & VideoProps;
+
+const defaultVideoStyles: React.CSSProperties = {
+  objectFit: "cover",
+  display: "block",
+  width: "100%",
+  height: "100%",
+  backgroundColor: "#000",
+};
 
 /**
  * `Video` component with customizable properties.
@@ -44,11 +53,20 @@ function Video({
   onReady,
   onBroken,
   onTimeUpdate,
+  style: userStyle,
   ...restProps
 }: OwnProps) {
   const videoRef = useRefInstead<HTMLVideoElement>(ref);
-
   const isReadyRef = useRef(false);
+
+  // Merge default styles with user-provided styles
+  const mergedStyle = useMemo(
+    () => ({
+      ...defaultVideoStyles,
+      ...userStyle,
+    }),
+    [userStyle],
+  );
 
   const handleReady = useStableCallback(() => {
     if (!isReadyRef.current) {
@@ -57,15 +75,6 @@ function Video({
     }
   });
 
-  // onPLay: handleBuffering,
-  // onLoadedData: handleBuffering,
-  // onPlaying: handleBuffering,
-  // onLoadStart: handleBuffering, // Needed for Safari to start
-  // onPause: handleBuffering, // Needed for Chrome when seeking
-  // onTimeUpdate: handleBuffering, // Needed for audio buffering progress
-  // onProgress: handleBuffering, // Needed for video buffering progress
-
-  // This is only needed for browsers not allowing autoplay
   const { isBuffered, bufferingHandlers } = useBuffering(
     true,
     onTimeUpdate,
@@ -76,50 +85,51 @@ function Video({
 
   useEffectSync(
     ([prevIsBuffered]) => {
-      if (prevIsBuffered === undefined) {
-        return;
-      }
-
+      if (prevIsBuffered === undefined) return;
       handleReady();
     },
     [isBuffered, handleReady],
   );
 
-  const handlePlaying = useStableCallback((e) => {
-    handlePlayingForBuffering(e);
-    handleReady();
-    restProps.onPlaying?.(e);
-  });
+  const handlePlaying = useStableCallback(
+    (e: React.SyntheticEvent<HTMLVideoElement>) => {
+      handlePlayingForBuffering(e);
+      handleReady();
+      restProps.onPlaying?.(e);
+    },
+  );
 
-  const handlePlay = useStableCallback((e) => {
-    restProps.onPlay?.(e);
-  });
+  const handlePlay = useStableCallback(
+    (e: React.SyntheticEvent<HTMLVideoElement>) => {
+      restProps.onPlay?.(e);
+    },
+  );
 
   const mergedOtherBufferingHandlers = useMemo(() => {
-    const mergedHandlers: BufferingPair = {};
+    const handlers: BufferingPair = {};
 
     Object.keys(otherBufferingHandlers).forEach((keyString) => {
       const key = keyString as keyof typeof otherBufferingHandlers;
 
-      mergedHandlers[key] = (e: HTMLMediaBufferedEvent) => {
+      handlers[key] = (e: HTMLMediaBufferedEvent) => {
         restProps[key as keyof typeof restProps]?.(e);
         otherBufferingHandlers[key]?.(e);
       };
     });
 
-    return mergedHandlers;
+    return handlers;
   }, [otherBufferingHandlers, restProps]);
 
-  // TODO: Fix cleanup hook
-  // Something went wrong with that hook, actually it immediately unmounts the video after the first render
-  // useVideoCleanup(videoRef, mergedOtherBufferingHandlers);
+  useVideoCleanup(videoRef, mergedOtherBufferingHandlers);
 
   return (
-    // eslint-disable-next-line react/jsx-props-no-spreading
     <video
       ref={videoRef}
       onPlay={handlePlay}
       onPlaying={handlePlaying}
+      style={mergedStyle}
+      playsInline
+      preload="auto"
       {...mergedOtherBufferingHandlers}
       {...restProps}
     >

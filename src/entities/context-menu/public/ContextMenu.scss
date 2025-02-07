@@ -1,16 +1,20 @@
-/* ContextMenu Styling */
 .context-menu-container {
   position: absolute;
   border-radius: 8px;
   box-shadow: 0px 4px 12px rgba(255, 255, 255, 0.15);
-  min-width: 220px;
+  min-width: 120px;
+  max-width: 260px;
   max-height: 400px;
   overflow-y: auto;
   z-index: 9997; 
   background-color: var(--awe-palette-secondary-main);
   will-change: opacity, transform;
   
+  .no-compact {
+    min-width: 220px;
+  }
 }
+
 
 .context-menu-backdrop {
   position: fixed;
@@ -27,22 +31,3 @@
   cursor: pointer;
 }
 
-/* Additional variations for dense or compact menus */
-.context-menu-bubble.dense {
-  padding: 4px 8px;
-}
-
-.context-menu-bubble.no-compact {
-  min-width: 220px;
-}
-
-/* Optional custom class overrides */
-.custom-menu {
-  border: 2px solid #007bff;
-  background-color: #f0f8ff;
-}
-
-.context-menu-container.custom-class {
-  border: 1px solid #f0f0f0;
-  border-radius: 10px;
-}

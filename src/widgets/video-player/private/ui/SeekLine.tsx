@@ -110,7 +110,7 @@ const SeekLine: FC<SeekLineProps> = ({
     seekerRef: seekerContainer,
     previewRef: previewContainer,
     isPreviewDisabled,
-    isActive: isActive!,
+    isActive: true,
     duration,
     onSeek: handleSeek,
     onSeekStart: handleSeekStart,
