@@ -213,18 +213,24 @@ declare const Boolean: BooleanConstructor;
 /**
  * Extends the HTMLElement interface to include cross-browser fullscreen support methods.
  */
+// interface HTMLElement {
+//   requestFullscreen?: () => Promise<void>;
+//   msRequestFullscreen?: () => Promise<void>;
+//   mozRequestFullScreen?: () => Promise<void>;
+//   webkitRequestFullscreen?: () => Promise<void>;
+// }
 
-interface Document {
-  exitFullscreen?: () => Promise<void>;
-  msExitFullscreen?: () => Promise<void>;
-  mozCancelFullScreen?: () => Promise<void>;
-  webkitExitFullscreen?: () => Promise<void>;
+// interface Document {
+//   exitFullscreen?: () => Promise<void>;
+//   msExitFullscreen?: () => Promise<void>;
+//   mozCancelFullScreen?: () => Promise<void>;
+//   webkitExitFullscreen?: () => Promise<void>;
 
-  fullscreenElement?: Element | null;
-  msFullscreenElement?: Element | null;
-  mozFullScreenElement?: Element | null;
-  webkitFullscreenElement?: Element | null;
-}
+//   fullscreenElement?: Element | null;
+//   msFullscreenElement?: Element | null;
+//   mozFullScreenElement?: Element | null;
+//   webkitFullscreenElement?: Element | null;
+// }
 
 interface HTMLVideoElement {
   // WebKit methods

@@ -1,6 +1,5 @@
 import { throttleWith, throttle, debounce, Scheduler } from "@/lib/core";
 import { CallbackManager, createCallbackManager } from "@/lib/utils/callbacks";
-import { ObserveFn } from "./Intersection.types";
 
 export type TargetCallback = (entry: IntersectionObserverEntry) => void;
 export type RootCallback = (entries: IntersectionObserverEntry[]) => void;
@@ -11,12 +10,6 @@ interface IIntersectionController {
   addCallback: (element: Element, callback: TargetCallback) => void;
   removeCallback: (element: Element, callback: TargetCallback) => void;
   destroy: NoneToVoidFunction;
-}
-
-interface IIntersectionResponse {
-  observe: ObserveFn;
-  freeze: NoneToVoidFunction;
-  unfreeze: NoneToVoidFunction;
 }
 
 /**

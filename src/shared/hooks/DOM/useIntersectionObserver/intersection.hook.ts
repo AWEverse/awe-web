@@ -1,9 +1,26 @@
 import { useRef, useEffect, RefObject, useState } from "react";
 import { useStableCallback } from "../../base";
-import { IntersectionController } from "./Intersection.controller";
+import { IntersectionController } from "./intersection.controller";
 import { Scheduler } from "@/lib/core";
 import { TargetCallback, ObserveFn } from ".";
 import useHeavyAnimationCheck from "@/lib/hooks/sensors/useHeavyAnimationCheck";
+
+interface IntersectionProps {
+  rootRef: RefObject<Element | null>;
+  throttleMs?: number;
+  throttleScheduler?: Scheduler;
+  debounceMs?: number;
+  shouldSkipFirst?: boolean;
+  margin?: number;
+  threshold?: number | number[];
+  isDisabled?: boolean;
+}
+
+interface IntersectionResponse {
+  observe: ObserveFn;
+  freeze: NoneToVoidFunction;
+  unfreeze: NoneToVoidFunction;
+}
 
 export function useIntersectionObserver(
   {
@@ -15,18 +32,9 @@ export function useIntersectionObserver(
     margin,
     threshold,
     isDisabled,
-  }: {
-    rootRef: RefObject<Element | null>;
-    throttleMs?: number;
-    throttleScheduler?: Scheduler;
-    debounceMs?: number;
-    shouldSkipFirst?: boolean;
-    margin?: number;
-    threshold?: number | number[];
-    isDisabled?: boolean;
-  },
+  }: IntersectionProps,
   rootCallback?: (entries: IntersectionObserverEntry[]) => void,
-) {
+): IntersectionResponse {
   const controllerRef = useRef<IntersectionController | null>(null);
 
   useEffect(() => {
