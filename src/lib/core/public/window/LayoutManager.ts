@@ -5,8 +5,6 @@ import {
   MOBILE_SCREEN_LANDSCAPE_MAX_WIDTH,
   MOBILE_SCREEN_LANDSCAPE_MAX_HEIGHT,
   MIN_SCREEN_WIDTH_FOR_STATIC_LEFT_COLUMN,
-  MIN_SCREEN_WIDTH_FOR_STATIC_RIGHT_COLUMN,
-  MAX_SCREEN_WIDTH_FOR_EXPAND_PINNED_MESSAGES,
 } from "@/lib/config/app";
 
 enum EMediaQueryKey {
@@ -24,6 +22,13 @@ export type LayoutState = {
   isDesktop: boolean;
 };
 
+// Expected results for different environments
+// iOS Portrait:      ❌
+// iOS Landscape:     ✅
+// Android Portrait:  ❌
+// Android Landscape: ✅ (both queries)
+// Desktop:           ✅ when window ratio ≥ 1/1
+// Tablet:            ✅ in landscape mode
 const QUERIES = {
   [EMediaQueryKey.Mobile]: `
     (max-width: ${MOBILE_SCREEN_MAX_WIDTH}px),
@@ -123,7 +128,7 @@ export default {
     return () => subscribers.delete(callback);
   },
 
-  getState: () => ({ ...state }),
+  getState: () => ({ ...state }) as Readonly<LayoutState>,
 
   destroy: () => {
     mediaQueryCleanup.forEach((cleanup) => cleanup());

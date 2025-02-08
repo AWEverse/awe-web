@@ -1,55 +1,37 @@
-import { useState } from "react";
-import { useStateRef } from "@/shared/hooks/base";
-import { useComponentDidMount } from "@/shared/hooks/effects/useLifecycle";
+import { useSyncExternalStore } from "react";
 import LayoutManager, {
   type LayoutState,
 } from "@/lib/core/public/window/LayoutManager";
+import { IS_BROWSER } from "@/lib/core";
+import { useStableCallback } from "@/shared/hooks/base";
 
-export function getIsMobile(): boolean {
-  if (typeof window === "undefined") return false;
-  return LayoutManager.getState().isMobile;
-}
+const SERVER_SNAPSHOT: LayoutState = {
+  isMobile: false,
+  isTablet: false,
+  isLandscape: false,
+  isDesktop: false,
+  isTouchScreen: false,
+};
 
-export function getIsTablet(): boolean {
-  if (typeof window === "undefined") return false;
-  return LayoutManager.getState().isTablet;
-}
-
-export function getIsLandscape(): boolean {
-  if (typeof window === "undefined") return false;
-  return LayoutManager.getState().isLandscape;
-}
-
-export function getIsDesktop(): boolean {
-  if (typeof window === "undefined") return false;
-  return LayoutManager.getState().isDesktop;
-}
-
-export function getIsTouchScreen(): boolean {
-  if (typeof window === "undefined") return false;
-  return LayoutManager.getState().isTouchScreen;
-}
-
-export default function useAppLayout(): LayoutState {
-  const layoutManager = useStateRef(LayoutManager);
-
-  const [state, setState] = useState<LayoutState>(
-    layoutManager.current.getState(),
+export function useAppLayout(): LayoutState;
+export function useAppLayout<T>(selector: (state: LayoutState) => T): T;
+export function useAppLayout<T>(selector?: (state: LayoutState) => T) {
+  const _selector = useStableCallback(
+    selector ?? ((state) => state as unknown as T),
   );
 
-  useComponentDidMount(() => {
-    const unsubscribe = layoutManager.current.subscribe(() => {
-      setState({ ...layoutManager.current.getState() });
-    });
-
-    return () => {
-      unsubscribe();
-    };
-  });
-
-  return state;
+  return useSyncExternalStore(
+    LayoutManager.subscribe,
+    () => _selector(LayoutManager.getState()),
+    () => _selector(SERVER_SNAPSHOT), // SSR fallback
+  );
 }
 
-// [---------------------------App lifecycle--------------------------------]
-//                                 [--------------use App Layout------------]
-// For exampe during by nested component across full time lifecylce we using only one wersion of
+export const getLayoutState = () =>
+  IS_BROWSER ? LayoutManager.getState() : SERVER_SNAPSHOT;
+
+export const getIsMobile = () => getLayoutState().isMobile;
+export const getIsTablet = () => getLayoutState().isTablet;
+export const getIsLandscape = () => getLayoutState().isLandscape;
+export const getIsDesktop = () => getLayoutState().isDesktop;
+export const getIsTouchScreen = () => getLayoutState().isTouchScreen;
