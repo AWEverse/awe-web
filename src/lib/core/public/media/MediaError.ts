@@ -81,7 +81,9 @@ export const trackMediaError = (
     const { error } = mediaEl;
     if (error) {
       const message = getMediaErrorMessage(error.code);
-      console.error(`Tracking Media Error (${error.code}): ${message}`);
+      console.error(
+        `trackMediaError function detect (${error.code}): ${message}`,
+      );
       trackCallback({ code: error.code, message });
     }
   };
