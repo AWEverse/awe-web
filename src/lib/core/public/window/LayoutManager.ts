@@ -123,9 +123,12 @@ if (typeof window !== "undefined") {
 }
 
 export default {
-  subscribe: (callback: () => void) => {
-    subscribers.add(callback);
-    return () => subscribers.delete(callback);
+  subscribe: (onStoreChange: () => void) => {
+    subscribers.add(onStoreChange);
+
+    return () => {
+      subscribers.delete(onStoreChange);
+    };
   },
 
   getState: () => ({ ...state }) as Readonly<LayoutState>,

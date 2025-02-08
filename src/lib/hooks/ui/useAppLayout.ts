@@ -13,22 +13,22 @@ const SERVER_SNAPSHOT: LayoutState = {
   isTouchScreen: false,
 };
 
-export function useAppLayout(): LayoutState;
-export function useAppLayout<T>(selector: (state: LayoutState) => T): T;
-export function useAppLayout<T>(selector?: (state: LayoutState) => T) {
+const getLayoutState = () => {
+  return IS_BROWSER ? LayoutManager.getState() : SERVER_SNAPSHOT;
+};
+
+export default function useAppLayout(): LayoutState;
+export default function useAppLayout<T>(selector: (state: LayoutState) => T): T;
+export default function useAppLayout<T>(selector?: (state: LayoutState) => T) {
   const _selector = useStableCallback(
-    selector ?? ((state) => state as unknown as T),
+    selector ?? ((state: LayoutState) => state as unknown as T),
   );
 
-  return useSyncExternalStore(
-    LayoutManager.subscribe,
-    () => _selector(LayoutManager.getState()),
-    () => _selector(SERVER_SNAPSHOT), // SSR fallback
-  );
+  const snapshot = () => _selector(LayoutManager.getState());
+  const snapshotSSR = () => _selector(SERVER_SNAPSHOT); // SSR fallback
+
+  return useSyncExternalStore(LayoutManager.subscribe, snapshot, snapshotSSR);
 }
-
-export const getLayoutState = () =>
-  IS_BROWSER ? LayoutManager.getState() : SERVER_SNAPSHOT;
 
 export const getIsMobile = () => getLayoutState().isMobile;
 export const getIsTablet = () => getLayoutState().isTablet;
