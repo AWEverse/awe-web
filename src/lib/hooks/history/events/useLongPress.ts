@@ -1,73 +1,118 @@
-import { useComponentDidMount } from "@/shared/hooks/effects/useLifecycle";
-import { useRef, useCallback } from "react";
+import {
+  useComponentDidMount,
+  useComponentWillUnmount,
+} from "@/shared/hooks/effects/useLifecycle";
+import { useRef, useCallback, useEffect, type SyntheticEvent } from "react";
 
-const DEFAULT_THRESHOLD = 500;
-
-interface LongPressProps {
-  onClick?: (event: React.MouseEvent | React.TouchEvent) => void;
-  onStart?: NoneToVoidFunction;
-  onEnd?: NoneToVoidFunction;
-  threshold?: number;
+interface LongPressOptions {
+  delay?: number;
+  shouldPreventDefault?: boolean;
+  repeatInterval?: number;
+  onStart?: (event: SyntheticEvent) => void;
+  onFinish?: (event: SyntheticEvent) => void;
+  onCancel?: (event: SyntheticEvent) => void;
 }
 
-function useLongPress({
-  onClick,
-  onStart,
-  onEnd,
-  threshold = DEFAULT_THRESHOLD,
-}: LongPressProps) {
-  const isLongPressActive = useRef(false);
-  const isPressed = useRef(false);
-  const timerId = useRef<number | undefined>(undefined);
+const useLongPress = (
+  callback: (event: SyntheticEvent) => void,
+  options: LongPressOptions = {},
+) => {
+  const {
+    delay = 300,
+    shouldPreventDefault = true,
+    repeatInterval,
+    onStart,
+    onFinish,
+    onCancel,
+  } = options;
+
+  const timeoutRef = useRef<NodeJS.Timeout>(null);
+  const intervalRef = useRef<NodeJS.Timeout>(null);
+  const targetRef = useRef<EventTarget>(null);
 
   const start = useCallback(
-    (e: React.MouseEvent | React.TouchEvent) => {
-      const canProcessEvent =
-        ("button" in e && e.button === 0) ||
-        ("touches" in e && e.touches.length > 0);
-
-      if (isPressed.current || !canProcessEvent) {
-        return;
+    (event: SyntheticEvent) => {
+      if (shouldPreventDefault && event.cancelable) {
+        event.preventDefault();
       }
 
-      isPressed.current = true;
+      if (onStart) onStart(event);
 
-      timerId.current = window.setTimeout(() => {
-        onStart?.();
-        isLongPressActive.current = true;
-      }, threshold);
+      targetRef.current = event.target;
+
+      timeoutRef.current = setTimeout(() => {
+        callback(event);
+
+        if (repeatInterval) {
+          intervalRef.current = setInterval(() => {
+            callback(event);
+          }, repeatInterval);
+        }
+      }, delay);
     },
-    [onStart, threshold],
+    [callback, delay, repeatInterval, shouldPreventDefault, onStart],
   );
 
-  const cancel = useCallback(
-    (e: React.MouseEvent | React.TouchEvent) => {
-      if (!isPressed.current) return;
-
-      if (isLongPressActive.current) {
-        onEnd?.();
-      } else {
-        onClick?.(e);
+  const clear = useCallback(
+    (event: SyntheticEvent) => {
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
       }
 
-      isLongPressActive.current = false;
-      isPressed.current = false;
-      window.clearTimeout(timerId.current);
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+      }
+
+      if (intervalRef.current && onFinish) {
+        onFinish?.(event);
+      } else if (timeoutRef.current && onCancel) {
+        onCancel(event);
+      }
+
+      timeoutRef.current = null;
+      intervalRef.current = null;
     },
-    [onEnd, onClick],
+    [onCancel, onFinish],
   );
 
-  useComponentDidMount(() => () => {
-    window.clearTimeout(timerId.current);
+  // Prevent context menu on long press
+  useComponentDidMount(() => {
+    if (!targetRef.current) {
+      return undefined;
+    }
+
+    const listener = (event: Event) => {
+      if (targetRef.current) {
+        event.preventDefault();
+      }
+    };
+
+    targetRef.current.addEventListener("contextmenu", listener);
+
+    return () => {
+      targetRef.current?.removeEventListener("contextmenu", listener);
+    };
+  });
+
+  // Cleanup timers on unmount
+  useComponentWillUnmount(() => {
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+    }
+
+    if (intervalRef.current) {
+      clearInterval(intervalRef.current);
+    }
   });
 
   return {
     onMouseDown: start,
-    onMouseUp: cancel,
-    onMouseLeave: cancel,
+    onMouseUp: clear,
+    onMouseLeave: clear,
     onTouchStart: start,
-    onTouchEnd: cancel,
+    onTouchEnd: clear,
+    onTouchCancel: clear,
   };
-}
+};
 
 export default useLongPress;

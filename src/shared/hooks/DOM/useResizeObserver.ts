@@ -16,9 +16,7 @@ export default function useResizeObserver(
 
   useEffect(() => {
     const element = ref?.current;
-    if (!element || isDisabled) {
-      return;
-    }
+    if (!element || isDisabled) return;
 
     const callback: ResizeObserverCallback = ([entry]) => {
       const { width, height } = entry.contentRect;

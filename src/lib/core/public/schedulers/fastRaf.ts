@@ -70,7 +70,7 @@ function initializeFastRafCallbacks(callback: NoneToVoidFunction) {
       fastRafFallbackTimeout = undefined;
     }
 
-    currentCallbacks.forEach(cb => cb());
+    currentCallbacks.forEach((cb) => cb());
   });
 }
 
@@ -96,7 +96,10 @@ function initializeTimeoutFallback(callback: NoneToVoidFunction) {
       const currentTimeoutCallbacks = fastRafFallbackCallbacks!;
 
       if (fastRafCallbacks) {
-        currentTimeoutCallbacks.forEach(fastRafCallbacks.delete, fastRafCallbacks);
+        currentTimeoutCallbacks.forEach(
+          fastRafCallbacks.delete,
+          fastRafCallbacks,
+        );
       }
 
       fastRafFallbackCallbacks = undefined;
@@ -106,7 +109,7 @@ function initializeTimeoutFallback(callback: NoneToVoidFunction) {
         fastRafFallbackTimeout = undefined;
       }
 
-      currentTimeoutCallbacks.forEach(cb => cb());
+      currentTimeoutCallbacks.forEach((cb) => cb());
     }, FAST_RAF_TIMEOUT_FALLBACK_MS);
   }
 }

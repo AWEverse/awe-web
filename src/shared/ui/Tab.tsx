@@ -1,4 +1,4 @@
-import { FC, useMemo, useRef } from "react";
+import React, { FC, useImperativeHandle, useMemo, useRef } from "react";
 import { motion } from "framer-motion";
 import buildClassName from "../lib/buildClassName";
 import "./Tab.scss";
@@ -7,9 +7,9 @@ import { capitalize } from "@/lib/utils/helpers/string/stringFormaters";
 import { EMouseButton } from "@/lib/core";
 import ContextMenu, { useContextMenuHandlers } from "@/entities/context-menu";
 import ActionButton from "./ActionButton";
-import useUniqueId from "@/lib/hooks/utilities/useUniqueId";
 
 type OwnProps = {
+  ref: React.RefObject<HTMLDivElement | null>;
   layoutId: string;
   className?: string;
   title: string;
@@ -31,6 +31,7 @@ const classNames = {
 };
 
 const Tab: FC<OwnProps> = ({
+  ref,
   layoutId,
   className,
   title,
@@ -83,6 +84,17 @@ const Tab: FC<OwnProps> = ({
       onClick?.(clickArg!);
     },
   );
+
+  useImperativeHandle(ref, () => {
+    return {
+      focus() {
+        tabRef.current?.focus();
+      },
+      scrollIntoView() {
+        tabRef.current?.scrollIntoView();
+      },
+    } as HTMLDivElement;
+  }, []);
 
   return (
     <>

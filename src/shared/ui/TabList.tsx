@@ -5,7 +5,6 @@ import buildClassName from "../lib/buildClassName";
 import Tab, { TabProps } from "./Tab";
 import { capitalize } from "@/lib/utils/helpers/string/stringFormaters";
 import "./TabList.scss";
-import { usePrevious } from "../hooks/base";
 import useUniqueId from "@/lib/hooks/utilities/useUniqueId";
 
 type TabProperty = "title" | "badgeCount" | "isBlocked" | "isBadgeActive";
@@ -70,6 +69,7 @@ const TabList: FC<OwnProps> = (props) => {
 
           return (
             <Tab
+              ref={containerRef}
               layoutId={uuid}
               key={`${id}_${title}`}
               aria-selected={isActive}

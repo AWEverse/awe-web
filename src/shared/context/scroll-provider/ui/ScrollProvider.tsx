@@ -9,11 +9,15 @@ const INTERSECTION_THROTTLE_FOR_MEDIA = IS_ANDROID ? 1000 : 350;
 const INTERSECTION_MARGIN_FOR_LOADING = getIsMobile() ? 300 : 500;
 
 interface OwnProps {
-  containerRef: React.RefObject<HTMLElement>;
+  containerRef: React.RefObject<HTMLElement | null>;
   children: ReactNode;
 }
 
-export const ScrollProvider = ({ children, containerRef }: OwnProps) => {
+const ScrollProvider = ({ children, containerRef }: OwnProps) => {
+  const { observe: observeIntersectionForReading } = useIntersectionObserver({
+    rootRef: containerRef,
+  });
+
   const {
     observe: observeIntersectionForLoading,
     freeze,
@@ -34,6 +38,7 @@ export const ScrollProvider = ({ children, containerRef }: OwnProps) => {
   return (
     <ScrollContext.Provider
       value={{
+        observeIntersectionForReading,
         observeIntersectionForLoading,
         observeIntersectionForPlaying,
       }}
@@ -42,3 +47,5 @@ export const ScrollProvider = ({ children, containerRef }: OwnProps) => {
     </ScrollContext.Provider>
   );
 };
+
+export default ScrollProvider;

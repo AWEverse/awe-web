@@ -109,15 +109,15 @@ export default class BTimeRanges {
 
     const ranges = this.getBufferedInfo(b);
 
-    // for (const { start, end } of ranges) {
-    //   if (time < end) {
-    //     result += end - Math.max(start, time);
-    //   }
-    // }
+    const overlaps = ({ start, end }: IBufferedRange) => {
+      if (time < end) {
+        return end - Math.max(start, time);
+      }
 
-    return ranges.sum(({ start, end }) =>
-      time < end ? end - Math.max(start, time) : 0,
-    );
+      return 0;
+    };
+
+    return ranges.sum(overlaps);
   }
   /**
    * Determines if the given time is inside a gap between buffered ranges.

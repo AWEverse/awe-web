@@ -38,3 +38,5 @@ const branch = (cases: BranchConfig) => {
     }
   };
 };
+
+export default branch;

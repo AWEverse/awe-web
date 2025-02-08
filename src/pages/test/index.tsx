@@ -8,6 +8,11 @@ import { useFastClick } from "@/shared/hooks/mouse/useFastClick";
 import { useState, useRef } from "react";
 import Video from "@/shared/ui/Video";
 import SlideButton from "@/entities/SlideButton";
+import {
+  requestMeasure,
+  requestMutation,
+  requestNextMutation,
+} from "@/lib/modules/fastdom/fastdom";
 
 const TestPage: React.FC = () => {
   const containerRef = useRef<HTMLDivElement>(null);

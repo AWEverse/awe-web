@@ -11,9 +11,9 @@ import {
 import { REM } from "@/lib/utils/mediaDimensions";
 import { ThreadId } from "@/types";
 import { FC, ReactNode, useRef, useState } from "react";
-import MessageText from "./views/MessageText";
 
 import "./index.scss";
+import { useScrollProvider } from "@/shared/context";
 
 type PositionEntity = "Group" | "Document" | "List";
 type Position = "IsFirst" | "IsLast";
@@ -45,9 +45,6 @@ class Purposes {
 
 type OwnProps = {
   message: ApiMessage;
-  observeIntersectionForBottom: ObserveFn;
-  observeIntersectionForLoading: ObserveFn;
-  observeIntersectionForPlaying: ObserveFn;
   album?: IAlbum;
   withAvatar?: boolean;
   withSenderName?: boolean;
@@ -63,15 +60,17 @@ type OwnProps = {
 
 interface StateProps {}
 
-const ChatMessage: FC<OwnProps & StateProps> = ({
-  message,
-  observeIntersectionForBottom,
-  observeIntersectionForLoading,
-}) => {
+const ChatMessage: FC<OwnProps & StateProps> = ({ message }) => {
   const { content, isJustAdded } = message;
 
   const messageRef = useRef<HTMLDivElement>(null);
   const bottomMarkerRef = useRef<HTMLDivElement>(null);
+
+  const {
+    observeIntersectionForReading,
+    observeIntersectionForLoading,
+    observeIntersectionForPlaying,
+  } = useScrollProvider();
 
   const renderContent = (): ReactNode => {
     const {
@@ -97,7 +96,11 @@ const ChatMessage: FC<OwnProps & StateProps> = ({
       ttlSeconds,
     } = content;
 
-    return <div>Message content is {isLoading ? "visible" : "hidden"}</div>;
+    return (
+      <div>
+        Message content is {isReading ? "Message is readed!" : "Ready to read!"}
+      </div>
+    );
   };
 
   const renderAvatar = () => {
@@ -118,7 +121,7 @@ const ChatMessage: FC<OwnProps & StateProps> = ({
   );
   const isReading = useIsIntersecting(
     bottomMarkerRef,
-    observeIntersectionForBottom,
+    observeIntersectionForReading,
   );
 
   return (
