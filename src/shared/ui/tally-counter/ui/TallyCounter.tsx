@@ -4,7 +4,7 @@ import buildClassName from "@/shared/lib/buildClassName";
 import "./TallyCounter.scss";
 import { AddRounded, RemoveRounded } from "@mui/icons-material";
 import { useStableCallback } from "@/shared/hooks/base";
-import useLongPress from "@/lib/hooks/history/events/useLongPress";
+import useLongPress from "@/lib/hooks/events/useLongPress";
 import { useInterval } from "@/shared/hooks/shedulers";
 
 interface OwnProps {

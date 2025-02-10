@@ -21,7 +21,7 @@ const useClickHandler = <E extends EventType = EventType>(
   const handler = useCallback(
     (event: Event) => {
       if (window.TouchEvent && event instanceof TouchEvent) {
-        if (event.touches.length > 1) return;
+        if (event.touches?.length > 1) return;
       }
 
       const { current: el } = ref;

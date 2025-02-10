@@ -1,11 +1,6 @@
 import React, { FC, memo, useCallback } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { pipe } from "@/lib/core/public/misc/Pipe";
-import {
-  useDropdownState,
-  useDropdownAccessibility,
-  useDropdownEffects,
-} from "../hooks";
+import { useDropdownState, useDropdownAccessibility } from "../hooks";
 import buildClassName from "@/shared/lib/buildClassName";
 import { useRefInstead } from "@/shared/hooks/base";
 import s from "./Dropdown.module.scss";
@@ -45,6 +40,12 @@ interface OwnProps {
 
 const SCALE_FACTOR = 0.85; //%
 const ANIMATION_DURATION = 0.15;
+
+const dropdownVariants = {
+  initial: { scale: SCALE_FACTOR, opacity: 0 },
+  animate: { scale: 1, opacity: 1 },
+  exit: { scale: SCALE_FACTOR, opacity: 0 },
+};
 
 const DropdownMenu: FC<OwnProps & OwnSharedProps> = ({
   ref,
@@ -113,9 +114,10 @@ const DropdownMenu: FC<OwnProps & OwnSharedProps> = ({
         {isOpen && (
           <motion.div
             ref={dropdownRef}
-            initial={{ scale: SCALE_FACTOR, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            exit={{ scale: SCALE_FACTOR, opacity: 0 }}
+            variants={dropdownVariants}
+            initial="initial"
+            animate="animate"
+            exit="exit"
             transition={{
               duration: ANIMATION_DURATION,
               ease: "easeInOut",

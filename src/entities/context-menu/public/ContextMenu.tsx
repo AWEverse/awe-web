@@ -13,14 +13,14 @@ import buildClassName from "@/shared/lib/buildClassName";
 import stopEvent from "@/lib/utils/stopEvent";
 import useMenuPosition from "@/entities/context-menu/public/hooks/useMenuPosition";
 import Portal from "@/shared/ui/Portal";
-import { useClickAway } from "@/lib/hooks/history/events/useClick";
+import { useClickAway } from "@/lib/hooks/events/useClick";
 import { useBoundaryCheck } from "@/shared/hooks/mouse/useBoundaryCheck";
 
 import "./ContextMenu.scss";
 import { useEffectWithPreviousDeps } from "@/shared/hooks/effects/useEffectWithPreviousDependencies";
 import { dispatchHeavyAnimation, IVector2 } from "@/lib/core";
 import useBodyClass from "@/shared/hooks/DOM/useBodyClass";
-import useKeyboardListeners from "@/lib/hooks/history/events/useKeyboardListeners";
+import useKeyboardListeners from "@/lib/hooks/events/useKeyboardListeners";
 
 const ANIMATION_DURATION = 0.125;
 
@@ -67,9 +67,9 @@ const ContextMenu: FC<OwnProps> = ({
     onClose();
   }, [onClose]);
 
-  useClickAway(containerRef, onClose, !isOpen);
-
   useBodyClass("has-open-dialog", isOpen);
+
+  useClickAway(containerRef, onClose);
 
   useKeyboardListeners({ onEsc: onClose });
 

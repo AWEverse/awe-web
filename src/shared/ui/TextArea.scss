@@ -1,0 +1,13 @@
+.text-area {
+  will-change: transform;
+  transform-origin: top;
+  transition: transform 0.15s ease-in-out;
+}
+
+.text-area.expanding {
+  transform: scaleY(1);
+}
+
+.text-area.collapsing {
+  transform: scaleY(0);
+}

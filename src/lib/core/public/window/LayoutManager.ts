@@ -55,7 +55,7 @@ const QUERIES = {
   `,
 };
 
-let state: LayoutState = {
+let state: Readonly<LayoutState> = {
   isMobile: false,
   isTablet: false,
   isLandscape: false,
@@ -69,6 +69,22 @@ const subscribers = new Set<() => void>();
 const DEBOUNCE_MS = 100;
 
 const debouncedUpdate = debounce(updateLayoutState, DEBOUNCE_MS);
+
+function initializeMediaQueries() {
+  Object.entries(QUERIES).forEach(([key, query]) => {
+    const mqKey = key as EMediaQueryKey;
+    const mq = window.matchMedia(query);
+    mediaQueryCache.set(mqKey, mq);
+
+    const listener = () => debouncedUpdate();
+    mq.addEventListener("change", listener);
+    mediaQueryCleanup.set(mqKey, () =>
+      mq.removeEventListener("change", listener),
+    );
+  });
+
+  updateLayoutState();
+}
 
 function updateLayoutState() {
   const newState = {
@@ -103,21 +119,7 @@ function notifySubscribers() {
 }
 
 if (typeof window !== "undefined") {
-  (function () {
-    Object.entries(QUERIES).forEach(([key, query]) => {
-      const mqKey = key as EMediaQueryKey;
-      const mq = window.matchMedia(query);
-      mediaQueryCache.set(mqKey, mq);
-
-      const listener = () => debouncedUpdate();
-      mq.addEventListener("change", listener);
-      mediaQueryCleanup.set(mqKey, () =>
-        mq.removeEventListener("change", listener),
-      );
-    });
-
-    updateLayoutState();
-  })();
+  initializeMediaQueries();
 }
 
 export default {
@@ -129,7 +131,7 @@ export default {
     };
   },
 
-  getState: () => ({ ...state }) as Readonly<LayoutState>,
+  getState: () => state,
 
   destroy: () => {
     mediaQueryCleanup.forEach((cleanup) => cleanup());

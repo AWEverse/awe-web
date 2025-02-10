@@ -26,8 +26,8 @@ export default function useAppLayout<T = LayoutState>(
 ): T {
   const _selector = useStableCallback(selector);
 
-  const snapshot = () => _selector(LayoutManager.getState());
-  const snapshotSSR = () => _selector(SERVER_SNAPSHOT);
+  const snapshot = useStableCallback(() => _selector(LayoutManager.getState()));
+  const snapshotSSR = useStableCallback(() => _selector(SERVER_SNAPSHOT));
 
   return useSyncExternalStore(LayoutManager.subscribe, snapshot, snapshotSSR);
 }

@@ -13,6 +13,7 @@ import { useComponentDidMount } from "@/shared/hooks/effects/useLifecycle";
 import useBodyClass from "@/shared/hooks/DOM/useBodyClass";
 import { IS_TOUCH_ENV } from "@/lib/core";
 import { LazyMotion, domAnimation } from "motion/react";
+import ErrorBoundary from "./providers/error-boundary";
 
 interface StateProps {
   themeKey: ThemeKey;

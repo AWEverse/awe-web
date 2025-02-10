@@ -1,4 +1,4 @@
-import React, { lazy, memo, useCallback, useEffect, useRef } from "react";
+import React, { lazy, memo, useEffect, useRef } from "react";
 import {
   clamp,
   clamp01,
@@ -28,31 +28,14 @@ import buildClassName from "@/shared/lib/buildClassName";
 import useStateSignal from "@/lib/hooks/signals/useStateSignal";
 import { DEBUG } from "@/lib/config/dev";
 import { useBooleanState } from "@/shared/hooks/state";
-import { requestMeasure } from "@/lib/modules/fastdom/fastdom";
 import parseMediaSources from "../../private/lib/source/parseMediaSources";
 import { useFastClick } from "@/shared/hooks/mouse/useFastClick";
-import ContextMenu, { useContextMenuHandlers } from "@/entities/context-menu";
+import { useContextMenuHandlers } from "@/entities/context-menu";
 import { useVideoBuffering } from "../../private/hooks/useVideoBuffering";
 import { useVideoPlayback } from "../../private/hooks/useVideoPlayback";
 import { noop } from "@/lib/utils/listener";
 import { useTimeLine } from "../../private/hooks/useTimeLine";
 import { useTouchControls } from "../../private/hooks/useTouchControls";
-import {
-  ArrowCircleLeft,
-  ArrowLeftRounded,
-  ArrowRightRounded,
-  AttractionsRounded,
-  CloseRounded,
-  ControlPointDuplicateSharp,
-  LibraryAddRounded,
-  LinkRounded,
-  LoopRounded,
-  RepeatOutlined,
-} from "@mui/icons-material";
-import { IconButton } from "@mui/material";
-import ActionButton from "@/shared/ui/ActionButton";
-import branch from "@/lib/core/public/misc/Branch";
-import MenuSeparator from "@/shared/ui/MenuSeparator";
 import VideoPlayerContextMenu from "../../private/ui/VideoPlayerContextMenu";
 
 const TopPannel = lazy(() => import("../../private/ui/mobile/TopPannel"));

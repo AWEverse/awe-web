@@ -3,7 +3,6 @@ import { ApiPhoto } from "@/@types/api/types/messages";
 import { ApiUser } from "@/@types/api/types/user";
 import AvatarStoryCircle from "@/entities/avatar-story-сircle";
 import { ObserveFn } from "@/shared/hooks/DOM/useIntersectionObserver";
-import { IS_TEST } from "@/lib/utils/OS/windowEnviroment";
 import { useRef } from "react";
 
 type OwnProps = {

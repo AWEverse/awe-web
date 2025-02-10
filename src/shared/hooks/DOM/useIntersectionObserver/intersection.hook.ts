@@ -130,16 +130,20 @@ export function useIsIntersecting(
 ) {
   const intersectionRef = useRef<boolean>(!observe);
 
-  const subscribe = useCallback(() => {
-    if (!targetRef.current || !observe) return () => {};
+  const subscribe = useCallback(
+    (notify: () => void) => {
+      if (!targetRef.current || !observe) return () => {};
 
-    const unsubscribe = observe(targetRef.current, (entry) => {
-      intersectionRef.current = entry.isIntersecting;
-      callback?.(entry);
-    });
+      const unsubscribe = observe(targetRef.current, (entry) => {
+        intersectionRef.current = entry.isIntersecting;
+        notify();
+        callback?.(entry);
+      });
 
-    return unsubscribe;
-  }, [targetRef, observe, callback]);
+      return unsubscribe;
+    },
+    [targetRef, observe, callback],
+  );
 
   const getSnapshot = () => intersectionRef.current;
 

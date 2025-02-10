@@ -187,6 +187,6 @@ const SeekLine: FC<SeekLineProps> = ({
 };
 
 const calculateXPosition = (value: number, duration: number) =>
-  `translateX(${round((value / duration) * 100)}%)`;
+  `translateX(${round((value / duration) * 100, 3)}%)`;
 
 export default memo(SeekLine);

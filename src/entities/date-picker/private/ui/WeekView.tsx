@@ -3,7 +3,7 @@ import buildClassName from "@/shared/lib/buildClassName";
 import { CalendarViewProps } from "../lib/types";
 import { buildCalendarGrid } from "../lib/utils";
 import DayCell from "./DayCell";
-import useLongPress from "@/lib/hooks/history/events/useLongPress";
+import useLongPress from "@/lib/hooks/events/useLongPress";
 
 type TimeLapse = "prev" | "current" | "next";
 
