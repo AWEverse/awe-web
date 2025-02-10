@@ -70,22 +70,6 @@ const DEBOUNCE_MS = 100;
 
 const debouncedUpdate = debounce(updateLayoutState, DEBOUNCE_MS);
 
-function initializeMediaQueries() {
-  Object.entries(QUERIES).forEach(([key, query]) => {
-    const mqKey = key as EMediaQueryKey;
-    const mq = window.matchMedia(query);
-    mediaQueryCache.set(mqKey, mq);
-
-    const listener = () => debouncedUpdate();
-    mq.addEventListener("change", listener);
-    mediaQueryCleanup.set(mqKey, () =>
-      mq.removeEventListener("change", listener),
-    );
-  });
-
-  updateLayoutState();
-}
-
 function updateLayoutState() {
   const newState = {
     isMobile: mediaQueryCache.get(EMediaQueryKey.Mobile)?.matches ?? false,
@@ -119,15 +103,29 @@ function notifySubscribers() {
 }
 
 if (typeof window !== "undefined") {
-  initializeMediaQueries();
+  (function () {
+    Object.entries(QUERIES).forEach(([key, query]) => {
+      const mqKey = key as EMediaQueryKey;
+      const mq = window.matchMedia(query);
+      mediaQueryCache.set(mqKey, mq);
+
+      const listener = () => debouncedUpdate();
+      mq.addEventListener("change", listener);
+      mediaQueryCleanup.set(mqKey, () =>
+        mq.removeEventListener("change", listener),
+      );
+    });
+
+    updateLayoutState();
+  })();
 }
 
 export default {
-  subscribe: (onStoreChange: () => void) => {
-    subscribers.add(onStoreChange);
+  subscribe: (callback: () => void) => {
+    subscribers.add(callback);
 
     return () => {
-      subscribers.delete(onStoreChange);
+      subscribers.delete(callback);
     };
   },
 

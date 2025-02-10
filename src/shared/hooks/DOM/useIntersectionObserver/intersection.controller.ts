@@ -105,6 +105,7 @@ export class IntersectionController implements IIntersectionController {
         entries.forEach((entry) => {
           this.entriesAccumulator.set(entry.target, entry);
         });
+
         // If frozen, do not process immediately.
         if (this.freezeCount > 0) {
           this.onUnfreeze = this.observerCallback;
