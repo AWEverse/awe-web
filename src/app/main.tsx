@@ -1,4 +1,4 @@
-import { createElement } from "react";
+import { createElement, StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import App from "./App";
 
@@ -14,20 +14,25 @@ import "@/styles/output.css";
 // if (STRICTERDOM_ENABLED) {
 //   enableStrict();
 // }
+
 async function init() {
-  const rootElement = document.getElementById("root");
+	const rootElement = document.getElementById("root");
 
-  if (!rootElement) {
-    console.error("Root element not found");
-    return;
-  }
+	if (!rootElement) {
+		console.error("Root element not found");
+		return;
+	}
 
-  requestMutation(() => {
-    const root = createRoot(rootElement as Element);
-    root.render(createElement(App));
+	requestMutation(() => {
+		const root = createRoot(rootElement);
+		root.render(
+			<StrictMode>
+				<App />
+			</StrictMode>,
+		);
 
-    optimizeView();
-  });
+		optimizeView();
+	});
 }
 
 init();

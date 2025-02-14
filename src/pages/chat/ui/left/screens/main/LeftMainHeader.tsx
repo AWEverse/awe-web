@@ -4,7 +4,7 @@ import SearchInput from "@/shared/ui/SearchInput";
 import { ArrowForwardRounded } from "@mui/icons-material";
 import useChatStore from "@/pages/chat/store/useChatSelector";
 import IconButton from "@/shared/ui/IconButton";
-import { useStableCallbackSync } from "@/shared/hooks/base";
+import { useStableCallback } from "@/shared/hooks/base";
 
 interface OwnProps {
   onFocus?: () => void;
@@ -17,15 +17,19 @@ interface StateProps {}
 const useSearchInput = () => {
   const [value, setValue] = useState("");
 
-  const handleChange = useStableCallbackSync(
+  const handleChange = useStableCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
       setValue(e.target.value);
     },
+    { sync: true },
   );
 
-  const handleReset = useStableCallbackSync(() => {
-    setValue("");
-  });
+  const handleReset = useStableCallback(
+    () => {
+      setValue("");
+    },
+    { sync: true },
+  );
 
   return { value, handleChange, handleReset };
 };

@@ -1,33 +1,46 @@
 import { useRef } from "react";
 
-const BASE36_CHARS = "0123456789abcdefghijklmnopqrstuvwxyz";
-
+/**
+ * Generates a cryptographically strong random string of a given length using Base64 encoding.
+ */
 function generateRandomString(length: number): string {
-  let result = "";
-  for (let i = 0; i < length; i++) {
-    result += BASE36_CHARS[Math.floor(Math.random() * 36)];
-  }
-  return result;
+  const randomBytes = new Uint8Array(Math.ceil((length * 6) / 8)); // 6 bits per Base64 char
+  crypto.getRandomValues(randomBytes);
+  let result = btoa(String.fromCharCode(...randomBytes))
+    .replace(/\+/g, "-") // Replace '+' with '-'
+    .replace(/\//g, "_") // Replace '/' with '_'
+    .replace(/=/g, ""); // Remove padding '='
+  return result.slice(0, length); // Truncate to desired length
 }
 
+/**
+ * Generates a unique ID with optional prefix, suffix, and length constraints.
+ */
 function generateUniqueId(
   prefix: string = "",
   suffix: string = "",
   length: number = 16,
 ): string {
   const timestamp = Date.now().toString(36);
-  const fixedPart = `${prefix}${timestamp}${suffix}`;
-  const separatorCount = [prefix, timestamp, suffix].filter(Boolean).length - 1;
-  const fixedLength = fixedPart.length + separatorCount;
 
+  const subMillisecond = Math.floor(performance.now() * 1000).toString(36);
+  const fixedPart = `${prefix}${timestamp}${subMillisecond}${suffix}`;
+  const separatorCount =
+    [prefix, timestamp, subMillisecond, suffix].filter(Boolean).length - 1;
+  const fixedLength = fixedPart.length + separatorCount;
   const randomLength = Math.max(length - fixedLength, 1);
 
   const randomPart = generateRandomString(randomLength);
 
-  const parts = [prefix, timestamp, randomPart, suffix].filter(Boolean);
+  const parts = [prefix, timestamp, subMillisecond, randomPart, suffix].filter(
+    Boolean,
+  );
   return parts.join("-").slice(0, length);
 }
 
+/**
+ * React hook to generate and memoize a unique ID.
+ */
 function useUniqueId(
   prefix: string = "",
   suffix: string = "",

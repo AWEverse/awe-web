@@ -1,57 +1,81 @@
-import { useState, useEffect, useMemo } from "react";
-import { throttle } from "@/lib/core";
-import windowSize from "../../../lib/utils/windowSize";
-import { useDebouncedFunction } from "@/shared/hooks/shedulers";
+import { useState, useEffect, useRef, useMemo } from "react";
+import { useStableCallback } from "../base";
+import { useDebouncedFunction } from "../shedulers";
 
-const THROTTLE = 250;
+type WindowSize = {
+  width: number;
+  height: number;
+  isResizing: boolean;
+};
 
-export default function useWindowSize() {
-  const { width: initialWidth, height: initialHeight } = windowSize.dimensions;
-  const [width, setWidth] = useState(initialWidth);
-  const [height, setHeight] = useState(initialHeight);
-  const [isResizing, setIsResizing] = useState(false);
+const useWindowSize = (): WindowSize => {
+  const [size, setSize] = useState(() => ({
+    width: typeof window !== "undefined" ? window.innerWidth : 0,
+    height: typeof window !== "undefined" ? window.innerHeight : 0,
+  }));
 
-  const setIsResizingDebounced = useDebouncedFunction(
-    setIsResizing,
-    [setIsResizing],
-    THROTTLE,
+  const isResizing = useRef(false);
+  const animationFrame = useRef<number>(0);
+  const lastUpdate = useRef(Date.now());
+  const debounceMs = 250;
+
+  const handleResize = useStableCallback(() => {
+    if (!isResizing.current) {
+      isResizing.current = true;
+    }
+
+    const now = Date.now();
+    const timeSinceLastUpdate = now - lastUpdate.current;
+
+    if (timeSinceLastUpdate >= debounceMs) {
+      lastUpdate.current = now;
+
+      console.log("window resize");
+
+      setSize({
+        width: window.innerWidth,
+        height: window.innerHeight,
+      });
+    }
+
+    if (animationFrame.current) {
+      cancelAnimationFrame(animationFrame.current);
+    }
+
+    animationFrame.current = requestAnimationFrame(() => {
+      isResizing.current = false;
+    });
+  });
+
+  const debouncedResizeHandler = useDebouncedFunction(
+    handleResize,
+    debounceMs,
     true,
+    false,
   );
 
   useEffect(() => {
-    const throttledSetIsResizing = throttle(
-      () => {
-        setIsResizing(true);
-      },
-      THROTTLE,
-      true,
-    );
+    if (typeof window === "undefined") return;
 
-    const throttledSetSize = throttle(
-      () => {
-        const { width: newWidth, height: newHeight } = windowSize.dimensions;
-        setWidth(newWidth);
-        setHeight(newHeight);
-        setIsResizingDebounced(false);
-      },
-      THROTTLE,
-      false,
-    );
-
-    const handleResize = () => {
-      throttledSetIsResizing();
-      throttledSetSize();
-    };
-
-    window.addEventListener("resize", handleResize);
+    window.addEventListener("resize", debouncedResizeHandler, {
+      passive: true,
+    });
 
     return () => {
-      window.removeEventListener("resize", handleResize);
+      window.removeEventListener("resize", debouncedResizeHandler);
+      if (animationFrame.current) {
+        cancelAnimationFrame(animationFrame.current);
+      }
     };
-  }, [setIsResizingDebounced]);
+  }, [debouncedResizeHandler]);
 
   return useMemo(
-    () => ({ width, height, isResizing }),
-    [height, isResizing, width],
+    () => ({
+      ...size,
+      isResizing: isResizing.current,
+    }),
+    [size.width, size.height, isResizing.current],
   );
-}
+};
+
+export default useWindowSize;

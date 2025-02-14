@@ -5,7 +5,6 @@ export function createCallbackManager<
   removeCallback: (callback: T) => void;
   runCallbacks: (...args: Parameters<T>) => void;
   hasCallbacks: () => boolean;
-  runCallbacksAsync: (...args: Parameters<T>) => void;
 } {
   const callbacks = new Set<T>();
 
@@ -26,14 +25,6 @@ export function createCallbackManager<
     }
   };
 
-  // when the callbacks might be time-consuming, and you don't want them to block the main execution thread.
-  // This is how we work with a sequence of macro tasks
-  const runCallbacksAsync = (...args: Parameters<T>): void => {
-    setTimeout(() => {
-      runCallbacks(...args);
-    }, 0);
-  };
-
   const hasCallbacks = () => callbacks.size > 0;
 
   return {
@@ -41,7 +32,6 @@ export function createCallbackManager<
     removeCallback,
     runCallbacks,
     hasCallbacks,
-    runCallbacksAsync,
   };
 }
 

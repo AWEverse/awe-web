@@ -1,18 +1,12 @@
 .Message {
-	display: flex;
-  align-items: flex-end;
-  margin-bottom: 0.375rem;
-  position: relative;
-
-  padding: 2.25rem 0;
-
-	--background-color: var(--color-background);
+  --color-background-own:  var(--awe-palette-primary-main);
+  --background-color: var(--awe-palette-secondary-main);
   --hover-color: var(--color-reply-hover);
   --color-reaction: var(--color-message-reaction);
   --hover-color-reaction: var(--color-message-reaction-hover);
   --text-color-reaction: var(--accent-color);
   --color-reaction-chosen: var(--accent-color);
-  --text-color-reaction-chosen: #FFFFFF;
+  --text-color-reaction-chosen: #fff;
   --hover-color-reaction-chosen: var(--color-message-reaction-chosen-hover);
   --active-color: var(--color-reply-active);
   --max-width: 29rem;
@@ -23,11 +17,17 @@
   --thumbs-background: var(--color-background);
   --deleting-translate-x: -50%;
   --select-message-scale: 0.9;
+  --border-radius-messages: 17px;
+  --border-radius: var(--border-radius-messages);
 
-  --border-top-left-radius: var(--border-radius-messages);
-  --border-top-right-radius: var(--border-radius-messages);
-  --border-bottom-left-radius: var(--border-radius-messages);
-  --border-bottom-right-radius: var(--border-radius-messages);
+  display: flex;
+  align-items: flex-end;
+  position: relative;
+  margin-bottom: 0.375rem;
+  border-radius: var(--border-radius);
+  max-width: var(--max-width);
+  background-color: var(--background-color);
+  padding: 4px 8px 5px;
 
   @media (min-width: 1921px) {
     --max-width: calc(30vw - 1rem);
@@ -46,17 +46,15 @@
   }
 
   &.own {
-    flex-direction: row-reverse;
     --background-color: var(--color-background-own);
     --hover-color: var(--color-reply-own-hover);
     --color-reaction: var(--color-message-reaction-own);
     --hover-color-reaction: var(--color-message-reaction-hover-own);
-    --text-color-reaction: var(--accent-color);
     --color-reaction-chosen: var(--accent-color);
     --text-color-reaction-chosen: var(--color-background);
     --hover-color-reaction-chosen: var(--color-message-reaction-chosen-hover-own);
     --active-color: var(--color-reply-own-active);
-    --max-width: 30rem;
+
     --accent-color: var(--color-accent-own);
     --accent-shade-color: var(--color-green);
     --secondary-color: var(--color-accent-own);
@@ -68,18 +66,23 @@
     --color-voice-transcribe: var(--color-voice-transcribe-button-own);
     --thumbs-background: var(--color-background-own);
 
-    .theme-dark & {
-      --color-reaction: rgb(255, 255, 255, 0.1);
-      --hover-color-reaction: rgb(255, 255, 255, 0.2);
-      --text-color-reaction: var(--color-text);
+    align-self: flex-end;
 
-      --color-reaction-chosen: rgb(255, 255, 255, 0.75);
-      --hover-color-reaction-chosen: rgb(255, 255, 255, 0.85);
-      --text-color-reaction-chosen: rgb(62, 62, 62);
+    .theme-dark & {
+      --color-reaction: rgb(255 255 255 / 0.1);
+      --hover-color-reaction: rgb(255 255 255 / 0.2);
+      --text-color-reaction: var(--color-text);
+      --color-reaction-chosen: rgb(255 255 255 / 0.75);
+      --hover-color-reaction-chosen: rgb(255 255 255 / 0.85);
+      --text-color-reaction-chosen: #3e3e3e;
     }
 
     @media (min-width: 1921px) {
       --max-width: 30vw;
+    }
+
+    @media (max-width: 600px) {
+      padding-right: 0.25rem;
     }
 
     body.is-ios &,
@@ -88,42 +91,16 @@
       --color-reply-own-hover: var(--color-reply-own-hover-apple);
       --color-reply-own-active: var(--color-reply-own-active-apple);
     }
-
-    @media (max-width: 600px) {
-      padding-right: 0.25rem;
-    }
-
-    &.first-in-group:not(.last-in-group) {
-      --border-bottom-right-radius: var(--border-radius-messages-small);
-    }
-
-    &:not(.first-in-group):not(.last-in-group) {
-      --border-top-right-radius: var(--border-radius-messages-small);
-      --border-bottom-right-radius: var(--border-radius-messages-small);
-    }
-
-    &.last-in-group:not(.first-in-group) {
-      --border-top-right-radius: var(--border-radius-messages-small);
-    }
-
-    &.last-in-group {
-      --border-bottom-right-radius: var(--border-radius-messages-small);
-
-      .message-content.has-appendix {
-        --border-bottom-right-radius: 0;
-        border-bottom-right-radius: 0;
-      }
-    }
   }
 
   &__bottom {
     position: absolute;
     bottom: 0;
-    height: 1px;
     width: 100%;
+    height: 1px;
+    background-color: transparent;
     opacity: 0;
     pointer-events: none;
     user-select: none;
-    background-color: transparent;
   }
 }

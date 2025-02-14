@@ -9,13 +9,15 @@ import useStableCallback from "../base/useStableCallback";
  */
 const useBooleanState = (
   initial: boolean = false,
-): [boolean, () => void, () => void] => {
+): [boolean, () => void, () => void, () => void, () => void] => {
   const [value, setValue] = useState<boolean>(initial);
 
   const setTrue = useStableCallback(() => setValue(true));
   const setFalse = useStableCallback(() => setValue(false));
+  const toggle = useStableCallback(() => setValue((prev) => !prev));
+  const reset = useStableCallback(() => setValue(initial));
 
-  return [value, setTrue, setFalse];
+  return [value, setTrue, setFalse, toggle, reset];
 };
 
 export default useBooleanState;

@@ -12,38 +12,32 @@ import "@/lib/core/public/templates/linq";
 import { useComponentDidMount } from "@/shared/hooks/effects/useLifecycle";
 import useBodyClass from "@/shared/hooks/DOM/useBodyClass";
 import { IS_TOUCH_ENV } from "@/lib/core";
-import { LazyMotion, domAnimation } from "motion/react";
-import ErrorBoundary from "./providers/error-boundary";
 
 interface StateProps {
-  themeKey: ThemeKey;
+	themeKey?: ThemeKey;
 }
 
 const App: FC<StateProps> = ({ themeKey = "dark" }) => {
-  useBodyClass("is-touch-env", IS_TOUCH_ENV);
+	useBodyClass("is-touch-env", IS_TOUCH_ENV);
 
-  useComponentDidMount(() => {
-    windowSize.update();
-  });
+	useComponentDidMount(() => {
+		windowSize.update();
+	});
 
-  return (
-    <StrictMode>
-      <LazyMotion features={domAnimation}>
-        <InltLocaleProvider>
-          <ThemeProvider
-            defaultMode={themeKey}
-            theme={theme}
-            disableTransitionOnChange
-          >
-            <CssBaseline />
-            <BrowserRouter>
-              <AWERoutesBrowserRouter />
-            </BrowserRouter>
-          </ThemeProvider>
-        </InltLocaleProvider>
-      </LazyMotion>
-    </StrictMode>
-  );
+	return (
+		<InltLocaleProvider>
+			<ThemeProvider
+				defaultMode={themeKey}
+				theme={theme}
+				disableTransitionOnChange
+			>
+				<CssBaseline />
+				<BrowserRouter>
+					<AWERoutesBrowserRouter />
+				</BrowserRouter>
+			</ThemeProvider>
+		</InltLocaleProvider>
+	);
 };
 
 export default App;

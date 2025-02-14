@@ -1,11 +1,9 @@
 import {
   RefObject,
   ChangeEvent,
-  FormEvent,
   FC,
   useLayoutEffect,
   memo,
-  useMemo,
   useRef,
 } from "react";
 import buildClassName from "../lib/buildClassName";
@@ -15,46 +13,26 @@ import {
   requestNextMutation,
 } from "@/lib/modules/fastdom/fastdom";
 import { useStableCallback } from "@/shared/hooks/base";
-import useUniqueId, {
-  generateUniqueId,
-} from "@/lib/hooks/utilities/useUniqueId";
+import useUniqueId from "@/lib/hooks/utilities/useUniqueId";
 
 import "./TextArea.scss";
-import { ECDH } from "crypto";
 import { throttle } from "@/lib/core";
+
+type TextAreaProps = React.DetailedHTMLProps<
+  React.TextareaHTMLAttributes<HTMLTextAreaElement>,
+  HTMLTextAreaElement
+>;
 
 type OwnProps = {
   ref?: RefObject<HTMLTextAreaElement>;
-  id?: string;
-  className?: string;
-  value?: string;
   label?: string;
   error?: string;
   success?: string;
-  disabled?: boolean;
-  readOnly?: boolean;
-  placeholder?: string;
-  autoComplete?: string;
-  inputMode?:
-    | "text"
-    | "none"
-    | "tel"
-    | "url"
-    | "email"
-    | "numeric"
-    | "decimal"
-    | "search";
   maxLength?: number;
-  maxLengthIndicator?: boolean;
-  tabIndex?: number;
-  replaceNewlines?: boolean;
   maxLines?: number;
-  onChange?: (e: ChangeEvent<HTMLTextAreaElement>) => void;
-  onInput?: (e: FormEvent<HTMLTextAreaElement>) => void;
-  onKeyDown?: (e: React.KeyboardEvent<HTMLTextAreaElement>) => void;
-  onBlur?: (e: React.FocusEvent<HTMLTextAreaElement>) => void;
-  onPaste?: (e: React.ClipboardEvent<HTMLTextAreaElement>) => void;
-};
+  maxLengthIndicator?: boolean;
+  replaceNewlines?: boolean;
+} & TextAreaProps;
 
 const TextArea: FC<OwnProps> = ({
   ref,
@@ -79,8 +57,9 @@ const TextArea: FC<OwnProps> = ({
   onBlur,
   onPaste,
   replaceNewlines = false,
+  ...rest
 }) => {
-  const uuid = useUniqueId("text-area");
+  const uuid = useUniqueId("text-area", id);
   const textareaRef = useRefInstead<HTMLTextAreaElement>(ref);
   const indicatorRef = useRef<HTMLDivElement>(null);
 
@@ -114,8 +93,6 @@ const TextArea: FC<OwnProps> = ({
           requestNextMutation(() => {
             const maxHeight = parseFloat(element.style.maxHeight) || 0;
             const newHeight = element.scrollHeight;
-
-            console.log("call");
 
             return () => {
               element.style.height = `${newHeight}px`;
@@ -193,6 +170,7 @@ const TextArea: FC<OwnProps> = ({
         onInput={onInput}
         onKeyDown={onKeyDown}
         onPaste={onPaste}
+        {...rest}
       />
 
       {error && (

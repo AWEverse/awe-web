@@ -2,7 +2,6 @@ import {
   useRef,
   useEffect,
   RefObject,
-  useState,
   useCallback,
   useSyncExternalStore,
 } from "react";
@@ -132,7 +131,7 @@ export function useIsIntersecting(
 
   const subscribe = useCallback(
     (notify: () => void) => {
-      if (!targetRef.current || !observe) return () => {};
+      if (!targetRef.current || !observe) return () => { };
 
       const unsubscribe = observe(targetRef.current, (entry) => {
         intersectionRef.current = entry.isIntersecting;
@@ -145,9 +144,8 @@ export function useIsIntersecting(
     [targetRef, observe, callback],
   );
 
-  const getSnapshot = () => intersectionRef.current;
-
-  const getServerSnapshot = () => false;
+  const getSnapshot = useStableCallback(() => intersectionRef.current);
+  const getServerSnapshot = useStableCallback(() => false);
 
   const isIntersecting = useSyncExternalStore(
     subscribe,

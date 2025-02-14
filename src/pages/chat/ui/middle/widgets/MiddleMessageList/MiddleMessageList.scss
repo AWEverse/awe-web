@@ -1,0 +1,22 @@
+.MiddleMessageList {
+	height: 100%;
+	position: relative;
+	overflow-x: hidden;
+	overflow-y: scroll;
+	display: flex;
+	flex-direction: column-reverse;
+	padding-inline: 16px;
+}
+
+.bottom-marker {
+  height: 1px;
+  width: 100%;
+  z-index: 10;
+  opacity: 0;
+  background: linear-gradient(90deg, rgba(255, 255, 255, 0) 0%, rgba(255, 255, 255, 0.4) 2%, rgba(255, 255, 255, 0.4) 98%, rgba(255, 255, 255, 0) 100%);
+  transition: opacity 350ms;
+}
+
+.bottom-active {
+  opacity: 1;
+}

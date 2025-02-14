@@ -6,15 +6,15 @@
   max-width: 260px;
   max-height: 400px;
   overflow-y: auto;
-  z-index: 9997; 
-  background-color: var(--awe-palette-secondary-main);
+  z-index: 9997;
+  background-color: rgba(var(--awe-palette-secondary-mainChannel) / 0.85);
+  backdrop-filter: blur(10px);
   will-change: opacity, transform;
-  
+
   .no-compact {
     min-width: 220px;
   }
 }
-
 
 .context-menu-backdrop {
   position: fixed;

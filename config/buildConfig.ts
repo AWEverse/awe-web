@@ -1,13 +1,13 @@
-import { BuildOptions } from 'vite';
-import { NO_MINIFY } from './constants';
-import { serverOptions } from './utils';
+import { BuildOptions } from "vite";
+import { NO_MINIFY } from "./constants";
+import { serverOptions } from "./utils";
 
-const group_chunks = ['src/entities/ReportModal.tsx'];
+const group_chunks = ["../src/entities/ReportModal.tsx"];
 
 export default {
-  target: 'es2020',
+  target: "es2020",
   sourcemap: true,
-  assetsDir: '',
+  assetsDir: "",
   copyPublicDir: false,
   emptyOutDir: true,
   minify: NO_MINIFY,
@@ -15,12 +15,14 @@ export default {
     treeshake: true,
     output: {
       manualChunks: (id: string) => {
-        const is_group_chunk = group_chunks.some(partialPath => id.includes(partialPath));
+        const is_group_chunk = group_chunks.some((partialPath) =>
+          id.includes(partialPath),
+        );
 
         console.log(id);
 
         if (is_group_chunk) {
-          return 'general';
+          return "general";
         }
       },
       sourcemapIgnoreList: serverOptions.sourcemapIgnoreList,

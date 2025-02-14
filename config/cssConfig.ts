@@ -5,7 +5,7 @@ export default {
   devSourcemap: true,
   postcss: {
     plugins: [
-      autoprefixer({}), // add options if needed
+      autoprefixer({}), 
     ],
   },
 } as CSSOptions;

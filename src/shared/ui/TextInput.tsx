@@ -10,7 +10,9 @@ import {
 import buildClassName from "../lib/buildClassName";
 import { useRefInstead } from "@/shared/hooks/base";
 import { useStableCallback } from "@/shared/hooks/base";
-import { generateUniqueId } from "@/lib/hooks/utilities/useUniqueId";
+import useUniqueId, {
+  generateUniqueId,
+} from "@/lib/hooks/utilities/useUniqueId";
 
 interface OwnProps extends InputHTMLAttributes<HTMLInputElement> {
   ref?: RefObject<HTMLInputElement>;
@@ -39,7 +41,7 @@ const TextInput: FC<OwnProps> = ({
   onChange,
   ...props
 }) => {
-  const uuid = useMemo(() => id || generateUniqueId("input", "text"), [id]);
+  const uuid = useUniqueId("text-input", id);
 
   const inputRef = useRefInstead<HTMLInputElement>(ref);
   const [isInputFocused, setFocused] = useState(focused);

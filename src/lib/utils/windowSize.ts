@@ -15,13 +15,16 @@ const isIOS = typeof window !== "undefined" && IS_IOS;
 const dimensions: IDimensions = {
   height: typeof window !== "undefined" ? window.innerHeight : 0,
   width: typeof window !== "undefined" ? window.innerWidth : 0,
-};
+} as const;
 
 let initialHeight = dimensions.height;
 
-function updateCssVars() {
+const updateCssVars = () => {
   const vh = dimensions.height * 0.01;
-  document.documentElement.style.setProperty("--vh", `${vh}px`);
+
+  return () => {
+    document.documentElement.style.setProperty("--vh", `${vh}px`);
+  }
 }
 
 function getVisualViewportDimensions(): IDimensions {
@@ -76,7 +79,7 @@ export function initializeViewportListeners() {
     });
   }
 
-  updateCssVars();
+  requestNextMutation(updateCssVars);
 }
 
 // Initialize automatically in non-SSR environments

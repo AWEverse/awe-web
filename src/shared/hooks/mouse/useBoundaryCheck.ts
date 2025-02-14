@@ -1,4 +1,4 @@
-import { throttle } from "@/lib/core";
+import { clamp, throttle } from "@/lib/core";
 import { useEffect, RefObject } from "react";
 
 interface UseBoundaryCheckParams {
@@ -41,8 +41,8 @@ export function useBoundaryCheck({
         width: docEl.clientWidth,
         height: docEl.clientHeight,
       };
-      const rect = element.getBoundingClientRect();
 
+      const rect = element.getBoundingClientRect();
       let boundaries: {
         left: number;
         right: number;
@@ -72,6 +72,7 @@ export function useBoundaryCheck({
     }, throttleInterval);
 
     window.addEventListener("mousemove", handleMove);
+
     return () => window.removeEventListener("mousemove", handleMove);
   }, [
     isActive,
@@ -91,45 +92,32 @@ function calculateAdjustedBoundaries(
   viewport: { width: number; height: number },
   rect: DOMRect,
 ) {
-  // X-axis adjustment
   const spaceRight = viewport.width - position.x;
   const spaceLeft = position.x;
-  const totalWidth = rect.width + paddingX;
 
   let adjustedX = position.x;
-
-  if (totalWidth <= spaceRight) {
+  if (rect.width + paddingX <= spaceRight) {
     adjustedX += paddingX;
+  } else if (rect.width + paddingX <= spaceLeft) {
+    adjustedX -= rect.width + paddingX;
   } else {
-    const totalWidthLeft = rect.width + paddingX;
-
-    if (totalWidthLeft <= spaceLeft) {
-      adjustedX -= totalWidthLeft;
-    } else {
-      adjustedX = spaceRight > spaceLeft ? viewport.width - rect.width : 0;
-    }
+    adjustedX = spaceRight > spaceLeft ? viewport.width - rect.width : 0;
   }
 
-  // Y-axis adjustment
   const spaceBottom = viewport.height - position.y;
   const spaceTop = position.y;
 
   let adjustedY = position.y;
-
   if (rect.height <= spaceBottom) {
-    adjustedY = position.y;
+    adjustedY += 0;
+  } else if (rect.height <= spaceTop) {
+    adjustedY -= rect.height;
   } else {
-    adjustedY =
-      rect.height <= spaceTop
-        ? position.y - rect.height
-        : spaceBottom > spaceTop
-          ? viewport.height - rect.height
-          : 0;
+    adjustedY = spaceBottom > spaceTop ? viewport.height - rect.height : 0;
   }
 
-  // Clamp adjusted positions to viewport
-  adjustedX = Math.max(0, Math.min(adjustedX, viewport.width - rect.width));
-  adjustedY = Math.max(0, Math.min(adjustedY, viewport.height - rect.height));
+  adjustedX = clamp(adjustedX, 0, viewport.width - rect.width);
+  adjustedY = clamp(adjustedY, 0, viewport.height - rect.height);
 
   return {
     left: Math.max(adjustedX - outboxSize, 0),
