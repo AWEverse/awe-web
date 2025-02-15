@@ -35,13 +35,10 @@ function identifyFunction(part: PartVarians): string {
 }
 
 export default function buildClassName(...parts: Parts): string {
-  return memoizee(() =>
-    parts
-      .map(identifyFunction)
-      .filter(Boolean)
-      .join(" "),
-    { length: false, max: 1 }
-  )();
+  return parts
+    .map(identifyFunction)
+    .filter(Boolean)
+    .join(" ")
 }
 
 
