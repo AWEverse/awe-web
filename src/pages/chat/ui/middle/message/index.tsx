@@ -48,6 +48,21 @@ class Purposes {
 	static readonly LOADING = "loading";
 }
 
+export const MessageStatuses = [
+	"delivered",
+	"error",
+	"paused",
+	"partial-sent",
+	"read",
+	"sending",
+	"sent",
+	"viewed",
+] as const;
+export type MessageStatusType = (typeof MessageStatuses)[number];
+
+export const Directions = ["incoming", "outgoing"] as const;
+export type DirectionType = (typeof Directions)[number];
+
 type OwnProps = {
 	isOwn: boolean;
 	message: ApiMessage;

@@ -1,4 +1,4 @@
-export const noop = () => {};
+export function noop(): void { }
 
 type AnyEntity = Window | Document | HTMLElement | EventTarget;
 type EventListenerArgs = [string, EventListenerOrEventListenerObject, ...unknown[]];
