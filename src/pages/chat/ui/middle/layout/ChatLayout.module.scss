@@ -10,7 +10,7 @@
   height: 100dvh;
 }
 
-.Body {  
+.Body {
   position: relative;
   display: grid;
   grid-template-columns: minmax(225px, min(40%, 400px)) 1fr;
@@ -35,5 +35,5 @@
 .Footer {
   z-index: 100;
   overflow: hidden;
-  background-color: gray;  
+  background-color: gray;
 }

@@ -17,11 +17,11 @@ import { useCallback, useMemo } from "react";
  */
 export default function useThrottledFunction<T extends AnyToVoidFunction>(
   fn: T,
-  deps: any[],
   msOrSchedulerFn: number | Scheduler,
-  noFirst = false,
+  noFirst: boolean = false,
+  deps?: React.DependencyList,
 ): AnyToVoidFunction {
-  const fnMemo = useCallback(fn, deps);
+  const fnMemo = useCallback(fn, deps || ([] as const));
 
   // Return the throttled function based on the type of `msOrSchedulerFn`
   return useMemo(() => {

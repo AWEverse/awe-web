@@ -1,37 +1,60 @@
 import {
-  requestMutation,
-  requestMeasure,
-  requestNextMutation,
-} from "@/lib/modules/fastdom/fastdom";
-import {
   useEffect,
   useLayoutEffect,
   useRef,
   useState,
   type RefObject,
+  useCallback,
 } from "react";
-import { useStableCallback } from "../base";
+import {
+  requestMutation,
+  requestMeasure,
+  requestNextMutation,
+} from "@/lib/modules/fastdom/fastdom";
 import { useDebouncedFunction } from "../shedulers";
 import useWindowSize from "@/shared/hooks/DOM/useWindowSize";
+import { useStableCallback } from "../base";
 
 const WINDOW_RESIZE_LINE_RECALC_DEBOUNCE = 200;
 
-export default function useCollapsibleLines<
-  T extends HTMLElement,
-  C extends HTMLElement,
->(
+//
+// Helper: Calculates the line height and total number of lines in the container.
+//
+
+/*
+* Measure only
+*/
+export function calcTextLineHeightAndCount(textContainer: HTMLElement) {
+  const computedStyle = getComputedStyle(textContainer);
+  // Parse the computed line height (assuming it’s in pixels)
+  const lineHeight = parseInt(computedStyle.lineHeight, 10);
+  // Divide the total scroll height by the line height to estimate the number of lines
+  const totalLines = textContainer.scrollHeight / lineHeight;
+  return { totalLines, lineHeight };
+}
+
+//
+// useCollapsibleLines: A React hook that provides the logic for making a text container collapsible
+// if it exceeds a specified number of lines.
+//
+// T – the type of the text container element.
+// C – the optional type for a “cutout” element, if any.
+//
+export default function useCollapsibleLines<T extends HTMLElement>(
   ref: RefObject<T | null>,
   maxLinesBeforeCollapse: number,
-  cutoutRef?: RefObject<C>,
   isDisabled?: boolean,
 ) {
   const isFirstRenderRef = useRef(true);
-  const cutoutHeightRef = useRef<number | undefined>(0);
+  const cutoutHeightRef = useRef<number>(0);
+
   const [isCollapsible, setIsCollapsible] = useState(!isDisabled);
   const [isCollapsed, setIsCollapsed] = useState(isCollapsible);
 
+  const getElement = useStableCallback(() => ref?.current);
+
   useLayoutEffect(() => {
-    const element = (cutoutRef || ref).current;
+    const element = getElement();
     if (isDisabled || !element) return;
 
     requestMutation(() => {
@@ -39,15 +62,14 @@ export default function useCollapsibleLines<
         ? `${cutoutHeightRef.current}px`
         : "100dvh";
     });
-  }, [cutoutRef, isCollapsed, isDisabled, ref]);
+  }, [isCollapsed, isDisabled, ref]);
 
-  const recalculateTextLines = useStableCallback(() => {
-    if (isDisabled || !ref.current) {
-      return;
-    }
-    const element = ref.current;
+  const recalculateTextLines = useCallback(() => {
+    const element = getElement();
 
+    if (isDisabled || !element) return;
     const { lineHeight, totalLines } = calcTextLineHeightAndCount(element);
+
     if (totalLines > maxLinesBeforeCollapse) {
       cutoutHeightRef.current = lineHeight * maxLinesBeforeCollapse;
       setIsCollapsible(true);
@@ -55,12 +77,14 @@ export default function useCollapsibleLines<
       setIsCollapsible(false);
       setIsCollapsed(false);
     }
-  });
+  }, [isDisabled, maxLinesBeforeCollapse, ref]);
 
   const debouncedRecalcTextLines = useDebouncedFunction(
     () => requestMeasure(recalculateTextLines),
-    [recalculateTextLines],
     WINDOW_RESIZE_LINE_RECALC_DEBOUNCE,
+    false,
+    true,
+    [recalculateTextLines],
   );
 
   useLayoutEffect(() => {
@@ -70,28 +94,23 @@ export default function useCollapsibleLines<
 
         return () => {
           isFirstRenderRef.current = false;
-          const element = (cutoutRef || ref).current;
+          const element = getElement();
 
-          if (!element) {
-            return;
+          if (element) {
+            element.style.maxHeight = cutoutHeightRef.current
+              ? `${cutoutHeightRef.current}px`
+              : "";
           }
-
-          element.style.maxHeight = cutoutHeightRef.current
-            ? `${cutoutHeightRef.current}px`
-            : "";
         };
       });
     }
-  }, [cutoutRef, isDisabled, recalculateTextLines, ref]);
+  }, [isDisabled, recalculateTextLines, ref]);
 
-  // Parent resize is triggered on every collapse/expand, so we do recalculation only on window resize to save resources
   const { width: windowWidth } = useWindowSize();
+
   useEffect(() => {
     if (!isDisabled) {
-      if (isFirstRenderRef.current) {
-        return;
-      }
-
+      if (isFirstRenderRef.current) return;
       debouncedRecalcTextLines();
     } else {
       setIsCollapsible(false);
@@ -103,16 +122,5 @@ export default function useCollapsibleLines<
     isCollapsed,
     isCollapsible,
     setIsCollapsed,
-  };
-}
-
-export function calcTextLineHeightAndCount(textContainer: HTMLElement) {
-  const lineHeight = parseInt(getComputedStyle(textContainer).lineHeight, 10);
-
-  const totalLines = textContainer.scrollHeight / lineHeight;
-
-  return {
-    totalLines,
-    lineHeight,
   };
 }

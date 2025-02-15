@@ -1,3 +1,5 @@
+import memoizee from "memoizee";
+
 type PartsWithGlobals = (string | false | undefined | string[])[];
 type ClassNameBuilder = ((
   elementName: string,
@@ -34,17 +36,11 @@ function identifyFunction(part: PartVarians): string {
 
 export default function buildClassName(...parts: Parts): string {
   return parts
-    .reduce((classNames, part) => {
-      const identified = identifyFunction(part);
-
-      if (identified) {
-        classNames.push(identified);
-      }
-
-      return classNames;
-    }, [] as string[])
-    .join(" ");
+    .map(identifyFunction)
+    .filter(Boolean)
+    .join(" ")
 }
+
 
 export function createClassNameBuilder(componentName: string) {
   return ((elementName: string, ...modifiers: PartsWithGlobals) => {

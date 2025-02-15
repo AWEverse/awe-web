@@ -1,21 +1,23 @@
-import fastRaf from './fastRaf';
-import onTickEnd from './onTickEnd';
+import fastRaf from "./fastRaf";
+import onTickEnd from "./onTickEnd";
 
 export type Scheduler = typeof requestAnimationFrame | typeof onTickEnd;
 
-export function throttleWith<F extends AnyToVoidFunction>(schedulerFn: Scheduler, fn: F) {
-  let waiting = false;
-  let args: Parameters<F>;
+export function throttleWith<F extends (...args: any[]) => void>(
+  schedulerFn: Scheduler,
+  fn: F,
+): (...args: Parameters<F>) => void {
+  let isScheduled = false;
+  let lastArgs: Parameters<F>;
 
-  return (..._args: Parameters<F>) => {
-    args = _args;
+  return (...args: Parameters<F>) => {
+    lastArgs = args;
 
-    if (!waiting) {
-      waiting = true;
-
+    if (!isScheduled) {
+      isScheduled = true;
       schedulerFn(() => {
-        waiting = false;
-        fn(...args);
+        isScheduled = false;
+        fn(...lastArgs);
       });
     }
   };

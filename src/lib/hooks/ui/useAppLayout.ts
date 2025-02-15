@@ -5,6 +5,8 @@ import LayoutManager, {
 import { IS_BROWSER } from "@/lib/core";
 import { useStableCallback } from "@/shared/hooks/base";
 
+type SelectorPayload<T> = (state: LayoutState) => T;
+
 const SERVER_SNAPSHOT: LayoutState = {
   isMobile: false,
   isTablet: false,
@@ -13,22 +15,22 @@ const SERVER_SNAPSHOT: LayoutState = {
   isTouchScreen: false,
 };
 
-export function useAppLayout(): LayoutState;
-export function useAppLayout<T>(selector: (state: LayoutState) => T): T;
-export function useAppLayout<T>(selector?: (state: LayoutState) => T) {
-  const _selector = useStableCallback(
-    selector ?? ((state) => state as unknown as T),
-  );
+const getLayoutState = () => {
+  return IS_BROWSER ? LayoutManager.getState() : SERVER_SNAPSHOT;
+};
 
-  return useSyncExternalStore(
-    LayoutManager.subscribe,
-    () => _selector(LayoutManager.getState()),
-    () => _selector(SERVER_SNAPSHOT), // SSR fallback
-  );
+export default function useAppLayout(): LayoutState;
+export default function useAppLayout<T>(selector: (state: LayoutState) => T): T;
+export default function useAppLayout<T = LayoutState>(
+  selector: SelectorPayload<T> = (state) => state as unknown as T,
+): T {
+  const _selector = useStableCallback(selector);
+
+  const snapshot = useStableCallback(() => _selector(LayoutManager.getState()));
+  const snapshotSSR = useStableCallback(() => _selector(SERVER_SNAPSHOT));
+
+  return useSyncExternalStore(LayoutManager.subscribe, snapshot, snapshotSSR);
 }
-
-export const getLayoutState = () =>
-  IS_BROWSER ? LayoutManager.getState() : SERVER_SNAPSHOT;
 
 export const getIsMobile = () => getLayoutState().isMobile;
 export const getIsTablet = () => getLayoutState().isTablet;

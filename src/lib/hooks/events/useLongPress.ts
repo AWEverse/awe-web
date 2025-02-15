@@ -75,7 +75,6 @@ const useLongPress = (
     [onCancel, onFinish],
   );
 
-  // Prevent context menu on long press
   useComponentDidMount(() => {
     if (!targetRef.current) {
       return undefined;
@@ -94,7 +93,6 @@ const useLongPress = (
     };
   });
 
-  // Cleanup timers on unmount
   useComponentWillUnmount(() => {
     if (timeoutRef.current) {
       clearTimeout(timeoutRef.current);

@@ -6,9 +6,9 @@ type GenericEvent<T> =
   | React.SyntheticEvent<T>
   | React.UIEvent<T>
   | React.MouseEvent<T>
-  | React.FormEvent<T>;
+  | React.FormEvent<T>
 
-const stopEvent = <T = HTMLElement>(event: GenericEvent<T>): void => {
+const stopEvent = <T = Element>(event: GenericEvent<T>): void => {
   if (event) {
     const nativeEvent = event?.nativeEvent || event;
 

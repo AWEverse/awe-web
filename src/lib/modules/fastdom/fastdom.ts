@@ -97,7 +97,7 @@ export function requestMutation(fn: TaskFunction) {
  * });
  */
 export function requestNextMutation(fn: ReflowTaskFunction) {
-  if (!reflowTasks.has(fn)) {
+  if (fn && !reflowTasks.has(fn)) {
     reflowTasks.add(fn);
     runUpdatePass();
   }

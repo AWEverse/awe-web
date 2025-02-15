@@ -85,17 +85,6 @@ const Tab: FC<OwnProps> = ({
     },
   );
 
-  useImperativeHandle(ref, () => {
-    return {
-      focus() {
-        tabRef.current?.focus();
-      },
-      scrollIntoView() {
-        tabRef.current?.scrollIntoView();
-      },
-    } as HTMLDivElement;
-  }, []);
-
   return (
     <>
       <button

@@ -1,17 +1,16 @@
-type MathFunction = (x: number) => number;
-
 /**
  * Calculates the numerical derivative of a given function at a specific point using central difference.
+ * @param {MathFunction} fn - The function for which to compute the derivative.
  * @param {number} x - The point at which to compute the derivative.
- * @param {number} [h] - The step size used for numerical differentiation (default is 1e-5).
+ * @param {number} [h=1e-5] - The step size used for numerical differentiation (default is 1e-5).
  * @returns {number} The approximate value of the derivative at the point x.
  */
 export const derivative = (
-  fn: MathFunction,
+  fn: (x: number) => number,
   x: number,
   h: number = 1e-5,
 ): number => {
-  return (fn(x + h) - fn(x)) / h;
+  return (fn(x + h) - fn(x - h)) / (2 * h);
 };
 
 /**

@@ -1,5 +1,7 @@
-export const deferMicrotasks = (callback: NoneToVoidFunction) => {
-  (typeof queueMicrotask === 'function' ? queueMicrotask : Promise.resolve().then.bind(Promise))(
-    callback,
-  );
+export const deferMicrotasks = (callback: () => void): void => {
+  if (typeof queueMicrotask === "function") {
+    queueMicrotask(callback);
+  } else {
+    Promise.resolve().then(callback);
+  }
 };

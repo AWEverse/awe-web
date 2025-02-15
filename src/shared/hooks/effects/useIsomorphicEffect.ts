@@ -1,4 +1,5 @@
-import { useEffect, useLayoutEffect } from "react";
+import { IS_BROWSER } from "@/lib/core";
+import React from "react";
 
 /**
  * A custom hook that uses `useLayoutEffect` on the client-side and `useEffect` on the server-side.
@@ -15,5 +16,7 @@ import { useEffect, useLayoutEffect } from "react";
  * }, []);
  * ```
  */
-export const useIsomorphicEffect =
-  typeof window !== "undefined" ? useLayoutEffect : useEffect;
+
+export const useIsomorphicLayoutEffect: typeof React.useEffect | typeof React.useLayoutEffect = IS_BROWSER
+  ? React.useLayoutEffect
+  : React.useEffect;

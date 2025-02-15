@@ -1,5 +1,5 @@
 import { debounce } from "@/lib/core";
-import { useCallback, useMemo } from "react";
+import React, { useCallback, useMemo } from "react";
 
 /**
  * Custom hook to debounce a callback function with options for controlling
@@ -19,12 +19,12 @@ import { useCallback, useMemo } from "react";
  */
 export default function useDebouncedFunction<T extends AnyToVoidFunction>(
   fn: T,
-  deps: any[],
   ms: number,
   noFirst: boolean = false,
   noLast: boolean = false,
+  deps?: React.DependencyList,
 ): AnyToVoidFunction {
-  const fnMemo = useCallback(fn, deps);
+  const fnMemo = useCallback(fn, deps || ([] as const));
 
   // Return the debounced function, passing the necessary options for leading and trailing edge calls
   return useMemo(

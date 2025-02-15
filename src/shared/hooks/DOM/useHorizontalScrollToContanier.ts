@@ -38,7 +38,10 @@ const useHorizontalScrollToContanier = (
         }
 
         // Perform the scroll with optimized duration and throttled animations
-        animateHorizontalScroll(container, newLeft, SCROLL_DURATION);
+        animateHorizontalScroll(container, newLeft, {
+          duration: SCROLL_DURATION,
+          damping: 6,
+        });
       }
     });
   }, [activeEl]);

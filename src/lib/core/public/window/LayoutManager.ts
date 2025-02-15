@@ -55,7 +55,7 @@ const QUERIES = {
   `,
 };
 
-let state: LayoutState = {
+let state: Readonly<LayoutState> = {
   isMobile: false,
   isTablet: false,
   isLandscape: false,
@@ -125,10 +125,13 @@ if (typeof window !== "undefined") {
 export default {
   subscribe: (callback: () => void) => {
     subscribers.add(callback);
-    return () => subscribers.delete(callback);
+
+    return () => {
+      subscribers.delete(callback);
+    };
   },
 
-  getState: () => ({ ...state }) as Readonly<LayoutState>,
+  getState: () => state,
 
   destroy: () => {
     mediaQueryCleanup.forEach((cleanup) => cleanup());

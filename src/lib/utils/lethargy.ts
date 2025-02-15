@@ -1,4 +1,4 @@
-import { CircularBuffer } from "../core";
+import { average, CircularBuffer } from "../core";
 
 export type LethargyConfig = {
   stability?: number;
@@ -78,8 +78,8 @@ export class Lethargy {
     const oldDeltas = orderedDeltas.slice(0, this.stability);
     const newDeltas = orderedDeltas.slice(this.stability, this.totalSamples);
 
-    const oldAvg = oldDeltas.sum() / oldDeltas.length;
-    const newAvg = newDeltas.sum() / newDeltas.length;
+    const oldAvg = average(oldDeltas);
+    const newAvg = average(newDeltas);
 
     if (
       Math.abs(oldAvg) <= Math.abs(newAvg) * this.tolerance &&

@@ -7,24 +7,24 @@ import s from "./Blockquote.module.scss";
 import { ArrowDownwardRounded, ArrowUpwardRounded } from "@mui/icons-material";
 
 type OwnProps = {
+  maxLines?: number;
   canBeCollapsible?: boolean;
   isToggleDisabled?: boolean;
   children: ReactNode;
 };
 
-const MAX_LINES = 4;
+const MAX_LINES = 3;
 
 const Blockquote = ({
+  maxLines = MAX_LINES,
   canBeCollapsible,
   isToggleDisabled,
   children,
 }: OwnProps) => {
-  // eslint-disable-next-line no-null/no-null
   const ref = useRef<HTMLQuoteElement | null>(null);
   const { isCollapsed, isCollapsible, setIsCollapsed } = useCollapsibleLines(
     ref,
-    MAX_LINES,
-    undefined,
+    maxLines,
     !canBeCollapsible,
   );
 
@@ -43,7 +43,7 @@ const Blockquote = ({
       <blockquote
         ref={ref}
         data-entity-type={ApiMessageEntityTypes.Blockquote}
-        className={buildClassName(s.blockquote, isCollapsed && s.expanded)}
+        className={buildClassName(s.blockquote, !isCollapsed && s.expanded)}
       >
         <div
           className={buildClassName(

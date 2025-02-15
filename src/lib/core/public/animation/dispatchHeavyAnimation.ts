@@ -54,65 +54,159 @@ export function onIdleComplete(callback: NoneToVoidFunction) {
 export const throttleWithIdleComplete = <F extends AnyToVoidFunction>(fn: F) =>
   throttleWith(onIdleComplete, fn);
 
-// This code provides a mechanism to track and manage heavy animations, allowing efficient scheduling of tasks during idle periods. Here's an optimized version with explanations and use cases:
+// // This code provides a mechanism to track and manage heavy animations, allowing efficient scheduling of tasks during idle periods. Here's an optimized version with explanations and use cases:
 
-// Key Optimizations:
-// 1. State encapsulation using objects for better maintainability
-// 2. Safer state updates with `Math.max(0, ...)` to prevent negative counts
-// 3. Immediate state cleanup in returned cancel callback
-// 4. Simplified idle checking flow
+// Here are practical real-world use cases for this animation coordination system across different application domains:
 
-// Common Use Cases:
-
-// 1. Tracking Complex Animations
+// ### 1. E-commerce Product Carousel
+// **Scenario:** Smooth image transitions with zoom effects while loading product details
 // ```typescript
-// // Component initiating animation
-// function startLoader() {
-//   const cleanup = dispatchHeavyAnimation(2000, true);
+// const showProductDetails = (productId: string) => {
+//   // Start blocking animation during transition
+//   const cleanup = dispatchHeavyAnimation(500, true);
 
-//   // Run after animation completes
-//   onIdleComplete(() => {
-//     console.log('Safe to perform layout calculations now');
+//   // Animate carousel transition
+//   animateCarousel(productId, () => {
+//     // Load heavy product data after animation
+//     onIdleComplete(() => {
+//       load3DProductView(productId);
+//       loadCustomerReviews(productId);
+//     });
 //   });
 
-//   return cleanup; // Call this if animation completes early
-// }
+//   return cleanup;
+// };
 // ```
 
-// 2. Blocking UI Interactions
+// ### 2. Financial Trading Dashboard
+// **Scenario:** Real-time candle stick chart updates without blocking price alerts
 // ```typescript
-// // Prevent form submission during animation
-// watchEffect(() => {
-//   if (getIsBlockingHeavyAnimating.value) {
-//     disableForm();
+// const handleMarketDataUpdate = throttleWithIdleComplete((update) => {
+//   if (!getIsBlockingHeavyAnimating.value) {
+//     updateCandlestickChart(update);
+//     renderOrderBook(update);
 //   } else {
-//     enableForm();
+//     queueMicrotask(() => handleMarketDataUpdate(update));
 //   }
 // });
+
+// // Connect to WebSocket feed
+// marketDataFeed.on('update', handleMarketDataUpdate);
 // ```
 
-// 3. Optimized Scroll Handlers
+// ### 3. Video Editing Timeline
+// **Scenario:** Smooth scrubbing preview with frame-accurate seeking
 // ```typescript
-// const handleScroll = throttleWithIdleComplete((event) => {
-//   // Heavy calculations that should wait for animations
-//   calculateVisibleElements();
+// let animationCleanup: () => void;
+
+// const handleTimelineDrag = (position: number) => {
+//   // Cancel previous animation tracking
+//   animationCleanup?.();
+
+//   // Start new animation session
+//   animationCleanup = dispatchHeavyAnimation(300);
+
+//   // Preview update
+//   requestAnimationFrame(() => {
+//     updateVideoPreview(position);
+//     renderTimelineMarkers(position);
+//   });
+// };
+
+// const handleDragEnd = () => {
+//   animationCleanup();
+//   onIdleComplete(() => {
+//     commitTimelineChanges();
+//     generateOptimizedThumbnails();
+//   });
+// };
+// ```
+
+// ### 4. Medical Imaging Viewer
+// **Scenario:** Cross-section animations in MRI scan analysis
+// ```typescript
+// const rotateScanView = (angle: number) => {
+//   const cleanup = dispatchHeavyAnimation(1000);
+
+//   animateScanRotation(angle, {
+//     onFrame: (progress) => {
+//       updateDensityMap(progress);
+//       renderMeasurementGuides();
+//     },
+//     onComplete: () => {
+//       onIdleComplete(() => {
+//         calculateVolumetricData();
+//         updateDiagnosticOverlay();
+//       });
+//     }
+//   });
+
+//   return cleanup;
+// };
+// ```
+
+// ### 5. Game Lobby Interface
+// **Scenario:** Character customization with real-time previews
+// ```typescript
+// const updateCharacterOutfit = (newItems: WardrobeItem[]) => {
+//   const cleanup = dispatchHeavyAnimation(800, true);
+
+//   // Immediate visual update
+//   applyCharacterTextures(newItems);
+
+//   // Defer heavy computations
+//   onIdleComplete(() => {
+//     generateOutfitHash();
+//     validateEquipmentCombination();
+//     updateInventorySystem();
+//   });
+
+//   return () => {
+//     cleanup();
+//     revertPreviewChanges();
+//   };
+// };
+// ```
+
+// ### 6. Collaborative Whiteboard
+// **Scenario:** Multi-user cursor tracking with path prediction
+// ```typescript
+// const handleRemoteCursorUpdate = throttleWithIdleComplete((update) => {
+//   if (getIsHeavyAnimating.value) {
+//     bufferCursorUpdates(update);
+//     return;
+//   }
+
+//   animateCursorMovement(update, {
+//     onRender: () => dispatchHeavyAnimation(200),
+//     onComplete: () => {
+//       processBufferedUpdates();
+//       updateCollaborationHistory();
+//     }
+//   });
 // });
-
-// window.addEventListener('scroll', handleScroll);
 // ```
 
-// 4. Resource-Intensive Operations
-// ```typescript
-// function loadHeavyContent() {
-//   const cleanup = dispatchHeavyAnimation(3000);
+// **Key Benefits Across Use Cases:**
+// 1. Maintains 60fps animations during critical interactions
+// 2. Batches non-visual computations (data processing, network calls)
+// 3. Prioritizes user-perceived performance metrics
+// 4. Coordinates complex interaction sequences
+// 5. Prevents competing resource contention
+// 6. Enables smooth interruptible transitions
 
-//   fetchContent().then(data => {
-//     onIdleComplete(() => {
-//       renderComplexVisualization(data);
-//     });
-//   }).finally(cleanup);
-// }
-// ```
+// **Performance Critical Paths:**
+// - **First Input Delay:** Blocking animations prevent UI lockups
+// - **Cumulative Layout Shift:** Coordinated updates stabilize layout
+// - **Interaction-to-Visual Response:** Guaranteed animation frames
+// - **Main Thread Work:** Offloads tasks to idle periods
+
+// These patterns work particularly well for applications requiring:
+// - Real-time visual feedback (design tools, games)
+// - Complex data visualization (analytics, dashboards)
+// - Media-intensive interfaces (video, 3D viewers)
+// - Collaborative environments (whiteboards, docs)
+// - Resource-constrained platforms (mobile web, embedded)
 
 // Best Practices:
 // 1. Always call the cleanup function from `dispatchHeavyAnimation`
