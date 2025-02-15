@@ -6,6 +6,7 @@ import {
 } from "../../../../shared/lib/extraClassHelpers";
 import { useStateRef } from "../../../../shared/hooks/base";
 import { clamp } from "@/lib/core";
+import { noop } from "@/lib/utils/listener";
 
 type IAnchorPosition = { x: number; y: number };
 
@@ -70,7 +71,11 @@ export default function useMenuPosition(
   const { anchor } = options as DynamicPositionOptions;
   const optionsRef = useStateRef(options);
 
-  const applyPositioning = useCallback(() => {
+  useLayoutEffect(() => {
+    if (!isOpen) {
+      return noop;
+    }
+
     const currentOptions = optionsRef.current;
 
     if (!("getTriggerElement" in currentOptions)) {
@@ -95,13 +100,7 @@ export default function useMenuPosition(
         }
       };
     });
-  }, [containerRef, bubbleRef, optionsRef]);
-
-  useLayoutEffect(() => {
-    if (isOpen) {
-      applyPositioning();
-    }
-  }, [isOpen, anchor, applyPositioning]);
+  }, [isOpen, anchor]);
 }
 
 function getLayoutMeasurements(
@@ -143,20 +142,25 @@ function getLayoutMeasurements(
 function calculatePosition(
   anchor: IAnchorPosition,
   measurements: LayoutMeasurements,
-  layout: Layout,
+  layout: Layout
 ): PositionCalculation {
   const { menu, viewport } = measurements;
   const { isDense, extraPaddingX = 0 } = layout;
+  const OFFSET = 3; // Consistent offset for adjustments
 
-  // Horizontal positioning
+  // Determine horizontal placement:
+  // If the layout is dense or the menu fits on the right side within the viewport,
+  // position the menu to the left of the anchor; otherwise, position it to the right.
   const canFitRight = anchor.x + menu.width + extraPaddingX < viewport.width;
-  const positionX = isDense || canFitRight ? "left" : "right";
-  let x = positionX === "left" ? anchor.x + 3 : anchor.x - menu.width - 3;
+  const positionX: "left" | "right" = isDense || canFitRight ? "left" : "right";
+  const x = positionX === "left" ? anchor.x + OFFSET : anchor.x - menu.width - OFFSET;
 
-  // Vertical positioning
+  // Determine vertical placement:
+  // If the layout is dense or the menu fits below the anchor within the viewport,
+  // position the menu at the top of the anchor; otherwise, position it above.
   const canFitBelow = anchor.y + menu.height < viewport.height;
-  const positionY = isDense || canFitBelow ? "top" : "bottom";
-  let y = positionY === "top" ? anchor.y : anchor.y - menu.height;
+  const positionY: "top" | "bottom" = isDense || canFitBelow ? "top" : "bottom";
+  const y = positionY === "top" ? anchor.y : anchor.y - menu.height;
 
   return { positionX, positionY, x, y };
 }
@@ -166,17 +170,14 @@ function applyPositionConstraints(
   { menu, viewport }: LayoutMeasurements,
   { shouldAvoidNegativePosition }: Layout,
 ): PositionCalculation {
-  x = clamp(
-    x,
-    MENU_POSITION_VISUAL_COMFORT_SPACE_PX,
-    viewport.width - menu.width - MENU_POSITION_VISUAL_COMFORT_SPACE_PX,
-  );
+  const minX = MENU_POSITION_VISUAL_COMFORT_SPACE_PX;
+  const maxX = viewport.width - menu.width - MENU_POSITION_VISUAL_COMFORT_SPACE_PX;
 
-  y = clamp(
-    y,
-    MENU_POSITION_VISUAL_COMFORT_SPACE_PX,
-    viewport.height - menu.height - MENU_POSITION_BOTTOM_MARGIN,
-  );
+  const minY = MENU_POSITION_VISUAL_COMFORT_SPACE_PX;
+  const maxY = viewport.height - menu.height - MENU_POSITION_BOTTOM_MARGIN;
+
+  x = clamp(x, minX, maxX);
+  y = clamp(y, minY, maxY);
 
   if (shouldAvoidNegativePosition) {
     x = Math.max(x, 0);
@@ -200,15 +201,22 @@ function calculateFinalPosition(
   const relativeX = initialPosition.x - trigger.left + portalXOffset;
   const relativeY = initialPosition.y - trigger.top + portalYOffset;
 
+  const finalLeft = initialPosition.x + deltaX - portalXOffset;
+  const finalTop = initialPosition.y + topShiftY - portalYOffset;
+
+  const transformOriginX =
+    initialPosition.positionX === "left" ? relativeX : menu.width - relativeX;
+  const transformOriginY =
+    initialPosition.positionY === "top" ? relativeY : menu.height - relativeY;
+
   return {
-    left: initialPosition.x + deltaX - portalXOffset,
-    top: initialPosition.y + topShiftY - portalYOffset,
-    transformOriginX:
-      initialPosition.positionX === "left" ? relativeX : menu.width - relativeX,
-    transformOriginY:
-      initialPosition.positionY === "top" ? relativeY : menu.height - relativeY,
+    left: finalLeft,
+    top: finalTop,
+    transformOriginX,
+    transformOriginY,
   };
 }
+
 
 function processDynamically(options: DynamicPositionOptions) {
   const {
@@ -220,19 +228,20 @@ function processDynamically(options: DynamicPositionOptions) {
     withMaxHeight,
   } = options;
 
-  const triggerEl = getTriggerElement();
-  const menuEl = getMenuElement();
-  const rootEl = getRootElement();
+  const triggerElement = getTriggerElement();
+  const menuElement = getMenuElement();
+  const rootElement = getRootElement();
+
   const layout = getLayout?.() || {};
 
-  if (!triggerEl || !menuEl || !rootEl) {
+  if (!triggerElement || !menuElement || !rootElement) {
     return null;
   }
 
   const measurements = getLayoutMeasurements(
-    rootEl,
-    triggerEl,
-    menuEl,
+    rootElement,
+    triggerElement,
+    menuElement,
     layout.menuElMinWidth || 0,
   );
 
@@ -254,17 +263,18 @@ function processDynamically(options: DynamicPositionOptions) {
     ? `max-height: ${measurements.viewport.height - finalPosition.top - MENU_POSITION_BOTTOM_MARGIN}px;`
     : "";
 
-  const styles = `left: ${finalPosition.left}px; top: ${finalPosition.top}px;`;
+  const positionStyles = `left: ${finalPosition.left}px; top: ${finalPosition.top}px;`;
 
   return {
     positionX: constrainedPosition.positionX,
     positionY: constrainedPosition.positionY,
-    style: styles,
+    style: positionStyles,
     heightStyle: maxHeightStyle,
     transformOriginX: finalPosition.transformOriginX,
     transformOriginY: finalPosition.transformOriginY,
   };
 }
+
 
 function applyStaticOptions(
   containerRef: React.RefObject<HTMLDivElement | null>,
@@ -273,6 +283,7 @@ function applyStaticOptions(
 ) {
   const containerEl = containerRef.current;
   const bubbleEl = bubbleRef.current;
+
   if (!containerEl || !bubbleEl) return;
 
   const {
@@ -290,8 +301,13 @@ function applyStaticOptions(
     bubbleEl.style.cssText = heightStyle;
   }
 
-  if (positionX) addExtraClass(bubbleEl, positionX);
-  if (positionY) addExtraClass(bubbleEl, positionY);
+  if (positionX) {
+    addExtraClass(bubbleEl, positionX);
+  }
+
+  if (positionY) {
+    addExtraClass(bubbleEl, positionY);
+  }
 
   setExtraStyles(bubbleEl, {
     transformOrigin: [

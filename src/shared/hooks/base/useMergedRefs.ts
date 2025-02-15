@@ -1,4 +1,5 @@
-import { useCallback, Ref } from "react";
+import memoizee from "memoizee";
+import { useCallback, Ref, MutableRefObject, RefObject, useMemo } from "react";
 
 /**
  * A modern hook that merges multiple refs (object refs or callback refs) into a single callback ref.
@@ -28,20 +29,30 @@ import { useCallback, Ref } from "react";
  *
  * export default MyComponent;
  */
-export default function useMergedRefs<T>(
-  ...refs: Array<Ref<T> | null | undefined>
-): (node: T | null) => void {
-  return useCallback(
-    (node: T | null) => {
-      for (const ref of refs) {
-        if (!ref) continue;
-        if (typeof ref === "function") {
-          ref(node);
-        } else if ("current" in ref) {
-          ref.current = node;
-        }
+const useMergedRefs = (): ReturnType<typeof createRefMerger> =>
+  useMemo(createRefMerger, []);;
+
+export function refMerger<T>(
+  ...refs: Array<Ref<unknown>>
+): (topLevelRef: T) => void {
+  return (el: T) => {
+    refs.forEach(ref => {
+      // This is a simplified version of [what React does][0] to set a ref.
+      // [0]: https://github.com/facebook/react/blob/29b7b775f2ecf878eaf605be959d959030598b07/packages/react-reconciler/src/ReactFiberCommitWork.js#L661-L677
+      if (typeof ref === 'function') {
+        ref(el);
+      } else if (ref) {
+        // I believe the types for `ref` are wrong in this case, as `ref.current` should
+        //   not be `readonly`. That's why we do this cast. See [the React source][1].
+        // [1]: https://github.com/facebook/react/blob/29b7b775f2ecf878eaf605be959d959030598b07/packages/shared/ReactTypes.js#L78-L80
+        (ref as Mutable<RefObject<T>>).current = el;
       }
-    },
-    [...refs],
-  );
+    });
+  };
 }
+
+export function createRefMerger(): typeof refMerger {
+  return memoizee(refMerger, { length: false, max: 1 });
+}
+
+export default useMergedRefs;

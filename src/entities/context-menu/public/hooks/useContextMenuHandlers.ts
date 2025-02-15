@@ -11,9 +11,10 @@ import {
   addExtraClass,
   removeExtraClass,
 } from "@/shared/lib/extraClassHelpers";
-import { RefObject, useState, useRef, useEffect } from "react";
+import { RefObject, useReducer, useRef, useCallback, useEffect } from "react";
 import useEffectSync from "../../../../shared/hooks/effects/useEffectSync";
-import { useStableCallback } from "../../../../shared/hooks/base";
+import { useStableCallback } from "@/shared/hooks/base";
+import { noop } from "@/lib/utils/listener";
 
 const LONG_TAP_DURATION_MS = 200;
 const IOS_PWA_CONTEXT_MENU_DELAY_MS = 100;
@@ -26,8 +27,36 @@ function stopEvent(e: Event) {
 
 type ContextMenuState = {
   isOpen: boolean;
-  anchor: IVector2 | undefined;
-  target: HTMLElement | undefined;
+  anchor?: IVector2;
+  target?: HTMLElement;
+};
+
+type ContextMenuAction =
+  | {
+    type: 'OPEN';
+    anchor: IVector2;
+    target: HTMLElement
+  }
+  | { type: 'CLOSE' }
+  | { type: 'HIDE' };
+
+const initialState = {
+  isOpen: false,
+  anchor: undefined,
+  target: undefined,
+}
+
+const contextMenuReducer = (state: ContextMenuState, action: ContextMenuAction): ContextMenuState => {
+  switch (action.type) {
+    case 'OPEN':
+      return { isOpen: true, anchor: action.anchor, target: action.target };
+    case 'CLOSE':
+      return { ...state, isOpen: false };
+    case 'HIDE':
+      return { ...state, anchor: undefined, target: undefined };
+    default:
+      return state;
+  }
 };
 
 const useContextMenuHandlers = (
@@ -38,14 +67,11 @@ const useContextMenuHandlers = (
   readySignal?: ReadonlySignal<boolean>,
   shouldDisablePropagation?: boolean,
 ) => {
-  const [contextMenuState, setContextMenuState] = useState<ContextMenuState>({
-    isOpen: false,
-    anchor: undefined,
-    target: undefined,
-  });
+  const [contextMenuState, dispatch] = useReducer(contextMenuReducer, initialState);
 
   const isMenuDisabledRef = useRef(isMenuDisabled);
   const contextMenuAnchorRef = useRef(contextMenuState.anchor);
+  const timerRef = useRef<number | null>(null);
 
   useEffectSync(() => {
     isMenuDisabledRef.current = isMenuDisabled;
@@ -62,7 +88,7 @@ const useContextMenuHandlers = (
     },
   );
 
-  const handleContextMenu = useStableCallback(
+  const handleContextMenu = useCallback(
     (e: React.MouseEvent<HTMLElement>) => {
       requestMutation(() => {
         removeExtraClass(e.target as HTMLElement, "no-selection");
@@ -78,24 +104,21 @@ const useContextMenuHandlers = (
       e.preventDefault();
       e.stopPropagation();
 
-      setContextMenuState({
-        isOpen: true,
+      dispatch({
+        type: 'OPEN',
         anchor: { x: e.clientX, y: e.clientY },
         target: e.target as HTMLElement,
       });
     },
+    [shouldDisableOnLink],
   );
 
   const handleContextMenuClose = useStableCallback(() => {
-    setContextMenuState((prev) => ({ ...prev, isOpen: false }));
+    dispatch({ type: 'CLOSE' });
   });
 
   const handleContextMenuHide = useStableCallback(() => {
-    setContextMenuState((prev) => ({
-      ...prev,
-      anchor: undefined,
-      target: undefined,
-    }));
+    dispatch({ type: 'HIDE' });
   });
 
   useEffect(() => {
@@ -105,72 +128,59 @@ const useContextMenuHandlers = (
       shouldDisableOnLongTap ||
       (readySignal && !readySignal.value)
     ) {
-      return undefined;
+      return noop;
     }
 
     const element = elementRef.current;
-    if (!element) return undefined;
-
-    let timer: number | undefined;
+    if (!element) return noop;
 
     const clearLongPressTimer = () => {
-      if (timer) {
-        clearTimeout(timer);
-        timer = undefined;
+      if (timerRef.current) {
+        clearTimeout(timerRef.current);
+        timerRef.current = null;
       }
     };
 
     const emulateContextMenuEvent = (originalEvent: TouchEvent) => {
       clearLongPressTimer();
-      if (isMenuDisabledRef.current) return;
+      if (isMenuDisabledRef.current) return noop;
 
-      const { clientX, clientY, target } = originalEvent.touches[0];
+      const touch = originalEvent.touches[0];
+      if (!touch) return;
+      const { clientX, clientY, target } = touch;
       const shouldDisable =
         shouldDisableOnLink && (target as HTMLElement).matches("a[href]");
 
-      if (contextMenuAnchorRef.current || shouldDisable) return;
+      // Avoid multiple context menu triggers
+      if (contextMenuAnchorRef.current || shouldDisable) return noop;
 
+      // Prevent click events after long press
       const handlePreventClick = (e: Event) => {
         stopEvent(e);
-        document.removeEventListener("touchend", handlePreventClick, {
-          capture: true,
-        });
+        document.removeEventListener("touchend", handlePreventClick, true);
       };
 
-      document.addEventListener("touchend", handlePreventClick, {
-        capture: true,
-      });
+      document.addEventListener("touchend", handlePreventClick, true);
 
+      // For iOS PWA, also block mousedown and click events briefly
       if (IS_PWA && IS_IOS) {
         const preventInteraction = (e: Event) => {
           stopEvent(e);
-          document.removeEventListener("mousedown", preventInteraction, {
-            capture: true,
-          });
-          document.removeEventListener("click", preventInteraction, {
-            capture: true,
-          });
+          document.removeEventListener("mousedown", preventInteraction, true);
+          document.removeEventListener("click", preventInteraction, true);
         };
 
-        document.addEventListener("mousedown", preventInteraction, {
-          capture: true,
-        });
-        document.addEventListener("click", preventInteraction, {
-          capture: true,
-        });
+        document.addEventListener("mousedown", preventInteraction, true);
+        document.addEventListener("click", preventInteraction, true);
 
         setTimeout(() => {
-          document.removeEventListener("mousedown", preventInteraction, {
-            capture: true,
-          });
-          document.removeEventListener("click", preventInteraction, {
-            capture: true,
-          });
+          document.removeEventListener("mousedown", preventInteraction, true);
+          document.removeEventListener("click", preventInteraction, true);
         }, IOS_PWA_CONTEXT_MENU_DELAY_MS);
       }
 
-      setContextMenuState({
-        isOpen: true,
+      dispatch({
+        type: 'OPEN',
         anchor: { x: clientX, y: clientY },
         target: target as HTMLElement,
       });
@@ -179,21 +189,16 @@ const useContextMenuHandlers = (
     const startLongPressTimer = (e: TouchEvent) => {
       if (shouldDisablePropagation) e.stopPropagation();
       clearLongPressTimer();
-      timer = window.setTimeout(
-        () => emulateContextMenuEvent(e),
-        LONG_TAP_DURATION_MS,
-      );
+      timerRef.current = window.setTimeout(() => emulateContextMenuEvent(e), LONG_TAP_DURATION_MS);
     };
 
-    element.addEventListener("touchstart", startLongPressTimer, {
-      passive: true,
-    });
+    // Add touch event listeners with consistent options
+    element.addEventListener("touchstart", startLongPressTimer, { passive: true });
     element.addEventListener("touchcancel", clearLongPressTimer, true);
     element.addEventListener("touchend", clearLongPressTimer, true);
-    element.addEventListener("touchmove", clearLongPressTimer, {
-      passive: true,
-    });
+    element.addEventListener("touchmove", clearLongPressTimer, { passive: true });
 
+    // Cleanup listeners on unmount
     return () => {
       clearLongPressTimer();
       element.removeEventListener("touchstart", startLongPressTimer);

@@ -35,6 +35,8 @@ const App: FC<StateProps> = ({ themeKey = "dark" }) => {
 				<BrowserRouter>
 					<AWERoutesBrowserRouter />
 				</BrowserRouter>
+
+				<div>modal</div>
 			</ThemeProvider>
 		</InltLocaleProvider>
 	);
