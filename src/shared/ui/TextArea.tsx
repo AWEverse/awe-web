@@ -5,6 +5,7 @@ import {
   useLayoutEffect,
   memo,
   useRef,
+  useCallback,
 } from "react";
 import buildClassName from "../lib/buildClassName";
 import { useRefInstead } from "@/shared/hooks/base";
@@ -12,11 +13,11 @@ import {
   requestMutation,
   requestNextMutation,
 } from "@/lib/modules/fastdom/fastdom";
-import { useStableCallback } from "@/shared/hooks/base";
 import useUniqueId from "@/lib/hooks/utilities/useUniqueId";
 
 import "./TextArea.scss";
-import { throttle } from "@/lib/core";
+import { useThrottledFunction } from "../hooks/shedulers";
+import { noop } from "@/lib/utils/listener";
 
 type TextAreaProps = React.DetailedHTMLProps<
   React.TextareaHTMLAttributes<HTMLTextAreaElement>,
@@ -32,6 +33,8 @@ type OwnProps = {
   maxLines?: number;
   maxLengthIndicator?: boolean;
   replaceNewlines?: boolean;
+  maxByteCount?: number;
+  maxLengthCount?: number;
 } & TextAreaProps;
 
 const TextArea: FC<OwnProps> = ({
@@ -47,21 +50,19 @@ const TextArea: FC<OwnProps> = ({
   placeholder,
   autoComplete,
   inputMode,
-  maxLength,
+  maxByteCount,
+  maxLengthCount,
   maxLengthIndicator,
   tabIndex,
   maxLines = 5,
   onChange,
-  onInput,
-  onKeyDown,
-  onBlur,
-  onPaste,
   replaceNewlines = false,
   ...rest
 }) => {
   const uuid = useUniqueId("text-area", id);
   const textareaRef = useRefInstead<HTMLTextAreaElement>(ref);
   const indicatorRef = useRef<HTMLDivElement>(null);
+  const resizerCallbackRef = useRef<NoneToVoidFunction>(noop);
 
   const lang = navigator.language;
 
@@ -80,38 +81,33 @@ const TextArea: FC<OwnProps> = ({
     const textarea = textareaRef.current;
     if (!textarea) return;
 
-    textarea.style.maxHeight = `${textarea.scrollHeight * maxLines}px`;
-    resizeHeight(textarea);
+    resizerCallbackRef.current = createResizeHeightUpdater(textarea);
+
+    requestNextMutation(() => {
+      const scrollHeight = textarea.scrollHeight;
+
+      return () => {
+        textarea.style.maxHeight = `${scrollHeight * maxLines}px`;
+        resizerCallbackRef.current?.();
+      };
+    });
   }, [maxLines, textareaRef]);
 
-  const resizeHeight = useStableCallback(
-    throttle(
-      (element: HTMLTextAreaElement) => {
-        requestMutation(() => {
-          element.style.height = "0";
-
-          requestNextMutation(() => {
-            const maxHeight = parseFloat(element.style.maxHeight) || 0;
-            const newHeight = element.scrollHeight;
-
-            return () => {
-              element.style.height = `${newHeight}px`;
-              element.style.overflow =
-                maxHeight < newHeight ? "auto" : "hidden";
-            };
-          });
-        });
-      },
-      200,
-      true,
-    ),
+  const resizeHeight = useThrottledFunction(
+    () => {
+      requestMutation(() => {
+        resizerCallbackRef.current?.();
+      });
+    },
+    250,
+    true,
   );
 
-  const handleChange = useStableCallback(
+  const handleChange = useCallback(
     (e: ChangeEvent<HTMLTextAreaElement>) => {
       const target = e.currentTarget;
 
-      let updatedValue = target.value.trim();
+      let updatedValue = target.value;
 
       if (replaceNewlines) {
         const previousSelectionEnd = target.selectionEnd;
@@ -124,7 +120,7 @@ const TextArea: FC<OwnProps> = ({
 
       if (maxLengthIndicator && indicatorRef.current) {
         indicatorRef.current.textContent =
-          valueLength > 0 ? `${valueLength}/${maxLength}` : "";
+          valueLength > 0 ? `${valueLength}/${maxLengthCount}` : "";
       }
 
       if (1 <= valueLength) {
@@ -135,6 +131,7 @@ const TextArea: FC<OwnProps> = ({
         });
       }
 
+      // mutate height = 0
       resizeHeight(target);
 
       onChange?.({
@@ -143,6 +140,7 @@ const TextArea: FC<OwnProps> = ({
         currentTarget: { ...e.currentTarget, value: updatedValue },
       });
     },
+    [replaceNewlines, maxLengthCount],
   );
 
   return (
@@ -160,16 +158,12 @@ const TextArea: FC<OwnProps> = ({
         dir="auto"
         disabled={disabled}
         inputMode={inputMode}
-        maxLength={maxLength}
+        maxLength={maxLengthCount}
         placeholder={placeholder}
         readOnly={readOnly}
         tabIndex={tabIndex}
         value={value || undefined}
-        onBlur={onBlur}
         onChange={handleChange}
-        onInput={onInput}
-        onKeyDown={onKeyDown}
-        onPaste={onPaste}
         {...rest}
       />
 
@@ -185,11 +179,38 @@ const TextArea: FC<OwnProps> = ({
         </div>
       )}
 
-      {maxLength && maxLengthIndicator && (
+      {maxLengthCount && maxLengthIndicator && (
         <div ref={indicatorRef} className="max-length-indicator" />
       )}
     </div>
   );
 };
+
+function createResizeHeightUpdater(element: HTMLTextAreaElement) {
+  const computedStyle = window.getComputedStyle(element);
+  const isBorderBox = computedStyle.boxSizing === "border-box";
+  const borderTop = parseFloat(computedStyle.borderTopWidth);
+  const borderBottom = parseFloat(computedStyle.borderBottomWidth);
+  const paddingTop = parseFloat(computedStyle.paddingTop);
+  const paddingBottom = parseFloat(computedStyle.paddingBottom);
+
+  return () => {
+    element.style.height = "0";
+
+    requestNextMutation(() => {
+      const maxHeight = parseFloat(element.style.maxHeight) || 0;
+      const { scrollHeight } = element;
+
+      return () => {
+        const newHeight = isBorderBox
+          ? scrollHeight + borderTop + borderBottom
+          : scrollHeight - paddingTop - paddingBottom;
+
+        element.style.height = `${newHeight}px`;
+        element.style.overflow = newHeight > maxHeight ? "auto" : "hidden";
+      };
+    });
+  };
+}
 
 export default memo(TextArea);

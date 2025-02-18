@@ -1,5 +1,5 @@
 import memoizee from "memoizee";
-import { useCallback, Ref, MutableRefObject, RefObject, useMemo } from "react";
+import { Ref, useMemo } from "react";
 
 /**
  * A modern hook that merges multiple refs (object refs or callback refs) into a single callback ref.
@@ -45,7 +45,7 @@ export function refMerger<T>(
         // I believe the types for `ref` are wrong in this case, as `ref.current` should
         //   not be `readonly`. That's why we do this cast. See [the React source][1].
         // [1]: https://github.com/facebook/react/blob/29b7b775f2ecf878eaf605be959d959030598b07/packages/shared/ReactTypes.js#L78-L80
-        (ref as Mutable<RefObject<T>>).current = el;
+        (ref as NewMutableRefObject).current = el;
       }
     });
   };
