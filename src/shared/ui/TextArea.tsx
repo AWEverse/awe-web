@@ -18,6 +18,7 @@ import useUniqueId from "@/lib/hooks/utilities/useUniqueId";
 import "./TextArea.scss";
 import { useThrottledFunction } from "../hooks/shedulers";
 import { noop } from "@/lib/utils/listener";
+import { throttleWith } from "@/lib/core";
 
 type TextAreaProps = React.DetailedHTMLProps<
   React.TextareaHTMLAttributes<HTMLTextAreaElement>,
@@ -94,11 +95,7 @@ const TextArea: FC<OwnProps> = ({
   }, [maxLines, textareaRef]);
 
   const resizeHeight = useThrottledFunction(
-    () => {
-      requestMutation(() => {
-        resizerCallbackRef.current?.();
-      });
-    },
+    throttleWith(requestMutation, resizerCallbackRef.current),
     250,
     true,
   );

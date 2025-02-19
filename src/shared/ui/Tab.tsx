@@ -1,4 +1,4 @@
-import React, { FC, useImperativeHandle, useMemo, useRef } from "react";
+import React, { FC, memo, useImperativeHandle, useMemo, useRef } from "react";
 import { motion } from "framer-motion";
 import buildClassName from "../lib/buildClassName";
 import "./Tab.scss";
@@ -146,5 +146,5 @@ const Tab: FC<OwnProps> = ({
   );
 };
 
-export default Tab;
+export default memo(Tab);
 export type { OwnProps as TabProps };
