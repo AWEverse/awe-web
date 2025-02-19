@@ -1,114 +1,148 @@
+import { requestMutation } from "@/lib/modules/fastdom";
 import { useComponentDidMount } from "../hooks/effects/useLifecycle";
 
-const extraClasses = new WeakMap<HTMLElement, Set<string>>();
-const extraStyles = new WeakMap<HTMLElement, Record<string, string>>();
+interface ElementExtras {
+  classes: Set<string>;
+  styles: Record<string, string>;
+}
 
-// // Initialize the hook
-// useExtraStyles(ref);
+const elementExtras = new WeakMap<HTMLElement, ElementExtras>();
 
-// // Example: Add a class and styles
-// React.useEffect(() => {
-//   if (ref.current) {
-//     addExtraClass(ref.current, 'my-class');
-//     setExtraStyles(ref.current, { color: 'red', '--custom-var': 'blue' });
-//   }
-// }, []);
+// Get (or initialize) the extras object for an element.
+function getExtras(element: HTMLElement): ElementExtras {
+  let extras = elementExtras.get(element);
+  if (!extras) {
+    extras = { classes: new Set(), styles: {} };
+    elementExtras.set(element, extras);
+  }
+  return extras;
+}
+
+/** Hook to clean up extras on unmount for a list of refs. */
 export function useExtraStyles(refs: React.RefObject<HTMLElement | null>[]) {
   useComponentDidMount(() => {
     return () => {
       refs.forEach((ref) => {
         if (ref.current) {
-          extraClasses.delete(ref.current);
-          extraStyles.delete(ref.current);
+          elementExtras.delete(ref.current);
         }
       });
     };
   });
 }
 
+/** Checks if a CSS property is a valid custom property. */
 export function isValidCustomProperty(prop: string): boolean {
   return /^--[a-zA-Z0-9-]+$/.test(prop);
 }
 
-function getClassSet(element: HTMLElement): Set<string> {
-  let classSet = extraClasses.get(element);
-
-  if (!classSet) {
-    classSet = new Set();
-    extraClasses.set(element, classSet);
-  }
-
-  return classSet;
-}
-
+/** Adds an extra class to the element if not already added. */
 export function addExtraClass(element: HTMLElement, className: string) {
-  const classSet = getClassSet(element);
-  if (!classSet.has(className)) {
+  const extras = getExtras(element);
+  if (!extras.classes.has(className)) {
     element.classList.add(className);
-    classSet.add(className);
+    extras.classes.add(className);
   }
 }
 
+/** Removes an extra class from the element if present. */
 export function removeExtraClass(element: HTMLElement, className: string) {
-  const classSet = extraClasses.get(element);
-  if (classSet?.has(className)) {
+  const extras = elementExtras.get(element);
+  if (extras && extras.classes.has(className)) {
     element.classList.remove(className);
-    classSet.delete(className);
-    if (classSet.size === 0) {
-      extraClasses.delete(element);
+    extras.classes.delete(className);
+
+    if (extras.classes.size === 0 && Object.keys(extras.styles).length === 0) {
+      elementExtras.delete(element);
     }
   }
 }
 
+/** Toggles an extra class. When force is defined, adds (true) or removes (false). */
 export function toggleExtraClass(
   element: HTMLElement,
   className: string,
-  force?: boolean,
+  force?: boolean
 ) {
-  const hasClass = extraClasses.get(element)?.has(className);
+  const extras = getExtras(element);
+  const hasClass = extras.classes.has(className);
   const shouldAdd = force ?? !hasClass;
 
-  if (shouldAdd) {
-    addExtraClass(element, className);
-  } else {
-    removeExtraClass(element, className);
+  shouldAdd ? addExtraClass(element, className) : removeExtraClass(element, className);
+}
+
+/** Batch updates the element's extra classes and styles in one go. */
+export function batchUpdate(
+  element: HTMLElement,
+  update: {
+    styles?: Partial<CSSStyleDeclaration> & Record<string, string>;
+    classesToAdd?: string[];
+    classesToRemove?: string[];
+  }
+) {
+  const extras = getExtras(element);
+
+  if (update.classesToAdd) {
+    update.classesToAdd.forEach((cls) => {
+      if (!extras.classes.has(cls)) {
+        element.classList.add(cls);
+        extras.classes.add(cls);
+      }
+    });
+  }
+  if (update.classesToRemove) {
+    update.classesToRemove.forEach((cls) => {
+      if (extras.classes.has(cls)) {
+        element.classList.remove(cls);
+        extras.classes.delete(cls);
+      }
+    });
+  }
+
+  if (update.styles) {
+    batchStyles(element, (currentStyles) => {
+      Object.assign(currentStyles, update.styles);
+    });
+  }
+
+  if (extras.classes.size === 0 && Object.keys(extras.styles).length === 0) {
+    elementExtras.delete(element);
   }
 }
 
+/** Allows batched updates to the styles object before applying changes. */
 export function batchStyles(
   element: HTMLElement,
-  callback: (styles: Record<string, string>) => void,
+  callback: (styles: Record<string, string>) => void
 ) {
-  const styles = { ...extraStyles.get(element) };
-  callback(styles);
-  setExtraStyles(element, styles);
+  const extras = getExtras(element);
+  const updatedStyles = { ...extras.styles };
+  callback(updatedStyles);
+  setExtraStyles(element, updatedStyles);
 }
 
+/** Sets extra styles on an element and schedules a DOM update. */
 export function setExtraStyles(
   element: HTMLElement,
-  styles: Partial<CSSStyleDeclaration> & AnyLiteral,
+  styles: Partial<CSSStyleDeclaration> & Record<string, string>
 ) {
-  const currentStyles = extraStyles.get(element) || {};
-  const newStyles = { ...currentStyles, ...styles };
-
-  extraStyles.set(element, newStyles);
-  applyExtraStyles(element, newStyles);
+  const extras = getExtras(element);
+  extras.styles = { ...extras.styles, ...styles };
+  applyExtraStyles(element, extras.styles);
 }
 
-function applyExtraStyles(
-  element: HTMLElement,
-  styles: Record<string, string>,
-) {
-  const style = element.style;
+/** Applies extra styles using a batched mutation to the DOM. */
+function applyExtraStyles(element: HTMLElement, styles: Record<string, string>) {
+  requestMutation(() => {
+    const style = element.style;
 
-  requestAnimationFrame(() => {
-    for (const prop in styles) {
-      const value = styles[prop];
+    Object.entries(styles).forEach(({ 0: prop, 1: value }) => {
       if (prop.startsWith("--")) {
         style.setProperty(prop, value);
       } else {
-        style[prop as any] = value;
+        // @ts-ignore: index signature for CSSStyleDeclaration can be loose.
+        style[prop] = value;
       }
-    }
+    });
   });
 }

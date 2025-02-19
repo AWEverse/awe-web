@@ -6,7 +6,7 @@ import {
   IVector2,
 } from "@/lib/core";
 import { ReadonlySignal } from "@/lib/core/public/signals";
-import { requestMutation } from "@/lib/modules/fastdom/fastdom";
+import { requestMutation } from "@/lib/modules/fastdom";
 import {
   addExtraClass,
   removeExtraClass,
@@ -67,7 +67,7 @@ const useContextMenuHandlers = (
   readySignal?: ReadonlySignal<boolean>,
   shouldDisablePropagation?: boolean,
 ) => {
-  const [contextMenuState, dispatch] = useReducer(contextMenuReducer, initialState);
+  const { 0: contextMenuState, 1: dispatch } = useReducer(contextMenuReducer, initialState);
 
   const isMenuDisabledRef = useRef(isMenuDisabled);
   const contextMenuAnchorRef = useRef(contextMenuState.anchor);

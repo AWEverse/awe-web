@@ -101,7 +101,6 @@ class CircularBuffer<T> {
    * Clears the buffer and resets its state.
    */
   public clear(): void {
-    // Clear all references to help garbage collection.
     this.buffer.fill(null);
     this.writeIndex = 0;
     this.readIndex = 0;

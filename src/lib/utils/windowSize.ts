@@ -1,5 +1,5 @@
 import { IS_IOS, throttle } from "../core";
-import { requestNextMutation } from "../modules/fastdom/fastdom";
+import { requestNextMutation } from "../modules/fastdom";
 
 interface IDimensions {
   height: number;

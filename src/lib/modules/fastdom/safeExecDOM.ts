@@ -13,19 +13,22 @@ interface ExecutionConfig {
   always?: () => void;
   strict?: boolean;
   rollback?: RollbackHandler;
+  /**
+   * Если true, выбрасывать ошибку даже в продакшене.
+   */
+  throwOnError?: boolean;
 }
 
 const safeExecDOM = <T = any>(
   operation: DOMOperation<T>,
   config: ExecutionConfig = {},
 ): T | undefined => {
-  const { rescue, always, strict = false, rollback } = config;
+  const { rescue, always, strict = false, rollback, throwOnError = false } = config;
   const phase = getPhase();
   const isStrictMode = strict || getIsStrict();
   let result: T | undefined;
   let error: Error | undefined;
 
-  // Debug mode validation
   // #v-ifdef DEBUG
   if (isStrictMode && phase !== "mutate") {
     console.warn('DOM mutations should only occur during "mutate" phase');
@@ -37,16 +40,21 @@ const safeExecDOM = <T = any>(
   } catch (err) {
     error = err instanceof Error ? err : new Error(String(err));
 
-    // Error handling pipeline
     // #v-ifdef DEBUG
     console.error("DOM operation failed:", error);
+    // #v-else
+    console.error("DOM operation encountered an error:", error);
     // #v-endif
 
     rescue?.(error);
     rollback?.();
 
+    if (throwOnError) {
+      throw error;
+    }
+
     // #v-ifdef DEBUG
-    throw error; // Fail fast in development
+    throw error;
     // #v-endif
   } finally {
     always?.();

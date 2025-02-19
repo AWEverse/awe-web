@@ -5,7 +5,6 @@ import throttleWithRafFallback from "./throttleWithRafFallback";
 type TaskFunction = () => void;
 type ReflowTaskFunction = () => TaskFunction | void;
 
-// Configure error handling
 type ErrorHandler = (error: Error) => void;
 let handleError: ErrorHandler = (error) =>
   console.error("DOM task error:", error);
@@ -15,11 +14,14 @@ const mutationTasks = new Set<TaskFunction>();
 const reflowTasks = new Set<ReflowTaskFunction>();
 
 const processTasks = <T>(tasks: Set<T>, handler: (task: T) => void) => {
+  if (tasks.size === 0) return;
+
   const queue = Array.from(tasks);
   tasks.clear();
-  for (const task of queue) {
+
+  for (let j = 0, len = queue.length; j < len; j++) {
     try {
-      handler(task);
+      handler(queue[j]);
     } catch (error) {
       handleError(error as Error);
     }
@@ -28,21 +30,20 @@ const processTasks = <T>(tasks: Set<T>, handler: (task: T) => void) => {
 
 const runUpdatePass = throttleWithRafFallback(async () => {
   try {
-    // Measure phase
     if (measureTasks.size) {
       setPhase("measure");
       processTasks(measureTasks, (task) => safeExecDOM(task));
     }
 
-    await Promise.resolve(); // Allow microtasks
+    // Ждем завершения микротасков
+    await Promise.resolve(); // Позволяем выполниться микротаскам
 
-    // Mutation phase
+    // Фаза мутации
     if (mutationTasks.size) {
       setPhase("mutate");
       processTasks(mutationTasks, (task) => safeExecDOM(task));
     }
 
-    // Reflow phase
     if (reflowTasks.size) {
       setPhase("measure");
       const followUp: TaskFunction[] = [];

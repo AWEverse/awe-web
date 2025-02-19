@@ -1,4 +1,7 @@
 import { useCallback, useEffect, useLayoutEffect, useRef } from "react";
+import useStateRef from "./useStateRef";
+
+const NO_DEPS = [] as const;
 
 interface UseStableCallbackOptions {
   /**
@@ -37,15 +40,7 @@ export default function useStableCallback<T extends AnyFunction>(
 ): T {
   const { sync = false } = options || { sync: false };
 
-  const callbackRef = useRef(callback);
+  const callbackRef = useStateRef(callback);
 
-  const effectHook = sync ? useLayoutEffect : useEffect;
-
-  effectHook(() => {
-    callbackRef.current = callback;
-  });
-
-  return useCallback((...args: Parameters<T>) => {
-    return callbackRef.current?.(...args);
-  }, []) as T;
+  return useCallback((...args: Parameters<T>) => callbackRef.current?.(...args), NO_DEPS) as T;
 }

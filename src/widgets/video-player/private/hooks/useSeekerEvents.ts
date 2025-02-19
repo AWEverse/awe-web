@@ -1,5 +1,5 @@
 import { clamp } from "@/lib/core";
-import { requestMeasure } from "@/lib/modules/fastdom/fastdom";
+import { requestMeasure } from "@/lib/modules/fastdom";
 import { useStableCallback } from "@/shared/hooks/base";
 import { useEffect, useRef } from "react";
 

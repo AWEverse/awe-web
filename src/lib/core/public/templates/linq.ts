@@ -206,32 +206,49 @@ Array.prototype.selectMany = function <T, U>(
   }
 
   const source = this;
-  const sourceLength = source.length;
+  const sourceLength = source.length >>> 0;
+  const nestedArrays: U[][] = [];
   let totalLength = 0;
 
-  const nestedArrays: U[][] = [];
   for (let i = 0; i < sourceLength; i++) {
     if (i in source) {
-      const nested = selector(source[i]);
-      nestedArrays[i] = nested;
-      totalLength += nested.length;
+      const item = source[i];
+      let nested: U[];
+
+      try {
+        nested = selector(item);
+      } catch (e) {
+        throw new Error(`Selector error at index ${i}: ${(e as Error).message}`);
+      }
+
+      if (!Array.isArray(nested)) {
+        throw new TypeError(`Selector must return an array (got ${typeof nested} at index ${i})`);
+      }
+
+      const nestedLength = nested.length;
+      if (nestedLength > 0) {
+        nestedArrays.push(nested);
+        totalLength += nestedLength >>> 0;
+      }
     }
   }
 
   const result = new Array<U>(totalLength);
-  let resultIndex = 0;
+  let offset = 0;
 
-  for (let i = 0; i < sourceLength; i++) {
-    if (i in source) {
-      const nested = nestedArrays[i];
-      const nestedLength = nested.length;
+  for (let i = 0; i < nestedArrays.length; ++i) {
+    const arr = nestedArrays[i];
 
-      for (let j = 0; j < nestedLength; j++) {
-        result[resultIndex + j] = nested[j];
+    const len = arr.length;
+
+    if (len > 1000) {
+      result.splice(offset, len, ...arr);
+    } else if (len > 0) {
+      for (let i = 0; i < len; i++) {
+        result[offset + i] = arr[i];
       }
-
-      resultIndex += nestedLength;
     }
+    offset += len;
   }
 
   return result;
@@ -362,161 +379,32 @@ Array.prototype.distinct = function <T>(this: T[]): T[] {
 
 Array.prototype.orderBy = function <T, R>(
   this: T[],
-  selector: (item: T) => R,
+  selector: (item: T) => R
 ): T[] {
-  const MIN_MERGE = 32;
-
-  // Precompute keys to avoid repeated selector calls
-  const mappedArray = this.map((item) => ({
-    key: selector(item),
-    item,
-  }));
-
-  const minRunLength = (n: number): number => {
-    let r = 0;
-    while (n >= MIN_MERGE) {
-      r |= n & 1;
-      n >>= 1;
-    }
-    return n + r;
-  };
-
-  const insertionSort = (
-    arr: typeof mappedArray,
-    left: number,
-    right: number,
-  ): void => {
-    for (let i = left + 1; i <= right; i++) {
-      const temp = arr[i];
-      let j = i - 1;
-      // Compare precomputed keys
-      while (j >= left && arr[j].key > temp.key) {
-        arr[j + 1] = arr[j];
-        j--;
-      }
-      arr[j + 1] = temp;
-    }
-  };
-
-  const merge = (
-    arr: typeof mappedArray,
-    l: number,
-    m: number,
-    r: number,
-  ): void => {
-    const len1 = m - l + 1;
-    const len2 = r - m;
-    const [left, right] = [new Array(len1), new Array(len2)];
-
-    for (let x = 0; x < len1; x++) left[x] = arr[l + x];
-    for (let x = 0; x < len2; x++) right[x] = arr[m + 1 + x];
-
-    let [i, j, k] = [0, 0, l];
-    while (i < len1 && j < len2) {
-      arr[k++] = left[i].key <= right[j].key ? left[i++] : right[j++];
-    }
-    while (i < len1) arr[k++] = left[i++];
-    while (j < len2) arr[k++] = right[j++];
-  };
-
-  const timSort = (arr: typeof mappedArray, n: number): void => {
-    const minRun = minRunLength(MIN_MERGE);
-    // Initial insertion sort on small runs
-    for (let i = 0; i < n; i += minRun) {
-      insertionSort(arr, i, Math.min(i + minRun - 1, n - 1));
-    }
-    // Progressive merging
-    for (let size = minRun; size < n; size *= 2) {
-      for (let left = 0; left < n; left += 2 * size) {
-        const mid = left + size - 1;
-        const right = Math.min(left + 2 * size - 1, n - 1);
-        if (mid < right) merge(arr, left, mid, right);
-      }
-    }
-  };
-
-  timSort(mappedArray, mappedArray.length);
-  return mappedArray.map((e) => e.item);
+  return this
+    .map((item, index) => ({ item, key: selector(item), index }))
+    .sort((a, b) => {
+      if (a.key < b.key) return -1;
+      if (a.key > b.key) return 1;
+      return a.index - b.index;
+    })
+    .map(e => e.item);
 };
 
 Array.prototype.orderByDescending = function <T, R>(
   this: T[],
   selector: (item: T) => R,
 ): T[] {
-  const MIN_MERGE = 32;
-
-  // Precompute keys once to avoid redundant selector calls
-  const mappedArray = this.map((item) => ({
-    key: selector(item),
-    item,
-  }));
-
-  const minRunLength = (n: number): number => {
-    let r = 0;
-    while (n >= MIN_MERGE) {
-      r |= n & 1;
-      n >>= 1;
-    }
-    return n + r;
-  };
-
-  const insertionSort = (
-    arr: typeof mappedArray,
-    left: number,
-    right: number,
-  ): void => {
-    for (let i = left + 1; i <= right; i++) {
-      const temp = arr[i];
-      let j = i - 1;
-      // Changed comparison to descending order
-      while (j >= left && arr[j].key < temp.key) {
-        arr[j + 1] = arr[j];
-        j--;
-      }
-      arr[j + 1] = temp;
-    }
-  };
-
-  const merge = (
-    arr: typeof mappedArray,
-    l: number,
-    m: number,
-    r: number,
-  ): void => {
-    const len1 = m - l + 1;
-    const len2 = r - m;
-    const [leftArr, rightArr] = [new Array(len1), new Array(len2)];
-
-    for (let x = 0; x < len1; x++) leftArr[x] = arr[l + x];
-    for (let x = 0; x < len2; x++) rightArr[x] = arr[m + 1 + x];
-
-    let [i, j, k] = [0, 0, l];
-    while (i < len1 && j < len2) {
-      // Reverse comparison for descending order
-      arr[k++] =
-        leftArr[i].key >= rightArr[j].key ? leftArr[i++] : rightArr[j++];
-    }
-    while (i < len1) arr[k++] = leftArr[i++];
-    while (j < len2) arr[k++] = rightArr[j++];
-  };
-
-  const timSort = (arr: typeof mappedArray, n: number): void => {
-    const minRun = minRunLength(MIN_MERGE);
-    for (let i = 0; i < n; i += minRun) {
-      insertionSort(arr, i, Math.min(i + minRun - 1, n - 1));
-    }
-    for (let size = minRun; size < n; size *= 2) {
-      for (let left = 0; left < n; left += 2 * size) {
-        const mid = left + size - 1;
-        const right = Math.min(left + 2 * size - 1, n - 1);
-        if (mid < right) merge(arr, left, mid, right);
-      }
-    }
-  };
-
-  timSort(mappedArray, mappedArray.length);
-  return mappedArray.map((e) => e.item);
+  return this
+    .map((item, index) => ({ item, key: selector(item), index }))
+    .sort((a, b) => {
+      if (a.key < b.key) return 1;
+      if (a.key > b.key) return -1;
+      return a.index - b.index;
+    })
+    .map(e => e.item);
 };
+
 Array.prototype.skip = function <T>(this: T[], count: number): T[] {
   return this.slice(count);
 };
@@ -574,9 +462,11 @@ String.prototype.aggregate = function <S>(
   func: (acc: S, item: string) => S,
 ): S {
   let accumulator = seed;
+
   for (let i = 0; i < this.length; i++) {
     accumulator = func(accumulator, this[i]);
   }
+
   return accumulator;
 };
 

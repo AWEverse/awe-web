@@ -1,15 +1,17 @@
-import React, { FC, useImperativeHandle, useMemo, useRef } from "react";
+import React, { FC, memo, useMemo, useRef } from "react";
 import { motion } from "framer-motion";
 import buildClassName from "../lib/buildClassName";
 import "./Tab.scss";
 import { useFastClick } from "../hooks/mouse/useFastClick";
 import { capitalize } from "@/lib/utils/helpers/string/stringFormaters";
 import { EMouseButton } from "@/lib/core";
-import ContextMenu, { useContextMenuHandlers } from "@/entities/context-menu";
+import ContextMenu, {
+  ContextMenuOptionType,
+  useContextMenuHandlers,
+} from "@/entities/context-menu";
 import ActionButton from "./ActionButton";
 
 type OwnProps = {
-  ref: React.RefObject<HTMLDivElement | null>;
   layoutId: string;
   className?: string;
   title: string;
@@ -17,12 +19,11 @@ type OwnProps = {
   isBlocked?: boolean;
   badgeCount?: number;
   isBadgeActive?: boolean;
-  previousActiveTab?: number;
-  onClick?: (arg: number) => void;
   clickArg?: number;
   variant: "folders" | "pannels" | "fill";
   tabIndex?: number;
-  contextRootElementSelector?: string;
+  onClick?: (arg: number) => void;
+  contextMenuOptions?: ContextMenuOptionType<number>[];
 };
 
 const classNames = {
@@ -30,8 +31,9 @@ const classNames = {
   badgeActive: "Tab-badge-active",
 };
 
+const TRANSITION_SETTINGS = { type: "spring", stiffness: 500, damping: 30 };
+
 const Tab: FC<OwnProps> = ({
-  ref,
   layoutId,
   className,
   title,
@@ -43,8 +45,11 @@ const Tab: FC<OwnProps> = ({
   clickArg,
   variant = "pannels",
   tabIndex = 0,
+  contextMenuOptions,
 }) => {
   const tabRef = useRef<HTMLButtonElement>(null);
+  const shoudlRenderContextMenu =
+    contextMenuOptions && contextMenuOptions.length > 0;
 
   const renderBadge = useMemo(() => {
     if (badgeCount) {
@@ -71,16 +76,18 @@ const Tab: FC<OwnProps> = ({
     handleContextMenu,
     handleContextMenuHide,
     handleContextMenuClose,
-  } = useContextMenuHandlers(tabRef, false, false, false);
+  } = useContextMenuHandlers(tabRef, shoudlRenderContextMenu, false, false);
 
   const { handleClick, handleMouseDown } = useFastClick(
     (e: React.MouseEvent<HTMLButtonElement>) => {
-      if (e.button === EMouseButton.Secondary) {
+      if (!shoudlRenderContextMenu && e.button === EMouseButton.Secondary) {
         handleBeforeContextMenu(e);
       }
+
       if (e.type === "mousedown" && e.button !== EMouseButton.Main) {
         return;
       }
+
       onClick?.(clickArg!);
     },
   );
@@ -118,7 +125,7 @@ const Tab: FC<OwnProps> = ({
               key={title}
               layoutId={layoutId}
               className={buildClassName("platform", `platform-${variant}`)}
-              transition={{ type: "spring", stiffness: 500, damping: 30 }}
+              transition={TRANSITION_SETTINGS}
             >
               <span className="platform-inner-pannels" />
             </motion.i>
@@ -126,25 +133,27 @@ const Tab: FC<OwnProps> = ({
         </span>
       </button>
 
-      <ContextMenu
-        isOpen={isContextMenuOpen}
-        position={contextMenuAnchor!}
-        onClose={handleContextMenuClose}
-        onCloseAnimationEnd={handleContextMenuHide}
-        withPortal
-        menuClassName="p-2"
-      >
-        <ActionButton size="sm" fullWidth>
-          Edit folder
-        </ActionButton>
+      {contextMenuOptions && contextMenuOptions.length > 0 && (
+        <ContextMenu
+          isOpen={isContextMenuOpen}
+          position={contextMenuAnchor!}
+          onClose={handleContextMenuClose}
+          onCloseAnimationEnd={handleContextMenuHide}
+          withPortal
+          menuClassName="p-2"
+        >
+          <ActionButton size="sm" fullWidth>
+            Edit folder
+          </ActionButton>
 
-        <ActionButton color="error" variant="text" size="sm" fullWidth>
-          Remove folder
-        </ActionButton>
-      </ContextMenu>
+          <ActionButton color="error" variant="text" size="sm" fullWidth>
+            Remove folder
+          </ActionButton>
+        </ContextMenu>
+      )}
     </>
   );
 };
 
-export default Tab;
+export default memo(Tab);
 export type { OwnProps as TabProps };

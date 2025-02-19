@@ -13,7 +13,7 @@ import buildClassName from "@/shared/lib/buildClassName";
 import s from "./Collapsible.module.scss";
 import { useStableCallback } from "@/shared/hooks/base";
 import { CollapsibleContext, useCollapsible } from "../hooks/useCollapsible";
-import { requestMeasure } from "@/lib/modules/fastdom/fastdom";
+import { requestMeasure } from "@/lib/modules/fastdom";
 import { clamp } from "@/lib/core";
 
 interface ContentProps {

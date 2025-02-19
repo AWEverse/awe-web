@@ -14,7 +14,7 @@ import { CloseRounded, SearchRounded } from "@mui/icons-material";
 import { useIntl } from "react-intl";
 import { useRefInstead, useStableCallback } from "@/shared/hooks/base";
 import buildClassName from "../lib/buildClassName";
-import { requestMeasure } from "@/lib/modules/fastdom/fastdom";
+import { requestMeasure } from "@/lib/modules/fastdom";
 import { useBooleanState } from "../hooks/state";
 
 interface OwnProps {

@@ -1,5 +1,5 @@
 import { fastRaf, IS_IOS, median } from "@/lib/core";
-import { requestMutation } from "@/lib/modules/fastdom/fastdom";
+import { requestMutation } from "@/lib/modules/fastdom";
 import { animate } from "@/lib/utils/animation/animate";
 
 const TEST_INTERVAL = 5000; // 5 sec

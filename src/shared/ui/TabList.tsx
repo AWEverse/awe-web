@@ -62,6 +62,7 @@ const TabList: FC<OwnProps> = (props) => {
         role="tablist"
       >
         {tabs.map(({ id, title, ...tabProps }, index) => {
+          const key = `${id}_${title}`;
           const isActive = index === activeTab;
           const currentTitle =
             !isFolderVariant && title === "All" ? "All folders" : title;
@@ -69,9 +70,8 @@ const TabList: FC<OwnProps> = (props) => {
 
           return (
             <Tab
-              ref={containerRef}
               layoutId={uuid}
-              key={`${id}_${title}`}
+              key={key}
               aria-selected={isActive}
               clickArg={index}
               isActive={isActive}

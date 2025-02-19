@@ -1,4 +1,4 @@
-import { requestMeasure } from '@/lib/modules/fastdom/fastdom';
+import { requestMeasure } from '@/lib/modules/fastdom';
 import { animateInstantly } from './animate';
 import { derivative } from '@/lib/core';
 

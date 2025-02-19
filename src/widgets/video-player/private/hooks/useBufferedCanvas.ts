@@ -1,6 +1,6 @@
 import { useEffect, useRef, useCallback } from "react";
 import { BufferedRange } from "@/lib/hooks/ui/useBuffering";
-import { requestMutation } from "@/lib/modules/fastdom/fastdom";
+import { requestMutation } from "@/lib/modules/fastdom";
 import useDevicePixelRatio, {
   getDevicePixelRatio,
 } from "@/lib/hooks/sensors/useDevicePixelRatio";

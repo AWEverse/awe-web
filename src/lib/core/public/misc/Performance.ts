@@ -1,4 +1,4 @@
-import { requestMutation } from "@/lib/modules/fastdom/fastdom";
+import { requestMutation } from "@/lib/modules/fastdom";
 
 export type PerformanceTypeKey =
   | "pageTransitions"

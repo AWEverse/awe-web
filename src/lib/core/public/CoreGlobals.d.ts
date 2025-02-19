@@ -12,6 +12,9 @@ type Partial<T> = { [K in keyof T]?: T[K] };
  */
 type Undefined<T> = { [K in keyof T]: undefined };
 
+
+type NewMutableRefObject = Mutable<React.RefObject<T>>;
+
 /**
  * The `Impossible<T>` type maps over the properties of `T` (if any) and transforms them all into `never`.
  * It effectively renders any valid key in `T` impossible to use in actual code by assigning it the `never` type.
@@ -94,10 +97,10 @@ type NoExtraProperties<T, U extends T = T> = U &
  */
 type ModifyFunctionsToAsync<T> = {
   [key in keyof T]: T[key] extends (...args: infer A) => infer R
-    ? R extends PromiseLike
-      ? T[key]
-      : (...args: A) => Promise<Awaited<R>>
-    : T[key];
+  ? R extends PromiseLike
+  ? T[key]
+  : (...args: A) => Promise<Awaited<R>>
+  : T[key];
 };
 
 /**
@@ -186,8 +189,8 @@ type PickByType<T, Value> = {
 type FixedSizeArray<T, N extends number> = N extends 0
   ? []
   : N extends 1
-    ? [T]
-    : GrowExp<[T, T], N, [[T]]>;
+  ? [T]
+  : GrowExp<[T, T], N, [[T]]>;
 
 /**
  * Represents types that are considered "falsy".
@@ -502,17 +505,17 @@ type ExpandArrayUntilLengthReached<
 > = CurrentArray["length"] extends TargetLength
   ? CurrentArray
   : {
-      0: ExpandArrayUntilLengthReached<
-        [...CurrentArray, ...Buffers[0]],
-        TargetLength,
-        Buffers
-      >;
-      1: ExpandArrayUntilLengthReached<
-        CurrentArray,
-        TargetLength,
-        ShiftArray<Buffers>
-      >;
-    }[[...CurrentArray, ...Buffers[0]][TargetLength] extends undefined ? 0 : 1];
+    0: ExpandArrayUntilLengthReached<
+      [...CurrentArray, ...Buffers[0]],
+      TargetLength,
+      Buffers
+    >;
+    1: ExpandArrayUntilLengthReached<
+      CurrentArray,
+      TargetLength,
+      ShiftArray<Buffers>
+    >;
+  }[[...CurrentArray, ...Buffers[0]][TargetLength] extends undefined ? 0 : 1];
 
 /**
  * The `ExponentiallyExpandArray` type exponentially doubles the current array (`CurrentArray`) until its length reaches the target length (`TargetLength`).
@@ -536,15 +539,15 @@ type ExponentiallyExpandArray<
 > = CurrentArray["length"] extends TargetLength
   ? CurrentArray
   : {
-      0: ExponentiallyExpandArray<
-        [...CurrentArray, ...CurrentArray],
-        TargetLength,
-        [CurrentArray, ...Buffers]
-      >;
-      1: ExpandArrayUntilLengthReached<CurrentArray, TargetLength, Buffers>;
-    }[[...CurrentArray, ...CurrentArray][TargetLength] extends undefined
-      ? 0
-      : 1];
+    0: ExponentiallyExpandArray<
+      [...CurrentArray, ...CurrentArray],
+      TargetLength,
+      [CurrentArray, ...Buffers]
+    >;
+    1: ExpandArrayUntilLengthReached<CurrentArray, TargetLength, Buffers>;
+  }[[...CurrentArray, ...CurrentArray][TargetLength] extends undefined
+  ? 0
+  : 1];
 
 /**
  * Array extensions for common functional programming operations.

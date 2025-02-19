@@ -1,5 +1,6 @@
 import { createCallbackManager } from "@/lib/utils/callbacks";
 import { useStableCallback } from "@/shared/hooks/base";
+
 import { useEffect } from "react";
 
 const blurCallbacks = createCallbackManager<NoneToVoidFunction>();
@@ -67,3 +68,4 @@ export default function useBackgroundMode(
 export function isBackgroundModeActive(): boolean {
   return !isFocused;
 }
+

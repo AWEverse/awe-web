@@ -1,54 +1,53 @@
-import { CallbackManager, createCallbackManager } from "@/lib/utils/callbacks";
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { useStateRef } from "../base";
 
-const elementObserverMap = new WeakMap<
-  HTMLElement,
-  [ResizeObserver, CallbackManager]
->();
+export type Size = Readonly<{
+  width: number;
+  height: number;
+}>;
+
+// Updated to match the onResize callback signature used below.
+export type SizeChangeHandler = (entry: ResizeObserverEntry) => void;
+
+export function isSizeEqual(a: Size, b: Size): boolean {
+  return a.width === b.width && a.height === b.height;
+}
 
 export default function useResizeObserver(
   ref: React.RefObject<HTMLElement | null>,
-  onResize: (entry: ResizeObserverEntry) => void,
-  isDisabled = false,
+  onResize: SizeChangeHandler,
+  isDisabled = false
 ) {
+  const sizeRef = useRef<Size | null>(null);
   const onResizeRef = useStateRef(onResize);
 
   useEffect(() => {
-    const element = ref?.current;
-    if (!element || isDisabled) return;
+    if (isDisabled || !ref.current) return;
 
-    const callback: ResizeObserverCallback = ([entry]) => {
-      const { width, height } = entry.contentRect;
+    const observer = new ResizeObserver(entries => {
+      const entry = entries[0];
 
-      if (width === 0 && height === 0) {
-        return;
+      if (!ref.current) return;
+
+      const borderBoxSize = entry.borderBoxSize?.[0];
+      if (!borderBoxSize) return;
+
+      const next: Size = {
+        width: borderBoxSize.inlineSize,
+        height: borderBoxSize.blockSize,
+      };
+
+      const prev = sizeRef.current;
+      if (!prev || !isSizeEqual(prev, next)) {
+        sizeRef.current = next;
+        onResizeRef.current?.(entry);
       }
+    });
 
-      onResizeRef.current(entry);
-    };
-
-    let [observer, callbackManager] = elementObserverMap.get(element) || [
-      undefined,
-      undefined,
-    ];
-
-    if (!observer) {
-      callbackManager = createCallbackManager();
-      observer = new ResizeObserver(callbackManager.runCallbacks);
-      elementObserverMap.set(element, [observer, callbackManager]);
-      observer.observe(element as Element);
-    }
-
-    const removeCallback = callbackManager!.addCallback(callback);
+    observer.observe(ref.current, { box: "border-box" });
 
     return () => {
-      removeCallback();
-
-      if (!callbackManager!.hasCallbacks()) {
-        observer!.unobserve(element as Element);
-        observer!.disconnect();
-      }
+      observer.disconnect();
     };
-  }, [isDisabled, onResizeRef, ref]);
+  }, [ref, isDisabled]);
 }
