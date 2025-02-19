@@ -6,7 +6,7 @@ import {
   IVector2,
 } from "@/lib/core";
 import { ReadonlySignal } from "@/lib/core/public/signals";
-import { requestMutation } from "@/lib/modules/fastdom/fastdom";
+import { requestMutation } from "@/lib/modules/fastdom";
 import {
   addExtraClass,
   removeExtraClass,

@@ -44,7 +44,7 @@ import { CSSTransitionProps } from "react-transition-group/CSSTransition";
 
 import { initGrigPosition, initDateRange } from "./config";
 import useSelectedOrCurrentDate from "../../private/lib/hooks/useSelectedOrCurrentDate";
-import { requestMeasure } from "@/lib/modules/fastdom/fastdom";
+import { requestMeasure } from "@/lib/modules/fastdom";
 import useClipPathForDateRange from "../../private/lib/hooks/useClipPathForDateRange";
 import useTransitionKey from "../../private/lib/hooks/useTransitionKey";
 import useCalendarStyles from "../../private/lib/hooks/useCalendarStyles";
@@ -86,12 +86,12 @@ with all entities (own dates, selected dates, current month, selected range and 
 9  10 (11 (12) 13 14 15
 16 17 18 19 (20 21 22
 23 24 25 26 27)) 28 29
-30 31] 1  2  3  4  5 
+30 31] 1  2  3  4  5
 
-Understanding the fact that the sequence in the calendar is iterative, 
+Understanding the fact that the sequence in the calendar is iterative,
 it can be noted that the line can be reduced by an order of magnitude.
 
-this: 25 30 [1 (11 (12) (20 27)) 31] 1 5 
+this: 25 30 [1 (11 (12) (20 27)) 31] 1 5
 
 () - selected range
 [] - current month

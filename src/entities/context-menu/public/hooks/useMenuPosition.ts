@@ -1,8 +1,7 @@
-import { requestNextMutation } from "@/lib/modules/fastdom/fastdom";
-import { useCallback, useLayoutEffect } from "react";
+import { requestMutation, requestNextMutation } from "@/lib/modules/fastdom";
+import { useLayoutEffect } from "react";
 import {
-  addExtraClass,
-  setExtraStyles,
+  batchUpdate,
 } from "../../../../shared/lib/extraClassHelpers";
 import { useStateRef } from "../../../../shared/hooks/base";
 import { clamp } from "@/lib/core";
@@ -79,11 +78,13 @@ export default function useMenuPosition(
     const currentOptions = optionsRef.current;
 
     if (!("getTriggerElement" in currentOptions)) {
-      applyStaticOptions(
-        containerRef,
-        bubbleRef,
-        currentOptions as StaticPositionOptions,
-      );
+      requestMutation(() => {
+        applyStaticOptions(
+          containerRef,
+          bubbleRef,
+          currentOptions as StaticPositionOptions,
+        );
+      })
       return;
     }
 
@@ -297,22 +298,13 @@ function applyStaticOptions(
 
   containerEl.style.cssText = `${style} transform-origin: ${positionX} ${positionY}`;
 
-  if (heightStyle) {
-    bubbleEl.style.cssText = heightStyle;
-  }
-
-  if (positionX) {
-    addExtraClass(bubbleEl, positionX);
-  }
-
-  if (positionY) {
-    addExtraClass(bubbleEl, positionY);
-  }
-
-  setExtraStyles(bubbleEl, {
-    transformOrigin: [
-      transformOriginX != null ? `${transformOriginX}px` : positionX,
-      transformOriginY != null ? `${transformOriginY}px` : positionY,
-    ].join(" "),
+  batchUpdate(bubbleEl, {
+    styles: {
+      transformOrigin: [
+        transformOriginX != null ? `${transformOriginX}px` : positionX,
+        transformOriginY != null ? `${transformOriginY}px` : positionY,
+      ].join(" "),
+    },
+    classesToAdd: heightStyle ? [positionX, positionY] : undefined,
   });
 }

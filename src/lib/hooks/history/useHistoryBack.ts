@@ -1,4 +1,4 @@
-import { requestMeasure } from "@/lib/modules/fastdom/fastdom";
+import { requestMeasure } from "@/lib/modules/fastdom";
 import { useRef, useCallback } from "react";
 import useComponentDidMount from "../effects/useComponentDidMount";
 import { useStableCallback } from "@/shared/hooks/base";

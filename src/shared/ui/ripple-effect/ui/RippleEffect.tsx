@@ -1,6 +1,6 @@
 import { useState, useMemo, memo } from "react";
 
-import { requestMeasure } from "@/lib/modules/fastdom/fastdom";
+import { requestMeasure } from "@/lib/modules/fastdom";
 import buildClassName from "@/shared/lib/buildClassName";
 import { clamp01, debounce } from "@/lib/core";
 import { useStableCallback } from "@/shared/hooks/base";

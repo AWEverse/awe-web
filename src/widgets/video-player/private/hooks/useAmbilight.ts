@@ -1,5 +1,5 @@
 import { throttle } from "@/lib/core";
-import { requestMeasure } from "@/lib/modules/fastdom/fastdom";
+import { requestMeasure } from "@/lib/modules/fastdom";
 import useResizeObserver from "@/shared/hooks/DOM/useResizeObserver";
 import { useRef, useEffect, useCallback } from "react";
 

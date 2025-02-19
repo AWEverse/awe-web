@@ -1,4 +1,4 @@
-import { requestMeasure } from "@/lib/modules/fastdom/fastdom";
+import { requestMeasure } from "@/lib/modules/fastdom";
 import stopEvent from "@/lib/utils/stopEvent";
 import { useRef, useEffect, useCallback, memo } from "react";
 import { useComponentDidMount } from "../hooks/effects/useLifecycle";

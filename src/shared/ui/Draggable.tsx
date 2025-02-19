@@ -1,11 +1,19 @@
-import buildClassName from '@/shared/lib/buildClassName';
-import { FC, useRef, useState, useCallback, useEffect, memo, CSSProperties } from 'react';
+import buildClassName from "@/shared/lib/buildClassName";
+import {
+  FC,
+  useRef,
+  useState,
+  useCallback,
+  useEffect,
+  memo,
+  CSSProperties,
+} from "react";
 
-import buildStyle from '@/shared/lib/buildStyle';
-import stopEvent from '@/lib/utils/stopEvent';
+import buildStyle from "@/shared/lib/buildStyle";
+import stopEvent from "@/lib/utils/stopEvent";
 
-import styles from './Draggable.module.scss';
-import { requestMeasure } from '@/lib/modules/fastdom/fastdom';
+import styles from "./Draggable.module.scss";
+import { requestMeasure } from "@/lib/modules/fastdom";
 
 type TPoint = {
   x: number;
@@ -33,14 +41,18 @@ type OwnProps = {
   vertical?: boolean;
 };
 
-type EventWithClientCoordinates = MouseEvent | TouchEvent | React.MouseEvent | React.TouchEvent;
+type EventWithClientCoordinates =
+  | MouseEvent
+  | TouchEvent
+  | React.MouseEvent
+  | React.TouchEvent;
 
 function getClientCoordinate(
   e: EventWithClientCoordinates,
   horizontal: boolean = false,
   vertical: boolean = false,
 ) {
-  const { clientX, clientY } = 'touches' in e ? e.touches[0] : e;
+  const { clientX, clientY } = "touches" in e ? e.touches[0] : e;
 
   return { x: horizontal ? clientX : 0, y: vertical ? clientY : 0 };
 }
@@ -93,7 +105,7 @@ const Draggable: FC<OwnProps> = memo(
           y: y - state.origin.y,
         };
 
-        setState(current => ({
+        setState((current) => ({
           ...current,
           translation,
         }));
@@ -104,7 +116,7 @@ const Draggable: FC<OwnProps> = memo(
     );
 
     const handleMouseUp = useCallback(() => {
-      setState(current => ({
+      setState((current) => ({
         ...current,
         isDragging: false,
         width: undefined,
@@ -116,7 +128,7 @@ const Draggable: FC<OwnProps> = memo(
 
     useEffect(() => {
       if (state.isDragging && isDisabled) {
-        setState(current => ({
+        setState((current) => ({
           ...current,
           isDragging: false,
           width: undefined,
@@ -127,19 +139,19 @@ const Draggable: FC<OwnProps> = memo(
 
     useEffect(() => {
       if (state.isDragging) {
-        window.addEventListener('touchmove', handleMouseMove);
-        window.addEventListener('mousemove', handleMouseMove);
-        window.addEventListener('touchend', handleMouseUp);
-        window.addEventListener('touchcancel', handleMouseUp);
-        window.addEventListener('mouseup', handleMouseUp);
+        window.addEventListener("touchmove", handleMouseMove);
+        window.addEventListener("mousemove", handleMouseMove);
+        window.addEventListener("touchend", handleMouseUp);
+        window.addEventListener("touchcancel", handleMouseUp);
+        window.addEventListener("mouseup", handleMouseUp);
       } else {
-        window.removeEventListener('touchmove', handleMouseMove);
-        window.removeEventListener('mousemove', handleMouseMove);
-        window.removeEventListener('touchend', handleMouseUp);
-        window.removeEventListener('touchcancel', handleMouseUp);
-        window.removeEventListener('mouseup', handleMouseUp);
+        window.removeEventListener("touchmove", handleMouseMove);
+        window.removeEventListener("mousemove", handleMouseMove);
+        window.removeEventListener("touchend", handleMouseUp);
+        window.removeEventListener("touchcancel", handleMouseUp);
+        window.removeEventListener("mouseup", handleMouseUp);
 
-        setState(current => ({
+        setState((current) => ({
           ...current,
           translation: ZERO_POINT,
         }));
@@ -147,11 +159,11 @@ const Draggable: FC<OwnProps> = memo(
 
       return () => {
         if (state.isDragging) {
-          window.removeEventListener('touchmove', handleMouseMove);
-          window.removeEventListener('mousemove', handleMouseMove);
-          window.removeEventListener('touchend', handleMouseUp);
-          window.removeEventListener('touchcancel', handleMouseUp);
-          window.removeEventListener('mouseup', handleMouseUp);
+          window.removeEventListener("touchmove", handleMouseMove);
+          window.removeEventListener("mousemove", handleMouseMove);
+          window.removeEventListener("touchend", handleMouseUp);
+          window.removeEventListener("touchcancel", handleMouseUp);
+          window.removeEventListener("mouseup", handleMouseUp);
         }
       };
     }, [handleMouseMove, handleMouseUp, state.isDragging]);
@@ -176,8 +188,12 @@ const Draggable: FC<OwnProps> = memo(
 
         {!isDisabled && (
           <div
-            aria-label={'i18n_dragToSort'}
-            className={buildClassName(styles.knob, 'div-button', 'draggable-knob')}
+            aria-label={"i18n_dragToSort"}
+            className={buildClassName(
+              styles.knob,
+              "div-button",
+              "draggable-knob",
+            )}
             role="button"
             style={knobStyle}
             tabIndex={0}

@@ -1,6 +1,6 @@
 import { EKeyboardKey } from "@/lib/core";
 import useStableCallback from "../base/useStableCallback";
-import { requestMutation, requestMeasure } from "@/lib/modules/fastdom/fastdom";
+import { requestMutation, requestMeasure } from "@/lib/modules/fastdom";
 import { RefObject, useState, useEffect, useCallback } from "react";
 
 const useKeyboardListNavigation = (

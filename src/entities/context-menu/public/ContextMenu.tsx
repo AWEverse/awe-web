@@ -32,6 +32,23 @@ const ANIMATION_PROPS = {
   transition: { duration: ANIMATION_DURATION },
 };
 
+export type ContextMenuOptionType<T> = Readonly<{
+  description?: string;
+  icon?: string;
+  label: string;
+  group?: string;
+  onClick: (value?: T) => unknown;
+  value?: T;
+}>;
+
+type RenderButtonProps = Readonly<{
+  onClick: (ev: React.MouseEvent) => void;
+  onKeyDown: (ev: KeyboardEvent) => void;
+  isMenuShowing: boolean;
+  ref: React.Ref<HTMLButtonElement> | null;
+  menuNode: ReactNode;
+}>;
+
 interface OwnProps {
   isOpen: boolean;
   position: IVector2;

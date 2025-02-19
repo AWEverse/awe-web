@@ -10,7 +10,7 @@ import {
   requestMutation,
   requestMeasure,
   requestNextMutation,
-} from "@/lib/modules/fastdom/fastdom";
+} from "@/lib/modules/fastdom";
 import { useDebouncedFunction } from "../shedulers";
 import useWindowSize from "@/shared/hooks/DOM/useWindowSize";
 import { useStableCallback } from "../base";

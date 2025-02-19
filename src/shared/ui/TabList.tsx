@@ -70,7 +70,6 @@ const TabList: FC<OwnProps> = (props) => {
 
           return (
             <Tab
-              ref={containerRef}
               layoutId={uuid}
               key={key}
               aria-selected={isActive}

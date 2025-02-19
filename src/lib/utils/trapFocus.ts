@@ -1,4 +1,4 @@
-import { requestMeasure } from "../modules/fastdom/fastdom";
+import { requestMeasure } from "../modules/fastdom";
 import stopEvent from "./stopEvent";
 
 const SELECTABLE =

@@ -2,7 +2,7 @@ import { FC, useRef, memo, useInsertionEffect, useMemo } from "react";
 import buildClassName from "../lib/buildClassName";
 import s from "./TrackNavigation.module.scss";
 import buildStyle from "../lib/buildStyle";
-import { requestMutation } from "@/lib/modules/fastdom/fastdom";
+import { requestMutation } from "@/lib/modules/fastdom";
 
 type OwnProps = {
   count: number;
@@ -205,14 +205,14 @@ function drawRect(
   // a = "arc" to draw the rounded corner (r, r) at the bottom-left corner
   // v = "vertical line" drawing upward by (height - 2 * r), leaving room for the rounded corner on the top-left
   // a = "arc" to draw the rounded corner (r, r) back to the starting point, closing the path
-  return `M${x + r},${y} 
-          h${width - 2 * r} 
-          a${r},${r},0,0,1,${r},${r} 
-          v${height - 2 * r} 
-          a${r},${r},0,0,1,${-r},${r} 
-          h${-(width - 2 * r)} 
-          a${r},${r},0,0,1,${-r},${-r} 
-          v${-(height - 2 * r)} 
+  return `M${x + r},${y}
+          h${width - 2 * r}
+          a${r},${r},0,0,1,${r},${r}
+          v${height - 2 * r}
+          a${r},${r},0,0,1,${-r},${r}
+          h${-(width - 2 * r)}
+          a${r},${r},0,0,1,${-r},${-r}
+          v${-(height - 2 * r)}
           a${r},${r},0,0,1,${r},${-r}Z`;
 }
 

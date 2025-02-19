@@ -1,6 +1,6 @@
 import { DEBUG } from "@/lib/config/dev";
 import { IS_SAFARI } from "@/lib/core";
-import { requestMutation } from "@/lib/modules/fastdom/fastdom";
+import { requestMutation } from "@/lib/modules/fastdom";
 import { applyStyles } from "@/lib/utils/animation/animateNumber";
 import unloadVideo from "@/lib/utils/unloadVideo";
 import { RefObject, useEffect } from "react";

@@ -9,10 +9,7 @@ import {
 } from "react";
 import buildClassName from "../lib/buildClassName";
 import { useRefInstead } from "@/shared/hooks/base";
-import {
-  requestMutation,
-  requestNextMutation,
-} from "@/lib/modules/fastdom/fastdom";
+import { requestMutation, requestNextMutation } from "@/lib/modules/fastdom";
 import useUniqueId from "@/lib/hooks/utilities/useUniqueId";
 
 import "./TextArea.scss";
