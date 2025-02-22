@@ -62,7 +62,7 @@ export default function useCollapsibleLines<T extends HTMLElement>(
         ? `${cutoutHeightRef.current}px`
         : "100dvh";
     });
-  }, [isCollapsed, isDisabled, ref]);
+  }, [isCollapsed, isDisabled]);
 
   const recalculateTextLines = useCallback(() => {
     const element = getElement();
@@ -77,7 +77,7 @@ export default function useCollapsibleLines<T extends HTMLElement>(
       setIsCollapsible(false);
       setIsCollapsed(false);
     }
-  }, [isDisabled, maxLinesBeforeCollapse, ref]);
+  }, [isDisabled, maxLinesBeforeCollapse]);
 
   const debouncedRecalcTextLines = useDebouncedFunction(
     () => requestMeasure(recalculateTextLines),
@@ -104,7 +104,7 @@ export default function useCollapsibleLines<T extends HTMLElement>(
         };
       });
     }
-  }, [isDisabled, recalculateTextLines, ref]);
+  }, [isDisabled, recalculateTextLines]);
 
   const { width: windowWidth } = useWindowSize();
 

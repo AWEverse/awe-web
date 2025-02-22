@@ -1,4 +1,4 @@
-.LastRequest {
+.SearchLastRequest {
   position: relative;
   display: flex;
   align-items: center;
@@ -21,7 +21,7 @@
     overflow: hidden;
     color: var(--awe-palette-grey-400);
     cursor: not-allowed;
-    
+
     &::after {
       content: '';
       position: absolute;

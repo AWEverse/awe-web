@@ -1,7 +1,7 @@
-import TextArea from '@/shared/ui/TextArea';
-import { FC } from 'react';
+import TextArea from "@/shared/ui/TextArea";
+import { FC } from "react";
 
-import './index.scss';
+import "./index.scss";
 
 interface OwnProps {}
 
@@ -13,8 +13,9 @@ const MiddleInput: FC<OwnProps & StateProps> = () => {
       <TextArea
         id="middle-input"
         placeholder="Type a message"
-        maxLength={4096}
-        maxLengthIndicator={'Characters left: 4096'}
+        maxLengthCount={4096}
+        maxLengthIndicator
+        maxLines={9}
         tabIndex={0}
       />
     </div>

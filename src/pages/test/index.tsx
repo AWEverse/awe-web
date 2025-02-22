@@ -2,77 +2,78 @@ import { AnimatePresence, motion } from "motion/react";
 import React, { useState, useRef, useEffect } from "react";
 
 import "./styles.scss";
-
-const Slider = ({ items }: { items: any }) => {
-	const [currentIndex, setCurrentIndex] = useState(0);
-
-	const nextSlide = () => {
-		setCurrentIndex((prevIndex) => (prevIndex + 1) % items.length);
-	};
-
-	const prevSlide = () => {
-		setCurrentIndex(
-			(prevIndex) => (prevIndex - 1 + items.length) % items.length,
-		);
-	};
-
-	return (
-		<div className="slider-container">
-			<button onClick={prevSlide} className="prev-button">
-				Previous
-			</button>
-			<div className="slider-track">
-				<AnimatePresence>
-					<motion.div
-						key={currentIndex}
-						className="slide"
-						initial={{ x: 100, opacity: 0 }}
-						animate={{ x: 0, opacity: 1 }}
-						exit={{ x: -100, opacity: 0 }}
-						transition={{ duration: 0.5 }}
-					>
-						<div className="column">
-							<div
-								className="item"
-								style={{ height: `${items[currentIndex].height}px` }}
-							>
-								{items[currentIndex].content}
-							</div>
-						</div>
-						<div className="column">
-							<div
-								className="item"
-								style={{
-									height: `${items[(currentIndex + 1) % items.length].height}px`,
-								}}
-							>
-								{items[(currentIndex + 1) % items.length].content}
-							</div>
-						</div>
-					</motion.div>
-				</AnimatePresence>
-			</div>
-			<button onClick={nextSlide} className="next-button">
-				Next
-			</button>
-		</div>
-	);
-};
+import { AccordionGroup, AccordionItem } from "@/shared/ui/AccordionSwift";
 
 const TestPage: React.FC = () => {
-	const containerRef = useRef<HTMLDivElement>(null);
-	const items = [
-		{ content: "Item 1", height: 150 },
-		{ content: "Item 2", height: 200 },
-		{ content: "Item 3", height: 180 },
-		{ content: "Item 4", height: 220 },
-	];
-
-	return (
-		<div className="app">
-			<Slider items={items} />
-		</div>
-	);
+  return (
+    <div className="p-12">
+      <AccordionGroup allowMultiple>
+        <AccordionItem title="Item 1">
+          <div>
+            <p>Content 1</p>
+            Lorem ipsum, dolor sit amet consectetur adipisicing elit. Iste
+            distinctio autem adipisci voluptatum nulla perspiciatis illum
+            similique, dolor doloremque quas esse! Rerum nulla eveniet sed qui
+            earum accusantium? Fugit, corporis.
+          </div>
+        </AccordionItem>
+        <AccordionItem title="Item 2">
+          <div>
+            <p>Content 2</p>
+            Lorem ipsum, dolor sit amet consectetur adipisicing elit. Iste
+            distinctio autem adipisci voluptatum nulla perspiciatis illum
+            similique, dolor doloremque quas esse! Rerum nulla eveniet sed qui
+            earum accusantium? Fugit, corporis.
+          </div>
+        </AccordionItem>
+        <AccordionItem title="Item 3">
+          <div>
+            <p>Content 3</p>
+            Lorem ipsum, dolor sit amet consectetur adipisicing elit. Iste
+            distinctio autem adipisci voluptatum nulla perspiciatis illum
+            similique, dolor doloremque quas esse! Rerum nulla eveniet sed qui
+            earum accusantium? Fugit, corporis.
+          </div>
+        </AccordionItem>
+        <AccordionItem title="Item 4">
+          <div>
+            <p>Content 4</p>
+            Lorem ipsum, dolor sit amet consectetur adipisicing elit. Iste
+            distinctio autem adipisci voluptatum nulla perspiciatis illum
+            similique, dolor doloremque quas esse! Rerum nulla eveniet sed qui
+            earum accusantium? Fugit, corporis.
+          </div>
+        </AccordionItem>
+        <AccordionItem title="Item 5">
+          <div>
+            <p>Content 5</p>
+            Lorem ipsum, dolor sit amet consectetur adipisicing elit. Iste
+            distinctio autem adipisci voluptatum nulla perspiciatis illum
+            similique, dolor doloremque quas esse! Rerum nulla eveniet sed qui
+            earum accusantium? Fugit, corporis.
+          </div>
+        </AccordionItem>
+        <AccordionItem title="Item 6">
+          <div>
+            <p>Content 6</p>
+            Lorem ipsum, dolor sit amet consectetur adipisicing elit. Iste
+            distinctio autem adipisci voluptatum nulla perspiciatis illum
+            similique, dolor doloremque quas esse! Rerum nulla eveniet sed qui
+            earum accusantium? Fugit, corporis.
+          </div>
+        </AccordionItem>
+        <AccordionItem title="Item 7">
+          <div>
+            <p>Content 7</p>
+            Lorem ipsum, dolor sit amet consectetur adipisicing elit. Iste
+            distinctio autem adipisci voluptatum nulla perspiciatis illum
+            similique, dolor doloremque quas esse! Rerum nulla eveniet sed qui
+            earum accusantium? Fugit, corporis.
+          </div>
+        </AccordionItem>
+      </AccordionGroup>
+    </div>
+  );
 };
 
 export default TestPage;

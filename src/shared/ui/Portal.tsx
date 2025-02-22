@@ -1,4 +1,5 @@
-import { FC, useEffect, ReactNode } from "react";
+import { requestMutation } from "@/lib/modules/fastdom";
+import { FC, useEffect, ReactNode, useMemo } from "react";
 import { createPortal } from "react-dom";
 
 type OwnProps = {
@@ -12,25 +13,24 @@ const Portal: FC<OwnProps> = ({
   className,
   children,
 }) => {
+  const container = useMemo(
+    () => document.getElementById(containerId),
+    [containerId],
+  );
+
   useEffect(() => {
-    const container = document.querySelector(`#${containerId}`);
+    if (container && className) {
+      requestMutation(() => {
+        container.classList.add(className);
+      });
 
-    if (!container) {
-      return;
+      return () => {
+        requestMutation(() => {
+          container.classList.remove(className);
+        });
+      };
     }
-
-    if (className) {
-      container.classList.add(className);
-    }
-
-    return () => {
-      if (className) {
-        container.classList.remove(className);
-      }
-    };
-  }, [className, containerId]);
-
-  const container = document.querySelector(`#${containerId}`);
+  }, [container, className]);
 
   if (!container) return null;
 

@@ -1,6 +1,6 @@
 import React, { FC, memo, useCallback } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { useDropdownState, useDropdownAccessibility } from "../hooks";
+import { useDropdownState } from "../hooks";
 import buildClassName from "@/shared/lib/buildClassName";
 import { useRefInstead } from "@/shared/hooks/base";
 import s from "./Dropdown.module.scss";
@@ -8,11 +8,11 @@ import { dispatchHeavyAnimation } from "@/lib/core";
 import useBodyClass from "@/shared/hooks/DOM/useBodyClass";
 import { useBoundaryCheck } from "@/shared/hooks/mouse/useBoundaryCheck";
 import { useEffectWithPreviousDeps } from "@/shared/hooks/effects/useEffectWithPreviousDependencies";
+import useKeyboardListeners from "@/lib/hooks/events/useKeyboardListeners";
 
 interface OwnTriggerProps<T = HTMLElement> extends React.HTMLAttributes<T> {
   onTrigger: NoneToVoidFunction;
   isOpen?: boolean;
-  tabIndex?: number;
 }
 
 interface OwnSharedProps {
@@ -69,9 +69,9 @@ const DropdownMenu: FC<OwnProps & OwnSharedProps> = ({
     shouldClose,
   });
 
-  useDropdownAccessibility({
-    onClose: handleClose,
-    onEnter,
+  useKeyboardListeners({
+    bindings: { onEsc: onClose, onEnter },
+    rules: { preventDefault: true },
   });
 
   useBodyClass("has-open-dialog", isOpen);
@@ -110,7 +110,7 @@ const DropdownMenu: FC<OwnProps & OwnSharedProps> = ({
         <TriggerButton isOpen={isOpen} onTrigger={handleToggle} tabIndex={-1} />
       )}
 
-      <AnimatePresence mode="wait">
+      <AnimatePresence initial={false}>
         {isOpen && (
           <motion.div
             ref={dropdownRef}

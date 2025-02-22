@@ -1,4 +1,13 @@
-import { FC, memo, useCallback, useEffect, useRef, useState } from "react";
+import {
+  FC,
+  JSX,
+  memo,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import buildClassName from "@/shared/lib/buildClassName";
 import {
   ObserveFn,
@@ -23,23 +32,14 @@ interface OwnProps {
 }
 
 /**
- * Image component with lazy loading, fallback support, and optional caption.
+ * Modern Image component with lazy loading, fallback support, and intersection observer.
  *
- * ### Props
+ * This component defers loading the image until it is in the viewport when
+ * `observeIntersectionForLoading` is provided. It also handles error states by
+ * falling back to a provided fallback image source.
  *
- * | Property                        | Example                                        | Type               | Status   |
- * |---------------------------------|------------------------------------------------|--------------------|----------|
- * | `src`                           | `src="/profile.png"`                           | String             | Required |
- * | `width`                         | `width={500}`                                  | Integer (px)       | Required |
- * | `height`                        | `height={500}`                                 | Integer (px)       | Required |
- * | `alt`                           | `alt="Picture of the author"`                  | String             | Required |
- * | `fallbackSrc`                   | `fallbackSrc="https://via.placeholder.com/150"`| String             | Optional |
- * | `loading`                       | `loading="lazy"`                               | "lazy" or "eager"   | Optional |
- * | `decoding`                      | `decoding="async"`                             | "async", "auto", "sync" | Optional |
- * | `srcSet`                        | `srcSet="..."`                                 | String             | Optional |
- * | `sizes`                         | `sizes="(max-width: 768px) 100vw, 33vw"`         | String             | Optional |
- * | `onError`                       | `onError={() => {}}`                           | Function           | Optional |
- * | `observeIntersectionForLoading` | `observeIntersectionForLoading={...}`         | Function           | Optional |
+ * @param {OwnProps} props - The component props.
+ * @returns {JSX.Element} The rendered image element or null if no container exists.
  */
 const Image: FC<OwnProps> = ({
   src,
@@ -47,25 +47,23 @@ const Image: FC<OwnProps> = ({
   className,
   fallbackSrc = "https://via.placeholder.com/150",
   loading = "lazy",
+  decoding = "async",
   srcSet,
   sizes,
-  decoding = "async",
   width,
   height,
   onError,
   observeIntersectionForLoading,
-}) => {
-  const [imgSrc, setImgSrc] = useState<string>("");
+}: OwnProps): JSX.Element => {
+  const [imgSrc, setImgSrc] = useState<string>(
+    !observeIntersectionForLoading ? src : "",
+  );
   const [isLoaded, setIsLoaded] = useState<boolean>(false);
   const imageRef = useRef<HTMLImageElement | null>(null);
 
   useEffect(() => {
     setIsLoaded(false);
-    if (!observeIntersectionForLoading) {
-      setImgSrc(src);
-    } else {
-      setImgSrc("");
-    }
+    setImgSrc(!observeIntersectionForLoading ? src : "");
   }, [src, observeIntersectionForLoading]);
 
   const handleError = useCallback(() => {
@@ -88,6 +86,14 @@ const Image: FC<OwnProps> = ({
 
   useOnIntersect(imageRef, observeIntersectionForLoading, onIntersect);
 
+  const computedStyle = useMemo(
+    () => ({
+      opacity: isLoaded ? 1 : 0,
+      transition: "opacity 0.125s ease-in-out",
+    }),
+    [isLoaded],
+  );
+
   return (
     <img
       alt={alt}
@@ -99,11 +105,8 @@ const Image: FC<OwnProps> = ({
       sizes={sizes}
       onError={handleError}
       onLoad={handleImageLoad}
-      style={{
-        opacity: isLoaded ? 1 : 0,
-        transition: "opacity 0.3s ease-in-out",
-      }}
-      loading={loading === "lazy" ? "lazy" : "eager"}
+      style={computedStyle}
+      loading={loading}
       width={width}
       height={height}
     />

@@ -1,6 +1,6 @@
 /**
  * Interface for objects that can be disposed.
  **/
-export default interface IDisposable {
+export interface IDisposable {
   destroy(): void;
 }

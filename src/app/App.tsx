@@ -1,4 +1,4 @@
-import { FC, StrictMode } from "react";
+import { FC } from "react";
 import { BrowserRouter } from "react-router-dom";
 import { ThemeProvider } from "@mui/material/styles";
 import CssBaseline from "@mui/material/CssBaseline";
@@ -12,18 +12,22 @@ import "@/lib/core/public/templates/linq";
 import { useComponentDidMount } from "@/shared/hooks/effects/useLifecycle";
 import useBodyClass from "@/shared/hooks/DOM/useBodyClass";
 import { IS_TOUCH_ENV } from "@/lib/core";
-import DebugInfo from "./DebugInfo";
+import { usePageVisibility } from "@/lib/hooks/ui/usePageVisibility";
 
 interface StateProps {
   themeKey?: ThemeKey;
 }
 
 const App: FC<StateProps> = ({ themeKey = "dark" }) => {
+  const isPageVisible = usePageVisibility();
+
   useBodyClass("is-touch-env", IS_TOUCH_ENV);
 
   useComponentDidMount(() => {
     windowSize.update();
   });
+
+  useBodyClass("page-visible", isPageVisible);
 
   return (
     <InltLocaleProvider>

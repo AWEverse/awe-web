@@ -1,9 +1,9 @@
+import { AnimatePresence, motion } from "framer-motion";
 import Portal from "./Portal";
 
 import "./Menu.scss";
 import { dispatchHeavyAnimation, IS_BACKDROP_BLUR_SUPPORTED } from "@/lib/core";
 import { useStableCallback } from "@/shared/hooks/base";
-import useHistoryBack from "@/lib/hooks/history/useHistoryBack";
 import useAppLayout from "@/lib/hooks/ui/useAppLayout";
 import { FC, useRef, useEffect, memo } from "react";
 import useKeyboardListNavigation from "../hooks/keyboard/useKeyboardListNavigation";
@@ -18,7 +18,7 @@ import captureKeyboardListeners from "@/lib/utils/captureKeyboardListeners";
 import { useEffectWithPreviousDeps } from "../hooks/effects/useEffectWithPreviousDependencies";
 
 type OwnProps = {
-  ref?: React.RefObject<HTMLDivElement>;
+  ref?: React.RefObject<HTMLElement | null>;
   isOpen: boolean;
   shouldCloseFast?: boolean;
   id?: string;
@@ -42,7 +42,13 @@ type OwnProps = {
   children?: React.ReactNode;
 } & MenuPositionOptions;
 
-const ANIMATION_DURATION = 200;
+const ANIMATION_DURATION = 0.2; // Adjust as needed
+
+const dropdownVariants = {
+  initial: { opacity: 0, scale: 0.95 },
+  animate: { opacity: 1, scale: 1 },
+  exit: { opacity: 0, scale: 0.95 },
+};
 
 const Menu: FC<OwnProps> = ({
   ref: externalRef,
@@ -68,27 +74,25 @@ const Menu: FC<OwnProps> = ({
 }) => {
   const { isTouchScreen } = useAppLayout();
 
-  // eslint-disable-next-line no-null/no-null
   const containerRef = useRef<HTMLDivElement | null>(null);
   const bubbleRef = useRef<HTMLDivElement | null>(null);
 
   useMenuPosition(isOpen, containerRef, bubbleRef, positionOptions);
 
   useEffect(
-    () => (isOpen ? captureKeyboardListeners({ onEsc: onClose }) : undefined),
+    () =>
+      isOpen
+        ? captureKeyboardListeners({
+            bindings: { onEsc: onClose },
+          })
+        : undefined,
     [isOpen, onClose],
   );
-
-  useHistoryBack({
-    isActive: isOpen,
-    onBack: onClose,
-    shouldBeReplaced: true,
-  });
 
   useEffectWithPreviousDeps(
     ([prevIsOpen]) => {
       if (isOpen || (!isOpen && prevIsOpen === true)) {
-        dispatchHeavyAnimation(ANIMATION_DURATION);
+        dispatchHeavyAnimation(ANIMATION_DURATION * 1000); // Animation duration in milliseconds
       }
     },
     [isOpen],
@@ -126,8 +130,8 @@ const Menu: FC<OwnProps> = ({
     },
   );
 
-  const menu = (
-    <div
+  const menuContent = (
+    <motion.div
       ref={containerRef}
       id={id}
       className={buildClassName(
@@ -142,6 +146,14 @@ const Menu: FC<OwnProps> = ({
       onKeyDown={isOpen ? handleKeyDown : undefined}
       onMouseEnter={onMouseEnter}
       onMouseLeave={isOpen ? onMouseLeave : undefined}
+      variants={dropdownVariants}
+      initial="initial"
+      animate="animate"
+      exit="exit"
+      transition={{
+        duration: ANIMATION_DURATION,
+        ease: "easeInOut",
+      }}
     >
       {isOpen && (
         <div
@@ -158,14 +170,18 @@ const Menu: FC<OwnProps> = ({
         {children}
         {footer && <div className="footer">{footer}</div>}
       </div>
-    </div>
+    </motion.div>
   );
 
   if (withPortal) {
-    return <Portal>{menu}</Portal>;
+    return (
+      <AnimatePresence>
+        {isOpen && <Portal>{menuContent}</Portal>}
+      </AnimatePresence>
+    );
   }
 
-  return menu;
+  return <AnimatePresence>{isOpen && menuContent}</AnimatePresence>;
 };
 
 export default memo(Menu);

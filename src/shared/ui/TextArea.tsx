@@ -15,7 +15,6 @@ import useUniqueId from "@/lib/hooks/utilities/useUniqueId";
 import "./TextArea.scss";
 import { useThrottledFunction } from "../hooks/shedulers";
 import { noop } from "@/lib/utils/listener";
-import { throttleWith } from "@/lib/core";
 
 type TextAreaProps = React.DetailedHTMLProps<
   React.TextareaHTMLAttributes<HTMLTextAreaElement>,
@@ -33,8 +32,9 @@ type OwnProps = {
   replaceNewlines?: boolean;
   maxByteCount?: number;
   maxLengthCount?: number;
-} & TextAreaProps;
+} & Omit<TextAreaProps, "maxLenght">;
 
+// @Todo: fix responsive for height
 const TextArea: FC<OwnProps> = ({
   ref,
   id,
@@ -89,10 +89,17 @@ const TextArea: FC<OwnProps> = ({
         resizerCallbackRef.current?.();
       };
     });
+
+    return () => {
+      textarea.style.maxHeight = "";
+      textarea.value = "";
+    };
   }, [maxLines, textareaRef]);
 
   const resizeHeight = useThrottledFunction(
-    throttleWith(requestMutation, resizerCallbackRef.current),
+    () => {
+      requestMutation(() => resizerCallbackRef.current());
+    },
     250,
     true,
   );
@@ -114,19 +121,26 @@ const TextArea: FC<OwnProps> = ({
 
       if (maxLengthIndicator && indicatorRef.current) {
         indicatorRef.current.textContent =
-          valueLength > 0 ? `${valueLength}/${maxLengthCount}` : "";
+          valueLength > 0
+            ? `Characters left: ${valueLength}/${maxLengthCount}`
+            : "";
       }
 
-      if (1 <= valueLength) {
+      const valueLengthTrimmed = updatedValue.trim().length;
+
+      if (1 >= valueLengthTrimmed) {
         requestMutation(() => {
           if (textareaRef.current) {
-            textareaRef.current.classList.toggle("touched", valueLength > 0);
+            textareaRef.current.classList.toggle(
+              "touched",
+              valueLengthTrimmed > 0,
+            );
           }
         });
       }
 
       // mutate height = 0
-      resizeHeight(target);
+      resizeHeight();
 
       onChange?.({
         ...e,

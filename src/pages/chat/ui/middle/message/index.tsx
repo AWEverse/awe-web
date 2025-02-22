@@ -1,16 +1,16 @@
 import {
-	ApiMessage,
-	IAlbum,
-	MessageListType,
+  ApiMessage,
+  IAlbum,
+  MessageListType,
 } from "@/@types/api/types/messages";
 import {
-	ObserveFn,
-	useIsIntersecting,
-	useOnIntersect,
+  ObserveFn,
+  useIsIntersecting,
+  useOnIntersect,
 } from "@/shared/hooks/DOM/useIntersectionObserver";
 import { REM } from "@/lib/utils/mediaDimensions";
 import { ThreadId } from "@/types";
-import { FC, ReactNode, useRef, useState } from "react";
+import { FC, memo, ReactNode, useRef, useState } from "react";
 
 import "./index.scss";
 import { useScrollProvider } from "@/shared/context";
@@ -24,7 +24,7 @@ type PositionEntity = "Group" | "Document" | "List";
 type Position = "IsFirst" | "IsLast";
 
 type MessagePositionProperties = {
-	[K in `${Position}${PositionEntity}`]: boolean;
+  [K in `${Position}${PositionEntity}`]: boolean;
 };
 
 type MetaPosition = "in-text" | "standalone" | "none";
@@ -43,20 +43,20 @@ const THROTTLE_MS = 300;
 const RESIZE_ANIMATION_DURATION = 400;
 
 class Purposes {
-	static readonly READING = "reading";
-	static readonly PLAYING = "playing";
-	static readonly LOADING = "loading";
+  static readonly READING = "reading";
+  static readonly PLAYING = "playing";
+  static readonly LOADING = "loading";
 }
 
 export const MessageStatuses = [
-	"delivered",
-	"error",
-	"paused",
-	"partial-sent",
-	"read",
-	"sending",
-	"sent",
-	"viewed",
+  "delivered",
+  "error",
+  "paused",
+  "partial-sent",
+  "read",
+  "sending",
+  "sent",
+  "viewed",
 ] as const;
 export type MessageStatusType = (typeof MessageStatuses)[number];
 
@@ -64,18 +64,18 @@ export const Directions = ["incoming", "outgoing"] as const;
 export type DirectionType = (typeof Directions)[number];
 
 type OwnProps = {
-	isOwn: boolean;
-	message: ApiMessage;
-	album?: IAlbum;
-	withAvatar?: boolean;
-	withSenderName?: boolean;
-	threadId: ThreadId;
-	messageListType: MessageListType;
-	noComments: boolean;
-	noReplies: boolean;
-	isJustAdded: boolean;
-	memoFirstUnreadIdRef: { current: number | undefined };
-	accessibleList: () => boolean;
+  isOwn: boolean;
+  message: ApiMessage;
+  album?: IAlbum;
+  withAvatar?: boolean;
+  withSenderName?: boolean;
+  threadId: ThreadId;
+  messageListType: MessageListType;
+  noComments: boolean;
+  noReplies: boolean;
+  isJustAdded: boolean;
+  memoFirstUnreadIdRef: { current: number | undefined };
+  accessibleList: () => boolean;
 } & MessagePositionProperties;
 
 interface StateProps {}
@@ -104,118 +104,114 @@ In the table, I've listed the HTML tags and their associated attributes based on
 `;
 
 const ChatMessage: FC<OwnProps & StateProps> = ({ isOwn, message }) => {
-	const { content, isJustAdded } = message;
+  const { content, isJustAdded } = message;
 
-	const messageRef = useRef<HTMLDivElement>(null);
-	const bottomMarkerRef = useRef<HTMLDivElement>(null);
+  const messageRef = useRef<HTMLDivElement>(null);
+  const bottomMarkerRef = useRef<HTMLDivElement>(null);
 
-	const {
-		observeIntersectionForReading,
-		observeIntersectionForLoading,
-		observeIntersectionForPlaying,
-	} = useScrollProvider();
+  const {
+    observeIntersectionForReading,
+    observeIntersectionForLoading,
+    observeIntersectionForPlaying,
+  } = useScrollProvider();
 
-	const renderContent = (): ReactNode => {
-		const {
-			text,
-			photo,
-			video,
-			altVideo,
-			document,
-			sticker,
-			contact,
-			poll,
-			action,
-			webPage,
-			audio,
-			voice,
-			invoice,
-			location,
-			game,
-			giveaway,
-			giveawayResults,
-			isExpiredVoice,
-			isExpiredRoundVideo,
-			ttlSeconds,
-		} = content;
+  const renderContent = (): ReactNode => {
+    const {
+      text,
+      photo,
+      video,
+      altVideo,
+      document,
+      sticker,
+      contact,
+      poll,
+      action,
+      webPage,
+      audio,
+      voice,
+      invoice,
+      location,
+      game,
+      giveaway,
+      giveawayResults,
+      isExpiredVoice,
+      isExpiredRoundVideo,
+      ttlSeconds,
+    } = content;
 
-		return <MessageText children={markdownContent} />;
-	};
+    return <MessageText children={markdownContent} />;
+  };
 
-	const renderAvatar = () => {
-		return <div>Avatar</div>;
-	};
+  const renderAvatar = () => {
+    return <div>Avatar</div>;
+  };
 
-	const renderTitle = () => {
-		return <div>Title</div>;
-	};
+  const renderTitle = () => {
+    return <div>Title</div>;
+  };
 
-	const renderMessageText = () => {
-		return <div>Text</div>;
-	};
+  const renderMessageText = () => {
+    return <div>Text</div>;
+  };
 
-	const isLoading = useIsIntersecting(
-		messageRef,
-		observeIntersectionForLoading,
-	);
-	const isReading = useIsIntersecting(
-		bottomMarkerRef,
-		observeIntersectionForReading,
-	);
+  const isLoading = useIsIntersecting(
+    messageRef,
+    observeIntersectionForLoading,
+  );
+  const isReading = useIsIntersecting(
+    bottomMarkerRef,
+    observeIntersectionForReading,
+  );
 
-	const {
-		isContextMenuOpen,
-		contextMenuAnchor,
-		handleBeforeContextMenu,
-		handleContextMenu,
-		handleContextMenuClose,
-	} = useContextMenuHandlers(messageRef, false, false, false);
+  const {
+    isContextMenuOpen,
+    contextMenuAnchor,
+    handleBeforeContextMenu,
+    handleContextMenu,
+    handleContextMenuClose,
+  } = useContextMenuHandlers(messageRef, false, false, false);
 
-	const { handleClick, handleMouseDown } = useFastClick(
-		(e: React.MouseEvent<HTMLDivElement>) => {
-			if (e.button === EMouseButton.Secondary) {
-				handleBeforeContextMenu(e);
-			}
+  const { handleClick, handleMouseDown } = useFastClick(
+    (e: React.MouseEvent<HTMLDivElement>) => {
+      if (e.button === EMouseButton.Secondary) {
+        handleBeforeContextMenu(e);
+      }
+    },
+  );
 
-			if (e.type === "mousedown" && e.button !== EMouseButton.Main) {
-				return;
-			}
-		},
-	);
+  return (
+    <>
+      <div
+        ref={messageRef}
+        className={buildClassName("Message", isOwn && "own")}
+        onClick={handleClick}
+        onMouseDown={handleMouseDown}
+        onContextMenu={handleContextMenu}
+      >
+        {renderContent()}
+        <div
+          ref={bottomMarkerRef}
+          className="Message__bottom"
+          date-purpose={Purposes.READING}
+          data-meta={NBSP}
+        />
+      </div>
 
-	return (
-		<>
-			<div
-				ref={messageRef}
-				className={buildClassName("Message", isOwn && "own")}
-				onClick={handleClick}
-				onMouseDown={handleMouseDown}
-				onContextMenu={handleContextMenu}
-			>
-				{renderContent()}
-				<div
-					ref={bottomMarkerRef}
-					className="Message__bottom"
-					date-purpose={Purposes.READING}
-					data-meta={NBSP}
-				/>
-			</div>
-
-			<ContextMenu
-				isOpen={isContextMenuOpen}
-				position={contextMenuAnchor!}
-				onClose={handleContextMenuClose}
-				withPortal
-				menuClassName="p-2"
-			>
-				<p>Reply</p>
-				<p>Copy</p>
-				<p>Copy link</p>
-				<p>Forward</p>
-				<p>Reporst</p>
-			</ContextMenu>
-		</>
-	);
+      <ContextMenu
+        isOpen={isContextMenuOpen}
+        position={contextMenuAnchor!}
+        onClose={handleContextMenuClose}
+        withPortal
+        menuClassName="p-2"
+      >
+        <p>Reply</p>
+        <p>Copy</p>
+        <p>Copy link</p>
+        <p>Forward</p>
+        <p>Reporst</p>
+      </ContextMenu>
+    </>
+  );
 };
 
-export default ChatMessage;
+export default memo(ChatMessage);

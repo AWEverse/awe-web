@@ -23,12 +23,11 @@ export default function useDebouncedFunction<T extends AnyToVoidFunction>(
   noFirst: boolean = false,
   noLast: boolean = false,
   deps?: React.DependencyList,
-): AnyToVoidFunction {
+): T {
   const fnMemo = useCallback(fn, deps || ([] as const));
 
-  // Return the debounced function, passing the necessary options for leading and trailing edge calls
   return useMemo(
-    () => debounce(fnMemo, ms, !noFirst, !noLast),
+    () => debounce(fnMemo, ms, !noFirst, !noLast) as unknown as T,
     [fnMemo, ms, noFirst, noLast],
   );
 }

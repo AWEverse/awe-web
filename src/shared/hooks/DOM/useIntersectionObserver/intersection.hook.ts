@@ -81,6 +81,7 @@ export function useIntersectionObserver(
         if (targetCallback) {
           controller.removeCallback(target, targetCallback);
         }
+
         controller.observer.unobserve(target);
       };
     },
@@ -128,6 +129,7 @@ export function useIsIntersecting(
   callback?: TargetCallback,
 ) {
   const intersectionRef = useRef<boolean>(!observe);
+  const lastCallback = useStableCallback(callback);
 
   const subscribe = useCallback(
     (notify: () => void) => {
@@ -136,12 +138,12 @@ export function useIsIntersecting(
       const unsubscribe = observe(targetRef.current, (entry) => {
         intersectionRef.current = entry.isIntersecting;
         notify();
-        callback?.(entry);
+        lastCallback?.(entry);
       });
 
       return unsubscribe;
     },
-    [targetRef, observe, callback],
+    [targetRef, observe, lastCallback],
   );
 
   const getSnapshot = useStableCallback(() => intersectionRef.current);

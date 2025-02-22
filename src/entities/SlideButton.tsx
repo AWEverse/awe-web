@@ -8,6 +8,8 @@ import {
   useEffect,
   cloneElement,
   isValidElement,
+  Fragment,
+  useCallback,
 } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import ActionButton, { ActionButtonProps } from "@/shared/ui/ActionButton";
@@ -44,7 +46,6 @@ const SlideButton: FC<SlideButtonProps & ActionButtonProps> = ({
 }) => {
   const [slideIndex, setSlideIndex] = useState(0);
   const [isHovered, setIsHovered] = useState(false);
-
   const totalSlides = Children.count(children);
 
   if (totalSlides === 0) {
@@ -54,11 +55,15 @@ const SlideButton: FC<SlideButtonProps & ActionButtonProps> = ({
   useEffect(() => {
     if (interval > 0 && !isHovered) {
       const timer = setInterval(() => {
-        setSlideIndex((prev) => (prev + 1) % totalSlides);
+        setSlideIndex((prev) => {
+          const newIndex = (prev + 1) % totalSlides;
+          onSlideChange?.(newIndex);
+          return newIndex;
+        });
       }, interval);
       return () => clearInterval(timer);
     }
-  }, [interval, isHovered, totalSlides]);
+  }, [interval, isHovered, totalSlides, onSlideChange]);
 
   const handleNextSlide = useStableCallback(
     (e: React.MouseEvent<HTMLElement>) => {
@@ -71,27 +76,55 @@ const SlideButton: FC<SlideButtonProps & ActionButtonProps> = ({
 
   const currentChild = useMemo(() => {
     const child = Children.toArray(children)[slideIndex];
-    return isValidElement<{ className?: string }>(child)
-      ? cloneElement(child, {
-          className: `${child.props.className || ""} ${s.SlideContent}`,
-        })
-      : child;
+    if (
+      isValidElement<{ className?: string; children: React.ReactNode }>(child)
+    ) {
+      if (child.type === Fragment) {
+        return <div className={s.SlideContent}>{child.props.children}</div>;
+      }
+      return cloneElement(child, {
+        className: buildClassName(child.props.className, s.SlideContent),
+      });
+    }
+    return child;
   }, [children, slideIndex]);
+
+  const animationVariants = useMemo(() => {
+    const axis = direction === "vertical" ? "y" : "x";
+    return type === "slide"
+      ? {
+          enter: { [axis]: "100%", opacity: 1 },
+          center: { [axis]: 0, opacity: 1 },
+          exit: { [axis]: "-100%", opacity: 1 },
+        }
+      : {
+          enter: { opacity: 0 },
+          center: { opacity: 1 },
+          exit: { opacity: 0 },
+        };
+  }, [type, direction]);
+
+  // Stable mouse event handlers
+  const handleMouseEnter = useCallback(() => setIsHovered(true), []);
+  const handleMouseLeave = useCallback(() => setIsHovered(false), []);
 
   return (
     <ActionButton
       onClick={handleNextSlide}
       className={buildClassName(s.SlideButtonRoot, className)}
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
       aria-label={`Slide control (${slideIndex + 1} of ${totalSlides})`}
       {...rest}
     >
-      <TrackNavigation count={totalSlides} index={slideIndex} />
-      <AnimatePresence mode="wait">
+      <div className="absolute left-1 z-10">
+        <TrackNavigation count={totalSlides} index={slideIndex} />
+      </div>
+
+      <AnimatePresence mode="popLayout">
         <motion.div
           key={slideIndex}
-          variants={proccessAnimation(type, direction)}
+          variants={animationVariants}
           initial="enter"
           animate="center"
           exit="exit"
@@ -103,7 +136,6 @@ const SlideButton: FC<SlideButtonProps & ActionButtonProps> = ({
           {currentChild}
         </motion.div>
       </AnimatePresence>
-
       <div
         className={buildClassName(s.HiddenChild, classNames.child)}
         aria-hidden="true"
@@ -115,22 +147,6 @@ const SlideButton: FC<SlideButtonProps & ActionButtonProps> = ({
       </span>
     </ActionButton>
   );
-};
-
-const proccessAnimation = (type: string, direction: string) => {
-  const axis = direction === "vertical" ? "y" : "x";
-
-  return type === "slide"
-    ? {
-        enter: { [axis]: "100%", opacity: 1 },
-        center: { [axis]: 0, opacity: 1 },
-        exit: { [axis]: "-100%", opacity: 1 },
-      }
-    : {
-        enter: { opacity: 0 },
-        center: { opacity: 1 },
-        exit: { opacity: 0 },
-      };
 };
 
 export default memo(SlideButton);

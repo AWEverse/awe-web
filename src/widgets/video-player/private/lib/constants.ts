@@ -13,4 +13,6 @@ export const QUALITY_OPTIONS = [
   '240p',
   '144p',
   'auto',
-];
+] as const;
+
+
