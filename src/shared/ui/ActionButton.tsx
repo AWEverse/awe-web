@@ -1,17 +1,18 @@
-import React, {
+import {
   ReactNode,
   MouseEvent,
   memo,
   useCallback,
   useMemo,
+  forwardRef,
   ElementType,
-  FC,
+  ComponentPropsWithoutRef,
 } from "react";
 import buildClassName from "../lib/buildClassName";
 import RippleEffect from "./ripple-effect";
 import "./ActionButton.scss";
 
-type SizeVariant =
+export type SizeVariant =
   | "xs"
   | "sm"
   | "md"
@@ -19,7 +20,7 @@ type SizeVariant =
   | "xl"
   | `custom-${"xs" | "sm" | "md" | "lg" | "xl"}`;
 
-type ColorVariant =
+export type ColorVariant =
   | "primary"
   | "secondary"
   | "success"
@@ -27,11 +28,10 @@ type ColorVariant =
   | "error"
   | "inherit";
 
-type ButtonVariant = "contained" | "outlined" | "text" | "icon";
+export type ButtonVariant = "contained" | "outlined" | "text" | "icon";
 
-interface OwnProps {
-  ref?: React.RefObject<HTMLElement | null>;
-  ["as"]?: ElementType;
+export interface ActionButtonProps extends ComponentPropsWithoutRef<"button"> {
+  as?: ElementType;
   title?: string;
   active?: boolean;
   disabled?: boolean;
@@ -54,110 +54,111 @@ interface OwnProps {
   "aria-label"?: string;
   "aria-labelledby"?: string;
   "aria-describedby"?: string;
-  onClick?: (e: React.MouseEvent<HTMLElement>) => void;
-  onMouseEnter?: (e: React.MouseEvent<HTMLElement>) => void;
-  onMouseLeave?: (e: React.MouseEvent<HTMLElement>) => void;
+  onClick?: (e: MouseEvent<HTMLElement>) => void;
+  onMouseEnter?: (e: MouseEvent<HTMLElement>) => void;
+  onMouseLeave?: (e: MouseEvent<HTMLElement>) => void;
 }
 
-const ActionButton: FC<OwnProps> = ({
-  ref,
-  as: Component = "button",
-  onClick,
-  title,
-  active = false,
-  disabled = false,
-  className,
-  icon,
-  label,
-  labelClassName,
-  variant = "contained",
-  size = "md",
-  color = "primary",
-  loading = false,
-  fullWidth = true,
-  children,
-  startDecorator,
-  endDecorator,
-  ripple = true,
-  ...rest
-}) => {
-  const buttonClassname = useMemo(
-    () =>
-      buildClassName(
-        "button",
-        `button--variant--${variant}`,
-        `button--size--${size}`,
-        `button--color--${color}`,
-        active && "active",
-        disabled && "disabled",
-        loading && "loading",
-        fullWidth && "fullWidth",
-        className,
-      ),
-    [variant, size, color, active, disabled, loading, fullWidth, className],
-  );
+const ActionButton = forwardRef<HTMLElement, ActionButtonProps>(
+  (props, ref) => {
+    const {
+      as: Component = "button",
+      onClick,
+      title,
+      active = false,
+      disabled = false,
+      className,
+      icon,
+      label,
+      labelClassName,
+      variant = "contained",
+      size = "md",
+      color = "primary",
+      loading = false,
+      fullWidth = true,
+      children,
+      startDecorator,
+      endDecorator,
+      ripple = true,
+      ...rest
+    } = props;
 
-  const handleClick = useCallback(
-    (event: MouseEvent<HTMLButtonElement>) => {
-      if (!disabled && !loading) {
-        onClick?.(event);
-      }
-    },
-    [disabled, loading, onClick, ripple],
-  );
+    const buttonClassname = useMemo(
+      () =>
+        buildClassName(
+          "button",
+          `button--variant--${variant}`,
+          `button--size--${size}`,
+          `button--color--${color}`,
+          active && "active",
+          disabled && "disabled",
+          loading && "loading",
+          fullWidth && "fullWidth",
+          className,
+        ),
+      [variant, size, color, active, disabled, loading, fullWidth, className],
+    );
 
-  const content = useMemo(() => {
-    if (children) return children;
-    const child = label || null;
+    const handleClick = useCallback(
+      (event: MouseEvent<HTMLElement>) => {
+        if (!disabled && !loading) {
+          onClick?.(event);
+        }
+      },
+      [disabled, loading, onClick],
+    );
+
+    const content = useMemo(() => {
+      if (children) return children;
+      return (
+        <>
+          {startDecorator}
+          {icon && <span className="iconWrapper">{icon}</span>}
+          {label && (
+            <span className={buildClassName("label", labelClassName)}>
+              {label}
+            </span>
+          )}
+          {endDecorator}
+        </>
+      );
+    }, [children, label, icon, startDecorator, endDecorator, labelClassName]);
+
+    const ariaProps = useMemo(
+      () => ({
+        "aria-busy": loading,
+        "aria-disabled": disabled,
+        "aria-pressed": active,
+        "aria-label": rest["aria-label"] || label || title,
+        "aria-labelledby": rest["aria-labelledby"],
+        "aria-describedby": rest["aria-describedby"],
+      }),
+      [loading, disabled, active, rest, label, title],
+    );
 
     return (
-      <>
-        {startDecorator}
-        {icon && <span className={"iconWrapper"}>{icon}</span>}
-        {child && (
-          <span className={buildClassName("label", labelClassName)}>
-            {child}
-          </span>
-        )}
-        {endDecorator}
-      </>
+      <Component
+        {...rest}
+        ref={ref}
+        role={rest.role || (Component === "button" ? undefined : "button")}
+        className={buttonClassname}
+        title={title}
+        onClick={handleClick}
+        disabled={disabled || loading}
+        {...ariaProps}
+      >
+        {content}
+        {ripple && <RippleEffect />}
+        {loading && <div className="loader" aria-hidden="true" />}
+      </Component>
     );
-  }, [children, label, icon, startDecorator, endDecorator, labelClassName]);
+  },
+);
 
-  const ariaProps = useMemo(
-    () => ({
-      "aria-busy": loading,
-      "aria-disabled": disabled,
-      "aria-pressed": active,
-      "aria-label": rest["aria-label"] || label || title,
-      "aria-labelledby": rest["aria-labelledby"],
-      "aria-describedby": rest["aria-describedby"],
-    }),
-    [loading, disabled, active, rest, label, title],
-  );
-
-  return (
-    <Component
-      {...rest}
-      ref={ref}
-      role={rest.role || (Component === "button" ? undefined : "button")}
-      className={buttonClassname}
-      title={title}
-      onClick={handleClick}
-      disabled={disabled || loading}
-      {...ariaProps}
-    >
-      {content}
-      {ripple && <RippleEffect />}
-      {loading && <div className={"loader"} aria-hidden="true" />}
-    </Component>
-  );
-};
-
-export default memo(ActionButton, (prevProps, nextProps) => {
-  return Object.keys(prevProps).every(
+export default memo(ActionButton, (prevProps, nextProps) =>
+  Object.keys(prevProps).every(
     (key) =>
-      prevProps[key as keyof OwnProps] === nextProps[key as keyof OwnProps],
-  );
-});
-export { type OwnProps as ActionButtonProps };
+      prevProps[key as keyof ActionButtonProps] ===
+      nextProps[key as keyof ActionButtonProps],
+  ),
+);

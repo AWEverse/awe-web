@@ -1,13 +1,16 @@
-import ActionButton from "@/shared/ui/ActionButton";
-
 import DropdownMenu, { TriggerProps } from "@/shared/ui/dropdown";
-import { FC, memo, useCallback, useState } from "react";
-import s from "./SettingsDropdown.module.scss";
+import { FC, JSX, memo, useState } from "react";
 import { useStableCallback } from "@/shared/hooks/base";
-import { AnimatePresence, motion } from "motion/react";
+import { AnimatePresence, motion } from "framer-motion";
+import SettingSleep from "./screens/SettingSleep";
+import SettingPlayBackSpeed from "./screens/SettingPlayBackSpeed";
+import SettingMain from "./screens/SettingMain";
+import SettingQuality from "./screens/SettingQuality";
 
-interface OwnProps<T extends Record<string, unknown> = {}> {
-  position: string;
+type Screen = "Main" | "Speed" | "Quality" | "Timer";
+
+interface SettingsDropdownProps<T extends Record<string, unknown> = {}> {
+  position?: "bottom-right" | "top-right" | "top-left" | "bottom-left";
   triggerButton: FC<T & TriggerProps>;
   onStableVolumeClick?: (flag: boolean) => void;
   onAmbientModeClick?: (flag: boolean) => void;
@@ -16,110 +19,61 @@ interface OwnProps<T extends Record<string, unknown> = {}> {
   onQualityClick?: (value: string) => void;
 }
 
-const SettingsDropdown: FC<OwnProps> = ({
+const ANIMATION_DURATION = 0.125;
+
+const SettingsDropdown: FC<SettingsDropdownProps> = ({
   position = "bottom-right",
   triggerButton,
-  onStableVolumeClick,
   onAmbientModeClick,
-  onPlaybackSpeedClick,
-  onSpeedTimerClick,
   onQualityClick,
+  onSpeedTimerClick,
 }) => {
-  const [quality, setQuality] = useState<string>("Auto (1080p)");
-  const [playbackSpeed, setPlaybackSpeed] = useState<number>(1.0);
-  const [showSpeedSlider, setShowSpeedSlider] = useState(false);
+  const [screen, setScreen] = useState<Screen>("Main");
 
-  // Optimized handler using useCallback
-  const handleSpeedChange = useCallback(
-    (value: number) => {
-      setPlaybackSpeed(value);
-      onPlaybackSpeedClick?.(value);
-    },
-    [onPlaybackSpeedClick],
-  );
-
-  // Stable callback with animation support
-  const toggleSpeedSlider = useStableCallback(() => {
-    console.log(showSpeedSlider);
-    setShowSpeedSlider(!showSpeedSlider);
-  });
+  const resetScreen = useStableCallback(() => setScreen("Main"));
 
   const handleAmbientModeClick = useStableCallback(() => {
-    onAmbientModeClick?.(true); // Toggle ambient mode
+    onAmbientModeClick && onAmbientModeClick(true);
   });
 
-  const handlePlaybackSpeedClick = useStableCallback((value: number) => {
-    setPlaybackSpeed(value);
-    onPlaybackSpeedClick?.(value);
-  });
+  const handleSpeedTimerClick = useStableCallback(() => setScreen("Speed"));
+  const handleQualityClick = useStableCallback(() => setScreen("Quality"));
 
-  const handleSpeedTimerClick = useStableCallback((value: number) => {
-    onSpeedTimerClick?.(value);
-  });
+  const screenComponentMap: Record<Screen, JSX.Element> = {
+    Main: (
+      <SettingMain
+        onQualityClick={handleQualityClick}
+        onAmbientModeClick={handleAmbientModeClick}
+        onSpeedTimerClick={handleSpeedTimerClick}
+      />
+    ),
+    Speed: <SettingPlayBackSpeed onBackClick={resetScreen} />,
+    Quality: <SettingQuality onBackClick={resetScreen} />,
+    Timer: <SettingSleep onBackClick={resetScreen} />,
+  };
 
-  const handleQualityClick = useStableCallback((value: string) => {
-    setQuality(value);
-    onQualityClick?.(value);
-  });
+  const isMain = screen === "Main";
+  const initialX = isMain ? "-100%" : "100%";
+  const exitX = initialX;
 
   return (
     <DropdownMenu
+      className="w-56 max-h-64 overflow-y-auto"
       triggerButton={triggerButton}
-      position={
-        position as "bottom-right" | "top-right" | "top-left" | "bottom-left"
-      }
+      position={position}
     >
-      <ActionButton>Stable volume</ActionButton>
-      <ActionButton onClick={handleAmbientModeClick}>Ambient Mode</ActionButton>
-      <ActionButton onClick={toggleSpeedSlider}>Playback speed</ActionButton>
-      <AnimatePresence mode="wait">
-        {showSpeedSlider && (
-          <motion.div
-            key="speedSlider"
-            layout // Add layout animation
-            initial={{ opacity: 0, y: -10 }}
-            animate={{
-              opacity: 1,
-              y: 0,
-              transition: { type: "spring", stiffness: 300 }, // Smoother animation
-            }}
-            exit={{
-              opacity: 0,
-              y: -10,
-              transition: { duration: 0.15 },
-            }}
-            className={s.sliderWrapper}
-          >
-            <input
-              type="range"
-              min="0.5"
-              max="3"
-              step="0.1"
-              value={playbackSpeed}
-              onChange={(e) => handleSpeedChange(parseFloat(e.target.value))}
-              className={s.speedSlider}
-            />
-          </motion.div>
-        )}
+      <AnimatePresence initial={false} mode="popLayout">
+        <motion.div
+          key={screen}
+          initial={{ x: initialX }}
+          animate={{ x: 0 }}
+          exit={{ x: exitX }}
+          transition={{ duration: ANIMATION_DURATION }}
+        >
+          {screenComponentMap[screen]}
+        </motion.div>
       </AnimatePresence>
-      <ActionButton onClick={() => handleSpeedTimerClick(10)}>
-        Speed timer
-      </ActionButton>
-      <ActionButton
-        endDecorator={renderAnnotation(quality)}
-        onClick={() => handleQualityClick("Auto (1080p)")}
-      >
-        Quality
-      </ActionButton>
     </DropdownMenu>
-  );
-};
-
-const renderAnnotation = (text: string) => {
-  return (
-    <span className={s.annotation}>
-      <span className={s.annotationText}>{text}</span>
-    </span>
   );
 };
 

@@ -1,12 +1,12 @@
 import { useMemo } from 'react';
 
-const useTransitionKey = (direction: { current: string }, zoomLevel: number, currentDate: Date) => {
+const useTransitionKey = (direction: string, zoomLevel: number, currentDate: Date) => {
   return useMemo(() => {
-    if (direction.current === 'zoomIn') {
+    if (direction === 'zoomIn') {
       return zoomLevel * 2;
     }
     return currentDate.getTime().toString();
-  }, [direction.current, zoomLevel, currentDate]);
+  }, [direction, zoomLevel, currentDate]);
 };
 
 export default useTransitionKey;

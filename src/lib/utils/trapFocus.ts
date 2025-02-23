@@ -1,53 +1,49 @@
 import { requestMeasure } from "../modules/fastdom";
-import stopEvent from "./stopEvent";
 
-const SELECTABLE =
-  'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])' as const;
+const FOCUSABLE_SELECTOR =
+  'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])';
 
-export default function trapFocus(element: HTMLElement) {
-  function handleKeyDown(e: KeyboardEvent) {
-    if (e.key !== "Tab") {
-      return;
-    }
+/**
+* Traps focus within a given container element by listening for "Tab" key events
+* and forcing the focus to loop through the focusable elements inside the container.
+*
+* @param {HTMLElement} container - The element inside which the focus should be trapped.
+* @returns {() => void} - A cleanup function to remove the focus trap.
+*/
+export default function trapFocus(container: HTMLElement): () => void {
+  const keydownHandler = (event: KeyboardEvent): void => {
+    if (event.key !== "Tab") return;
 
-    stopEvent(e);
+    event.preventDefault();
+    event.stopPropagation();
 
     const focusableElements = Array.from(
-      element.querySelectorAll(SELECTABLE),
+      container.querySelectorAll(FOCUSABLE_SELECTOR)
     ) as HTMLElement[];
 
-    if (!focusableElements.length) {
-      return;
-    }
+    if (!focusableElements.length) return;
 
-    const currentFocusedIndex = focusableElements.findIndex((em) =>
-      em.isSameNode(document.activeElement),
+    const currentIndex = focusableElements.findIndex(
+      (el) => el === document.activeElement
     );
 
-    const getFocusIndex = () => {
-      if (currentFocusedIndex === -1) {
-        return 0;
-      }
-
-      if (e.shiftKey) {
-        if (currentFocusedIndex === 0) {
-          return focusableElements.length - 1;
-        }
-
-        return currentFocusedIndex - 1;
-      }
-
-      return (currentFocusedIndex + 1) % focusableElements.length;
-    };
+    const nextIndex =
+      currentIndex === -1
+        ? 0
+        : event.shiftKey
+          ? currentIndex === 0
+            ? focusableElements.length - 1
+            : currentIndex - 1
+          : (currentIndex + 1) % focusableElements.length;
 
     requestMeasure(() => {
-      focusableElements[getFocusIndex()].focus();
+      focusableElements[nextIndex].focus();
     });
-  }
+  };
 
-  document.addEventListener("keydown", handleKeyDown, false);
+  document.addEventListener("keydown", keydownHandler, false);
 
   return () => {
-    document.removeEventListener("keydown", handleKeyDown, false);
+    document.removeEventListener("keydown", keydownHandler, false);
   };
 }

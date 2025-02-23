@@ -6,6 +6,7 @@ import { AddRounded, RemoveRounded } from "@mui/icons-material";
 import { useStableCallback } from "@/shared/hooks/base";
 import useLongPress from "@/lib/hooks/events/useLongPress";
 import { useInterval } from "@/shared/hooks/shedulers";
+import AnimatedCounter from "../../AnimatedCounter";
 
 interface OwnProps {
   className?: string;

@@ -1,88 +1,64 @@
-import React, {
-  createRef,
-  memo,
-  useCallback,
-  useEffect,
-  useRef,
-  useState,
-} from "react";
+import React, { memo, useCallback, useRef, useState } from "react";
 import { Avatar } from "@mui/material";
-import { UserProps } from "@/shared/types";
 import DotAnimation from "@/shared/ui/dot-animation";
 import ArrowBackRoundedIcon from "@mui/icons-material/ArrowBackRounded";
 import "./index.scss";
 import MiddleHeaderActions from "./MiddleHeaderActions";
 import PinnedMessageButton from "../../common/PinnedMessageButton";
-import useMedia from "@/lib/hooks/ui/useMedia";
 import { CalendarMonthRounded, CloseRounded } from "@mui/icons-material";
 import IconButton from "@/shared/ui/IconButton";
-import { TransitionGroup, CSSTransition } from "react-transition-group";
+import { motion, AnimatePresence } from "framer-motion";
 import { useStableCallback } from "@/shared/hooks/base";
 import Modal from "@/shared/ui/Modal";
 import { createSelectorHooks } from "@/lib/hooks/selectors/createSelectorHooks";
 import captureKeyboardListeners from "@/lib/utils/captureKeyboardListeners";
 import MiddleHeaderSearch from "./MiddleHeaderSearch";
 import useChatStore from "@/pages/chat/store/useChatSelector";
-import useConditionalRef from "@/lib/hooks/utilities/useConditionalRef";
 import buildClassName from "@/shared/lib/buildClassName";
 import { DatePicker } from "@/entities/date-picker";
 import { useComponentDidMount } from "@/shared/hooks/effects/useLifecycle";
+import useAppLayout from "@/lib/hooks/ui/useAppLayout";
 
-const TRANSITION_DURATION = 300;
+const TRANSITION_DURATION = 0.125;
+
+const variants = {
+  search: {
+    initial: { y: -20, opacity: 0 },
+    animate: { y: 0, opacity: 1 },
+    exit: { y: -20, opacity: 0 },
+  },
+  main: {
+    initial: { y: 20, opacity: 0 },
+    animate: { y: 0, opacity: 1 },
+    exit: { y: 20, opacity: 0 },
+  },
+};
 
 const useStore = createSelectorHooks(useChatStore);
 
-const MiddleHeader: React.FC<{ sender?: UserProps }> = ({ sender }) => {
+const MiddleHeader: React.FC<{ sender?: any }> = ({ sender }) => {
   const headerRef = useRef<HTMLDivElement>(null);
-
-  const isTablet = useMedia("(max-width: 1024px)");
-
+  const { isTablet } = useAppLayout();
   const [openDateModal, setOpenDateModal] = useState(false);
 
   const isChatSearching = useStore.isChatSearching();
   const toggleChatSearching = useStore.toggleChatSearching();
-
   const openProfileColumn = useStore.openProfileColumn();
   const toggleChatList = useStore.toggleChatList();
 
-  const onTransitionStart = useStableCallback(() => {
-    if (headerRef.current) {
-      headerRef.current.style.overflow = "hidden";
-    }
-  });
-
-  const onTransitionEnd = useStableCallback(() => {
-    if (headerRef.current) {
-      headerRef.current.style.overflow = "visible";
-    }
-  });
-
-  const handleEscListener = useStableCallback(() => {
-    if (isChatSearching) {
-      toggleChatSearching();
-    }
-  });
-
+  // Handle ESC key press
   useComponentDidMount(() => {
-    const keyboardListenersCleanup = captureKeyboardListeners({
-      onEsc: handleEscListener,
+    const keyboardCleanup = captureKeyboardListeners({
+      bindings: { onEsc: () => isChatSearching && toggleChatSearching() },
     });
-
-    return () => {
-      keyboardListenersCleanup();
-    };
+    return keyboardCleanup;
   });
 
-  const handleDateModalOpen = useStableCallback(() => {
-    setOpenDateModal(true);
-  });
+  const handleDateModalOpen = useStableCallback(() => setOpenDateModal(true));
+  const handleDateModalClose = useStableCallback(() => setOpenDateModal(false));
 
-  const handleDateModalClose = useStableCallback(() => {
-    setOpenDateModal(false);
-  });
-
-  const renderSearch = useCallback(() => {
-    return (
+  const renderSearch = useCallback(
+    () => (
       <>
         <MiddleHeaderSearch />
         <IconButton onClick={handleDateModalOpen}>
@@ -92,59 +68,66 @@ const MiddleHeader: React.FC<{ sender?: UserProps }> = ({ sender }) => {
           <CloseRounded />
         </IconButton>
       </>
-    );
-  }, []);
+    ),
+    [handleDateModalOpen, toggleChatSearching],
+  );
 
-  const renderMain = useCallback(() => {
-    return (
+  const renderMain = useCallback(
+    () => (
       <>
-        <div className={"UserDetails"} onClick={openProfileColumn}>
+        <div className="UserDetails" onClick={openProfileColumn}>
           <p>Andrii CLiyensa</p>
           <DotAnimation content="Looking" />
         </div>
-        <div className={"MiddleHeaderActions"}>
+        <div className="MiddleHeaderActions">
           {!isTablet && (
             <PinnedMessageButton
               activeIndex={0}
-              className={"InAction"}
+              className="InAction"
               segmentCount={4}
             />
           )}
           <MiddleHeaderActions />
         </div>
       </>
-    );
-  }, [isTablet]);
-
-  const nodeRef = useConditionalRef<HTMLDivElement>(null, [isChatSearching]);
+    ),
+    [isTablet, openProfileColumn],
+  );
 
   return (
     <>
-      <div ref={headerRef} className={"MiddleHeaderWrapper"}>
-        <IconButton className={"BackButton"} onClick={toggleChatList}>
+      <div ref={headerRef} className="MiddleHeaderWrapper">
+        <IconButton className="BackButton" onClick={toggleChatList}>
           <ArrowBackRoundedIcon />
         </IconButton>
-
         <Avatar
-          className={"UserAvatar"}
+          className="UserAvatar"
           sizes="medium"
-          src={"https://i.pravatar.cc/300"}
+          src="https://i.pravatar.cc/300"
         />
 
-        <TransitionGroup className={"HeaderBodyWrapper"}>
-          <CSSTransition
-            key={isChatSearching ? "search" : "main"}
-            classNames={isChatSearching ? "toTop" : "toBottom"}
-            nodeRef={nodeRef}
-            timeout={TRANSITION_DURATION}
-            onEnter={onTransitionStart}
-            onExited={onTransitionEnd}
-          >
-            <div ref={nodeRef} className={"HeaderTransition"}>
+        <div className={"HeaderBodyWrapper"}>
+          <AnimatePresence>
+            <motion.div
+              key={isChatSearching ? "search" : "main"}
+              initial={
+                isChatSearching
+                  ? variants.search.initial
+                  : variants.main.initial
+              }
+              animate={
+                isChatSearching
+                  ? variants.search.animate
+                  : variants.main.animate
+              }
+              exit={isChatSearching ? variants.search.exit : variants.main.exit}
+              transition={{ duration: TRANSITION_DURATION }}
+              className="HeaderTransition"
+            >
               {isChatSearching ? renderSearch() : renderMain()}
-            </div>
-          </CSSTransition>
-        </TransitionGroup>
+            </motion.div>
+          </AnimatePresence>
+        </div>
       </div>
 
       {isTablet && (

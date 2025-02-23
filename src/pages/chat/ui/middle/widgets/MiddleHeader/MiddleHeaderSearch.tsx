@@ -1,26 +1,29 @@
 import { useStableCallback } from "@/shared/hooks/base";
 import { debounce } from "@/lib/core";
 import SearchInput from "@/shared/ui/SearchInput";
-import { FC, memo, useState } from "react";
+import { FC, memo, useEffect, useState } from "react";
 
 import s from "./MiddleHeaderSearch.module.scss";
 import SearchResults from "../../search/SearchResults";
+import { useDebouncedFunction } from "@/shared/hooks/shedulers";
 
 interface OwnProps {}
 
 interface StateProps {}
 
 const MiddleHeaderSearch: FC<OwnProps & StateProps> = () => {
-  const [value, setValue] = useState("");
+  const [value, _setValue] = useState("");
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [isFocus, setIsFocus] = useState(false);
 
   const hasValue = Boolean(value);
 
+  const setValue = useDebouncedFunction(_setValue, 250, true, false);
+
   const handleChange = useStableCallback(
-    debounce((e: React.ChangeEvent<HTMLInputElement>) => {
+    (e: React.ChangeEvent<HTMLInputElement>) => {
       setValue(e.target.value);
-    }, 500),
+    },
   );
 
   const handleFocus = useStableCallback(
@@ -43,7 +46,6 @@ const MiddleHeaderSearch: FC<OwnProps & StateProps> = () => {
     <section className={s.MiddleHeaderSearch}>
       <SearchInput
         size="large"
-        value={value}
         onBlur={handleBlur}
         onChange={handleChange}
         onFocus={handleFocus}

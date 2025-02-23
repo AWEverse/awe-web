@@ -1,99 +1,69 @@
-import React, { useEffect, useState, FC, memo, useLayoutEffect, useCallback, useMemo } from 'react';
-import buildStyle from '@/shared/lib/buildStyle';
-import { throttle } from '@/lib/core';
-import s from './LightEffect.module.css';
-import { IVector2 } from '@/lib/core/public/math/vector2';
+import React, { memo, useRef, useState } from "react";
 
-interface LightEffectProps {
-  gridRef: React.RefObject<HTMLElement | null>;
-  lightSize: number;
-  intencity?: number;
+interface Position {
+  x: number;
+  y: number;
 }
 
-const DEFAULT_LIGHT_SIZE = 50; // px
-const THROTTLE_DELAY = 50; // ms
-const initialState = {
-  x: -DEFAULT_LIGHT_SIZE * 50,
-  y: -DEFAULT_LIGHT_SIZE * 50,
-};
+interface SpotlightCardProps extends React.PropsWithChildren {
+  className?: string;
+  spotlightColor?: `rgba(${number}, ${number}, ${number}, ${number})`;
+}
 
-const LightEffect: FC<LightEffectProps> = ({ gridRef, lightSize }) => {
-  const [position, setPosition] = useState<IVector2>(initialState);
+const LightEffect: React.FC<SpotlightCardProps> = ({
+  children,
+  className = "",
+  spotlightColor = "rgba(255, 255, 255, 0.25)",
+}) => {
+  const divRef = useRef<HTMLDivElement>(null);
+  const [isFocused, setIsFocused] = useState<boolean>(false);
+  const [position, setPosition] = useState<Position>({ x: 0, y: 0 });
+  const [opacity, setOpacity] = useState<number>(0);
 
-  // Memoize grid dimensions to avoid unnecessary recalculations
-  const [gridDimensions, setGridDimensions] = useState({
-    width: 0,
-    height: 0,
-    left: 0,
-    top: 0,
-  });
+  const handleMouseMove: React.MouseEventHandler<HTMLDivElement> = (e) => {
+    if (!divRef.current || isFocused) return;
 
-  const handleResize = useCallback(() => {
-    if (!gridRef.current) return;
+    const rect = divRef.current.getBoundingClientRect();
+    setPosition({ x: e.clientX - rect.left, y: e.clientY - rect.top });
+  };
 
-    const gridRect = gridRef.current.getBoundingClientRect();
-    setGridDimensions({
-      width: gridRect.width,
-      height: gridRect.height,
-      left: gridRect.left,
-      top: gridRect.top,
-    });
-  }, [gridRef]);
+  const handleFocus = () => {
+    setIsFocused(true);
+    setOpacity(0.6);
+  };
 
-  useEffect(() => {
-    handleResize();
+  const handleBlur = () => {
+    setIsFocused(false);
+    setOpacity(0);
+  };
 
-    window.addEventListener('resize', handleResize, { passive: true });
+  const handleMouseEnter = () => {
+    setOpacity(0.6);
+  };
 
-    return () => {
-      window.removeEventListener('resize', handleResize);
-    };
-  }, [handleResize]);
-
-  const handleMouseMove = useCallback(
-    () =>
-      throttle((e: MouseEvent) => {
-        if (!gridRef.current) return;
-        const { width: maxX, height: maxY, left: startLeft, top: startTop } = gridDimensions;
-
-        const halfLightSize = lightSize / 2;
-        const cursorX = e.clientX - startLeft - halfLightSize;
-        const cursorY = e.clientY - startTop - halfLightSize;
-
-        const isOutOfBoundsX = cursorX < -lightSize || maxX < cursorX;
-        const isOutOfBoundsY = cursorY < -lightSize || maxY < cursorY;
-
-        if (!(isOutOfBoundsX || isOutOfBoundsY)) {
-          setPosition(prev =>
-            prev.x !== cursorX || prev.y !== cursorY ? { x: cursorX, y: cursorY } : prev,
-          );
-        }
-      }, THROTTLE_DELAY),
-    [gridDimensions, lightSize],
-  );
-
-  useEffect(() => {
-    window.addEventListener('mousemove', handleMouseMove);
-
-    return () => {
-      window.removeEventListener('mousemove', handleMouseMove);
-    };
-  }, [handleMouseMove]);
+  const handleMouseLeave = () => {
+    setOpacity(0);
+  };
 
   return (
     <div
-      aria-label="Light effect indicating current position"
-      aria-live="polite"
-      className={s.lightEffect}
-      data-light-size={lightSize}
-      data-testid="light-effect"
-      role="img"
-      style={buildStyle(
-        `--light-size: ${lightSize}px`,
-        `--light-position-x: ${Math.round(position.x)}px`,
-        `--light-position-y: ${Math.round(position.y)}px`,
-      )}
-    />
+      ref={divRef}
+      onMouseMove={handleMouseMove}
+      onFocus={handleFocus}
+      onBlur={handleBlur}
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
+      className={`relative rounded-3xl border border-neutral-800 bg-neutral-900 overflow-hidden p-1 ${className}`}
+    >
+      <div
+        className="pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-500 ease-in-out"
+        style={{
+          opacity,
+          background: `radial-gradient(circle at ${position.x}px ${position.y}px, ${spotlightColor}, transparent 80%)`,
+        }}
+      />
+      {children}
+    </div>
   );
 };
 

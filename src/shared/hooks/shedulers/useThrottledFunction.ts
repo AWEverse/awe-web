@@ -20,15 +20,15 @@ export default function useThrottledFunction<T extends AnyToVoidFunction>(
   msOrSchedulerFn: number | Scheduler,
   noFirst: boolean = false,
   deps?: React.DependencyList,
-): AnyToVoidFunction {
+): T {
   const fnMemo = useCallback(fn, deps || ([] as const));
 
   // Return the throttled function based on the type of `msOrSchedulerFn`
   return useMemo(() => {
     if (typeof msOrSchedulerFn === "number") {
-      return throttle(fnMemo, msOrSchedulerFn, !noFirst);
+      return throttle(fnMemo, msOrSchedulerFn, !noFirst) as unknown as T;
     } else {
-      return throttleWith(msOrSchedulerFn, fnMemo);
+      return throttleWith(msOrSchedulerFn, fnMemo) as unknown as T;
     }
   }, [fnMemo, msOrSchedulerFn, noFirst]);
 }

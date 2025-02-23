@@ -6,14 +6,14 @@ import MainScreen from "./drawer-screens/MainScreen";
 import "./RightColumn.scss";
 import useChatStore from "../../store/useChatSelector";
 
-const TRANSITION_DURATION = 0.25; // seconds
+const TRANSITION_DURATION = 0.125; // seconds
 
 const RightColumn: FC = () => {
   const isOpen = useChatStore((state) => state.isProfileEditing);
 
   return (
     <DrawerColumn>
-      <AnimatePresence initial={false}>
+      <AnimatePresence initial={false} mode="popLayout">
         <motion.div
           key={isOpen ? "edit" : "main"}
           initial={{ x: isOpen ? "100%" : "-100%" }}

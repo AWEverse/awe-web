@@ -62,6 +62,9 @@ interface OwnProps {
   triggerRef?: React.RefObject<HTMLElement | null>;
   onClose: () => void;
   onCloseAnimationEnd?: () => void;
+  animations?: {
+    layout?: boolean | "position" | "size" | "preserve-aspect";
+  };
 }
 
 const ContextMenu: FC<OwnProps> = ({
@@ -75,6 +78,7 @@ const ContextMenu: FC<OwnProps> = ({
   isDense,
   noCompact = false,
   triggerRef,
+  animations: { layout = undefined } = {},
   onClose,
   onCloseAnimationEnd,
 }) => {
@@ -89,7 +93,7 @@ const ContextMenu: FC<OwnProps> = ({
 
   useClickAway(containerRef, onClose);
 
-  useKeyboardListeners({ onEsc: onClose });
+  useKeyboardListeners({ bindings: { onEsc: onClose } });
 
   const getTriggerElement = useStableCallback(
     () => triggerRef?.current || document.body,
@@ -151,6 +155,7 @@ const ContextMenu: FC<OwnProps> = ({
         style={style}
         {...ANIMATION_PROPS}
         onAnimationEnd={onCloseAnimationEnd}
+        layout={layout}
       >
         <div
           className={buildClassName("context-menu-bubble", menuClassName)}

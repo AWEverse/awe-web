@@ -1,6 +1,3 @@
-import { MAX_INT_32 } from '@/lib/constants/numeric';
-import { NumericLimits } from '@/lib/core';
-
 export const WEEKDAY_LETTERS = [
   'lng_weekday1',
   'lng_weekday2',
@@ -32,7 +29,6 @@ export const MONTH_LIST = [
   'lng_fourth_month',
 ];
 
-export const TRANSITION_DURATION = 1000;
 export const MAX_SAFE_DATE = 8640000000000000;
 export const MIN_SAFE_DATE = -8640000000000000;
 export const COLUMNS = 7;

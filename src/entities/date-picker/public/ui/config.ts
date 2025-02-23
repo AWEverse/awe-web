@@ -1,4 +1,4 @@
-export const initGrigPosition = {
+export const initGridPosition = {
   columns: 0,
   rows: 0,
 };

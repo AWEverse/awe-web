@@ -1,5 +1,5 @@
+import { useComponentDidMount } from "@/shared/hooks/effects/useLifecycle";
 import { useState } from "react";
-import useComponentDidMount from "../effects/useComponentDidMount";
 
 const useBrowserOnline = () => {
   const [isOnline, setIsOnline] = useState(window.navigator.onLine);
