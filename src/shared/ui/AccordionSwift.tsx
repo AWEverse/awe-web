@@ -12,8 +12,6 @@ import React, {
 } from "react";
 import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 
-import "./AccordionSwift.scss";
-
 const TRANSITION = 0.125;
 
 interface AccordionItemProps {
@@ -34,10 +32,41 @@ const getDataChildAttr = (
   isNextChild: boolean,
   isPrevChild: boolean,
 ): string => {
-  if (isOpen) return "current";
-  if (isNextChild) return !isPrevChild ? "next" : "beetween";
-  if (isPrevChild) return "prev";
+  if (isOpen) {
+    return "current";
+  }
+  if (isNextChild) {
+    return isPrevChild ? "beetween" : "next";
+  }
+  if (isPrevChild) {
+    return "prev";
+  }
   return "another";
+};
+
+const getDataChildRadius = (
+  isFirstChild: boolean,
+  isLastChild: boolean,
+  isNextChild: boolean,
+  isPrevChild: boolean,
+): string => {
+  if (isFirstChild && isLastChild) {
+    return "0.5rem";
+  }
+
+  if (isLastChild) {
+    return !isNextChild ? "0 0 0.5rem 0.5rem" : "0.5rem";
+  }
+
+  if (isFirstChild || isNextChild) {
+    return !isPrevChild ? "0.5rem 0.5rem 0 0" : "0.5rem";
+  }
+
+  if (isPrevChild) {
+    return "0 0 0.5rem 0.5rem";
+  }
+
+  return "0rem";
 };
 
 const itemVariants = {
@@ -55,16 +84,18 @@ const itemVariants = {
       borderRadius: "0.5rem",
     };
   },
-  closed: (custom: { isPrevChild: boolean; isNextChild: boolean }) => {
-    const borderRadius = (() => {
-      if (custom.isPrevChild) {
-        return "0.5rem 0.5rem 0 0";
-      }
-      if (custom.isNextChild) {
-        return "0 0 0.5rem 0.5rem";
-      }
-      return "0";
-    })();
+  closed: (custom: {
+    isFirstChild: boolean;
+    isLastChild: boolean;
+    isPrevChild: boolean;
+    isNextChild: boolean;
+  }) => {
+    const borderRadius = getDataChildRadius(
+      custom.isFirstChild,
+      custom.isLastChild,
+      custom.isNextChild,
+      custom.isPrevChild,
+    );
 
     return {
       margin: 0,
@@ -76,6 +107,18 @@ const itemVariants = {
 const contentVariants = {
   hidden: { opacity: 0, height: 0 },
   visible: { opacity: 1, height: "auto" },
+};
+
+type MultiplyState = {
+  openSet: Set<number>;
+  prevSet: Set<number>;
+  nextSet: Set<number>;
+};
+
+type SingleState = {
+  currentOpenIndex: number;
+  prevIndex: number;
+  nextIndex: number;
 };
 
 export const AccordionItem: FC<AccordionItemProps> = memo(
@@ -109,8 +152,7 @@ export const AccordionItem: FC<AccordionItemProps> = memo(
       <motion.div
         data-open={isOpen}
         data-child={dataChildAttr}
-        className="accordion-item p-2 border border-gray-200 bg-white cursor-pointer shadow-sm"
-        onClick={handleToggle}
+        className="accordion-item border border-gray-200 bg-white shadow-sm"
         initial={false}
         animate={isOpen ? "open" : "closed"}
         variants={itemVariants}
@@ -125,7 +167,10 @@ export const AccordionItem: FC<AccordionItemProps> = memo(
           duration: shouldReduceMotion ? 0 : TRANSITION,
         }}
       >
-        <button className="accordion-header w-full text-left font-semibold text-gray-800 focus:outline-none">
+        <button
+          onClick={handleToggle}
+          className="accordion-header block w-full h-full p-2 cursor-pointer text-left font-semibold text-gray-800 focus:outline-none"
+        >
           {title}
         </button>
         <AnimatePresence initial={false}>
@@ -164,44 +209,50 @@ export const AccordionGroup: FC<AccordionGroupProps> = ({
   const [openIndexes, setOpenIndexes] = useState<number[]>(defaultOpenIndexes);
   const childrenArray = useMemo(() => Children.toArray(children), [children]);
 
-  const getAccordionState = useCallback(
-    (openIndexes: number[]) => {
-      if (allowMultiple) {
-        const openSet = new Set(openIndexes);
-        const prevSet = new Set<number>();
-        const nextSet = new Set<number>();
-
-        for (const index of openIndexes) {
-          prevSet.add(index + 1);
-          nextSet.add(index - 1);
-        }
-
-        return { openSet, prevSet, nextSet };
-      } else {
-        const currentOpenIndex = openIndexes[0] ?? -1;
-
-        return {
-          currentOpenIndex,
-          prevIndex: currentOpenIndex - 1,
-          nextIndex: currentOpenIndex + 1,
-        };
-      }
-    },
-    [allowMultiple],
-  );
-
-  const accordionState = useMemo(
-    () => getAccordionState(openIndexes),
-    [openIndexes, getAccordionState],
-  );
+  const accordionState: MultiplyState | SingleState = useMemo(() => {
+    if (allowMultiple) {
+      return openIndexes.reduce(
+        (acc, index) => {
+          acc.openSet.add(index);
+          acc.prevSet.add(index - 1);
+          acc.nextSet.add(index + 1);
+          return acc;
+        },
+        {
+          openSet: new Set<number>(),
+          prevSet: new Set<number>(),
+          nextSet: new Set<number>(),
+        },
+      );
+    } else {
+      const currentOpenIndex = openIndexes[0] ?? -1;
+      return {
+        currentOpenIndex,
+        prevIndex: currentOpenIndex - 1,
+        nextIndex: currentOpenIndex + 1,
+      };
+    }
+  }, [openIndexes]);
 
   const toggleIndex = useCallback(
     (index: number) => {
       setOpenIndexes((prev) => {
-        if (prev.includes(index)) {
-          return prev.filter((i) => i !== index);
+        let found = false;
+        const newOpenIndexes: number[] = [];
+
+        for (let i = 0; i < prev.length; i++) {
+          if (prev[i] === index) {
+            found = true;
+          } else {
+            newOpenIndexes.push(prev[i]);
+          }
         }
-        return allowMultiple ? [...prev, index] : [index];
+
+        if (found) {
+          return newOpenIndexes;
+        }
+
+        return allowMultiple ? [...newOpenIndexes, index] : [index];
       });
     },
     [allowMultiple],
@@ -215,12 +266,13 @@ export const AccordionGroup: FC<AccordionGroupProps> = ({
         let isOpen: boolean, isPrevChild: boolean, isNextChild: boolean;
 
         if (allowMultiple) {
-          const { openSet, prevSet, nextSet } = accordionState;
+          const { openSet, prevSet, nextSet } = accordionState as MultiplyState;
           isOpen = !!openSet?.has(index);
           isPrevChild = !!prevSet?.has(index);
           isNextChild = !!nextSet?.has(index);
         } else {
-          const { currentOpenIndex, prevIndex, nextIndex } = accordionState;
+          const { currentOpenIndex, prevIndex, nextIndex } =
+            accordionState as SingleState;
           isOpen = currentOpenIndex !== undefined && index === currentOpenIndex;
           isPrevChild = index === nextIndex && !isOpen;
           isNextChild = index === prevIndex;

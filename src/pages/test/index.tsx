@@ -4,144 +4,175 @@ import { AccordionGroup, AccordionItem } from "@/shared/ui/AccordionSwift";
 
 const TestPage: React.FC = () => {
   return (
-    <div className="p-12 overflow-auto">
+    <div className="p-12 overflow-auto h-screen">
       <AccordionGroup allowMultiple>
-        <AccordionItem title="Accordion Item 1">
+        <AccordionItem title="Step 1: Project Setup">
           <div>
             <p>
-              <strong>Overview:</strong> This item provides a detailed overview
-              of our product's features.
+              <strong>Initialize Vite Project</strong>
             </p>
-            <p>
-              Lorem ipsum dolor sit amet, consectetur adipiscing elit. Curabitur
-              vel dolor eget urna consectetur tincidunt.
-            </p>
-            <ul>
-              <li>Feature A: Excellent performance</li>
-              <li>Feature B: User-friendly interface</li>
-              <li>Feature C: Robust design</li>
-            </ul>
-            <p>
-              Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.
-            </p>
-          </div>
-        </AccordionItem>
-        <AccordionItem title="Accordion Item 2">
-          <div>
-            <p>
-              <strong>Details:</strong> Item 2 dives into technical details.
-            </p>
-            <p>
-              Vivamus lacinia odio vitae vestibulum vestibulum. Cras venenatis
-              euismod malesuada. Integer ac volutpat metus.
-            </p>
-            <ol>
-              <li>Step 1: Initialization</li>
-              <li>Step 2: Processing</li>
-              <li>Step 3: Finalization</li>
-            </ol>
-            <p>
-              Duis aute irure dolor in reprehenderit in voluptate velit esse
-              cillum dolore eu fugiat nulla pariatur.
-            </p>
-          </div>
-        </AccordionItem>
-        <AccordionItem title="Accordion Item 3">
-          <div>
-            <p>
-              <strong>Highlights:</strong>
-            </p>
-            <p>Here are some notable highlights:</p>
-            <blockquote>
-              "The journey of a thousand miles begins with a single step." – Lao
-              Tzu
-            </blockquote>
-            <p>
-              Praesent auctor purus luctus enim egestas, ac scelerisque ante
-              pulvinar. Integer faucibus sapien vel nulla tempor, nec dapibus
-              elit fermentum.
-            </p>
-          </div>
-        </AccordionItem>
-        <AccordionItem title="Accordion Item 4">
-          <div>
-            <p>
-              <strong>Technical Specs:</strong>
-            </p>
-            <p>
-              Item 4 is equipped with cutting-edge technology. Below is a
-              summary of key specifications:
-            </p>
-            <table>
-              <thead>
-                <tr>
-                  <th>Parameter</th>
-                  <th>Specification</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr>
-                  <td>Speed</td>
-                  <td>High</td>
-                </tr>
-                <tr>
-                  <td>Efficiency</td>
-                  <td>Optimized</td>
-                </tr>
-                <tr>
-                  <td>Scalability</td>
-                  <td>Unlimited</td>
-                </tr>
-              </tbody>
-            </table>
-            <p>
-              Nulla facilisi. Curabitur ac libero id libero sollicitudin
-              bibendum.
-            </p>
-          </div>
-        </AccordionItem>
-        <AccordionItem title="Accordion Item 5">
-          <div>
-            <p>
-              <strong>Usage Instructions:</strong>
-            </p>
-            <p>Follow these steps to get started:</p>
             <pre>
-              {`npm install package-name
-npm start`}
+              {`npm create vite@latest my-react-app -- --template react
+cd my-react-app`}
+            </pre>
+            <p>Key actions:</p>
+            <ul>
+              <li>Choose React as framework</li>
+              <li>Select variant (TypeScript recommended)</li>
+              <li>Install initial dependencies</li>
+            </ul>
+          </div>
+        </AccordionItem>
+
+        <AccordionItem title="Step 2: Install Dependencies">
+          <div>
+            <p>
+              <strong>Essential Packages</strong>
+            </p>
+            <pre>
+              {`npm install @headlessui/react react-icons
+npm install -D tailwindcss postcss autoprefixer`}
+            </pre>
+            <p>Packages included:</p>
+            <ol>
+              <li>Tailwind CSS for styling</li>
+              <li>Headless UI for accessible components</li>
+              <li>React Icons for iconography</li>
+            </ol>
+          </div>
+        </AccordionItem>
+
+        <AccordionItem title="Step 3: Configure Tailwind CSS">
+          <div>
+            <p>
+              <strong>Configuration Files</strong>
+            </p>
+            <pre>{`npx tailwindcss init -p`}</pre>
+            <p>
+              Update <code>tailwind.config.js</code>:
+            </p>
+            <pre>
+              {`module.exports = {
+  content: [
+    "./index.html",
+    "./src/**/*.{js,ts,jsx,tsx}",
+  ],
+  theme: { extend: {} },
+  plugins: [],
+}`}
             </pre>
             <p>
-              Once installed, refer to the documentation for further
-              configuration.
+              Add base styles to <code>index.css</code>:
             </p>
+            <pre>
+              {`@tailwind base;
+@tailwind components;
+@tailwind utilities;`}
+            </pre>
           </div>
         </AccordionItem>
-        <AccordionItem title="Accordion Item 6">
+
+        <AccordionItem title="Step 4: Create Accordion Components">
           <div>
             <p>
-              <strong>User Testimonials:</strong>
+              <strong>Component Structure</strong>
             </p>
-            <p>"This product revolutionized my workflow!" – John Doe</p>
             <p>
-              "Absolutely fantastic and incredibly easy to use." – Jane Smith
+              Create <code>AccordionItem.tsx</code>:
             </p>
-            <p>"A game changer for our entire team." – Alex Johnson</p>
+            <pre>
+              {`import { useState } from 'react';
+import { ChevronDownIcon } from '@heroicons/react/24/outline';
+
+export const AccordionItem = ({ title, children }) => {
+  const [isOpen, setIsOpen] = useState(false);
+
+  return (
+    <div className="border-b">
+      <button
+        onClick={() => setIsOpen(!isOpen)}
+        className="flex justify-between w-full p-4"
+      >
+        {title}
+        <ChevronDownIcon className={\`w-5 transition-transform \${isOpen ? 'rotate-180' : ''}\`} />
+      </button>
+      {isOpen && <div className="p-4 bg-gray-50">{children}</div>}
+    </div>
+  );
+};`}
+            </pre>
           </div>
         </AccordionItem>
-        <AccordionItem title="Accordion Item 7">
+
+        <AccordionItem title="Step 5: Implement Accordion Group">
           <div>
             <p>
-              <strong>Final Thoughts:</strong>
+              <strong>Main Component Integration</strong>
             </p>
             <p>
-              This section summarizes our detailed discussion and provides
-              closing insights. Lorem ipsum dolor sit amet, consectetur
-              adipiscing elit.
+              Create <code>AccordionGroup.tsx</code>:
+            </p>
+            <pre>
+              {`export const AccordionGroup = ({ children, allowMultiple = false }) => {
+  const [openIndex, setOpenIndex] = useState(null);
+
+  const handleItemClick = (index) => {
+    setOpenIndex(prev => prev === index ? null : index);
+  };
+
+  return (
+    <div className="w-full max-w-2xl mx-auto">
+      {Children.map(children, (child, index) =>
+        cloneElement(child, {
+          isOpen: openIndex === index,
+          onToggle: () => handleItemClick(index)
+        })
+      )}
+    </div>
+  );
+};`}
+            </pre>
+          </div>
+        </AccordionItem>
+
+        <AccordionItem title="Step 6: Application Integration">
+          <div>
+            <p>
+              <strong>Implement in Main App</strong>
             </p>
             <p>
-              Donec sit amet semper sapien. Vivamus hendrerit arcu sed erat
-              molestie vehicula.
+              Update <code>App.tsx</code>:
             </p>
+            <pre>
+              {`import { AccordionGroup, AccordionItem } from './components/Accordion';
+
+function App() {
+  return (
+    <div className="min-h-screen p-8 bg-gray-100">
+      <h1 className="mb-6 text-3xl font-bold">Project Guide</h1>
+      <AccordionGroup>
+        {/* Add your accordion items here */}
+      </AccordionGroup>
+    </div>
+  );
+}`}
+            </pre>
+          </div>
+        </AccordionItem>
+
+        <AccordionItem title="Step 7: Run and Test">
+          <div>
+            <p>
+              <strong>Start Development Server</strong>
+            </p>
+            <pre>{`npm run dev`}</pre>
+            <p>Key checks:</p>
+            <ul>
+              <li>Accordion items open/close smoothly</li>
+              <li>Multiple open items (if allowed)</li>
+              <li>Responsive behavior</li>
+              <li>Accessibility features</li>
+            </ul>
           </div>
         </AccordionItem>
       </AccordionGroup>
