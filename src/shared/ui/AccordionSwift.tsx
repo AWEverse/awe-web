@@ -22,11 +22,11 @@ interface AccordionItemProps {
   isOpen?: boolean;
   onToggle?: (index: number) => void;
   index?: number;
-  isNextChild?: boolean;
-  isPrevChild?: boolean;
-  isFirstChild?: boolean;
-  isLastChild?: boolean;
-  isSingleChild?: boolean;
+  _isNextChild?: boolean;
+  _isPrevChild?: boolean;
+  _isFirstChild?: boolean;
+  _isLastChild?: boolean;
+  _isSingleChild?: boolean;
 }
 
 const getDataChildAttr = (
@@ -45,15 +45,31 @@ const itemVariants = {
     isFirstChild: boolean;
     isLastChild: boolean;
     isSingleChild: boolean;
-  }) => ({
-    margin: !custom.isSingleChild
+  }) => {
+    const margin = !custom.isSingleChild
       ? `${!custom.isFirstChild ? "0.5rem" : "0"} 0 ${!custom.isLastChild ? "0.5rem" : "0"} 0`
-      : undefined,
-    borderRadius: "0.5rem",
-  }),
-  closed: {
-    margin: undefined,
-    borderRadius: undefined,
+      : undefined;
+
+    return {
+      margin,
+      borderRadius: "0.5rem",
+    };
+  },
+  closed: (custom: { isPrevChild: boolean; isNextChild: boolean }) => {
+    const borderRadius = (() => {
+      if (custom.isPrevChild) {
+        return "0.5rem 0.5rem 0 0";
+      }
+      if (custom.isNextChild) {
+        return "0 0 0.5rem 0.5rem";
+      }
+      return "0";
+    })();
+
+    return {
+      margin: 0,
+      borderRadius: borderRadius,
+    };
   },
 };
 
@@ -69,11 +85,11 @@ export const AccordionItem: FC<AccordionItemProps> = memo(
     isOpen = false,
     onToggle,
     index,
-    isFirstChild = false,
-    isLastChild = false,
-    isSingleChild = false,
-    isNextChild = false,
-    isPrevChild = false,
+    _isFirstChild = false,
+    _isLastChild = false,
+    _isSingleChild = false,
+    _isNextChild = false,
+    _isPrevChild = false,
   }): JSX.Element => {
     const shouldReduceMotion = useReducedMotion();
 
@@ -86,7 +102,8 @@ export const AccordionItem: FC<AccordionItemProps> = memo(
     // Determine the data attribute for styling:
     // • If the item is active, it always returns "current"
     // • Otherwise, if an adjacent item is open, flag it as "next" or "prev"
-    const dataChildAttr = getDataChildAttr(isOpen, isNextChild, isPrevChild);
+    // • Also allowed for multiple opened items mode between
+    const dataChildAttr = getDataChildAttr(isOpen, _isNextChild, _isPrevChild);
 
     return (
       <motion.div
@@ -97,11 +114,16 @@ export const AccordionItem: FC<AccordionItemProps> = memo(
         initial={false}
         animate={isOpen ? "open" : "closed"}
         variants={itemVariants}
-        custom={{ isFirstChild, isLastChild, isSingleChild }}
+        custom={{
+          isFirstChild: _isFirstChild,
+          isLastChild: _isLastChild,
+          isSingleChild: _isSingleChild,
+          isPrevChild: _isPrevChild,
+          isNextChild: _isNextChild,
+        }}
         transition={{
           duration: shouldReduceMotion ? 0 : TRANSITION,
         }}
-        style={{ overflow: "hidden" }}
       >
         <button className="accordion-header w-full text-left font-semibold text-gray-800 focus:outline-none">
           {title}
@@ -117,7 +139,7 @@ export const AccordionItem: FC<AccordionItemProps> = memo(
               transition={{
                 duration: shouldReduceMotion ? 0 : TRANSITION,
               }}
-              style={{ willChange: "transform, opacity" }}
+              style={{ willChange: "height" }}
             >
               <div className="p-4 text-gray-700">{children}</div>
             </motion.div>
@@ -190,17 +212,17 @@ export const AccordionGroup: FC<AccordionGroupProps> = ({
       {Children.map(childrenArray, (child, index) => {
         if (!isValidElement(child)) return child;
 
-        let isOpen, isPrevChild, isNextChild: boolean;
+        let isOpen: boolean, isPrevChild: boolean, isNextChild: boolean;
 
         if (allowMultiple) {
           const { openSet, prevSet, nextSet } = accordionState;
-          isOpen = openSet?.has(index);
-          isPrevChild = prevSet?.has(index);
+          isOpen = !!openSet?.has(index);
+          isPrevChild = !!prevSet?.has(index);
           isNextChild = !!nextSet?.has(index);
         } else {
           const { currentOpenIndex, prevIndex, nextIndex } = accordionState;
-          isOpen = index === currentOpenIndex;
-          isPrevChild = index === nextIndex;
+          isOpen = currentOpenIndex !== undefined && index === currentOpenIndex;
+          isPrevChild = index === nextIndex && !isOpen;
           isNextChild = index === prevIndex;
         }
 
@@ -212,11 +234,11 @@ export const AccordionGroup: FC<AccordionGroupProps> = ({
           isOpen,
           onToggle: toggleIndex,
           index,
-          isFirstChild,
-          isLastChild,
-          isSingleChild,
-          isNextChild,
-          isPrevChild,
+          _isFirstChild: isFirstChild,
+          _isLastChild: isLastChild,
+          _isSingleChild: isSingleChild,
+          _isNextChild: isNextChild,
+          _isPrevChild: isPrevChild,
         });
       })}
     </div>
