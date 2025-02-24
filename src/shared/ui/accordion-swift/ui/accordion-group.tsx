@@ -1,7 +1,5 @@
-import buildClassName from "@/shared/lib/buildClassName";
 import React, {
   FC,
-  useState,
   useMemo,
   Children,
   useCallback,
@@ -12,44 +10,48 @@ import {
   AccordionGroupProps,
   AccordionItemProps as AccordionItemWithPrivateFieldsProps,
 } from "../lib/types";
+import useStateSet from "@/shared/hooks/state/useStateSet";
 
 export const AccordionGroup: FC<Readonly<AccordionGroupProps>> = React.memo(
   ({ children, allowMultiple = false, defaultOpenIndexes = [], className }) => {
-    const [openIndexes, setOpenIndexes] =
-      useState<number[]>(defaultOpenIndexes);
-    const childrenArray = useMemo(() => Children.toArray(children), [children]);
+    const {
+      values: openIndexes,
+      has,
+      add,
+      remove,
+      clear,
+    } = useStateSet<number>(defaultOpenIndexes);
 
     const toggleIndex = useCallback(
       (index: number) => {
-        setOpenIndexes((prev) => {
-          try {
-            const indexSet = new Set(prev);
-            if (indexSet.has(index)) {
-              indexSet.delete(index);
-            } else {
-              if (!allowMultiple) indexSet.clear();
-              indexSet.add(index);
-            }
-            return Array.from(indexSet);
-          } catch (error) {
-            console.error("Error toggling accordion:", error);
-            return prev;
+        if (has(index)) {
+          remove(index);
+        } else {
+          if (!allowMultiple) {
+            clear();
           }
-        });
+          add(index);
+        }
       },
       [allowMultiple],
     );
 
+    const childrenArray = useMemo(() => Children.toArray(children), [children]);
     const childCount = childrenArray.length;
-    const openSet = useMemo(() => new Set(openIndexes), [openIndexes]);
-    const currentOpenIndex = useMemo(
-      () => (allowMultiple ? -1 : (openIndexes[0] ?? -1)),
-      [allowMultiple, openIndexes],
-    );
+
+    const currentOpenIndex = useMemo(() => {
+      if (allowMultiple) {
+        return -1;
+      }
+
+      const { 0: first } = openIndexes;
+
+      return first ?? -1;
+    }, [allowMultiple]);
 
     return (
       <div
-        className={buildClassName(className)}
+        className={className}
         role="tablist"
         aria-multiselectable={allowMultiple}
       >
@@ -57,15 +59,15 @@ export const AccordionGroup: FC<Readonly<AccordionGroupProps>> = React.memo(
           if (!isValidElement(child)) return child;
 
           const isOpen = allowMultiple
-            ? openSet.has(index)
+            ? has(index)
             : index === currentOpenIndex;
 
           const isPrevChild = allowMultiple
-            ? openSet.has(index + 1)
+            ? has(index + 1)
             : index === currentOpenIndex - 1;
 
           const isNextChild = allowMultiple
-            ? openSet.has(index - 1)
+            ? has(index - 1)
             : index === currentOpenIndex + 1;
 
           return cloneElement(
@@ -86,5 +88,4 @@ export const AccordionGroup: FC<Readonly<AccordionGroupProps>> = React.memo(
     );
   },
 );
-
 AccordionGroup.displayName = "AccordionGroup";
