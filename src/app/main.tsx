@@ -8,8 +8,7 @@ import { STRICTERDOM_ENABLED } from "@/lib/config/dev";
 
 import "@/styles/global.scss";
 import "@/styles/index.css";
-import "@/styles/reboot.css";
-import "@/styles/output.css";
+import initI18n from "./providers/i18n-provider";
 
 // if (STRICTERDOM_ENABLED) {
 //   enableStrict();
@@ -36,3 +35,4 @@ async function init() {
 }
 
 init();
+initI18n();

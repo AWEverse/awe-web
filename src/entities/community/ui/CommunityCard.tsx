@@ -1,10 +1,10 @@
-import React from 'react';
-import Avatar from '@mui/material/Avatar';
-import Card from '@mui/material/Card';
-import CardActions from '@mui/material/CardActions';
-import { Stack } from '@mui/material';
-import CustomDivider from '../../../shared/ui/CustomDivider';
-import FlatList from '@/entities/FlatList';
+import React from "react";
+import Avatar from "@mui/material/Avatar";
+import Card from "@mui/material/Card";
+import CardActions from "@mui/material/CardActions";
+import { Stack } from "@mui/material";
+import CustomDivider from "../../../shared/ui/CustomDivider";
+import FlatList from "@/entities/FlatList";
 
 interface MemberInfo {
   count: string | number;
@@ -32,7 +32,10 @@ const CommunityCard: React.FC<CommunityCardInfoProps> = ({
     <Card sx={{ p: 1, gap: 1 }} variant="plain">
       <CustomDivider />
 
-      <Stack direction="row" sx={{ justifyContent: 'space-between', gap: 1, flexWrap: 'wrap' }}></Stack>
+      <Stack
+        direction="row"
+        sx={{ justifyContent: "space-between", gap: 1, flexWrap: "wrap" }}
+      ></Stack>
     </Card>
   );
 };

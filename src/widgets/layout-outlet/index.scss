@@ -1,35 +1,73 @@
 :root {
   --header-z-index: 1000;
-  --header-bg: var(--awe-palette-background-default);
-  --header-border: 1px solid black;
-  --header-height: 56px
+  --header-background: var(--awe-palette-background-default);
+  --header-border: 2px solid black;
+  --header-blur: blur(3px);
+  --header-mask-gradient: linear-gradient(to bottom, black 1px, transparent);
+  --layout-shadow: 0 4px 8px rgba(0, 0, 0, 0.05);
+  --header-height: 56px;
+}
+
+.LayoutHeader {
+  height: var(--header-height);
+  z-index: var(--header-z-index);
+  position: relative;
+  padding: 1rem;
+  min-height: 2rem;
+  max-height: 4rem;
+  border-bottom: var(--header-border);
+  background: {
+    image: radial-gradient(transparent 1px, var(--header-background) 1px);
+    size: 4px 4px;
+    color: rgba(255, 255, 255, 0.8); // Fallback base
+  }
+
+  // Modern backdrop filter support
+  @supports (backdrop-filter: none) or (-webkit-backdrop-filter: none) {
+    background-color: transparent;
+    backdrop-filter: var(--header-blur);
+    -webkit-backdrop-filter: var(--header-blur);
+  }
+
+  &::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: var(--header-mask-gradient);
+    mask: var(--header-mask-gradient);
+    pointer-events: none;
+  }
+
+  transform: translateZ(0);
+  will-change: transform, backdrop-filter;
+  contain: layout style;
 }
 
 .LayoutOutlet {
   display: flex;
   flex-direction: column;
+  min-height: 100vh;
   min-height: 100dvh;
   isolation: isolate;
 }
 
-.LayoutHeader {
-  z-index: var(--header-z-index);
-  position: sticky;
-  top: 0;
-  padding: 1rem;
-  border-bottom: var(--header-border);
-  background: radial-gradient(transparent 1px, var(--header-bg) 1px) 0 0 / 4px 4px;
-  backdrop-filter: blur(3px);
-  height: var(--header-height);
-  
-  @supports not (backdrop-filter: none) {
-    background-color: rgba(255, 255, 255, 0.8);
-  }
-}
-
 .LayoutBody {
   flex: 1;
+  padding: 0 2.75rem;
   overflow-y: auto; // Make scrollable
   position: relative;
   max-height: calc(100dvh - var(--header-height));
+}
+
+
+@supports not (contain: layout) {
+  .LayoutHeader {
+    overflow: hidden;
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .LayoutHeader {
+    transition: backdrop-filter 0.3s ease;
+  }
 }

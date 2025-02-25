@@ -1,5 +1,4 @@
 import { FC } from "react";
-import { BrowserRouter } from "react-router";
 import { ThemeProvider } from "@mui/material/styles";
 import CssBaseline from "@mui/material/CssBaseline";
 
@@ -35,9 +34,7 @@ const App: FC<StateProps> = ({ themeKey = "dark" }) => {
       disableTransitionOnChange
     >
       <CssBaseline />
-      <BrowserRouter>
-        <AWERoutesBrowserRouter />
-      </BrowserRouter>
+      <AWERoutesBrowserRouter />
 
       {/* <DebugInfo /> */}
     </ThemeProvider>
