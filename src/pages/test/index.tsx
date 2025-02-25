@@ -2,180 +2,162 @@ import React from "react";
 import "./styles.scss";
 import { AccordionGroup, AccordionItem } from "@/shared/ui/accordion-swift";
 
-const TestPage: React.FC = () => {
-  return (
-    <div className="p-12 overflow-auto h-screen">
-      <AccordionGroup allowMultiple>
-        <AccordionItem title="Step 1: Project Setup">
-          <div>
-            <p>
-              <strong>Initialize Vite Project</strong>
-            </p>
-            <pre>
-              {`npm create vite@latest my-react-app -- --template react
-cd my-react-app`}
-            </pre>
-            <p>Key actions:</p>
-            <ul>
-              <li>Choose React as framework</li>
-              <li>Select variant (TypeScript recommended)</li>
-              <li>Install initial dependencies</li>
-            </ul>
-          </div>
-        </AccordionItem>
+import { useEffect, useState } from "react";
 
-        <AccordionItem title="Step 2: Install Dependencies">
-          <div>
-            <p>
-              <strong>Essential Packages</strong>
-            </p>
-            <pre>
-              {`npm install @headlessui/react react-icons
-npm install -D tailwindcss postcss autoprefixer`}
-            </pre>
-            <p>Packages included:</p>
-            <ol>
-              <li>Tailwind CSS for styling</li>
-              <li>Headless UI for accessible components</li>
-              <li>React Icons for iconography</li>
-            </ol>
-          </div>
-        </AccordionItem>
+import {
+  computed,
+  Computed,
+  effect,
+  Effect,
+  ReadonlySignal,
+  signal,
+  Signal,
+  SIGNAL_SYMBOL,
+} from "@/lib/core/public/signals";
 
-        <AccordionItem title="Step 3: Configure Tailwind CSS">
-          <div>
-            <p>
-              <strong>Configuration Files</strong>
-            </p>
-            <pre>{`npx tailwindcss init -p`}</pre>
-            <p>
-              Update <code>tailwind.config.js</code>:
-            </p>
-            <pre>
-              {`module.exports = {
-  content: [
-    "./index.html",
-    "./src/**/*.{js,ts,jsx,tsx}",
-  ],
-  theme: { extend: {} },
-  plugins: [],
-}`}
-            </pre>
-            <p>
-              Add base styles to <code>index.css</code>:
-            </p>
-            <pre>
-              {`@tailwind base;
-@tailwind components;
-@tailwind utilities;`}
-            </pre>
-          </div>
-        </AccordionItem>
+interface SignalNodeProps {
+  node: any;
+  type: "signal" | "computed" | "effect";
+  depth?: number;
+}
 
-        <AccordionItem title="Step 4: Create Accordion Components">
-          <div>
-            <p>
-              <strong>Component Structure</strong>
-            </p>
-            <p>
-              Create <code>AccordionItem.tsx</code>:
-            </p>
-            <pre>
-              {`import { useState } from 'react';
-import { ChevronDownIcon } from '@heroicons/react/24/outline';
-
-export const AccordionItem = ({ title, children }) => {
-  const [isOpen, setIsOpen] = useState(false);
+const SignalNode = ({ node, type, depth = 0 }: SignalNodeProps) => {
+  const [expanded, setExpanded] = useState(false);
+  const flags = node._flags
+    ? [
+        ...(node._flags & 1 ? ["RUNNING"] : []),
+        ...(node._flags & 2 ? ["NOTIFIED"] : []),
+        ...(node._flags & 4 ? ["OUTDATED"] : []),
+        ...(node._flags & 8 ? ["DISPOSED"] : []),
+        ...(node._flags & 16 ? ["HAS_ERROR"] : []),
+        ...(node._flags & 32 ? ["TRACKING"] : []),
+      ].join(" | ")
+    : "";
 
   return (
-    <div className="border-b">
-      <button
-        onClick={() => setIsOpen(!isOpen)}
-        className="flex justify-between w-full p-4"
-      >
-        {title}
-        <ChevronDownIcon className={\`w-5 transition-transform \${isOpen ? 'rotate-180' : ''}\`} />
-      </button>
-      {isOpen && <div className="p-4 bg-gray-50">{children}</div>}
-    </div>
-  );
-};`}
-            </pre>
+    <div className="signal-node" style={{ marginLeft: depth * 20 }}>
+      <div className="node-header" onClick={() => setExpanded(!expanded)}>
+        <div className="node-type">{type.toUpperCase()}</div>
+        <div className="toggle">{expanded ? "▼" : "▶"}</div>
+      </div>
+
+      {expanded && (
+        <div className="node-properties">
+          <div className="property">
+            <strong>Value:</strong> {JSON.stringify(node._value)}
           </div>
-        </AccordionItem>
+          <div className="property">
+            <strong>Version:</strong> {node._version}
+          </div>
+          {flags && (
+            <div className="property">
+              <strong>Flags:</strong> {flags}
+            </div>
+          )}
 
-        <AccordionItem title="Step 5: Implement Accordion Group">
-          <div>
-            <p>
-              <strong>Main Component Integration</strong>
-            </p>
-            <p>
-              Create <code>AccordionGroup.tsx</code>:
-            </p>
-            <pre>
-              {`export const AccordionGroup = ({ children, allowMultiple = false }) => {
-  const [openIndex, setOpenIndex] = useState(null);
+          {node._targets && (
+            <div className="dependencies">
+              <h4>Targets</h4>
+              <div className="linked-list">
+                {getLinkedNodes(node._targets, "target", depth + 1)}
+              </div>
+            </div>
+          )}
 
-  const handleItemClick = (index) => {
-    setOpenIndex(prev => prev === index ? null : index);
-  };
-
-  return (
-    <div className="w-full max-w-2xl mx-auto">
-      {Children.map(children, (child, index) =>
-        cloneElement(child, {
-          isOpen: openIndex === index,
-          onToggle: () => handleItemClick(index)
-        })
+          {node._sources && (
+            <div className="dependencies">
+              <h4>Sources</h4>
+              <div className="linked-list">
+                {getLinkedNodes(node._sources, "source", depth + 1)}
+              </div>
+            </div>
+          )}
+        </div>
       )}
     </div>
   );
-};`}
-            </pre>
-          </div>
-        </AccordionItem>
+};
 
-        <AccordionItem title="Step 6: Application Integration">
-          <div>
-            <p>
-              <strong>Implement in Main App</strong>
-            </p>
-            <p>
-              Update <code>App.tsx</code>:
-            </p>
-            <pre>
-              {`import { AccordionGroup, AccordionItem } from './components/Accordion';
+const getLinkedNodes = (
+  startNode: any,
+  direction: "source" | "target",
+  depth: number,
+) => {
+  const nodes = [];
+  let currentNode = startNode;
+  let hasItems = false;
 
-function App() {
+  while (currentNode) {
+    const targetNode =
+      currentNode[direction === "source" ? "_source" : "_target"];
+    if (targetNode) {
+      hasItems = true;
+      nodes.push(
+        <React.Fragment key={targetNode._version}>
+          <div className="connection-arrow">→</div>
+          <SignalNode
+            node={targetNode}
+            type={getNodeType(targetNode)}
+            depth={depth}
+          />
+        </React.Fragment>,
+      );
+    }
+    currentNode = currentNode[`_next${direction}`];
+  }
+
+  return hasItems ? nodes : null;
+};
+
+const getNodeType = (node: any): "signal" | "computed" | "effect" => {
+  if (node?.brand === SIGNAL_SYMBOL) return "signal";
+  if (node instanceof Computed) return "computed";
+  if (node instanceof Effect) return "effect";
+  return "signal";
+};
+
+interface SignalVisualizerProps {
+  signal: Signal | ReadonlySignal | Effect;
+}
+
+export const SignalVisualizer = ({ signal }: SignalVisualizerProps) => {
+  const [updateTrigger, setUpdateTrigger] = useState(0);
+
+  useEffect(() => {
+    const forceUpdate = () => setUpdateTrigger((prev) => prev + 1);
+    const unsubscribe = signal.subscribe(forceUpdate);
+    return () => unsubscribe();
+  }, [signal]);
+
   return (
-    <div className="min-h-screen p-8 bg-gray-100">
-      <h1 className="mb-6 text-3xl font-bold">Project Guide</h1>
-      <AccordionGroup>
-        {/* Add your accordion items here */}
-      </AccordionGroup>
+    <div className="signal-visualizer">
+      <div className="controls">
+        <button onClick={() => setUpdateTrigger((prev) => prev + 1)}>
+          Force Update
+        </button>
+      </div>
+
+      <div className="nodes-container">
+        <SignalNode node={signal} type={getNodeType(signal)} />
+      </div>
     </div>
   );
-}`}
-            </pre>
-          </div>
-        </AccordionItem>
+};
 
-        <AccordionItem title="Step 7: Run and Test">
-          <div>
-            <p>
-              <strong>Start Development Server</strong>
-            </p>
-            <pre>{`npm run dev`}</pre>
-            <p>Key checks:</p>
-            <ul>
-              <li>Accordion items open/close smoothly</li>
-              <li>Multiple open items (if allowed)</li>
-              <li>Responsive behavior</li>
-              <li>Accessibility features</li>
-            </ul>
-          </div>
-        </AccordionItem>
-      </AccordionGroup>
+const TestPage: React.FC = () => {
+  const count = signal(0);
+  const doubled = computed(() => count.value * 2);
+
+  effect(() => {
+    console.log("Count:", count.value);
+  });
+
+  return (
+    <div className="overflow-auto h-screen">
+      <button onClick={() => count.value++}>Increment: {count.value}</button>
+
+      <SignalVisualizer signal={count} />
+      <SignalVisualizer signal={doubled} />
     </div>
   );
 };

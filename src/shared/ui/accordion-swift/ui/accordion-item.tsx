@@ -20,6 +20,7 @@ export type AccordionItemProps = Readonly<
 
 export const AccordionItem: FC<AccordionItemProps> = memo(
   ({
+    as: Component = "div",
     title,
     children,
     isOpen = false,

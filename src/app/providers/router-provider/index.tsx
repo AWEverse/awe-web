@@ -1,5 +1,5 @@
-import { Route, Routes } from "react-router-dom";
-import { JSX, lazy, Suspense } from "react";
+import { createBrowserRouter, RouterProvider } from "react-router";
+import { Suspense, lazy } from "react";
 
 // Lazy-loaded pages
 const TestPage = lazy(() => import("@/pages/test"));
@@ -23,58 +23,38 @@ import LayoutOutlet from "@/widgets/layout-outlet";
 
 const { HOME, MAIN, USER_PROFILE, CHAT, DIALOGS, DISCUS, VIDEO } = ROUTES;
 
-interface RouteConfig {
-  path: string;
-  element: React.ReactNode;
-  nestedRoutes?: RouteConfig[];
-}
-
-// A recursive function to render routes including any nested routes
-const renderRoutes = (routes: RouteConfig[]): JSX.Element[] =>
-  routes.map(({ path, element, nestedRoutes }) => (
-    <Route key={path} path={path} element={element}>
-      {nestedRoutes && renderRoutes(nestedRoutes)}
-    </Route>
-  ));
-
-// Define global (non-nested) routes
-const globalRoutes: RouteConfig[] = [
+const router = createBrowserRouter([
+  {
+    path: HOME.BASE,
+    element: <LayoutOutlet />,
+    children: [
+      { index: true, element: <HomePage /> },
+      { path: MAIN, element: <ThreadPage /> },
+      { path: USER_PROFILE.BASE, element: <ProfilePage /> },
+      { path: DIALOGS.THREAD, element: <SingleThread /> },
+      {
+        path: DISCUS.BASE,
+        element: <RedditPage />,
+        children: [
+          { path: DISCUS.THREAD, element: <SubRedditPage /> },
+          { path: DISCUS.OVERVIEW, element: <OverviewPage /> },
+          { path: DISCUS.DISSCUSIONS, element: <DisscusionsPage /> },
+          { path: DISCUS.MEMBERS, element: <CommunityPeoplePage /> },
+        ],
+      },
+      { path: DIALOGS.BASE, element: <ThreadsPage /> },
+      { path: VIDEO.BASE, element: <VideoPage /> },
+      { path: VIDEO.THREAD, element: <ThreadsPage /> },
+      { path: VIDEO.THREAD_ID, element: <SingleThread /> },
+    ],
+  },
   { path: CHAT.BASE, element: <ChatPage /> },
   { path: "test", element: <TestPage /> },
   { path: "*", element: <NotFoundPage /> },
-];
+]);
 
-// Define routes nested under the LayoutOutlet (for HOME.BASE)
-const homeRoutes: RouteConfig[] = [
-  { path: HOME.BASE, element: <HomePage /> },
-  { path: MAIN, element: <ThreadPage /> },
-  { path: USER_PROFILE.BASE, element: <ProfilePage /> },
-  { path: DIALOGS.THREAD, element: <SingleThread /> },
-  {
-    path: DISCUS.BASE,
-    element: <RedditPage />,
-    nestedRoutes: [
-      { path: DISCUS.THREAD, element: <SubRedditPage /> },
-      { path: DISCUS.OVERVIEW, element: <OverviewPage /> },
-      { path: DISCUS.DISSCUSIONS, element: <DisscusionsPage /> },
-      { path: DISCUS.MEMBERS, element: <CommunityPeoplePage /> },
-    ],
-  },
-  { path: DIALOGS.BASE, element: <ThreadsPage /> },
-  { path: VIDEO.BASE, element: <VideoPage /> },
-  { path: VIDEO.THREAD, element: <ThreadsPage /> },
-  { path: VIDEO.THREAD_ID, element: <SingleThread /> },
-];
-
-export const AWERoutesBrowserRouter = () => {
-  return (
-    <Suspense fallback={<RouteFallback />}>
-      <Routes>
-        {renderRoutes(globalRoutes)}
-        <Route element={<LayoutOutlet />} path={HOME.BASE}>
-          {renderRoutes(homeRoutes)}
-        </Route>
-      </Routes>
-    </Suspense>
-  );
-};
+export const AWERoutesBrowserRouter = () => (
+  <Suspense fallback={<RouteFallback />}>
+    <RouterProvider router={router} />
+  </Suspense>
+);

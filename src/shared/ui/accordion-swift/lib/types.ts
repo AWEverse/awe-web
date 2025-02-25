@@ -1,6 +1,7 @@
-import { ReactNode } from "react";
+import { ElementType, ReactNode } from "react";
 
 export interface AccordionItemProps {
+  as?: string;
   title: ReactNode;
   children: ReactNode;
   isOpen?: boolean;
@@ -16,6 +17,7 @@ export interface AccordionItemProps {
 }
 
 export interface AccordionGroupProps {
+  as?: ElementType;
   children: ReactNode;
   allowMultiple?: boolean;
   defaultOpenIndexes?: number[];

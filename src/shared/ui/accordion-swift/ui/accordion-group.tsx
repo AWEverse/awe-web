@@ -13,14 +13,22 @@ import {
 import useStateSet from "@/shared/hooks/state/useStateSet";
 
 export const AccordionGroup: FC<Readonly<AccordionGroupProps>> = React.memo(
-  ({ children, allowMultiple = false, defaultOpenIndexes = [], className }) => {
+  ({
+    as: Component = "div",
+    children,
+    allowMultiple = false,
+    defaultOpenIndexes = [],
+    className,
+  }) => {
     const {
       values: openIndexes,
       has,
       add,
       remove,
       clear,
-    } = useStateSet<number>(defaultOpenIndexes);
+    } = useStateSet<number>(
+      allowMultiple ? defaultOpenIndexes : [defaultOpenIndexes[0]],
+    );
 
     const toggleIndex = useCallback(
       (index: number) => {
@@ -50,7 +58,7 @@ export const AccordionGroup: FC<Readonly<AccordionGroupProps>> = React.memo(
     }, [allowMultiple]);
 
     return (
-      <div
+      <Component
         className={className}
         role="tablist"
         aria-multiselectable={allowMultiple}
@@ -84,7 +92,7 @@ export const AccordionGroup: FC<Readonly<AccordionGroupProps>> = React.memo(
             },
           );
         })}
-      </div>
+      </Component>
     );
   },
 );
