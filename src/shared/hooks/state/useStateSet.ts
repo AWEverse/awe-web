@@ -1,5 +1,5 @@
 import { useState, useRef } from 'react';
-import { useStableCallback } from '../base';
+import { useStableCallback, useStateRef } from '../base';
 
 type InitialState<T> = Iterable<T> | (() => Iterable<T>);
 
@@ -27,10 +27,12 @@ function useStateSet<T>(initialState?: InitialState<T>): StateSet<T> {
     return initialSet;
   });
 
-  const has = useStableCallback((item: T) => stateSet.has(item));
+  const stateSetRef = useStateRef(stateSet);
+
+  const has = useStableCallback((item: T) => stateSetRef.current.has(item));
 
   const add = useStableCallback((item: T) => {
-    setStateSet(prevSet => {
+    setStateSet((prevSet) => {
       if (prevSet.has(item)) return prevSet;
       const nextSet = new Set(prevSet);
       nextSet.add(item);
@@ -39,7 +41,7 @@ function useStateSet<T>(initialState?: InitialState<T>): StateSet<T> {
   });
 
   const remove = useStableCallback((item: T) => {
-    setStateSet(prevSet => {
+    setStateSet((prevSet) => {
       if (!prevSet.has(item)) return prevSet;
       const nextSet = new Set(prevSet);
       nextSet.delete(item);
@@ -56,7 +58,7 @@ function useStateSet<T>(initialState?: InitialState<T>): StateSet<T> {
   });
 
   const toggle = useStableCallback((item: T) => {
-    setStateSet(prevSet => {
+    setStateSet((prevSet) => {
       const nextSet = new Set(prevSet);
       nextSet.has(item) ? nextSet.delete(item) : nextSet.add(item);
       return nextSet;

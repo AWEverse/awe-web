@@ -21,15 +21,11 @@ const useSearchInput = () => {
     (e: React.ChangeEvent<HTMLInputElement>) => {
       setValue(e.target.value);
     },
-    { sync: true },
   );
 
-  const handleReset = useStableCallback(
-    () => {
-      setValue("");
-    },
-    { sync: true },
-  );
+  const handleReset = useStableCallback(() => {
+    setValue("");
+  });
 
   return { value, handleChange, handleReset };
 };

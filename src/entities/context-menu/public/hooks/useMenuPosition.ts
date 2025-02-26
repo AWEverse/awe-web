@@ -4,10 +4,9 @@ import {
   batchUpdate,
 } from "../../../../shared/lib/extraClassHelpers";
 import { useStateRef } from "../../../../shared/hooks/base";
-import { clamp } from "@/lib/core";
+import { clamp, IVector2 } from "@/lib/core";
 import { noop } from "@/lib/utils/listener";
 
-type IAnchorPosition = { x: number; y: number };
 
 interface Layout {
   extraPaddingX?: number;
@@ -31,7 +30,7 @@ interface StaticPositionOptions {
 }
 
 interface DynamicPositionOptions {
-  anchor: IAnchorPosition;
+  anchor: IVector2;
   getTriggerElement: () => HTMLElement | null;
   getRootElement: () => HTMLElement | null;
   getMenuElement: () => HTMLElement | null;
@@ -70,10 +69,9 @@ export default function useMenuPosition(
   const { anchor } = options as DynamicPositionOptions;
   const optionsRef = useStateRef(options);
 
+
   useLayoutEffect(() => {
-    if (!isOpen) {
-      return noop;
-    }
+    if (!isOpen) return;
 
     const currentOptions = optionsRef.current;
 
@@ -85,22 +83,21 @@ export default function useMenuPosition(
           currentOptions as StaticPositionOptions,
         );
       })
-      return;
+
     }
+    else {
+      requestNextMutation(() => {
+        const dynamicStyles = processDynamically(
+          currentOptions as DynamicPositionOptions,
+        );
 
-    // For dynamic positioning, schedule a DOM mutation
-    requestNextMutation(() => {
-      const dynamicStyles = processDynamically(
-        currentOptions as DynamicPositionOptions,
-      );
-
-      // mutation phrase
-      return () => {
-        if (dynamicStyles) {
-          applyStaticOptions(containerRef, bubbleRef, dynamicStyles);
-        }
-      };
-    });
+        return () => {
+          if (dynamicStyles) {
+            applyStaticOptions(containerRef, bubbleRef, dynamicStyles);
+          }
+        };
+      });
+    }
   }, [isOpen, anchor]);
 }
 
@@ -141,7 +138,7 @@ function getLayoutMeasurements(
 }
 
 function calculatePosition(
-  anchor: IAnchorPosition,
+  anchor: IVector2,
   measurements: LayoutMeasurements,
   layout: Layout
 ): PositionCalculation {

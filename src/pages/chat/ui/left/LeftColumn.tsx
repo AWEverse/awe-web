@@ -9,7 +9,6 @@ import { useSwipeable } from "@/lib/hooks/events/useSwipeable";
 
 const MainScreen = lazy(() => import("./screens/MainScreen"));
 const ArchivedScreen = lazy(() => import("./screens/ArchivedScreen"));
-const CreateNewScreen = lazy(() => import("./screens/CreateNewScreen"));
 const ContactsScreen = lazy(() => import("./screens/ContactsScreen"));
 const SettingsNavigation = lazy(
   () => import("./screens/settings/SettingsNavigation"),
@@ -37,7 +36,6 @@ const Skeleton = () => <div className={s.skeleton}>Generic Skeleton</div>;
 const screens = {
   [LeftColumnScreenType.Main]: MainScreen,
   [LeftColumnScreenType.Archived]: ArchivedScreen,
-  [LeftColumnScreenType.Creator]: CreateNewScreen,
   [LeftColumnScreenType.Contacts]: ContactsScreen,
   [LeftColumnScreenType.SettingsNavigation]: SettingsNavigation,
   [LeftColumnScreenType.AccountSetting]: AccountSetting,
@@ -88,7 +86,7 @@ const LeftColumn: FC<OwnProps> = ({ className }) => {
     }
   }, [currentScreen]);
 
-  const swipeHandlers = useSwipeable({
+  const { onMouseDown } = useSwipeable({
     onSwipedLeft: () => {
       // Add forward navigation logic here (e.g., go to next screen)
     },
@@ -99,35 +97,29 @@ const LeftColumn: FC<OwnProps> = ({ className }) => {
   });
 
   return (
-    <section
-      {...swipeHandlers}
-      className={buildClassName(s.LeftColumnRoot, className)}
-      data-placement={isOpen ? "show" : "hide"}
-      aria-label={`Current screen: ${currentScreen}`}
-    >
-      <motion.div className={s.SliderColumn}>
-        <AnimatePresence initial={false} mode="popLayout">
-          {ScreenComponent && (
-            <motion.div
-              key={currentScreen}
-              variants={screenVariants}
-              initial="initial"
-              animate="animate"
-              exit="exit"
-              custom={prevScreen! < currentScreen}
-              transition={
-                shouldReduceMotion ? { duration: 0 } : { duration: 0.125 }
-              }
-              className={s.screenContainer}
-            >
-              <Suspense fallback={Fallback}>
-                <ScreenComponent />
-              </Suspense>
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </motion.div>
-    </section>
+    <AnimatePresence initial={false} mode="popLayout">
+      {ScreenComponent && (
+        <motion.div
+          onMouseDown={onMouseDown}
+          className={buildClassName(s.LeftColumn, className)}
+          data-placement={isOpen ? "show" : "hide"}
+          aria-label={`Current screen: ${currentScreen}`}
+          key={currentScreen}
+          variants={screenVariants}
+          initial="initial"
+          animate="animate"
+          exit="exit"
+          custom={prevScreen! < currentScreen}
+          transition={
+            shouldReduceMotion ? { duration: 0 } : { duration: 0.125 }
+          }
+        >
+          <Suspense fallback={Fallback}>
+            <ScreenComponent />
+          </Suspense>
+        </motion.div>
+      )}
+    </AnimatePresence>
   );
 };
 

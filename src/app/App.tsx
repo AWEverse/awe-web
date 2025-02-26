@@ -35,8 +35,6 @@ const App: FC<StateProps> = ({ themeKey = "dark" }) => {
     >
       <CssBaseline />
       <AWERoutesBrowserRouter />
-
-      {/* <DebugInfo /> */}
     </ThemeProvider>
   );
 };

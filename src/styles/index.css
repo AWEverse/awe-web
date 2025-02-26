@@ -462,6 +462,15 @@
   .py-2 {
     padding-block: calc(var(--spacing) * 2);
   }
+  .space-y-2 > :not([hidden]) ~ :not([hidden]) {
+    padding: 0.5rem; /* 2 * 0.25rem */
+  }
+  .space-y-4 > :not([hidden]) ~ :not([hidden]) {
+    padding: 0.5rem; /* 2 * 0.25rem */
+  }
+   .space-y-6 > :not([hidden]) ~ :not([hidden]) {
+    padding: 0.5rem; /* 2 * 0.25rem */
+  }
   .text-center {
     text-align: center;
   }

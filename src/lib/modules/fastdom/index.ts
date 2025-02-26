@@ -4,8 +4,8 @@ import throttleWithRafFallback from "./throttleWithRafFallback";
 
 type TaskFunction = () => void;
 type ReflowTaskFunction = () => TaskFunction | void;
-type ErrorHandler = (error: Error) => void;
 
+type ErrorHandler = (error: Error) => void;
 let handleError: ErrorHandler = (error) =>
   console.error("DOM task error:", error);
 
@@ -13,52 +13,37 @@ const measureTasks = new Set<TaskFunction>();
 const mutationTasks = new Set<TaskFunction>();
 const reflowTasks = new Set<ReflowTaskFunction>();
 
-/**
- * Process all tasks in a given set with the provided handler.
- * Clears the set to allow new tasks to be queued.
- */
 const processTasks = <T>(tasks: Set<T>, handler: (task: T) => void) => {
-  if (!tasks.size) return;
+  if (tasks.size === 0) return;
 
   const queue = Array.from(tasks);
   tasks.clear();
 
-  for (let i = 0, size = queue.length; i < size; i++) {
+  for (let j = 0, len = queue.length; j < len; j++) {
     try {
-      handler(queue[i]);
+      handler(queue[j]);
     } catch (error) {
       handleError(error as Error);
     }
   }
 };
 
-/**
- * Flush all queued DOM tasks in the proper order:
- * 1. Measure phase (batch DOM reads).
- * 2. Yield microtasks.
- * 3. Mutation phase (batch DOM writes).
- * 4. Reflow phase (measure–then–mutate operations).
- *
- * This function is throttled via requestAnimationFrame using throttleWithRafFallback.
- */
 const runUpdatePass = throttleWithRafFallback(async () => {
   try {
-    // Phase 1: Measure (DOM reads)
     if (measureTasks.size) {
       setPhase("measure");
-      processTasks(measureTasks, safeExecDOM);
+      processTasks(measureTasks, (task) => safeExecDOM(task));
     }
 
-    // Allow pending microtasks to complete before mutations.
-    await Promise.resolve();
+    // Ждем завершения микротасков
+    await Promise.resolve(); // Позволяем выполниться микротаскам
 
-    // Phase 2: Mutation (DOM writes)
+    // Фаза мутации
     if (mutationTasks.size) {
       setPhase("mutate");
-      processTasks(mutationTasks, safeExecDOM);
+      processTasks(mutationTasks, (task) => safeExecDOM(task));
     }
 
-    // Phase 3: Reflow (measure–then–mutate)
     if (reflowTasks.size) {
       setPhase("measure");
       const followUp: TaskFunction[] = [];
@@ -67,12 +52,12 @@ const runUpdatePass = throttleWithRafFallback(async () => {
         safeExecDOM(() => {
           const result = task();
           if (result) followUp.push(result);
-        })
+        }),
       );
 
       if (followUp.length) {
         setPhase("mutate");
-        processTasks(new Set(followUp), safeExecDOM);
+        processTasks(new Set(followUp), (task) => safeExecDOM(task));
       }
     }
   } finally {
@@ -81,9 +66,9 @@ const runUpdatePass = throttleWithRafFallback(async () => {
 });
 
 /**
- * Queue a DOM read operation (measure phase).
- * Example:
- *   requestMeasure(() => console.log("Element width:", element.offsetWidth));
+ * Queue DOM read operations (measure phase).
+ * @example
+ * requestMeasure(() => console.log("Element width:", element.offsetWidth));
  */
 export function requestMeasure(fn: TaskFunction) {
   if (!measureTasks.has(fn)) {
@@ -93,9 +78,9 @@ export function requestMeasure(fn: TaskFunction) {
 }
 
 /**
- * Queue a DOM write operation (mutation phase).
- * Example:
- *   requestMutation(() => (element.style.color = "red"));
+ * Queue DOM write operations (mutate phase).
+ * @example
+ * requestMutation(() => element.style.color = "red");
  */
 export function requestMutation(fn: TaskFunction) {
   if (!mutationTasks.has(fn)) {
@@ -105,13 +90,12 @@ export function requestMutation(fn: TaskFunction) {
 }
 
 /**
- * Queue a measure–then–mutate operation (reflow phase).
- * The passed function should perform a measurement and return a mutation task.
- * Example:
- *   requestNextMutation(() => {
- *     const height = element.offsetHeight;
- *     return () => (element.style.height = `${height}px`);
- *   });
+ * Queue measure-then-mutate operations.
+ * @example
+ * requestNextMutation(() => {
+ *   const height = element.offsetHeight;
+ *   return () => element.style.height = `${height}px`;
+ * });
  */
 export function requestNextMutation(fn: ReflowTaskFunction) {
   if (fn && !reflowTasks.has(fn)) {
@@ -120,10 +104,6 @@ export function requestNextMutation(fn: ReflowTaskFunction) {
   }
 }
 
-/**
- * Set a custom error handler for DOM tasks.
- * @param handler The function to handle errors.
- */
 export function setTaskErrorHandler(handler: ErrorHandler) {
   handleError = handler;
 }

@@ -3,8 +3,16 @@
   padding-inline: 1rem 0.25rem;
   padding-inline-start: 4.1rem !important;
   padding-block: 0.5625rem;
-  border-radius: var(--awe-radius-md) !important;
-  transition: background-color 200ms ease-in-out;
+
+  transition: background-color 125ms ease-in-out;
+
+  &:not(:active) {
+      border-radius: var(--awe-radius-md) !important;
+  }
+
+  &:hover, &:active {
+    background-color: var(--awe-palette-primary-main);
+  }
 }
 
 .TopActions {

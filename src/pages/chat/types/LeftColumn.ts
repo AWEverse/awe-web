@@ -7,6 +7,5 @@ export enum LeftColumnScreenType {
   NotificationsSetting = 16,
   PersonalizationSetting = 17,
   Archived = 2,
-  Creator = 3,
-  Contacts = 4,
+  Contacts = 3,
 }

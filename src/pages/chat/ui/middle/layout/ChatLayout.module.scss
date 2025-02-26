@@ -15,7 +15,7 @@
   display: grid;
   grid-template-columns: minmax(225px, min(40%, 400px)) 1fr;
   width: 100dvw;
-
+  height: 100dvh;
 
   @media (max-width: 640px) {
     grid-template-columns: 1fr;
@@ -29,7 +29,7 @@
   display: flex;
   flex-direction: column;
   height: var(--chat-height);
-  transition: height 0.25s ease;
+  transition: height 0.125s cubic-bezier(0.075, 0.82, 0.165, 1);
 }
 
 .Footer {

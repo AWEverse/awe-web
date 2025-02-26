@@ -50,7 +50,7 @@ const tabsData = [
   },
 ];
 
-const ChatList: FC<OwnProps> = ({ ref, className }) => {
+const ChatList: FC<OwnProps> = ({ className }) => {
   const [currentIndex, setCurrentIndex] = useState(0);
 
   const handleTabChange = useStableCallback((index: number) => {
@@ -58,7 +58,7 @@ const ChatList: FC<OwnProps> = ({ ref, className }) => {
   });
 
   return (
-    <section ref={ref} className={className}>
+    <>
       <TabList
         activeTab={currentIndex}
         className={s.TabListBorders}
@@ -67,7 +67,7 @@ const ChatList: FC<OwnProps> = ({ ref, className }) => {
         onSwitchTab={handleTabChange}
       />
 
-      <div data-scrolled={true} className={buildClassName(s.ChatList)}>
+      <div className={buildClassName(s.ChatList)}>
         {Array.from({ length: 20 }, (_, i) => (
           <Fragment key={i}>
             <ChatListItem
@@ -80,7 +80,7 @@ const ChatList: FC<OwnProps> = ({ ref, className }) => {
           </Fragment>
         ))}
       </div>
-    </section>
+    </>
   );
 };
 
