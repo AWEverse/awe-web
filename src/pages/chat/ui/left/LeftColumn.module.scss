@@ -6,6 +6,7 @@
   border-right: 2px solid rgba(var(--awe-palette-primary-mainChannel) / 0.875);
   background-color: var(--awe-palette-background-default);
   padding: 0.5rem;
+  width: 400px;
 
   @media (max-width: 640px) {
     position: fixed;

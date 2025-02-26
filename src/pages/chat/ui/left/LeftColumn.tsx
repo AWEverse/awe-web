@@ -86,12 +86,12 @@ const LeftColumn: FC<OwnProps> = ({ className }) => {
     }
   }, [currentScreen]);
 
-  const { onMouseDown } = useSwipeable({
+  const handlers = useSwipeable({
     onSwipedLeft: () => {
-      // Add forward navigation logic here (e.g., go to next screen)
+      console.log("left");
     },
     onSwipedRight: () => {
-      // Add backward navigation logic here (e.g., go back)
+      console.log("right");
     },
     delta: 10, // Minimum distance for swipe to register
   });
@@ -100,7 +100,6 @@ const LeftColumn: FC<OwnProps> = ({ className }) => {
     <AnimatePresence initial={false} mode="popLayout">
       {ScreenComponent && (
         <motion.div
-          onMouseDown={onMouseDown}
           className={buildClassName(s.LeftColumn, className)}
           data-placement={isOpen ? "show" : "hide"}
           aria-label={`Current screen: ${currentScreen}`}
