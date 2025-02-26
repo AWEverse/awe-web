@@ -1,6 +1,5 @@
 import { FC, useRef, useState, memo, ReactNode } from "react";
 import { motion, AnimatePresence } from "motion/react";
-import { useIntl } from "react-intl";
 import { useStableCallback } from "@/shared/hooks/base";
 import { throttle } from "@/lib/core";
 
@@ -126,7 +125,6 @@ const DatePicker: FC<OwnProps> = ({
   range,
   size,
 }) => {
-  const { formatMessage } = useIntl();
   const initSelectedDate = useSelectedOrCurrentDate(selectedAt);
 
   const gridRef = useRef<HTMLDivElement>(null);
@@ -308,7 +306,7 @@ const DatePicker: FC<OwnProps> = ({
         onNextMonth={handleNextMonth}
         onZoomToggle={handleSwitchZoom}
       />
-      <WeekdayLabels formatMessage={formatMessage} />
+      <WeekdayLabels />
       <hr />
       <section
         aria-label="Date picker"

@@ -51,7 +51,7 @@ const LeftHeaderDropdownMenu: FC<OwnProps & StateProps> = () => {
   );
 
   const handleSettingClick = useStableCallback(() => {
-    setScreen(LeftColumnScreenType.Settings);
+    setScreen(LeftColumnScreenType.SettingsNavigation);
   });
 
   const handleContactsClick = useStableCallback(() => {

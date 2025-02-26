@@ -10,7 +10,7 @@ import { useEffect, useRef } from "react";
  * @param current The current value that needs to be tracked.
  * @returns The previous value of the input, or undefined if there was no previous value.
  */
-export default function <T>(value: T, ignore: boolean): T | undefined {
+export default function <T>(value: T, ignore: boolean = false): T | undefined {
   const ref = useRef<T>(undefined);
 
   useEffect(() => {

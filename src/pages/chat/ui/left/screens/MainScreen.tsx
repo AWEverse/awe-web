@@ -1,5 +1,5 @@
 import { forwardRef, useMemo, useState } from "react";
-import { CSSTransition, TransitionGroup } from "react-transition-group";
+import { motion, AnimatePresence } from "framer-motion";
 import s from "./MainScreen.module.scss";
 import buildClassName from "@/shared/lib/buildClassName";
 import LeftMainHeader from "./main/LeftMainHeader";
@@ -26,8 +26,6 @@ const screens = {
   search: SearchList,
   chat: ChatList,
 };
-
-const TRANSITION_DURATION = 250;
 
 const MainScreen = forwardRef<HTMLDivElement, OwnProps>(
   ({ className }, ref) => {
@@ -88,16 +86,19 @@ const MainScreen = forwardRef<HTMLDivElement, OwnProps>(
         </section>
 
         <section className={s.LeftMainBody}>
-          <TransitionGroup component={null}>
-            <CSSTransition
+          <AnimatePresence>
+            <motion.div
               key={content}
-              classNames={"zoomIn"}
-              nodeRef={currentRef}
-              timeout={TRANSITION_DURATION}
+              ref={currentRef}
+              className={s.LeftMainContent}
+              initial={{ opacity: 0, x: -50 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: 50 }}
+              transition={{ type: "spring", stiffness: 300, damping: 30 }}
             >
-              <CurrentScreen ref={currentRef} className={s.LeftMainContent} />
-            </CSSTransition>
-          </TransitionGroup>
+              <CurrentScreen ref={currentRef} />
+            </motion.div>
+          </AnimatePresence>
 
           <FloatingActionButton
             actions={actions}

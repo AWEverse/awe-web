@@ -18,6 +18,8 @@ import useUniqueId from "@/lib/hooks/utilities/useUniqueId";
 import { dispatchHeavyAnimation } from "@/lib/core";
 import useBodyClass from "../hooks/DOM/useBodyClass";
 
+import "./Modal.scss";
+
 const ANIMATION_DURATION = 0.15;
 
 type NoneToVoidFunction = () => void;
@@ -129,6 +131,16 @@ const Modal: FC<OwnProps> = ({
     [isOpen],
   );
 
+  const modalClasses = buildClassName(
+    "Modal",
+    backdropBlur && "backdropBlur",
+    noBackdrop && "nobackdrop",
+  );
+
+  const dialogClasses = buildClassName(
+    "Dialog",
+    buildClassName(className, contentClassName),
+  );
   return (
     <Portal>
       <AnimatePresence>
@@ -146,20 +158,10 @@ const Modal: FC<OwnProps> = ({
             aria-describedby="dialog-description"
             aria-label={ariaLabel}
             aria-labelledby="dialog-title"
-            className={buildClassName(
-              "Modal",
-              `fixed top-0 left-0 w-full h-full flex items-center justify-center z-[9998] ${
-                backdropBlur
-                  ? "backdrop-blur-lg"
-                  : noBackdrop
-                    ? ""
-                    : "bg-black/50"
-              }`,
-            )}
+            className={modalClasses}
             tabIndex={-1}
             role="dialog"
             onClick={handleClick}
-            style={{ willChange: "opacity" }}
           >
             <motion.div
               ref={dialogRef}
@@ -168,11 +170,7 @@ const Modal: FC<OwnProps> = ({
               animate="animate"
               exit="exit"
               transition={transition}
-              className={`relative p-4 rounded-lg shadow-lg z-[9999] min-w-[17.5rem] max-w-[92dvh] max-h-[92dvh] m-auto ${buildClassName(
-                className,
-                contentClassName,
-              )}`}
-              style={{ willChange: "opacity, transform" }}
+              className={dialogClasses}
               onClick={handleModalClick}
             >
               {children}

@@ -23,8 +23,7 @@ export const AccordionGroup: FC<Readonly<AccordionGroupProps>> = React.memo(
     const {
       values: openIndexes,
       has,
-      add,
-      remove,
+      toggle,
       clear,
     } = useStateSet<number>(
       allowMultiple ? defaultOpenIndexes : [defaultOpenIndexes[0]],
@@ -32,13 +31,10 @@ export const AccordionGroup: FC<Readonly<AccordionGroupProps>> = React.memo(
 
     const toggleIndex = useCallback(
       (index: number) => {
-        if (has(index)) {
-          remove(index);
-        } else {
-          if (!allowMultiple) {
-            clear();
-          }
-          add(index);
+        toggle(index);
+
+        if (!allowMultiple) {
+          clear();
         }
       },
       [allowMultiple],
