@@ -3,7 +3,7 @@ import s from "./ContactsScreen.module.scss";
 import buildClassName from "@/shared/lib/buildClassName";
 import HeaderNavigation from "../../common/HeaderNavigation";
 import useChatStore from "@/pages/chat/store/useChatSelector";
-import { useStableCallback } from "@/shared/hooks/base";
+import { usePrevious, useStableCallback } from "@/shared/hooks/base";
 import { LeftColumnScreenType } from "@/pages/chat/types/LeftColumn";
 import ContactResult from "./search/results/ContactResult";
 import ActionButton from "@/shared/ui/ActionButton";
@@ -17,7 +17,6 @@ import {
 import IconButton from "@/shared/ui/IconButton";
 import ContactsSortDropdown from "./contacts/ContactsSortDropdown";
 import { CSSTransition } from "react-transition-group";
-import usePrevious from "@/lib/hooks/state/usePrevious";
 
 interface OwnProps {
   className?: string;

@@ -31,11 +31,14 @@ interface FloatinActionButtonProps {
   isButtonVisible?: boolean;
 }
 
+type Handlers =
+  `on${Extract<IFloatingAction, { label: string }>["label"]}Click`;
+
 type OwnProps = FloatinActionButtonProps &
   IconButtonSharedProps &
   DropdopwnSharedProps;
 
-const FloatingActionButton: React.FC<OwnProps> = ({
+const FloatingActionButton: React.FC<OwnProps & Handlers> = ({
   icon,
   className,
   actions = [],

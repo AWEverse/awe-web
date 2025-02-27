@@ -11,8 +11,8 @@
   cursor: pointer;
 
   // Remove focus outlines for button states
-  &, 
-  &:active, 
+  &,
+  &:active,
   &:focus {
     outline: none;
   }
@@ -37,7 +37,7 @@
     // Common padding for "Pannels" and "Fill" variants
     &.Pannels,
     &.Fill {
-      padding: 0.225rem 1.125rem 0.45rem;
+      padding: 0.125rem 1.125rem 0.35rem;
     }
 
     &.Pannels {

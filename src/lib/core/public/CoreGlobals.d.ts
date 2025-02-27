@@ -15,6 +15,9 @@ type Undefined<T> = { [K in keyof T]: undefined };
 
 type NewMutableRefObject = Mutable<React.RefObject<T>>;
 
+
+type StartsWithUnderscore<T extends string> = T extends `_${string}` ? T : never;
+
 /**
  * The `Impossible<T>` type maps over the properties of `T` (if any) and transforms them all into `never`.
  * It effectively renders any valid key in `T` impossible to use in actual code by assigning it the `never` type.

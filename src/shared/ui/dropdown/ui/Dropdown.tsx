@@ -1,4 +1,4 @@
-import React, { FC, memo, useCallback } from "react";
+import React, { FC, memo, useCallback, useEffect } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { useDropdownState } from "../hooks";
 import buildClassName from "@/shared/lib/buildClassName";
@@ -9,6 +9,7 @@ import useBodyClass from "@/shared/hooks/DOM/useBodyClass";
 import { useBoundaryCheck } from "@/shared/hooks/mouse/useBoundaryCheck";
 import { useEffectWithPreviousDeps } from "@/shared/hooks/effects/useEffectWithPreviousDependencies";
 import useKeyboardListeners from "@/lib/hooks/events/useKeyboardListeners";
+import trapFocus from "@/lib/utils/trapFocus";
 
 interface OwnTriggerProps<T = HTMLElement> extends React.HTMLAttributes<T> {
   onTrigger: NoneToVoidFunction;
@@ -91,6 +92,12 @@ const DropdownMenu: FC<OwnProps & OwnSharedProps> = ({
     },
     [isOpen],
   );
+
+  useEffect(() => {
+    if (isOpen && dropdownRef.current) {
+      return trapFocus(dropdownRef.current!);
+    }
+  }, [isOpen]);
 
   const renderBackdrop = useCallback(
     () =>

@@ -1,5 +1,5 @@
-import { forwardRef, useMemo, useState } from "react";
-import { CSSTransition, TransitionGroup } from "react-transition-group";
+import { FC, useState, useCallback, useMemo } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import s from "./MainScreen.module.scss";
 import buildClassName from "@/shared/lib/buildClassName";
 import LeftMainHeader from "./main/LeftMainHeader";
@@ -12,8 +12,6 @@ import FloatingActionButton, {
   IFloatingAction,
 } from "@/entities/FloatingActionButton";
 import useFloatingButton from "../../hooks/useFloatingButton";
-import useConditionalRef from "@/lib/hooks/utilities/useConditionalRef";
-import useChatStore from "@/pages/chat/store/useChatSelector";
 import { useStableCallback } from "@/shared/hooks/base";
 
 interface OwnProps {
@@ -27,94 +25,58 @@ const screens = {
   chat: ChatList,
 };
 
-const TRANSITION_DURATION = 250;
+const fadeVariants = {
+  initial: { opacity: 0 },
+  animate: { opacity: 1 },
+  exit: { opacity: 0 },
+};
 
-const MainScreen = forwardRef<HTMLDivElement, OwnProps>(
-  ({ className }, ref) => {
-    const toggleFooter = useChatStore((state) => state.toggleFooter);
+const MainScreen: FC<OwnProps> = ({ className }) => {
+  const [content, setContent] = useState<ScreenType>("chat");
+  // const { isButtonVisible, handleMouseEnter, handleMouseLeave } =
+  //   useFloatingButton(false);
 
-    const [content, setContent] = useState<ScreenType>("chat");
-    const { isButtonVisible, handleMouseEnter, handleMouseLeave } =
-      useFloatingButton(false);
+  const switchToChat = useCallback(() => setContent("chat"), []);
+  const switchToSearch = useStableCallback(() => setContent("search"));
 
-    const currentRef = useConditionalRef<HTMLDivElement>(null, [content]);
-
-    const renderBackButton = useMemo(
-      () =>
-        content === "search" ? (
-          <IconButton size="medium" onClick={() => setContent("chat")}>
-            <CloseRounded />
-          </IconButton>
-        ) : (
-          <LeftHeaderDropdownMenu />
-        ),
-      [content],
+  const renderBackButton = useMemo(() => {
+    return content === "search" ? (
+      <IconButton size="medium" onClick={switchToChat}>
+        <CloseRounded />
+      </IconButton>
+    ) : (
+      <LeftHeaderDropdownMenu />
     );
+  }, [content, switchToChat]);
 
-    const CurrentScreen = screens[content];
+  const CurrentScreen = screens[content];
 
-    const actions: IFloatingAction[] = useMemo(
-      () => [
-        {
-          icon: <>•</>,
-          label: "Edit",
-          onClick: () => alert("Edit action clicked!"),
-        },
-        {
-          icon: <>•</>,
-          label: "Delete",
-          onClick: () => alert("Delete action clicked!"),
-        },
-        "-",
-        { icon: <>•</>, label: "Tool panel", onClick: toggleFooter },
-      ],
-      [],
-    );
+  return (
+    <div
+      className={s.LeftMainBody}
+      // onMouseEnter={handleMouseEnter}
+      // onMouseLeave={handleMouseLeave}
+    >
+      <section className={s.LeftMainHeader}>
+        {renderBackButton}
+        <LeftMainHeader onFocus={switchToSearch} />
+      </section>
 
-    const handleSwitchSearch = useStableCallback(() => {
-      setContent("search");
-    });
-
-    return (
-      <div
-        ref={ref}
-        className={buildClassName(className, s.MainScreen)}
-        onMouseEnter={handleMouseEnter}
-        onMouseLeave={handleMouseLeave}
-      >
-        <section className={s.LeftMainHeader}>
-          {renderBackButton}
-          <LeftMainHeader onFocus={handleSwitchSearch} />
-        </section>
-
-        <section className={s.LeftMainBody}>
-          <TransitionGroup component={null}>
-            <CSSTransition
-              key={content}
-              classNames={"zoomIn"}
-              nodeRef={currentRef}
-              timeout={TRANSITION_DURATION}
-            >
-              <CurrentScreen ref={currentRef} className={s.LeftMainContent} />
-            </CSSTransition>
-          </TransitionGroup>
-
-          <FloatingActionButton
-            actions={actions}
-            className={buildClassName(
-              s.ChatListFab,
-              isButtonVisible && s.FabVisible,
-            )}
-            icon={<EditRounded />}
-            isButtonVisible={isButtonVisible}
-            position="bottom-right"
-            size="large"
-            transformOrigin={10}
-          />
-        </section>
-      </div>
-    );
-  },
-);
+      <AnimatePresence mode="wait" initial={false}>
+        <motion.div
+          key={content}
+          className={s.LeftMainContent}
+          variants={fadeVariants}
+          initial="initial"
+          animate="animate"
+          exit="exit"
+          transition={{ duration: 0.125 }}
+        >
+          <CurrentScreen />
+        </motion.div>
+      </AnimatePresence>
+    </div>
+  );
+};
 
 export default MainScreen;

@@ -67,7 +67,7 @@ interface OwnProps {
   };
 }
 
-const ContextMenu: FC<OwnProps> = ({
+const ContextMenu: FC<Readonly<OwnProps>> = ({
   isOpen,
   position,
   children,

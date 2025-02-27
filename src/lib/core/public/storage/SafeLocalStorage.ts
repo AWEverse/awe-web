@@ -1,13 +1,19 @@
+/**
+ * SafeLocalStorage
+ *
+ * Расширяет базовый функционал работы с localStorage:
+ * - Безопасное получение и установку значений с обработкой JSON.
+ * - Групповое (batch) выполнение операций: возможность накапливать операции
+ *   и затем применять их все разом (commit) или откатывать (rollback).
+ * - Поддержка отмены операций через AbortController.
+ */
 class SafeLocalStorage {
-  /**
-   * Retrieves an item from localStorage and parses it into the specified type.
-   * @param key - The key of the item to retrieve.
-   * @returns The parsed item of type T or null if not found or invalid.
-   */
+  private static batchQueue: Array<{ type: 'set' | 'remove'; key: string; value?: unknown }> = [];
+  private static isBatching = false;
+
   static getItem<T>(key: string): T | null {
     const item = localStorage.getItem(key);
     if (!item) return null;
-
     try {
       return JSON.parse(item) as T;
     } catch (error) {
@@ -16,43 +22,114 @@ class SafeLocalStorage {
     }
   }
 
-  /**
-   * Sets an item in localStorage after serializing it.
-   * @param key - The key under which to store the item.
-   * @param value - The value to store.
-   */
   static setItem<T>(key: string, value: T): void {
-    try {
-      const serializedValue = JSON.stringify(value);
-      localStorage.setItem(key, serializedValue);
-    } catch (error) {
-      console.error(`Error setting item with key "${key}":`, error);
+    if (this.isBatching) {
+      this.batchQueue.push({ type: 'set', key, value });
+    } else {
+      try {
+        localStorage.setItem(key, JSON.stringify(value));
+      } catch (error) {
+        console.error(`Error setting item with key "${key}":`, error);
+      }
     }
   }
 
-  /**
-   * Sets multiple items in localStorage after serializing them.
-   * @param items - An object containing key-value pairs to store.
-   */
-  static setMultipleItems(items: Record<string, unknown>): void {
-    for (const [key, value] of Object.entries(items)) {
-      this.setItem(key, value);
-    }
-  }
-
-  /**
-   * Removes an item from localStorage.
-   * @param key - The key of the item to remove.
-   */
   static removeItem(key: string): void {
-    localStorage.removeItem(key);
+    if (this.isBatching) {
+      this.batchQueue.push({ type: 'remove', key });
+    } else {
+      try {
+        localStorage.removeItem(key);
+      } catch (error) {
+        console.error(`Error removing item with key "${key}":`, error);
+      }
+    }
+  }
+
+  static setMultipleItems(items: Record<string, unknown>): void {
+    if (this.isBatching) {
+      for (const [key, value] of Object.entries(items)) {
+        this.batchQueue.push({ type: 'set', key, value });
+      }
+    } else {
+      for (const [key, value] of Object.entries(items)) {
+        try {
+          localStorage.setItem(key, JSON.stringify(value));
+        } catch (error) {
+          console.error(`Error setting item with key "${key}":`, error);
+        }
+      }
+    }
+  }
+
+  static clear(): void {
+    try {
+      localStorage.clear();
+      this.batchQueue = [];
+    } catch (error) {
+      console.error("Error clearing localStorage:", error);
+    }
+  }
+
+  static beginBatch(): void {
+    this.isBatching = true;
+    this.batchQueue = [];
+  }
+
+  static commitBatch(): void {
+    for (const op of this.batchQueue) {
+      if (op.type === 'set') {
+        try {
+          localStorage.setItem(op.key, JSON.stringify(op.value));
+        } catch (error) {
+          console.error(`Error setting item with key "${op.key}" in batch:`, error);
+        }
+      } else if (op.type === 'remove') {
+        try {
+          localStorage.removeItem(op.key);
+        } catch (error) {
+          console.error(`Error removing item with key "${op.key}" in batch:`, error);
+        }
+      }
+    }
+    this.batchQueue = [];
+    this.isBatching = false;
+  }
+
+  static rollbackBatch(): void {
+    this.batchQueue = [];
+    this.isBatching = false;
   }
 
   /**
-   * Clears all items from localStorage.
+   * Выполняет заданную функцию в контексте batch-режима.
+   * Если функция завершается без ошибок, все операции применяются (commit).
+   * В противном случае происходит откат (rollback) и ошибка пробрасывается далее.
+   * Если предоставлен AbortSignal и он отменен, выполняется откат.
+   *
+   * @param callback - Функция, содержащая операции с localStorage.
+   * @param options - Опции, включая AbortSignal для отмены операции.
    */
-  static clear(): void {
-    localStorage.clear();
+  static batch(callback: () => void, options?: { signal?: AbortSignal }): void {
+    const signal = options?.signal;
+
+    if (signal?.aborted) {
+      throw new DOMException('Batch operation aborted', 'AbortError');
+    }
+
+    this.beginBatch();
+    try {
+      callback();
+
+      if (signal?.aborted) {
+        throw new DOMException('Batch operation aborted during execution', 'AbortError');
+      }
+
+      this.commitBatch();
+    } catch (error) {
+      this.rollbackBatch();
+      throw error;
+    }
   }
 }
 

@@ -905,6 +905,9 @@ export {
   batch,
   untracked,
   Signal,
+  Computed,
+  Effect,
+  SIGNAL_SYMBOL,
   type ReadonlySignal,
   type ISignalObject,
 };

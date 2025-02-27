@@ -1,5 +1,4 @@
-import { useState, useRef } from "react";
-import { useStableCallback } from "@/shared/hooks/base";
+import { useState, useRef, useCallback, useEffect } from "react";
 
 const BUTTON_CLOSE_DELAY_MS = 250;
 
@@ -14,45 +13,34 @@ export default function useFloatingButton(
     isTouchEnv ? initialState : false,
   );
 
-  const setIsMouseInside = (value: boolean) => {
-    isMouseInsideRef.current = value;
-  };
+  useEffect(() => {
+    return () => clearTimeout(closeTimeoutRef.current);
+  }, []);
 
-  const _handleMouseEnter = useStableCallback(() => {
+  const handleMouseEnter = useCallback(() => {
     if (isTouchEnv) return;
-    setIsMouseInside(true);
+
+    isMouseInsideRef.current = true;
     setIsButtonVisible(true);
+    clearTimeout(closeTimeoutRef.current);
+  }, [isTouchEnv]);
 
-    if (closeTimeoutRef.current) {
-      clearTimeout(closeTimeoutRef.current);
-    }
-  });
+  const handleMouseLeave = useCallback(() => {
+    if (isTouchEnv) return;
 
-  const _handleMouseLeave = useStableCallback(() => {
-    if (isTouchEnv) {
-      return;
-    }
-
-    setIsMouseInside(false);
-
-    if (closeTimeoutRef.current) {
-      clearTimeout(closeTimeoutRef.current);
-      closeTimeoutRef.current = undefined;
-    }
+    isMouseInsideRef.current = false;
+    clearTimeout(closeTimeoutRef.current);
 
     closeTimeoutRef.current = window.setTimeout(() => {
       if (!isMouseInsideRef.current) {
         setIsButtonVisible(false);
       }
     }, BUTTON_CLOSE_DELAY_MS);
-  });
+  }, [isTouchEnv]);
 
-  const handleMouseEnter: NoneToVoidFunction | undefined = !isTouchEnv
-    ? _handleMouseEnter
-    : undefined;
-  const handleMouseLeave: NoneToVoidFunction | undefined = !isTouchEnv
-    ? _handleMouseLeave
-    : undefined;
-
-  return { isButtonVisible, handleMouseEnter, handleMouseLeave };
+  return {
+    isButtonVisible,
+    handleMouseEnter: !isTouchEnv ? handleMouseEnter : undefined,
+    handleMouseLeave: !isTouchEnv ? handleMouseLeave : undefined,
+  };
 }

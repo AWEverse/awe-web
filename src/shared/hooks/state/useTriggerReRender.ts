@@ -23,8 +23,8 @@ interface ForceUpdateOptions {
 const useTriggerReRender = ({
   callback,
   throttleInterval,
-}: ForceUpdateOptions = {}): (() => void) => {
-  const [, setTick] = useState<number>(0);
+}: ForceUpdateOptions = {}) => {
+  const [reflows, setTick] = useState<number>(0);
   const lastCallRef = useRef<number>(0);
 
   /**
@@ -45,7 +45,7 @@ const useTriggerReRender = ({
     callback?.();
   });
 
-  return triggerReRender;
+  return [reflows, triggerReRender] as const;
 };
 
 export default useTriggerReRender;

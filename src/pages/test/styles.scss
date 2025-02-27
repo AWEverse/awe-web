@@ -1,46 +1,81 @@
-.slider-container {
-  position: relative;
-  width: 100%;
-  overflow: hidden;
+.signal-visualizer {
+  padding: 20px;
+  font-family: monospace;
+
+  .controls {
+    margin-bottom: 20px;
+
+    button {
+      padding: 8px 16px;
+      background: #007bff;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+  }
 }
 
-.slider-track {
-  display: flex;
-  width: 200%; /* Чтобы вместить две колонки */
-}
+.signal-node {
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  margin: 8px 0;
+  background: white;
 
-.slide {
-  display: flex;
-  width: 50%; /* Каждая колонка занимает половину ширины */
-}
+  .node-header {
+    display: flex;
+    align-items: center;
+    padding: 8px;
+    background: #f8f9fa;
+    cursor: pointer;
 
-.column {
-  flex: 1;
-  padding: 10px;
-}
+    .node-type {
+      font-weight: bold;
+      color: #2c3e50;
+    }
 
-.item {
-  background-color: #f0f0f0;
-  border: 1px solid #ccc;
-  padding: 10px;
-  box-sizing: border-box;
-}
+    .toggle {
+      margin-left: auto;
+      padding: 0 8px;
+    }
+  }
 
-.prev-button, .next-button {
-  position: absolute;
-  top: 50%;
-  transform: translateY(-50%);
-  background-color: rgba(0, 0, 0, 0.5);
-  color: white;
-  border: none;
-  padding: 10px;
-  cursor: pointer;
-}
+  .node-properties {
+    padding: 8px;
+    border-top: 1px solid #eee;
 
-.prev-button {
-  left: 10px;
-}
+    .property {
+      margin: 4px 0;
+      padding: 4px;
+      background: #f8f9fa;
+      border-radius: 4px;
+    }
+  }
 
-.next-button {
-  right: 10px;
+  .dependencies {
+    margin: 8px 0;
+    padding: 8px;
+    background: #f1f5f9;
+
+    h4 {
+      margin: 0 0 8px 0;
+      color: #4a5568;
+    }
+
+    .linked-list {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 12px;
+
+      .connection-arrow {
+        color: #718096;
+        padding: 0 4px;
+      }
+
+      .signal-node {
+        margin: 4px 0;
+      }
+    }
+  }
 }

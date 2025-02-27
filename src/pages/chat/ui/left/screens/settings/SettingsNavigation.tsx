@@ -19,7 +19,6 @@ import useChatStore from "@/pages/chat/store/useChatSelector";
 import { LeftColumnScreenType } from "@/pages/chat/types/LeftColumn";
 import s from "./SettingsNavigation.module.scss";
 import { SettingsScreenType } from "./types";
-import { useIntl } from "react-intl";
 import IconButton from "@/shared/ui/IconButton";
 import { useStableCallback } from "@/shared/hooks/base";
 import ConfirmActionModal from "@/entities/ConfirmActionModal";
@@ -34,8 +33,6 @@ const SettingsNavigation = forwardRef<HTMLDivElement, OwnProps>(
   (props, ref) => {
     const { className, onScreenChange } = props;
     const [showExitAccountModal, setShowExitAccountModal] = useState(false);
-
-    const { formatMessage } = useIntl();
 
     const setScreen = useChatStore((store) => store.setScreen);
 
@@ -59,7 +56,6 @@ const SettingsNavigation = forwardRef<HTMLDivElement, OwnProps>(
         >
           <HeaderNavigation
             className={s.SettingsHeader}
-            name={formatMessage({ id: "left.settings" })}
             onPrevClick={handleSearchClose}
           >
             <IconButton size="medium" title="Редактировать профиль">
@@ -86,7 +82,6 @@ const SettingsNavigation = forwardRef<HTMLDivElement, OwnProps>(
               <Divider className={s.Divider}>online (1/2)</Divider>
             </div>
             <ActionButton
-              swap
               className={s.UpdateButton}
               icon={<KeyboardArrowRight />}
               label={"Accounts Feature Updates"}
@@ -96,17 +91,11 @@ const SettingsNavigation = forwardRef<HTMLDivElement, OwnProps>(
           <section className={s.SettingSection}>
             <SettingsButton
               settingIcon={<AccountCircle />}
-              settingName={formatMessage({ id: "left.settings.account" })}
               onClick={() => onScreenChange?.(SettingsScreenType.Account)}
-            >
-              <p>
-                {formatMessage({ id: "left.settings.account.description" })}
-              </p>
-            </SettingsButton>
+            ></SettingsButton>
 
             <SettingsButton
               settingIcon={<Notifications />}
-              settingName={formatMessage({ id: "left.settings.notifications" })}
               onClick={() => onScreenChange?.(SettingsScreenType.Notifications)}
             >
               • Уведомления и звук <br />
@@ -116,7 +105,7 @@ const SettingsNavigation = forwardRef<HTMLDivElement, OwnProps>(
 
             <SettingsButton
               settingIcon={<Security />}
-              settingName={formatMessage({ id: "left.settings.privacy" })}
+              settingName={""}
               onClick={() => onScreenChange?.(SettingsScreenType.Confidence)}
             >
               • Настройки конфиденциальности <br />
@@ -128,7 +117,6 @@ const SettingsNavigation = forwardRef<HTMLDivElement, OwnProps>(
 
             <SettingsButton
               settingIcon={<People />}
-              settingName={formatMessage({ id: "left.settings.content" })}
               onClick={() => onScreenChange?.(SettingsScreenType.Interaction)}
             >
               • Близкие друзья <br />
@@ -139,7 +127,6 @@ const SettingsNavigation = forwardRef<HTMLDivElement, OwnProps>(
 
             <SettingsButton
               settingIcon={<Chat />}
-              settingName={formatMessage({ id: "left.settings.chats" })}
               onClick={() => onScreenChange?.(SettingsScreenType.Chats)}
             >
               • Папки с чатами <br />
@@ -149,9 +136,6 @@ const SettingsNavigation = forwardRef<HTMLDivElement, OwnProps>(
 
             <SettingsButton
               settingIcon={<EmojiEmotions />}
-              settingName={formatMessage({
-                id: "left.settings.personalization",
-              })}
               onClick={() =>
                 onScreenChange?.(SettingsScreenType.Personalization)
               }
@@ -176,11 +160,9 @@ const SettingsNavigation = forwardRef<HTMLDivElement, OwnProps>(
         <ConfirmActionModal
           backdropBlur
           confirmIsDestructive
-          action={formatMessage({ id: "left.settings.exitAccount" })}
           isOpen={showExitAccountModal}
           onClose={handleCloseExitAccountModal}
         >
-          <p>{formatMessage({ id: "left.settings.exitAccountDialog" })}</p>
           <Checkbox />
         </ConfirmActionModal>
       </>

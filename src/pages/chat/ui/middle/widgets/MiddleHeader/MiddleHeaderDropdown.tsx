@@ -15,7 +15,6 @@ import { withStateProps } from "@/lib/core";
 import buildClassName from "@/shared/lib/buildClassName";
 import DropdownMenu, { TriggerProps } from "@/shared/ui/dropdown";
 import IconButton from "@/shared/ui/IconButton";
-import { useIntl } from "react-intl";
 import ChatActionButton from "../../common/ChatActionButton";
 import ReportModal from "@/entities/ReportModal";
 import useChatStore from "@/pages/chat/store/useChatSelector";
@@ -66,15 +65,6 @@ const MiddleHeaderDropdown: FC<OwnProps & StateProps> = ({
   const handleAction = useStableCallback((action: ModalAction) => () => {
     setModal(action);
   });
-
-  const lang = useIntl();
-
-  const baseAction = lang.formatMessage(
-    {
-      id: "confirm.action",
-    },
-    { action: currentModal },
-  );
 
   const TriggerButton: FC<TriggerProps> = ({ isOpen, onTrigger }) => (
     <IconButton

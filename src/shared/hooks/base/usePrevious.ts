@@ -1,4 +1,4 @@
-import { useRef } from "react";
+import { useEffect, useRef } from "react";
 
 /**
  * Custom hook to store and retrieve the previous value of a variable.
@@ -10,16 +10,12 @@ import { useRef } from "react";
  * @param current The current value that needs to be tracked.
  * @returns The previous value of the input, or undefined if there was no previous value.
  */
-export default function <T>(current: T): T | undefined {
-  const prevRef = useRef<T>(undefined);
-  const lastRef = useRef<T>(undefined);
+export default function <T>(value: T, ignore: boolean = false): T | undefined {
+  const ref = useRef<T>(undefined);
 
-  // Update the previous value only if the current value has changed
-  if (lastRef.current !== current) {
-    prevRef.current = lastRef.current;
-  }
+  useEffect(() => {
+    ref.current = ignore ? ref.current : value;
+  }, [value, ignore]);
 
-  lastRef.current = current;
-
-  return prevRef.current;
+  return ref.current;
 }

@@ -1,6 +1,6 @@
-import React, { FC, ChangeEvent, FormEvent, memo } from 'react';
-import s from './SearchInput.module.scss';
-import buildClassName from '@/shared/lib/buildClassName';
+import React, { FC, ChangeEvent, FormEvent, memo } from "react";
+import s from "./SearchInput.module.scss";
+import buildClassName from "@/shared/lib/buildClassName";
 
 interface OwnProps {
   searchQuery?: string;
@@ -16,11 +16,11 @@ interface OwnProps {
   endDecorator?: React.ReactNode;
 }
 
-const SearchInput: FC<OwnProps> = memo(props => {
+const SearchInput: FC<OwnProps> = memo((props) => {
   const {
-    placeholder = 'Type to search...',
-    ariaLabel = 'Search',
-    labelQuery = 'Search: ...',
+    placeholder = "Type to search...",
+    ariaLabel = "Search",
+    labelQuery = "Search: ...",
     onChange,
     onSubmit,
     onReset,
@@ -45,7 +45,12 @@ const SearchInput: FC<OwnProps> = memo(props => {
   const inputClassName = buildClassName(s.input, isActive && s.active);
 
   return (
-    <form className={s.wrapper} role="search" onReset={handleReset} onSubmit={handleSubmit}>
+    <form
+      className={s.wrapper}
+      role="search"
+      onReset={handleReset}
+      onSubmit={handleSubmit}
+    >
       <div className={s.decorator}>{startDecorator}</div>
       <input
         aria-label={ariaLabel}

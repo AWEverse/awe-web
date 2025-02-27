@@ -11,7 +11,6 @@ import {
 import s from "./SearchInput.module.scss";
 import CircularProgress from "@mui/material/CircularProgress";
 import { CloseRounded, SearchRounded } from "@mui/icons-material";
-import { useIntl } from "react-intl";
 import { useRefInstead, useStableCallback } from "@/shared/hooks/base";
 import buildClassName from "../lib/buildClassName";
 import { requestMeasure } from "@/lib/modules/fastdom";
@@ -76,8 +75,6 @@ const SearchInput: FC<OwnProps> = ({
   const [isInputFocused, markInputFocused, unmarkInputFocused] =
     useBooleanState(focused);
 
-  const { formatMessage } = useIntl();
-
   useEffect(() => {
     if (!inputRef.current) {
       return;
@@ -119,14 +116,12 @@ const SearchInput: FC<OwnProps> = ({
       }
 
       if (e.key === "ArrowDown" || e.key === "Enter") {
-        requestMeasure(() => {
-          const element = document.querySelector(
-            resultsItemSelector,
-          ) as HTMLElement;
+        const element = document.querySelector(
+          resultsItemSelector,
+        ) as HTMLElement;
 
-          if (element) {
-            element.focus();
-          }
+        requestMeasure(() => {
+          element?.focus();
         });
       }
 
@@ -141,7 +136,7 @@ const SearchInput: FC<OwnProps> = ({
     },
   );
 
-  const placeholderIntl = formatMessage({ id: "search.placeholder" });
+  const placeholderIntl = "Search...";
 
   const renderLabels = useMemo(() => {
     if (!labels) return null;
