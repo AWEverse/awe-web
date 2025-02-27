@@ -1,10 +1,11 @@
-import { FC, forwardRef, Fragment, memo, useState } from "react";
+import { FC, Fragment, memo, useState } from "react";
 import ChatListItem from "./ChatListItem";
 import { ChatAnimationTypes } from "./hooks/useChatAnimationType";
 import s from "./ChatList.module.scss";
-import { useStableCallback } from "@/shared/hooks/base";
+import { usePrevious, useStableCallback } from "@/shared/hooks/base";
 import TabList from "@/shared/ui/TabList";
 import buildClassName from "@/shared/lib/buildClassName";
+import { AnimatePresence, motion } from "framer-motion";
 
 interface OwnProps {
   ref?: React.RefObject<HTMLDivElement | null>;
@@ -50,8 +51,23 @@ const tabsData = [
   },
 ];
 
+const variants = {
+  initial: (direction: number) => ({
+    x: direction > 0 ? "100%" : "-100%",
+  }),
+  animate: {
+    x: 0,
+  },
+  exit: (direction: number) => ({
+    x: direction > 0 ? "-100%" : "100%",
+  }),
+};
+
 const ChatList: FC<OwnProps> = ({ className }) => {
   const [currentIndex, setCurrentIndex] = useState(0);
+  const previousIndex = usePrevious(currentIndex);
+
+  const direction = currentIndex - (previousIndex || 0);
 
   const handleTabChange = useStableCallback((index: number) => {
     setCurrentIndex(index);
@@ -67,19 +83,30 @@ const ChatList: FC<OwnProps> = ({ className }) => {
         onSwitchTab={handleTabChange}
       />
 
-      <div className={buildClassName(s.ChatList)}>
-        {Array.from({ length: 20 }, (_, i) => (
-          <Fragment key={i}>
-            <ChatListItem
-              animation={ChatAnimationTypes.Move}
-              chatId={`${i}`}
-              currentUserId="1"
-              orderDiff={i}
-            />
-            <hr className={s.ChatListDivider} />
-          </Fragment>
-        ))}
-      </div>
+      <AnimatePresence custom={direction} initial={false} mode="popLayout">
+        <motion.div
+          className={buildClassName(s.ChatList)}
+          key={currentIndex}
+          custom={direction}
+          variants={variants}
+          initial="initial"
+          animate="animate"
+          exit="exit"
+          transition={{ duration: 0.2 }}
+        >
+          {Array.from({ length: 20 }, (_, i) => (
+            <Fragment key={i}>
+              <ChatListItem
+                animation={ChatAnimationTypes.Move}
+                chatId={`${i}`}
+                currentUserId="1"
+                orderDiff={i}
+              />
+              <hr className={s.ChatListDivider} />
+            </Fragment>
+          ))}
+        </motion.div>
+      </AnimatePresence>
     </>
   );
 };

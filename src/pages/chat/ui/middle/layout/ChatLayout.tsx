@@ -49,7 +49,6 @@ const MainContainer: FC<PropsWithChildren> = ({ children }) => {
       aria-label="Chat scrollable content"
       className={s.MainContainer}
       role="region"
-      layout
     >
       {children}
     </section>

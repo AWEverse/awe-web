@@ -66,7 +66,7 @@ const MAX_LOOP_DURATION = 30;
 const REWIND_STEP = 5;
 
 const VideoPlayer: React.FC<OwnProps> = ({
-  mediaUrl = "/video_test/got.mp4",
+  mediaUrl = "/video_test/Interstellar.mkv",
   playbackSpeed = 1,
   isAdsMessage,
   disableClickActions,
@@ -195,6 +195,8 @@ const VideoPlayer: React.FC<OwnProps> = ({
 
       const video = videoRef.current!;
       const key = e.key || e.code;
+
+      console.log(e.key);
 
       switch (key) {
         case EKeyboardKey.Space:

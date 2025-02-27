@@ -9,13 +9,14 @@ interface MediaSource {
   [key: string]: any;
 }
 
+// Updated MIME type for mkv to video/webm for broader browser support.
 const VIDEO_TYPES: Record<string, string> = {
   mp4: "video/mp4",
   webm: "video/webm",
   ogv: "video/ogg",
   m3u8: "application/x-mpegURL",
   mpd: "application/dash+xml",
-  mkv: "video/x-matroska",
+  mkv: "video/webm",
   mov: "video/quicktime",
 };
 
@@ -31,7 +32,6 @@ const parseMediaSources = (input: string | MediaSource[] | MediaSource) => {
         if (params) {
           params.split(";").forEach((param) => {
             const [key, value] = param.trim().split("=");
-
             if (key && value) {
               sourceObj[key] = value.replace(/['"]/g, "");
             }
@@ -47,11 +47,9 @@ const parseMediaSources = (input: string | MediaSource[] | MediaSource) => {
       if (Array.isArray(input)) {
         return input.map(parseSource);
       }
-
       if (typeof input === "string") {
         return input.split(",").map(parseSource);
       }
-
       return [parseSource(input)];
     };
 

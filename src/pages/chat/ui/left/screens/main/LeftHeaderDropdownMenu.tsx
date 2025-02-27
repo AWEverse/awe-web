@@ -10,6 +10,7 @@ import DropdownMenu, { TriggerProps } from "@/shared/ui/dropdown";
 import {
   ArrowForwardIosRounded,
   DarkModeRounded,
+  FolderCopyRounded,
   GroupAddRounded,
   HelpRounded,
   LightModeRounded,
@@ -49,6 +50,10 @@ const LeftHeaderDropdownMenu: FC<OwnProps & StateProps> = () => {
       <MenuRounded />
     </IconButton>
   );
+
+  const handleArchiveClick = useStableCallback(() => {
+    setScreen(LeftColumnScreenType.Archived);
+  });
 
   const handleSettingClick = useStableCallback(() => {
     setScreen(LeftColumnScreenType.SettingsNavigation);
@@ -124,6 +129,12 @@ const LeftHeaderDropdownMenu: FC<OwnProps & StateProps> = () => {
         <MenuSeparator size="thick" />
 
         <small className={s.ActionsTitle}>Collection</small>
+        <ActionButton
+          className="btn-menu-item"
+          icon={<FolderCopyRounded />}
+          label="Архив"
+          onClick={handleArchiveClick}
+        />
         <ActionButton
           className="btn-menu-item"
           icon={<FavoriteIcon />}

@@ -25,7 +25,6 @@ const screens = {
   chat: ChatList,
 };
 
-// Вынесем варианты анимации для упрощения кода
 const fadeVariants = {
   initial: { opacity: 0 },
   animate: { opacity: 1 },
@@ -34,14 +33,12 @@ const fadeVariants = {
 
 const MainScreen: FC<OwnProps> = ({ className }) => {
   const [content, setContent] = useState<ScreenType>("chat");
-  const { isButtonVisible, handleMouseEnter, handleMouseLeave } =
-    useFloatingButton(false);
+  // const { isButtonVisible, handleMouseEnter, handleMouseLeave } =
+  //   useFloatingButton(false);
 
-  // Используем useCallback для оптимизации переключения состояний
   const switchToChat = useCallback(() => setContent("chat"), []);
   const switchToSearch = useStableCallback(() => setContent("search"));
 
-  // Мемоизированное условное рендеринг кнопки "назад"
   const renderBackButton = useMemo(() => {
     return content === "search" ? (
       <IconButton size="medium" onClick={switchToChat}>
@@ -54,27 +51,11 @@ const MainScreen: FC<OwnProps> = ({ className }) => {
 
   const CurrentScreen = screens[content];
 
-  const actions: IFloatingAction[] = useMemo(
-    () => [
-      {
-        icon: <>•</>,
-        label: "Edit",
-        onClick: () => alert("Edit action clicked!"),
-      },
-      {
-        icon: <>•</>,
-        label: "Delete",
-        onClick: () => alert("Delete action clicked!"),
-      },
-    ],
-    [],
-  );
-
   return (
     <div
       className={s.LeftMainBody}
-      onMouseEnter={handleMouseEnter}
-      onMouseLeave={handleMouseLeave}
+      // onMouseEnter={handleMouseEnter}
+      // onMouseLeave={handleMouseLeave}
     >
       <section className={s.LeftMainHeader}>
         {renderBackButton}
@@ -94,19 +75,6 @@ const MainScreen: FC<OwnProps> = ({ className }) => {
           <CurrentScreen />
         </motion.div>
       </AnimatePresence>
-
-      <FloatingActionButton
-        actions={actions}
-        className={buildClassName(
-          s.ChatListFab,
-          isButtonVisible && s.FabVisible,
-        )}
-        icon={<EditRounded />}
-        isButtonVisible={isButtonVisible}
-        position="bottom-right"
-        size="large"
-        transformOrigin={10}
-      />
     </div>
   );
 };

@@ -1,15 +1,14 @@
-import { FC, lazy, memo, Suspense, useEffect } from "react";
+import { FC, lazy, memo, Suspense } from "react";
 import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import buildClassName from "@/shared/lib/buildClassName";
 import useChatStore from "../../store/useChatSelector";
 import { LeftColumnScreenType } from "../../types/LeftColumn";
 import s from "./LeftColumn.module.scss";
 import { usePrevious } from "@/shared/hooks/base";
-import { useSwipeable } from "@/lib/hooks/events/useSwipeable";
+import ArchivedScreen from "./screens/ArchivedScreen";
+import ContactsScreen from "./screens/ContactsScreen";
+import MainScreen from "./screens/MainScreen";
 
-const MainScreen = lazy(() => import("./screens/MainScreen"));
-const ArchivedScreen = lazy(() => import("./screens/ArchivedScreen"));
-const ContactsScreen = lazy(() => import("./screens/ContactsScreen"));
 const SettingsNavigation = lazy(
   () => import("./screens/settings/SettingsNavigation"),
 );
@@ -54,7 +53,7 @@ const skeletons = {
 const screenVariants = {
   initial: (direction: boolean) => ({
     opacity: 0,
-    x: direction ? 0 : -100,
+    x: direction ? "100%" : "-100%",
   }),
   animate: {
     opacity: 1,
@@ -62,7 +61,7 @@ const screenVariants = {
   },
   exit: (direction: boolean) => ({
     opacity: 0,
-    x: direction ? 0 : -100,
+    x: direction ? "100%" : "-100%",
   }),
 };
 
@@ -80,22 +79,6 @@ const LeftColumn: FC<OwnProps> = ({ className }) => {
   const ScreenComponent = screens[currentScreen];
   const Fallback = skeletons.default;
 
-  useEffect(() => {
-    if (currentScreen === LeftColumnScreenType.SettingsNavigation) {
-      import("./screens/settings/AccountSetting");
-    }
-  }, [currentScreen]);
-
-  const handlers = useSwipeable({
-    onSwipedLeft: () => {
-      console.log("left");
-    },
-    onSwipedRight: () => {
-      console.log("right");
-    },
-    delta: 10, // Minimum distance for swipe to register
-  });
-
   return (
     <AnimatePresence initial={false} mode="popLayout">
       {ScreenComponent && (
@@ -108,7 +91,7 @@ const LeftColumn: FC<OwnProps> = ({ className }) => {
           initial="initial"
           animate="animate"
           exit="exit"
-          custom={prevScreen! < currentScreen}
+          custom={(prevScreen || 0) < currentScreen}
           transition={
             shouldReduceMotion ? { duration: 0 } : { duration: 0.125 }
           }
