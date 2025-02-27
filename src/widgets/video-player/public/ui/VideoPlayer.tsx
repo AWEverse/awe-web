@@ -5,6 +5,7 @@ import {
   EKeyboardKey,
   EMouseButton,
   IS_TOUCH_ENV,
+  isBetween,
   pauseMedia,
   playMedia,
 } from "@/lib/core";
@@ -15,7 +16,6 @@ import useControlsSignal from "../../private/hooks/useControlsSignal";
 import stopEvent from "@/lib/utils/stopEvent";
 import useAmbilight from "../../private/hooks/useAmbilight";
 import {
-  ObserveFn,
   useIsIntersecting,
   useOnIntersect,
 } from "@/shared/hooks/DOM/useIntersectionObserver";
@@ -27,7 +27,7 @@ import usePictureInPicture from "../../private/hooks/usePictureInPicture";
 import buildClassName from "@/shared/lib/buildClassName";
 import useStateSignal from "@/lib/hooks/signals/useStateSignal";
 import { DEBUG } from "@/lib/config/dev";
-import { useBooleanState } from "@/shared/hooks/state";
+import { useBooleanState, useTriggerReRender } from "@/shared/hooks/state";
 import parseMediaSources from "../../private/lib/source/parseMediaSources";
 import { useFastClick } from "@/shared/hooks/mouse/useFastClick";
 import { useContextMenuHandlers } from "@/entities/context-menu";
@@ -35,8 +35,8 @@ import { useVideoBuffering } from "../../private/hooks/useVideoBuffering";
 import { useVideoPlayback } from "../../private/hooks/useVideoPlayback";
 import { noop } from "@/lib/utils/listener";
 import { useTimeLine } from "../../private/hooks/useTimeLine";
-import { useTouchControls } from "../../private/hooks/useTouchControls";
 import VideoPlayerContextMenu from "../../private/ui/VideoPlayerContextMenu";
+import { useScrollProvider } from "@/shared/context";
 
 const TopPannel = lazy(() => import("../../private/ui/mobile/TopPannel"));
 
@@ -59,9 +59,6 @@ type OwnProps = {
   posterDimensions?: ApiDimensions;
   posterSource?: string;
   allowFullscreen?: boolean;
-  observeIntersectionForBottom?: ObserveFn;
-  observeIntersectionForLoading?: ObserveFn;
-  observeIntersectionForPlaying?: ObserveFn;
   onAdsClick?: (triggeredFromMedia?: boolean) => void;
 };
 
@@ -77,15 +74,34 @@ const VideoPlayer: React.FC<OwnProps> = ({
   isAudioMuted,
   totalFileSize,
   onAdsClick,
-  observeIntersectionForBottom,
-  observeIntersectionForLoading,
-  observeIntersectionForPlaying,
 }) => {
   const { isMobile } = useAppLayout();
+
   const containerRef = useRef<HTMLDivElement>(null);
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const bottomRef = useRef<HTMLDivElement>(null);
+  const readingRef = useRef<HTMLDivElement>(null);
+
+  const [reflows, forceReflow] = useTriggerReRender();
+
+  const {
+    observeIntersectionForReading,
+    observeIntersectionForLoading,
+    observeIntersectionForPlaying,
+  } = useScrollProvider();
+
+  const getVideoElement = useStableCallback(() => {
+    const videoElement = videoRef?.current;
+
+    if (!videoElement) {
+      if (reflows > 3) {
+        throw new Error("Video element doesn't exist!");
+      }
+      forceReflow();
+    }
+
+    return videoElement!;
+  });
 
   const [isAmbient, markAmbientOn, markAmbientOff] = useBooleanState(true);
 
@@ -239,18 +255,35 @@ const VideoPlayer: React.FC<OwnProps> = ({
     },
   );
 
-  // const isIntersectingForLoading = useIsIntersecting(
-  // 	containerRef,
-  // 	observeIntersectionForLoading,
-  // );
+  const isIntersectingForLoading = useIsIntersecting(
+    containerRef,
+    observeIntersectionForLoading,
+    (entry) => {
+      const videoEl = getVideoElement();
 
-  // const isIntersectingForPlaying =
-  // 	useIsIntersecting(containerRef, observeIntersectionForPlaying) &&
-  // 	isIntersectingForLoading;
+      if (isBetween(entry.intersectionRatio, 0.9, 1.0)) {
+        playMedia(videoEl).then(() => {
+          console.log("Paused cause intercepting");
+        });
+      } else {
+        pauseMedia(videoEl);
+      }
+    },
+  );
 
-  // useOnIntersect(bottomRef, observeIntersectionForBottom, () => {
-  // 	// some logic when bottom is intersection
-  // });
+  const isIntersectingForPlaying =
+    useIsIntersecting(containerRef, observeIntersectionForPlaying) &&
+    isIntersectingForLoading;
+
+  useOnIntersect(readingRef, observeIntersectionForReading, (entry) => {
+    const videoEl = getVideoElement();
+
+    if (entry.isIntersecting && !videoEl.paused) {
+      playMedia(videoEl);
+    } else {
+      pauseMedia(videoEl);
+    }
+  });
 
   return (
     <>
@@ -323,7 +356,7 @@ const VideoPlayer: React.FC<OwnProps> = ({
         <AmbientLight canvasRef={canvasRef} disabled={isAmbilightDisabled} />
 
         <div
-          ref={bottomRef}
+          ref={readingRef}
           className="VideoPlayerBottom"
           aria-label="Video Player Bottom"
         />

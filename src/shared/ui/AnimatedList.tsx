@@ -7,7 +7,7 @@ import React, {
   UIEvent,
 } from "react";
 import { motion, useInView } from "framer-motion";
-import "./AnimatedList.css";
+import "./AnimatedList.scss";
 
 interface AnimatedItemProps {
   children: ReactNode;

@@ -1,4 +1,4 @@
-.VideoPlayer {  
+.VideoPlayer {
   --video-radius: 0.5rem;
   --video-bg-color: var(--color-black, #000);
   --cinematic-blur: 2.5rem;
@@ -7,13 +7,13 @@
   --controls-z-index: 15;
   --light-z-index: -1;
   --max-player-height: calc(100dvh - 8.25rem);
-  
+
   position: relative;
   max-height: var(--max-player-height);
   border-radius: var(--video-radius);
   z-index: var(--player-z-index);
   background: var(--video-bg-color);
-  
+
   @media (max-height: 640px) {
     max-height: min(100dvh, var(--max-player-height));
   }
@@ -22,7 +22,7 @@
 .FullscreenMode {
   --video-radius: 0;
   --max-player-height: 100dvh;
-  
+
   .Video {
     border-radius: 0;
   }
@@ -43,7 +43,7 @@
   background: var(--video-bg-color) no-repeat 50% / contain;
   border-radius: inherit;
   outline: none;
-  transform: translateZ(0); 
+  transform: translateZ(0);
   backface-visibility: hidden;
   touch-action: manipulation;
   user-select: none;
@@ -72,7 +72,7 @@
 
 .CinematicLight {
   --scale-factor: 1.125;
-  
+
   position: absolute;
   pointer-events: none;
   top: 50%;
@@ -80,7 +80,7 @@
   z-index: var(--light-z-index);
   width: 100%;
   height: 100%;
-  transform: 
+  transform:
     translate(-50%, -50%)
     scale(var(--scale-factor));
   filter: blur(var(--cinematic-blur));
@@ -92,14 +92,14 @@
   backface-visibility: hidden;
 
   @media (max-width: 648px) {
-    transform: 
+    transform:
     translate(-50%, -50%)
     scaleX(var(--scale-factor)) scaleY(1.75);
   }
 
   // Hardware accelerated fallback
   @supports not (translate: 0) {
-    transform: 
+    transform:
       translate(-50%, -50%)
       scale(var(--scale-factor));
   }
@@ -115,7 +115,7 @@
   .Video {
     will-change: transform, opacity;
   }
-  
+
   .CinematicLight {
     animation: cinematic-pulse 8s ease-in-out infinite;
   }
@@ -124,4 +124,10 @@
 @keyframes cinematic-pulse {
   0%, 100% { opacity: var(--cinematic-opacity); }
   50% { opacity: calc(var(--cinematic-opacity) * 0.9); }
+}
+
+.VideoPlayerBottom {
+  height: 1px;
+  width: 1px;
+  visibility: hidden;
 }
