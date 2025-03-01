@@ -71,7 +71,7 @@ const runUpdatePass = throttleWithRafFallback(async () => {
  * requestMeasure(() => console.log("Element width:", element.offsetWidth));
  */
 export function requestMeasure(fn: TaskFunction) {
-  if (!measureTasks.has(fn)) {
+  if (fn && !measureTasks.has(fn)) {
     measureTasks.add(fn);
     runUpdatePass();
   }
@@ -83,7 +83,7 @@ export function requestMeasure(fn: TaskFunction) {
  * requestMutation(() => element.style.color = "red");
  */
 export function requestMutation(fn: TaskFunction) {
-  if (!mutationTasks.has(fn)) {
+  if (fn && !mutationTasks.has(fn)) {
     mutationTasks.add(fn);
     runUpdatePass();
   }

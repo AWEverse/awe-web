@@ -1,16 +1,18 @@
-import { FC, MouseEvent, ReactNode, ButtonHTMLAttributes } from 'react';
-import s from './IconButton.module.scss';
-import buildClassName from '../lib/buildClassName';
-import RippleEffect from './ripple-effect';
+import { FC, MouseEvent, ReactNode, ButtonHTMLAttributes, memo } from "react";
+import s from "./IconButton.module.scss";
+import buildClassName from "../lib/buildClassName";
+import RippleEffect from "./ripple-effect";
 
 interface OwnSharedProps {
-  variant?: 'outlined' | 'plain';
-  size?: 'small' | 'medium' | 'large' | 'bigger' | 'jumbo';
+  variant?: "outlined" | "plain";
+  size?: "small" | "medium" | "large" | "bigger" | "jumbo";
 }
 
 interface OwnProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   children: ReactNode;
-  onClick?: ((event: MouseEvent<HTMLButtonElement>) => void) | NoneToVoidFunction;
+  onClick?:
+    | ((event: MouseEvent<HTMLButtonElement>) => void)
+    | NoneToVoidFunction;
   title?: string;
   active?: boolean;
   disabled?: boolean;
@@ -24,8 +26,8 @@ const IconButton: FC<OwnProps & OwnSharedProps> = ({
   active = false,
   disabled = false,
   className,
-  variant = 'plain',
-  size = 'medium',
+  variant = "plain",
+  size = "medium",
   ...buttonProps
 }) => {
   const buttonClassName = buildClassName(
@@ -52,5 +54,6 @@ const IconButton: FC<OwnProps & OwnSharedProps> = ({
   );
 };
 
+export const IconButtonMemo = memo(IconButton);
 export default IconButton;
 export type { OwnSharedProps as IconButtonSharedProps };

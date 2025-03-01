@@ -2,7 +2,6 @@ import { useEffect, useState } from "react";
 import {
   playMedia,
   pauseMedia,
-  clamp,
   clamp01,
   setMediaPlayBackRate,
 } from "@/lib/core";
@@ -26,31 +25,54 @@ export const useVideoPlayback = (
       setIsMuted(video.muted);
     };
 
-    const handleRateChange = () => setPlaybackRate(video.playbackRate);
+    const handleRateChange = () => {
+      setPlaybackRate(video.playbackRate);
+    };
+
+    const handlePlayEvent = () => {
+      setIsPlaying(true);
+    };
+
+    const handlePauseEvent = () => {
+      setIsPlaying(false);
+    };
 
     video.addEventListener("volumechange", handleVolumeChange);
     video.addEventListener("ratechange", handleRateChange);
+    video.addEventListener("play", handlePlayEvent);
+    video.addEventListener("pause", handlePauseEvent);
+
+    handleVolumeChange();
+    handleRateChange();
+    setIsPlaying(!video.paused);
 
     return () => {
       video.removeEventListener("volumechange", handleVolumeChange);
       video.removeEventListener("ratechange", handleRateChange);
+      video.removeEventListener("play", handlePlayEvent);
+      video.removeEventListener("pause", handlePauseEvent);
     };
-  }, [videoRef]);
+  }, [videoRef, setVolume, setPlaybackRate]);
 
-  const handlePlay = useStableCallback(() => setIsPlaying(true));
-  const handlePause = useStableCallback(() => setIsPlaying(false));
+  const handlePlay = useStableCallback(() => {
+    setIsPlaying(true);
+  });
+
+  const handlePause = useStableCallback(() => {
+    setIsPlaying(false);
+  });
 
   const togglePlayState = useStableCallback(async () => {
     const video = videoRef.current;
     if (!video) return;
-
     try {
-      if (isPlaying) {
-        pauseMedia(video);
-      } else {
+      if (video.paused) {
         await playMedia(video);
+      } else {
+        pauseMedia(video);
       }
     } catch (error) {
+      console.error("Error toggling playback:", error);
       setIsPlaying(false);
     }
   });
@@ -60,8 +82,7 @@ export const useVideoPlayback = (
     if (!video) return;
 
     const newVolume = clamp01(value);
-
-    video.muted = false;
+    if (video.muted) video.muted = false;
     video.volume = newVolume;
 
     setVolume(newVolume);
@@ -78,7 +99,6 @@ export const useVideoPlayback = (
   const handlePlaybackRateChange = useStableCallback((value: number) => {
     const video = videoRef.current;
     if (!video) return;
-
     setMediaPlayBackRate(video, value, 1);
   });
 

@@ -37,6 +37,8 @@ import { noop } from "@/lib/utils/listener";
 import { useTimeLine } from "../../private/hooks/useTimeLine";
 import VideoPlayerContextMenu from "../../private/ui/VideoPlayerContextMenu";
 import { useScrollProvider } from "@/shared/context";
+import useKeyHandler from "../../private/hooks/useKeyHandler";
+import { useThrottledFunction } from "@/shared/hooks/shedulers";
 
 const TopPannel = lazy(() => import("../../private/ui/mobile/TopPannel"));
 
@@ -73,6 +75,7 @@ const VideoPlayer: React.FC<OwnProps> = ({
   isGif,
   isAudioMuted,
   totalFileSize,
+  posterSource,
   onAdsClick,
 }) => {
   const { isMobile } = useAppLayout();
@@ -189,44 +192,22 @@ const VideoPlayer: React.FC<OwnProps> = ({
     if (mediaUrl && !IS_TOUCH_ENV) initializePlayback();
   }, [mediaUrl, isUnsupported]);
 
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      e.preventDefault();
-
-      const video = videoRef.current!;
-      const key = e.key || e.code;
-
-      console.log(e.key);
-
-      switch (key) {
-        case EKeyboardKey.Space:
-        case EKeyboardKey.Enter:
-          togglePlayState();
-          break;
-        case EKeyboardKey.ArrowLeft:
-          handleSeek(clamp(video.currentTime - REWIND_STEP, 0, duration));
-          break;
-        case EKeyboardKey.ArrowRight:
-          handleSeek(clamp(video.currentTime + REWIND_STEP, 0, duration));
-          break;
-        case EKeyboardKey.ArrowUp:
-        case EKeyboardKey.ArrowDown:
-          handleVolumeChange(
-            clamp01(volume.value + (key === EKeyboardKey.ArrowUp ? 0.1 : -0.1)),
-          );
-          break;
-        case EKeyboardKey.M:
-          handleMuteClick();
-          break;
-        case EKeyboardKey.F:
-          toggleFullscreen?.();
-          break;
-      }
-    };
-
-    document.addEventListener("keydown", handleKeyDown);
-    return () => document.removeEventListener("keydown", handleKeyDown);
-  }, [volume, duration, isPlaying]);
+  useKeyHandler({
+    Space: () => togglePlayState(),
+    Enter: () => togglePlayState(),
+    ArrowLeft: () => {
+      const video = getVideoElement();
+      handleSeek(clamp(video.currentTime - REWIND_STEP, 0, duration));
+    },
+    ArrowRight: () => {
+      const video = getVideoElement();
+      handleSeek(clamp(video.currentTime + REWIND_STEP, 0, duration));
+    },
+    ArrowUp: () => handleVolumeChange(clamp01(volume.value + 0.1)),
+    ArrowDown: () => handleVolumeChange(clamp01(volume.value - 0.1)),
+    KeyM: () => handleMuteClick(),
+    KeyF: () => toggleFullscreen?.(),
+  });
 
   const handleVideoEnter = useStableCallback(() => toggleControls(true));
   const handleVideoLeave = useStableCallback(() => toggleControls(!isPlaying));
@@ -243,7 +224,13 @@ const VideoPlayer: React.FC<OwnProps> = ({
     handleBeforeContextMenu,
     handleContextMenu,
     handleContextMenuClose,
-  } = useContextMenuHandlers(containerRef, false, false, false);
+  } = useContextMenuHandlers({
+    elementRef: containerRef,
+    isMenuDisabled: false,
+    shouldDisableOnLink: true,
+    shouldDisableOnLongTap: false,
+    shouldDisablePropagation: true,
+  });
 
   const { handleClick, handleMouseDown } = useFastClick(
     (e: React.MouseEvent<HTMLDivElement>) => {
@@ -264,9 +251,7 @@ const VideoPlayer: React.FC<OwnProps> = ({
       const videoEl = getVideoElement();
 
       if (isBetween(entry.intersectionRatio, 0.9, 1.0)) {
-        playMedia(videoEl).then(() => {
-          console.log("Paused cause intercepting");
-        });
+        playMedia(videoEl);
       } else {
         pauseMedia(videoEl);
       }
@@ -298,7 +283,6 @@ const VideoPlayer: React.FC<OwnProps> = ({
         ref={containerRef}
         onClick={handleClick}
         onMouseDown={handleMouseDown}
-        onContextMenu={handleContextMenu}
         onMouseMove={!isMobile ? handleVideoMove : undefined}
         onMouseOut={!isMobile ? handleVideoLeave : undefined}
         onMouseOver={!isMobile ? handleVideoEnter : undefined}
@@ -307,23 +291,35 @@ const VideoPlayer: React.FC<OwnProps> = ({
 
         <video
           id="media-viewer-video"
+          title="High-Quality 1080p Video Player"
+          poster={
+            posterSource ||
+            "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSxzXOOafoY2e2DZ3UKpAQ2Gz6S6bOCeab5Dg&s"
+          }
           ref={videoRef}
           className={buildClassName("Video", IS_TOUCH_ENV && "is-touch-env")}
           controls={false}
           controlsList="nodownload"
           playsInline
           muted={isGif || isAudioMuted}
+          aria-label="Video player"
+          aria-describedby="video-description"
+          aria-hidden={false}
+          role="video"
+          preload="metadata"
+          crossOrigin="anonymous"
+          autoPlay={false}
           {...handlersBuffering}
           onWaiting={() => setWaiting(true)}
-          onContextMenu={stopEvent}
+          onContextMenu={handleContextMenu}
           onEnded={handleEnded}
           onClick={!isMobile ? handleVideoClick : undefined}
           onDoubleClick={!IS_TOUCH_ENV ? toggleFullscreen : undefined}
           onTimeUpdate={handleTimeUpdate}
-          onPlay={handlePlay}
-          onPause={handlePause}
         >
-          {parseMediaSources(mediaUrl)}
+          {parseMediaSources({
+            src: mediaUrl,
+          })}
         </video>
 
         <VideoPlayerControls
@@ -356,6 +352,18 @@ const VideoPlayer: React.FC<OwnProps> = ({
         />
 
         <AmbientLight canvasRef={canvasRef} disabled={isAmbilightDisabled} />
+
+        <p id="video-description" className="sr-only">
+          Official trailer for Interstellar, a cinematic journey through space
+          and time, showcasing high-quality 1080p visuals. This video features
+          groundbreaking visuals and immersive sound design from Christopher
+          Nolan's acclaimed sci-fi epic. Interstellar explores themes of space
+          exploration, time dilation, and human survival, setting new standards
+          in modern filmmaking. Discover award-winning production values,
+          innovative storytelling, and a visionary approach that redefines the
+          genre. Experience the allure of one of the most influential films in
+          science fiction history.
+        </p>
 
         <div
           ref={readingRef}

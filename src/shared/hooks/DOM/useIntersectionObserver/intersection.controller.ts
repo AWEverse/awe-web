@@ -7,28 +7,32 @@ export type NoneToVoidFunction = () => void;
 
 interface IIntersectionController {
   observer: IntersectionObserver;
+  observe: (element: Element, callback: TargetCallback) => void;
+  unobserve: (element: Element) => void;
   addCallback: (element: Element, callback: TargetCallback) => void;
   removeCallback: (element: Element, callback: TargetCallback) => void;
+  flushEntries: NoneToVoidFunction;
   destroy: NoneToVoidFunction;
+  freeze: NoneToVoidFunction;
+  unfreeze: NoneToVoidFunction;
 }
 
 /**
- * A class that encapsulates the IntersectionObserver logic, including:
- * - Observing multiple elements and running per-element callbacks.
- * - Throttling or debouncing the callback (if needed).
- * - Support for freezing/unfreezing observer updates.
+ * A class that encapsulates IntersectionObserver logic for:
+ * - Observing multiple elements with per-element callbacks.
+ * - Optional throttling or debouncing of callbacks.
+ * - Freezing/unfreezing observer updates with configurable entry discarding.
+ * - Efficient resource management and browser-native performance.
  */
 export class IntersectionController implements IIntersectionController, IDisposable {
   public observer: IntersectionObserver;
 
-  // Use WeakMap so that DOM elements (keys) can be garbage-collected when removed.
   private callbacks: WeakMap<Element, CallbackManager<TargetCallback>> = new WeakMap();
-  // Retain a Map for entries since we need to iterate its values.
   private entriesAccumulator: Map<Element, IntersectionObserverEntry> = new Map();
-
   private freezeCount = 0;
   private onUnfreeze: NoneToVoidFunction | undefined;
-  private observerCallback: () => void;
+  private observerCallback: NoneToVoidFunction;
+  private discardWhileFrozen: boolean;
 
   constructor(options: {
     root: Element | null;
@@ -38,6 +42,7 @@ export class IntersectionController implements IIntersectionController, IDisposa
     throttleScheduler?: Scheduler;
     debounceMs?: number;
     shouldSkipFirst?: boolean;
+    discardWhileFrozen?: boolean;
     rootCallback?: RootCallback;
   }) {
     const {
@@ -47,26 +52,26 @@ export class IntersectionController implements IIntersectionController, IDisposa
       throttleMs,
       throttleScheduler,
       debounceMs,
-      shouldSkipFirst,
+      shouldSkipFirst = false,
+      discardWhileFrozen = false,
       rootCallback,
     } = options;
 
-    const observerCallbackSync = () => {
+    this.discardWhileFrozen = discardWhileFrozen;
+
+    const observerCallbackSync = (entries: IntersectionObserverEntry[]) => {
       if (this.freezeCount > 0) {
-        this.onUnfreeze = this.observerCallback;
+        this.onUnfreeze = () => observerCallbackSync(entries);
         return;
       }
 
-      // Instead of creating an intermediate array with Array.from,
-      // we can iterate directly over the map and collect entries.
-      const entries: IntersectionObserverEntry[] = [];
-      this.entriesAccumulator.forEach((entry) => {
-        entries.push(entry);
+      // Process each entry directly from the observer's batch
+      for (const entry of entries) {
         const callbackManager = this.callbacks.get(entry.target);
         if (callbackManager) {
           callbackManager.runCallbacks(entry);
         }
-      });
+      }
 
       if (rootCallback) {
         rootCallback(entries);
@@ -75,14 +80,26 @@ export class IntersectionController implements IIntersectionController, IDisposa
       this.entriesAccumulator.clear();
     };
 
+    // Wrap callback with throttle/debounce if specified
     if (typeof throttleScheduler === "function") {
-      this.observerCallback = throttleWith(throttleScheduler, observerCallbackSync);
+      this.observerCallback = throttleWith(throttleScheduler, () =>
+        observerCallbackSync([...this.entriesAccumulator.values()])
+      );
     } else if (throttleMs) {
-      this.observerCallback = throttle(observerCallbackSync, throttleMs, !shouldSkipFirst);
+      this.observerCallback = throttle(
+        () => observerCallbackSync([...this.entriesAccumulator.values()]),
+        throttleMs,
+        !shouldSkipFirst
+      );
     } else if (debounceMs) {
-      this.observerCallback = debounce(observerCallbackSync, debounceMs, !shouldSkipFirst);
+      this.observerCallback = debounce(
+        () => observerCallbackSync([...this.entriesAccumulator.values()]),
+        debounceMs,
+        !shouldSkipFirst
+      );
     } else {
-      this.observerCallback = observerCallbackSync;
+      this.observerCallback = () =>
+        observerCallbackSync([...this.entriesAccumulator.values()]);
     }
 
     this.observer = new IntersectionObserver(
@@ -90,12 +107,7 @@ export class IntersectionController implements IIntersectionController, IDisposa
         for (const entry of entries) {
           this.entriesAccumulator.set(entry.target, entry);
         }
-
-        if (this.freezeCount > 0) {
-          this.onUnfreeze = this.observerCallback;
-        } else {
-          this.observerCallback();
-        }
+        this.observerCallback();
       },
       {
         root,
@@ -106,13 +118,40 @@ export class IntersectionController implements IIntersectionController, IDisposa
   }
 
   /**
-   * Registers a callback for a specific element.
-   * The callback will be executed whenever that element's intersection changes.
-   *
+   * Starts observing an element and registers a callback for its intersection changes.
    * @param element The DOM element to observe.
-   * @param callback The function to call with the intersection entry.
+   * @param callback The callback to execute when the element's intersection changes.
+   */
+  observe(element: Element, callback: TargetCallback): void {
+    if (!(element instanceof Element)) {
+      throw new Error("Invalid element provided to observe.");
+    }
+    if (!this.callbacks.has(element)) {
+      this.callbacks.set(element, createCallbackManager<TargetCallback>());
+      this.observer.observe(element);
+    }
+    this.addCallback(element, callback);
+  }
+
+  /**
+   * Stops observing an element and removes all its callbacks.
+   * @param element The DOM element to unobserve.
+   */
+  unobserve(element: Element): void {
+    this.observer.unobserve(element);
+    this.callbacks.delete(element);
+    this.entriesAccumulator.delete(element);
+  }
+
+  /**
+   * Adds a callback for an already-observed element.
+   * @param element The DOM element to add a callback for.
+   * @param callback The callback to execute when the element's intersection changes.
    */
   addCallback(element: Element, callback: TargetCallback): void {
+    if (!(element instanceof Element)) {
+      throw new Error("Invalid element provided to addCallback.");
+    }
     if (!this.callbacks.has(element)) {
       this.callbacks.set(element, createCallbackManager<TargetCallback>());
     }
@@ -121,8 +160,8 @@ export class IntersectionController implements IIntersectionController, IDisposa
   }
 
   /**
-   * Removes a previously registered callback for the specified element.
-   *
+   * Removes a callback from an element's callback list.
+   * Unobserves the element if no callbacks remain.
    * @param element The DOM element whose callback should be removed.
    * @param callback The callback to remove.
    */
@@ -130,34 +169,43 @@ export class IntersectionController implements IIntersectionController, IDisposa
     const callbackManager = this.callbacks.get(element);
     if (!callbackManager) return;
     callbackManager.removeCallback(callback);
-    // The WeakMap automatically cleans up when the element is unreachable,
-    // so an explicit deletion isn’t strictly necessary.
+    if (!callbackManager.hasCallbacks()) {
+      this.unobserve(element);
+    }
   }
 
   /**
-   * Disconnects the observer and clears all callbacks.
+   * Manually processes all accumulated entries.
+   */
+  flushEntries(): void {
+    this.observerCallback();
+  }
+
+  /**
+   * Disconnects the observer and clears all resources.
    */
   destroy(): void {
     this.entriesAccumulator.clear();
+    this.callbacks = new WeakMap(); // Reset for clarity, though not strictly needed
     this.observer.disconnect();
   }
 
   /**
-   * Freezes the processing of observer callbacks.
-   * Useful for temporarily suspending updates (e.g. during heavy animations).
+   * Freezes callback processing. Optionally discards accumulated entries.
    */
   freeze(): void {
     this.freezeCount++;
+    if (this.discardWhileFrozen && this.freezeCount === 1) {
+      this.entriesAccumulator.clear();
+    }
   }
 
   /**
-   * Unfreezes the processing of observer callbacks.
-   * If a callback was scheduled while frozen, it will be executed now.
+   * Unfreezes callback processing and executes any pending callbacks if fully unfrozen.
    */
   unfreeze(): void {
     if (this.freezeCount <= 0) return;
     this.freezeCount--;
-
     if (this.freezeCount === 0 && this.onUnfreeze) {
       this.onUnfreeze();
       this.onUnfreeze = undefined;

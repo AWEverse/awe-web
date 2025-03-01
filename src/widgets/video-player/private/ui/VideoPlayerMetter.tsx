@@ -70,8 +70,6 @@ const VideoPlayerMetter: FC<VideoPlayerMetterProps> = ({
     currentTimeSignal,
     (time) => {
       if (progressBar.current) {
-        console.log(time);
-
         progressBar.current.style.transform = calculateXPosition(
           time,
           duration,

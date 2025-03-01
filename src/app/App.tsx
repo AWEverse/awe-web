@@ -6,11 +6,13 @@ import theme from "@/app/providers/theme-provider";
 import { AWERoutesBrowserRouter } from "@/app/providers/router-provider";
 import windowSize from "@/lib/utils/windowSize";
 import { ThemeKey } from "@/shared/themes/config";
-import "@/lib/core/public/templates/linq";
 import { useComponentDidMount } from "@/shared/hooks/effects/useLifecycle";
-import useBodyClass from "@/shared/hooks/DOM/useBodyClass";
+import { useBodyClasses } from "@/shared/hooks/DOM/useBodyClass";
 import { IS_TOUCH_ENV } from "@/lib/core";
 import { usePageVisibility } from "@/lib/hooks/ui/usePageVisibility";
+import usePreventDefaultDragEventsGlobally from "./lib/hooks/usePreventDefaultDragEventsGlobally";
+
+import "@/lib/core/public/templates/linq";
 
 interface StateProps {
   themeKey?: ThemeKey;
@@ -19,13 +21,17 @@ interface StateProps {
 const App: FC<StateProps> = ({ themeKey = "dark" }) => {
   const isPageVisible = usePageVisibility();
 
-  useBodyClass("is-touch-env", IS_TOUCH_ENV);
+  useBodyClasses({
+    "page-visible": isPageVisible,
+    "is-touch-env": IS_TOUCH_ENV,
+    "is-keyboard-active": windowSize.isKeyboardVisible,
+  });
 
   useComponentDidMount(() => {
     windowSize.update();
   });
 
-  useBodyClass("page-visible", isPageVisible);
+  usePreventDefaultDragEventsGlobally();
 
   return (
     <ThemeProvider

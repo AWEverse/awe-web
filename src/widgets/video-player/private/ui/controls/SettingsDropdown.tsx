@@ -57,18 +57,16 @@ const SettingsDropdown: FC<SettingsDropdownProps> = ({
   const exitX = initialX;
 
   return (
-    <DropdownMenu
-      className="w-56 max-h-64 overflow-y-auto"
-      triggerButton={triggerButton}
-      position={position}
-    >
+    <DropdownMenu triggerButton={triggerButton} position={position}>
       <AnimatePresence initial={false} mode="popLayout">
         <motion.div
           key={screen}
           initial={{ x: initialX }}
           animate={{ x: 0 }}
           exit={{ x: exitX }}
-          transition={{ duration: ANIMATION_DURATION }}
+          transition={{
+            duration: ANIMATION_DURATION,
+          }}
         >
           {screenComponentMap[screen]}
         </motion.div>

@@ -19,14 +19,10 @@ const useAmbilight = (
   const getCanvasElement = useCallback(() => canvasRef.current, [canvasRef]);
 
   const stopAmbilightRepaint = useCallback(() => {
-    if (callbackId.current === undefined) {
-      return;
-    }
+    if (callbackId.current === undefined) return;
 
     if (isRVFCSupported.current) {
-      getVideoElement()?.cancelVideoFrameCallback(
-        callbackId.current as number,
-      );
+      getVideoElement()?.cancelVideoFrameCallback(callbackId.current as number);
     } else {
       if (typeof callbackId.current === "number") {
         cancelAnimationFrame(callbackId.current);
@@ -37,36 +33,36 @@ const useAmbilight = (
     callbackId.current = undefined;
   }, [getVideoElement]);
 
-  const updateCanvasDimensionsIfNeeded = useCallback((entry?: ResizeObserverEntry) => {
+  const updateCanvasDimensionsIfNeeded = useCallback(
+    (entry?: ResizeObserverEntry) => {
+      const video = getVideoElement();
+      const canvas = getCanvasElement();
 
-    const video = getVideoElement();
-    const canvas = getCanvasElement();
+      requestMeasure(() => {
+        if (video && canvas) {
+          const entryOrContainer = entry
+            ? entry.contentRect
+            : { width: video.clientWidth, height: video.clientHeight };
 
-    requestMeasure(() => {
-      if (video && canvas) {
-        const { width: _w, height: _h } = entry ? entry.contentRect : {
-          width: video.clientWidth,
-          height: video.clientHeight,
-        };
+          const { width: _w, height: _h } = entryOrContainer;
 
-        const dpr = window.devicePixelRatio || 1;
-        const width = _w * dpr;
-        const height = _h * dpr;
+          const dpr = window.devicePixelRatio || 1;
+          const width = _w * dpr;
+          const height = _h * dpr;
 
-        if (canvas.width !== width || canvas.height !== height) {
-          canvas.width = width;
-          canvas.height = height;
+          if (canvas.width !== width || canvas.height !== height) {
+            canvas.width = width;
+            canvas.height = height;
+          }
         }
-      }
-    });
-  }, [getVideoElement, getCanvasElement]);
+      });
+    },
+    [getVideoElement, getCanvasElement],
+  );
 
   useResizeObserver(videoRef, (entry) => {
     updateCanvasDimensionsIfNeeded(entry);
-
-    if (!getVideoElement()!.paused) {
-      paintFrame();
-    }
+    if (!getVideoElement()?.paused) paintFrame();
   });
 
   const paintFrame = useCallback(
@@ -79,19 +75,15 @@ const useAmbilight = (
           !videoElement ||
           !canvasElement ||
           videoElement.paused ||
-          isDisabled
+          isDisabled ||
+          document.visibilityState === "hidden"
         ) {
           return;
         }
 
         try {
-          const ctx = canvasElement.getContext("2d", {
-            willReadFrequently: false,
-          });
-
-          if (!ctx) {
-            return;
-          }
+          const ctx = canvasElement.getContext("2d");
+          if (!ctx) return;
 
           ctx.clearRect(0, 0, canvasElement.width, canvasElement.height);
           ctx.drawImage(
@@ -107,13 +99,10 @@ const useAmbilight = (
           );
         } catch (error) {
           console.error("Ambilight rendering error:", error);
-          stopAmbilightRepaint();
-          return;
         }
 
         if (isRVFCSupported.current) {
-          callbackId.current =
-            videoElement.requestVideoFrameCallback(paintFrame);
+          callbackId.current = videoElement.requestVideoFrameCallback(paintFrame);
         } else {
           const now = performance.now();
           const elapsed = now - lastPaintRef.current;
@@ -123,7 +112,6 @@ const useAmbilight = (
             callbackId.current = requestAnimationFrame(paintFrame);
           } else {
             const remaining = intervalMs - elapsed;
-
             callbackId.current = setTimeout(() => {
               callbackId.current = requestAnimationFrame(paintFrame);
             }, remaining);
@@ -133,14 +121,7 @@ const useAmbilight = (
       intervalMs,
       true,
     ),
-    [
-      intervalMs,
-      isDisabled,
-      stopAmbilightRepaint,
-      updateCanvasDimensionsIfNeeded,
-      getVideoElement,
-      getCanvasElement,
-    ],
+    [isDisabled, getVideoElement, getCanvasElement],
   );
 
   const startAmbilightRepaint = useCallback(() => {
@@ -148,9 +129,7 @@ const useAmbilight = (
     const videoElement = getVideoElement();
     if (!videoElement) return;
 
-    isRVFCSupported.current =
-      "requestVideoFrameCallback" in HTMLVideoElement.prototype;
-
+    isRVFCSupported.current = "requestVideoFrameCallback" in HTMLVideoElement.prototype;
     updateCanvasDimensionsIfNeeded();
 
     if (isRVFCSupported.current) {
@@ -159,12 +138,7 @@ const useAmbilight = (
       lastPaintRef.current = performance.now();
       callbackId.current = requestAnimationFrame(paintFrame);
     }
-  }, [
-    stopAmbilightRepaint,
-    getVideoElement,
-    paintFrame,
-    updateCanvasDimensionsIfNeeded,
-  ]);
+  }, [stopAmbilightRepaint, getVideoElement, paintFrame, updateCanvasDimensionsIfNeeded]);
 
   useEffect(() => {
     if (isDisabled) return;
@@ -182,9 +156,7 @@ const useAmbilight = (
     };
 
     const handleSeeked = () => {
-      if (videoElement.paused) {
-        startAmbilightRepaint();
-      }
+      if (!videoElement.paused) startAmbilightRepaint();
     };
 
     const handleError = () => stopAmbilightRepaint();
@@ -195,9 +167,7 @@ const useAmbilight = (
     videoElement.addEventListener("loadeddata", startAmbilightRepaint);
     videoElement.addEventListener("error", handleError);
 
-    if (!videoElement.paused) {
-      startAmbilightRepaint();
-    }
+    if (!videoElement.paused) startAmbilightRepaint();
 
     return () => {
       stopAmbilightRepaint();
@@ -207,15 +177,7 @@ const useAmbilight = (
       videoElement.removeEventListener("loadeddata", startAmbilightRepaint);
       videoElement.removeEventListener("error", handleError);
     };
-  }, [
-    isDisabled,
-    startAmbilightRepaint,
-    stopAmbilightRepaint,
-    paintFrame,
-    getVideoElement,
-    getCanvasElement,
-    updateCanvasDimensionsIfNeeded,
-  ]);
+  }, [isDisabled, startAmbilightRepaint, stopAmbilightRepaint, getVideoElement, getCanvasElement]);
 
   useEffect(() => {
     if (isDisabled) stopAmbilightRepaint();

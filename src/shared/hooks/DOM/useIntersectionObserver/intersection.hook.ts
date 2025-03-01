@@ -11,6 +11,7 @@ import { Scheduler } from "@/lib/core";
 import { TargetCallback, ObserveFn } from ".";
 import useHeavyAnimationCheck from "@/lib/hooks/sensors/useHeavyAnimationCheck";
 
+// Props for configuring the Intersection Observer
 interface IntersectionProps {
   rootRef: RefObject<Element | null>;
   throttleMs?: number;
@@ -24,10 +25,14 @@ interface IntersectionProps {
 
 interface IntersectionResponse {
   observe: ObserveFn;
-  freeze: NoneToVoidFunction;
-  unfreeze: NoneToVoidFunction;
+  freeze: () => void;
+  unfreeze: () => void;
 }
 
+/**
+ * Hook to manage Intersection Observer instances.
+ * Returns functions to observe elements, freeze, and unfreeze the observer.
+ */
 export function useIntersectionObserver(
   {
     rootRef,
@@ -44,33 +49,45 @@ export function useIntersectionObserver(
   const controllerRef = useRef<IntersectionController | null>(null);
 
   useEffect(() => {
-    if (isDisabled) return;
+    if (isDisabled) {
+      controllerRef.current?.destroy();
+      controllerRef.current = null;
+      return;
+    }
+
+    const root = rootRef.current;
+    controllerRef.current = new IntersectionController({
+      root,
+      margin,
+      threshold,
+      throttleMs,
+      throttleScheduler,
+      debounceMs,
+      shouldSkipFirst,
+      rootCallback,
+    });
 
     return () => {
       controllerRef.current?.destroy();
       controllerRef.current = null;
     };
-  }, [isDisabled]);
+  }, [
+    rootRef,
+    margin,
+    threshold,
+    throttleMs,
+    throttleScheduler,
+    debounceMs,
+    shouldSkipFirst,
+    rootCallback,
+    isDisabled,
+  ]);
 
-  // The observe function adds an element to the IntersectionObserver and
-  // optionally registers a target-specific callback.
   const observe = useStableCallback(
-    (target: Element, targetCallback?: TargetCallback): NoneToVoidFunction => {
-      const root = rootRef.current;
+    (target: Element, targetCallback?: TargetCallback): (() => void) => {
+      if (isDisabled || !controllerRef.current) return () => { };
 
-      controllerRef.current = new IntersectionController({
-        root,
-        margin,
-        threshold,
-        throttleMs,
-        throttleScheduler,
-        debounceMs,
-        shouldSkipFirst,
-        rootCallback,
-      });
-
-      const controller = controllerRef.current!;
-
+      const controller = controllerRef.current;
       controller.observer.observe(target);
 
       if (targetCallback) {
@@ -81,47 +98,41 @@ export function useIntersectionObserver(
         if (targetCallback) {
           controller.removeCallback(target, targetCallback);
         }
-
         controller.observer.unobserve(target);
       };
     },
   );
 
-  const freeze = useStableCallback(controllerRef.current?.freeze);
-  const unfreeze = useStableCallback(controllerRef.current?.unfreeze);
+  const freeze = useStableCallback(() => controllerRef.current?.freeze());
+  const unfreeze = useStableCallback(() => controllerRef.current?.unfreeze());
 
   useHeavyAnimationCheck(freeze, unfreeze);
 
-  return {
-    observe,
-    freeze,
-    unfreeze,
-  };
+  return { observe, freeze, unfreeze };
 }
 
 /**
- * Хук, возвращающий callback‑ref для подписки на изменения пересечения.
- * При монтировании элемента наблюдение начинается, а при размонтировании — автоматически отписывается.
+ * Hook to observe an element's intersection when it mounts.
+ * Automatically unsubscribes on unmount.
  */
 export function useOnIntersect(
   targetRef: RefObject<Element | null>,
   observe?: ObserveFn,
   callback?: TargetCallback,
 ) {
-  const lastCallback = useStableCallback(callback);
+  const stableCallback = useStableCallback(callback);
 
   useEffect(() => {
-    if (targetRef.current && observe) {
-      return observe(targetRef.current, lastCallback);
-    }
-  }, [lastCallback, observe, targetRef]);
+    if (!targetRef.current || !observe) return;
+
+    const unsubscribe = observe(targetRef.current, stableCallback);
+    return unsubscribe;
+  }, [stableCallback, observe, targetRef]);
 }
 
 /**
- * Хук для определения, пересекается ли элемент с областью наблюдения.
- * Возвращает объект, содержащий:
- * - ref: callback‑ref для привязки к элементу;
- * - isIntersecting: булево значение, показывающее, пересекается ли элемент.
+ * Hook to determine if an element is intersecting.
+ * Returns a boolean indicating intersection state.
  */
 export function useIsIntersecting(
   targetRef: RefObject<Element | null>,
@@ -129,7 +140,7 @@ export function useIsIntersecting(
   callback?: TargetCallback,
 ) {
   const intersectionRef = useRef<boolean>(!observe);
-  const lastCallback = useStableCallback(callback);
+  const stableCallback = useStableCallback(callback);
 
   const subscribe = useCallback(
     (notify: () => void) => {
@@ -138,16 +149,16 @@ export function useIsIntersecting(
       const unsubscribe = observe(targetRef.current, (entry) => {
         intersectionRef.current = entry.isIntersecting;
         notify();
-        lastCallback?.(entry);
+        stableCallback?.(entry);
       });
 
       return unsubscribe;
     },
-    [targetRef, observe, lastCallback],
+    [targetRef, observe, stableCallback],
   );
 
   const getSnapshot = useStableCallback(() => intersectionRef.current);
-  const getServerSnapshot = useStableCallback(() => false);
+  const getServerSnapshot = useStableCallback(() => false); // SSR fallback
 
   const isIntersecting = useSyncExternalStore(
     subscribe,

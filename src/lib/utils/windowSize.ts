@@ -28,7 +28,7 @@ const updateCssVars = () => {
 }
 
 function getVisualViewportDimensions(): IDimensions {
-  if (!visualViewport) return dimensions;
+  if (!visualViewport) return { ...dimensions };
 
   return {
     width: Math.round(visualViewport.width),
@@ -68,12 +68,16 @@ const throttledResize = throttle(
 export function initializeViewportListeners() {
   if (typeof window === "undefined") return;
 
+  window.removeEventListener("resize", throttledResize);
+  window.removeEventListener("orientationchange", handleOrientationChange);
+
   window.addEventListener("resize", throttledResize, { passive: true });
   window.addEventListener("orientationchange", handleOrientationChange, {
     passive: true,
   });
 
   if (visualViewport) {
+    visualViewport.removeEventListener("resize", throttledResize);
     visualViewport.addEventListener("resize", throttledResize, {
       passive: true,
     });
@@ -82,7 +86,6 @@ export function initializeViewportListeners() {
   requestNextMutation(updateCssVars);
 }
 
-// Initialize automatically in non-SSR environments
 if (typeof window !== "undefined") {
   initializeViewportListeners();
 }

@@ -31,6 +31,7 @@ export default function throttle<F extends (...args: any[]) => void>(
     // Calculate how much time is left before we can invoke fn again.
     const remaining = ms - (now - lastExecutionTime);
 
+
     // If the wait period has passed, execute immediately.
     if (remaining <= 0) {
       if (timeoutId) {
