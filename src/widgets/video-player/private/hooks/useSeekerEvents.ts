@@ -1,5 +1,5 @@
 import { clamp } from "@/lib/core";
-import { requestMeasure } from "@/lib/modules/fastdom";
+import { requestMeasure, requestMutation } from "@/lib/modules/fastdom";
 import { useStableCallback } from "@/shared/hooks/base";
 import { useEffect, useRef } from "react";
 
@@ -29,6 +29,7 @@ const useSeekerEvents = ({
   const stableOnSeekEnd = useStableCallback(onSeekEnd);
 
   const pointerId = useRef<number>(-1);
+  const lastOffset = useRef<number>(0);
 
   const layoutCache = useRef<{
     seekerRect: DOMRect;
@@ -39,7 +40,7 @@ const useSeekerEvents = ({
     seekerRect: new DOMRect(),
     previewWidth: 0,
     minOffset: 0,
-    maxOffset: 0
+    maxOffset: 0,
   });
 
   useEffect(() => {
@@ -55,7 +56,7 @@ const useSeekerEvents = ({
           seekerRect,
           previewWidth,
           minOffset: -4,
-          maxOffset: seekerRect.width - previewWidth + 4
+          maxOffset: seekerRect.width - previewWidth + 4,
         };
       });
     };
@@ -69,7 +70,6 @@ const useSeekerEvents = ({
         0,
         1
       );
-
       const time = relativeX * duration;
 
       if (isPreviewDisabled || !previewRef?.current) {
@@ -92,8 +92,17 @@ const useSeekerEvents = ({
     const handlePointerMove = (e: PointerEvent) => {
       if (e.pointerId !== pointerId.current) return;
 
-      const [time] = calculatePosition(e.clientX);
+      const [time, offset] = calculatePosition(e.clientX);
       stableOnSeek?.(time);
+
+      if (previewRef?.current && !isPreviewDisabled && offset !== lastOffset.current) {
+        lastOffset.current = offset;
+        requestMutation(() => {
+          if (previewRef.current) {
+            previewRef.current.style.transform = `translateX(${offset}px)`;
+          }
+        });
+      }
     };
 
     const handlePointerUp = (e: PointerEvent) => {
@@ -115,21 +124,21 @@ const useSeekerEvents = ({
       pointerId.current = -1;
     };
 
-    seeker.style.touchAction = 'none';
+    seeker.style.touchAction = "none";
 
-    seeker.addEventListener('pointerdown', handlePointerDown);
-    seeker.addEventListener('pointermove', handlePointerMove);
-    seeker.addEventListener('pointerup', handlePointerUp);
-    seeker.addEventListener('pointercancel', handlePointerCancel);
-    seeker.addEventListener('pointerleave', handlePointerCancel);
+    seeker.addEventListener("pointerdown", handlePointerDown);
+    seeker.addEventListener("pointermove", handlePointerMove);
+    seeker.addEventListener("pointerup", handlePointerUp);
+    seeker.addEventListener("pointercancel", handlePointerCancel);
+    seeker.addEventListener("pointerleave", handlePointerCancel);
 
     return () => {
-      seeker.style.touchAction = '';
-      seeker.removeEventListener('pointerdown', handlePointerDown);
-      seeker.removeEventListener('pointermove', handlePointerMove);
-      seeker.removeEventListener('pointerup', handlePointerUp);
-      seeker.removeEventListener('pointercancel', handlePointerCancel);
-      seeker.removeEventListener('pointerleave', handlePointerCancel);
+      seeker.style.touchAction = "";
+      seeker.removeEventListener("pointerdown", handlePointerDown);
+      seeker.removeEventListener("pointermove", handlePointerMove);
+      seeker.removeEventListener("pointerup", handlePointerUp);
+      seeker.removeEventListener("pointercancel", handlePointerCancel);
+      seeker.removeEventListener("pointerleave", handlePointerCancel);
       releasePointer();
     };
   }, [
@@ -140,8 +149,9 @@ const useSeekerEvents = ({
     previewRef,
     stableOnSeek,
     stableOnSeekStart,
-    stableOnSeekEnd
+    stableOnSeekEnd,
   ]);
+
 };
 
 export default useSeekerEvents;

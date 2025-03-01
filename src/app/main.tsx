@@ -24,11 +24,7 @@ async function init() {
 
   requestMutation(() => {
     const root = createRoot(rootElement);
-    root.render(
-      <StrictMode>
-        <App />
-      </StrictMode>,
-    );
+    root.render(<App />);
 
     optimizeView();
   });

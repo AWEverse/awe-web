@@ -1,109 +1,15 @@
 import React from "react";
 import "./styles.scss";
 import AnimatedList from "@/shared/ui/AnimatedList";
+import { requestMeasure, requestMutation } from "@/lib/modules/fastdom";
+import { fastRaf } from "@/lib/core";
 
 const TestPage: React.FC = () => {
-  return (
-    <AnimatedList
-      items={[
-        "Item 1",
-        "Item 2",
-        "Item 3",
-        "Item 4",
-        "Item 5",
-        "Item 6",
-        "Item 7",
-        "Item 8",
-        "Item 9",
-        "Item 10",
-        "Item 11",
-        "Item 12",
-        "Item 13",
-        "Item 14",
-        "Item 15",
-        "Item 1",
-        "Item 2",
-        "Item 3",
-        "Item 4",
-        "Item 5",
-        "Item 6",
-        "Item 7",
-        "Item 8",
-        "Item 9",
-        "Item 10",
-        "Item 11",
-        "Item 12",
-        "Item 13",
-        "Item 14",
-        "Item 15",
-        "Item 1",
-        "Item 2",
-        "Item 3",
-        "Item 4",
-        "Item 5",
-        "Item 6",
-        "Item 7",
-        "Item 8",
-        "Item 9",
-        "Item 10",
-        "Item 11",
-        "Item 12",
-        "Item 13",
-        "Item 14",
-        "Item 15",
-        "Item 1",
-        "Item 2",
-        "Item 3",
-        "Item 4",
-        "Item 5",
-        "Item 6",
-        "Item 7",
-        "Item 8",
-        "Item 9",
-        "Item 10",
-        "Item 11",
-        "Item 12",
-        "Item 13",
-        "Item 14",
-        "Item 15",
-        "Item 1",
-        "Item 2",
-        "Item 3",
-        "Item 4",
-        "Item 5",
-        "Item 6",
-        "Item 7",
-        "Item 8",
-        "Item 9",
-        "Item 10",
-        "Item 11",
-        "Item 12",
-        "Item 13",
-        "Item 14",
-        "Item 15",
-        "Item 1",
-        "Item 2",
-        "Item 3",
-        "Item 4",
-        "Item 5",
-        "Item 6",
-        "Item 7",
-        "Item 8",
-        "Item 9",
-        "Item 10",
-        "Item 11",
-        "Item 12",
-        "Item 13",
-        "Item 14",
-        "Item 15",
-      ]}
-      height={400}
-      itemSize={50}
-      onItemSelect={(item, index) =>
-        console.log(`Selected: ${item} at ${index}`)
-      }
-    />
-  );
+  fastRaf(() => console.log("First added"), true);
+  fastRaf(() => console.log("Second added"), true);
+  fastRaf(() => console.log("Third added"), true);
+
+  return <></>;
 };
 
 export default TestPage;
