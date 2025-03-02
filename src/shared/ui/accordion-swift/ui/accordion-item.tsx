@@ -50,10 +50,7 @@ export const AccordionItem: FC<AccordionItemProps> = memo(
         role="region"
         aria-expanded={isOpen}
         aria-labelledby={`accordion-header-${index}`}
-        className={buildClassName(
-          "accordion-item border border-gray-200 bg-white shadow-sm",
-          className,
-        )}
+        className={buildClassName("accordion-swift-item", className)}
         initial={false}
         animate={isOpen ? "open" : "closed"}
         variants={itemVariants}

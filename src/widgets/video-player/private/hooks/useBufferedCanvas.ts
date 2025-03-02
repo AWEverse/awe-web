@@ -1,7 +1,6 @@
 import { useEffect, useRef, useCallback } from "react";
 import { BufferedRange } from "@/lib/hooks/ui/useBuffering";
-import { requestMutation } from "@/lib/modules/fastdom";
-import useDevicePixelRatio, {
+import {
   getDevicePixelRatio,
 } from "@/lib/hooks/sensors/useDevicePixelRatio";
 import useResizeObserver from "@/shared/hooks/DOM/useResizeObserver";
@@ -42,15 +41,14 @@ const useBufferedCanvas = (
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
-    requestMutation(() => {
-      drawBufferedRanges(
-        bufferedCanvas,
-        bufferedRanges,
-        canvas.width,
-        canvas.height,
-        duration,
-      );
-    });
+    drawBufferedRanges(
+      bufferedCanvas,
+      bufferedRanges,
+      canvas.width,
+      canvas.height,
+      duration,
+    );
+
   }, [bufferedRanges, duration]);
 
   useResizeObserver(bufferedCanvas, (entry) => {

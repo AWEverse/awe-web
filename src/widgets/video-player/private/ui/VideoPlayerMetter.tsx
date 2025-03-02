@@ -11,6 +11,7 @@ import { useSignalEffect } from "@/lib/hooks/signals/useSignalEffect";
 import { useStableCallback } from "@/shared/hooks/base";
 import useSeekerEvents from "../hooks/useSeekerEvents";
 import { useDebouncedFunction } from "@/shared/hooks/shedulers";
+import useBufferedCanvas from "../hooks/useBufferedCanvas";
 
 interface VideoPlayerMetterProps {
   waitingSignal: ReadonlySignal<boolean>;
@@ -49,7 +50,6 @@ const VideoPlayerMetter: FC<VideoPlayerMetterProps> = ({
   onSeekEnd,
 }) => {
   const isLocked = useRef<boolean>(false);
-  const canvasElement = useRef<HTMLCanvasElement>(null);
 
   const seekerContainer = useRef<HTMLDivElement | null>(null);
   const previewCanvas = useRef<HTMLCanvasElement | null>(null);
@@ -58,6 +58,8 @@ const VideoPlayerMetter: FC<VideoPlayerMetterProps> = ({
   const previewTimeDisplay = useRef<HTMLDivElement | null>(null);
 
   const [isSeeking, _setIsSeeking] = useState(false);
+
+  const canvasRef = useBufferedCanvas(bufferedRangesSignal.value, duration);
 
   const setIsSeeking = useDebouncedFunction(
     _setIsSeeking,
@@ -152,7 +154,11 @@ const VideoPlayerMetter: FC<VideoPlayerMetterProps> = ({
         aria-valuemax={duration}
         itemProp="duration"
       >
-        <canvas height={10} style={{ width: "100%", height: "100%" }} />
+        <canvas
+          ref={canvasRef}
+          height={10}
+          style={{ width: "100%", height: "100%" }}
+        />
         <div
           ref={progressBar}
           className={buildClassName(

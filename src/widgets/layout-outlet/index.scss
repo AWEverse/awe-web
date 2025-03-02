@@ -21,6 +21,11 @@
     size: 4px 4px;
     color: rgba(255, 255, 255, 0.8); // Fallback base
   }
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+
+  width: 100%;
 
   // Modern backdrop filter support
   @supports (backdrop-filter: none) or (-webkit-backdrop-filter: none) {
@@ -29,18 +34,12 @@
     -webkit-backdrop-filter: var(--header-blur);
   }
 
-  &::after {
-    content: '';
-    position: absolute;
-    inset: 0;
-    background: var(--header-mask-gradient);
-    mask: var(--header-mask-gradient);
-    pointer-events: none;
+  &__Search {
+    flex: 0 1 732px;
+    margin: 0 auto;
   }
 
   transform: translateZ(0);
-  will-change: transform, backdrop-filter;
-  contain: layout style;
 }
 
 .LayoutOutlet {
@@ -53,12 +52,12 @@
 
 .LayoutBody {
   flex: 1;
+  z-index: 1;
   padding: 0 2.75rem;
-  overflow-y: auto; // Make scrollable
+  overflow-y: auto;
   position: relative;
   max-height: calc(100dvh - var(--header-height));
 }
-
 
 @supports not (contain: layout) {
   .LayoutHeader {
