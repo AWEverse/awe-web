@@ -1,4 +1,4 @@
-function murmurHash2(key: string, len: number): number {
+export default function murmurHash2(key: string, len: number): number {
   const m = 0x5bd1e995;
   const seed = 0;
   const r = 24;

@@ -1,4 +1,3 @@
-// Ensure AnyFunction is defined (if not defined elsewhere)
 type AnyFunction = (...args: any[]) => any;
 
 export type DebounceReturnType<F extends AnyFunction> = {
@@ -7,90 +6,119 @@ export type DebounceReturnType<F extends AnyFunction> = {
   isDebounced(): boolean;
 };
 
-export default function debounce<F extends AnyFunction>(
-  fn: F,
-  ms: number,
-  shouldRunFirst = true,
-  shouldRunLast = true,
-): DebounceReturnType<F> {
-  let timer: ReturnType<typeof setTimeout> | null = null;
-  let pendingPromise: Promise<Awaited<ReturnType<F>>> | null = null;
-  let pendingResolve: ((value: Awaited<ReturnType<F>>) => void) | null = null;
-  let pendingReject: ((reason?: any) => void) | null = null;
-  let lastArgs: Parameters<F> | null = null;
-  let immediateResult: Promise<Awaited<ReturnType<F>>> | undefined = undefined;
+class Debouncer<F extends AnyFunction> {
+  private timer: ReturnType<typeof setTimeout> | null = null;
+  private deferred: {
+    promise: Promise<Awaited<ReturnType<F>>>;
+    resolve: (value: Awaited<ReturnType<F>>) => void;
+    reject: (reason?: any) => void;
+  } | null = null;
+  private lastArgs: Parameters<F> | null = null;
+  private immediateResult: Promise<Awaited<ReturnType<F>>> | null = null;
+  private readonly fn: F;
+  private readonly ms: number;
+  private readonly shouldRunFirst: boolean;
+  private readonly shouldRunLast: boolean;
 
-  const invokeFunction = (args: Parameters<F>): Promise<Awaited<ReturnType<F>>> =>
-    Promise.resolve(fn(...args));
-
-  const invokeTrailing = () => {
-    timer = null;
-    if (shouldRunLast && lastArgs) {
-      invokeFunction(lastArgs)
-        .then((result) => pendingResolve?.(result))
-        .catch((error) => pendingReject?.(error))
-        .finally(() => {
-          pendingPromise = null;
-          pendingResolve = null;
-          pendingReject = null;
-          lastArgs = null;
-        });
-    } else {
-      pendingResolve?.(immediateResult as unknown as Awaited<ReturnType<F>>);
-      pendingPromise = null;
-      pendingResolve = null;
-      pendingReject = null;
-      lastArgs = null;
+  constructor(fn: F, ms: number, shouldRunFirst: boolean, shouldRunLast: boolean) {
+    if (!shouldRunFirst && !shouldRunLast) {
+      throw new Error("Either shouldRunFirst or shouldRunLast must be true.");
     }
-  };
+    this.fn = fn;
+    this.ms = ms;
+    this.shouldRunFirst = shouldRunFirst;
+    this.shouldRunLast = shouldRunLast;
+  }
 
-  const debounced = (...args: Parameters<F>): Promise<Awaited<ReturnType<F>>> => {
-    const isFirstCall = timer === null;
-    lastArgs = args;
+  private createDeferred() {
+    let resolve: (value: Awaited<ReturnType<F>>) => void = () => { };
+    let reject: (reason?: any) => void = () => { };
+    const promise = new Promise<Awaited<ReturnType<F>>>((res, rej) => {
+      resolve = res;
+      reject = rej;
+    });
+    return { promise, resolve, reject };
+  }
+
+  private invokeFunction(args: Parameters<F>): Promise<Awaited<ReturnType<F>>> {
+    return Promise.resolve(this.fn(...args));
+  }
+
+  private resetState(): void {
+    this.timer = null;
+    this.deferred = null;
+    this.lastArgs = null;
+    this.immediateResult = null;
+  }
+
+  private invokeTrailing(): void {
+    if (this.shouldRunLast && this.lastArgs) {
+      this.invokeFunction(this.lastArgs)
+        .then(result => this.deferred?.resolve(result))
+        .catch(error => this.deferred?.reject(error))
+        .finally(() => this.resetState());
+    } else if (this.immediateResult) {
+      this.immediateResult
+        .then(result => this.deferred?.resolve(result))
+        .catch(error => this.deferred?.reject(error))
+        .finally(() => this.resetState());
+    } else {
+      this.resetState();
+    }
+  }
+
+  public debounced(...args: Parameters<F>): Promise<Awaited<ReturnType<F>>> {
+    this.lastArgs = args;
+    const isFirstCall = this.timer === null;
 
     if (isFirstCall) {
-      pendingPromise = new Promise<Awaited<ReturnType<F>>>((resolve, reject) => {
-        pendingResolve = resolve;
-        pendingReject = reject;
-      });
+      this.deferred = this.createDeferred();
 
-      if (shouldRunFirst) {
-        immediateResult = invokeFunction(args);
-        if (!shouldRunLast) {
-          immediateResult.catch((error) => {
-            pendingReject?.(error);
-            timer = null;
-            pendingPromise = null;
-            pendingResolve = null;
-            pendingReject = null;
-            lastArgs = null;
+      if (this.shouldRunFirst) {
+        this.immediateResult = this.invokeFunction(args);
+
+        if (!this.shouldRunLast) {
+          this.immediateResult.catch(error => {
+            this.deferred?.reject(error);
+            this.resetState();
           });
         }
       }
 
-      timer = globalThis.setTimeout(invokeTrailing, ms);
-      return pendingPromise;
+      this.timer = setTimeout(() => this.invokeTrailing(), this.ms);
+      return this.deferred.promise;
     } else {
-      if (timer)
-        clearTimeout(timer);
-      timer = globalThis.setTimeout(invokeTrailing, ms);
-      return pendingPromise!;
+      if (this.timer) clearTimeout(this.timer);
+      this.timer = setTimeout(() => this.invokeTrailing(), this.ms);
+      return this.deferred!.promise;
     }
-  };
+  }
 
-  debounced.clearTimeout = () => {
-    if (timer) {
-      clearTimeout(timer);
-      timer = null;
-      pendingReject?.(new Error("Debounce cancelled"));
-      pendingPromise = null;
-      pendingResolve = null;
-      pendingReject = null;
-      lastArgs = null;
+  public clearTimeout(): void {
+    if (this.timer) {
+      clearTimeout(this.timer);
+      this.timer = null;
+      this.deferred?.reject(new Error("Debounce cancelled"));
+      this.resetState();
     }
-  };
+  }
 
-  debounced.isDebounced = () => timer !== null;
+  public isDebounced(): boolean {
+    return this.timer !== null;
+  }
+}
+
+export default function debounce<F extends AnyFunction>(
+  fn: F,
+  ms: number,
+  shouldRunFirst = true,
+  shouldRunLast = true
+): DebounceReturnType<F> {
+  const debouncer = new Debouncer(fn, ms, shouldRunFirst, shouldRunLast);
+
+  const debounced = (...args: Parameters<F>) => debouncer.debounced(...args);
+  debounced.clearTimeout = () => debouncer.clearTimeout();
+  debounced.isDebounced = () => debouncer.isDebounced();
 
   return debounced as DebounceReturnType<F>;
 }

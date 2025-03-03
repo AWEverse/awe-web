@@ -169,6 +169,7 @@ const useContextMenuHandlers = (
       const element = elementRef.current;
       const rect = element?.getBoundingClientRect();
       const anchor = rect ? { x: rect.left, y: rect.top } : { x: 0, y: 0 };
+
       dispatch({
         type: 'OPEN',
         anchor,
