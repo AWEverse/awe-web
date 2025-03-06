@@ -1,7 +1,6 @@
 import { ApiDimensions } from "@/@types/api/types/messages";
 import { BufferedRange } from "@/lib/hooks/ui/useBuffering";
 import { FC, memo, useRef, useState } from "react";
-import { CSSTransition } from "react-transition-group";
 
 import s from "./VideoPlayerMetter.module.scss";
 import buildClassName from "@/shared/lib/buildClassName";
@@ -14,7 +13,6 @@ import { useDebouncedFunction } from "@/shared/hooks/shedulers";
 import useBufferedCanvas from "../hooks/useBufferedCanvas";
 
 interface VideoPlayerMetterProps {
-  waitingSignal: ReadonlySignal<boolean>;
   currentTimeSignal: ReadonlySignal<number>;
   bufferedRangesSignal: ReadonlySignal<BufferedRange[]>;
   url?: string;
@@ -34,7 +32,6 @@ const LOCK_TIMEOUT_MS = 250;
 const SEEK_DEBOUNCE_MS = 200;
 
 const VideoPlayerMetter: FC<VideoPlayerMetterProps> = ({
-  waitingSignal,
   currentTimeSignal,
   bufferedRangesSignal,
   url,
@@ -115,36 +112,29 @@ const VideoPlayerMetter: FC<VideoPlayerMetterProps> = ({
   });
 
   return (
-    <div
-      ref={seekerContainer}
-      className={s.container}
-      itemScope
-      itemType="http://schema.org/MediaObject"
-    >
+    <div ref={seekerContainer} className={s.container} itemScope>
       {!isPreviewDisabled && (
-        <CSSTransition nodeRef={previewContainer} in={isReady} timeout={0}>
-          <div
-            ref={previewContainer}
-            className={s.preview}
-            aria-label="Media preview"
-          >
-            <canvas
-              className={s.previewCanvas}
-              ref={previewCanvas}
-              width={posterSize?.width}
-              height={posterSize?.height}
-              aria-label="Media timeline preview"
-              role="img"
+        <div
+          ref={previewContainer}
+          className={s.preview}
+          aria-label="Media preview"
+        >
+          <canvas
+            className={s.previewCanvas}
+            ref={previewCanvas}
+            width={posterSize?.width}
+            height={posterSize?.height}
+            aria-label="Media timeline preview"
+            role="img"
+          />
+          <div className={s.previewTime} aria-hidden="true">
+            <span
+              className={s.previewTimeText}
+              ref={previewTimeDisplay}
+              itemProp="timecode"
             />
-            <div className={s.previewTime} aria-hidden="true">
-              <span
-                className={s.previewTimeText}
-                ref={previewTimeDisplay}
-                itemProp="timecode"
-              />
-            </div>
           </div>
-        </CSSTransition>
+        </div>
       )}
 
       <div
@@ -171,8 +161,6 @@ const VideoPlayerMetter: FC<VideoPlayerMetterProps> = ({
         <div className={s.trackBg} aria-hidden="true" />
       </div>
 
-      {/* Schema.org structured data */}
-      <meta itemProp="contentUrl" content={url} />
       {posterSize && (
         <>
           <meta itemProp="width" content={String(posterSize.width)} />

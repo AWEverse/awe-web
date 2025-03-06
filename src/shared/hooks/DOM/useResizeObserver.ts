@@ -48,6 +48,6 @@ export default function useResizeObserver(
 
     observer.observe(ref.current, { box: "border-box" });
 
-    return observer.disconnect;
+    return () => { observer.disconnect() };
   }, [ref, isDisabled]);
 }

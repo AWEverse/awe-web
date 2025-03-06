@@ -135,7 +135,7 @@ export const setMediaMute = (
   mute: boolean = true,
   fadeDuration: number = 0,
 ): number => {
-  const { dataset } = mediaEl;
+  const dataset = mediaEl.dataset;
   const currentVolume = mediaEl.volume;
 
   // Store the previous volume if muted and not already stored

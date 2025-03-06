@@ -1,4 +1,4 @@
-import { IS_IOS, throttle } from "../core";
+import { IS_IOS, round, throttle } from "../core";
 import { requestNextMutation } from "../modules/fastdom";
 
 interface IDimensions {
@@ -20,7 +20,7 @@ const dimensions: IDimensions = {
 let initialHeight = dimensions.height;
 
 const updateCssVars = () => {
-  const vh = dimensions.height * 0.01;
+  const vh = round(dimensions.height * 0.01, 2);
 
   return () => {
     document.documentElement.style.setProperty("--vh", `${vh}px`);

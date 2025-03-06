@@ -39,6 +39,7 @@ import VideoPlayerContextMenu from "../../private/ui/VideoPlayerContextMenu";
 import { useScrollProvider } from "@/shared/context";
 import useKeyHandler from "../../private/hooks/useKeyHandler";
 import { useThrottledFunction } from "@/shared/hooks/shedulers";
+import { useTouchControls } from "../../private/hooks/useTouchControls";
 
 const TopPannel = lazy(() => import("../../private/ui/mobile/TopPannel"));
 
@@ -68,7 +69,7 @@ const MAX_LOOP_DURATION = 30;
 const REWIND_STEP = 5;
 
 const VideoPlayer: React.FC<OwnProps> = ({
-  mediaUrl = "/video_test/Interstellar.mkv",
+  mediaUrl = "/video_test/Интерстеллар.mp4",
   playbackSpeed = 1,
   isAdsMessage,
   disableClickActions,
@@ -165,16 +166,16 @@ const VideoPlayer: React.FC<OwnProps> = ({
     },
   );
 
-  // useTouchControls(videoRef, {
-  // 	onLeftZone: () =>
-  // 		handleSeek(clamp(currentTime.value - REWIND_STEP, 0, duration)),
-  // 	onRightZone: () =>
-  // 		handleSeek(clamp(currentTime.value + REWIND_STEP, 0, duration)),
-  // 	onCenterZone: togglePlayState,
-  // 	zoneRatios: [0.2, 0.6, 0.2],
-  // 	debounceTime: 500,
-  // 	enableDoubleTap: true,
-  // });
+  useTouchControls(videoRef, {
+    onLeftZone: () =>
+      handleSeek(clamp(currentTime.value - REWIND_STEP, 0, duration)),
+    onRightZone: () =>
+      handleSeek(clamp(currentTime.value + REWIND_STEP, 0, duration)),
+    onCenterZone: togglePlayState,
+    zoneRatios: [0.2, 0.6, 0.2],
+    debounceTime: 500,
+    enableDoubleTap: true,
+  });
 
   useEffect(() => {
     const videoElement = videoRef.current;
@@ -258,6 +259,8 @@ const VideoPlayer: React.FC<OwnProps> = ({
     },
   );
 
+  screen.orientation.lock();
+
   const isIntersectingForPlaying =
     useIsIntersecting(containerRef, observeIntersectionForPlaying) &&
     isIntersectingForLoading;
@@ -278,7 +281,7 @@ const VideoPlayer: React.FC<OwnProps> = ({
         id="media-player"
         className={buildClassName(
           "VideoPlayer",
-          isFullscreen && "FullscreenMode",
+          isFullscreen && "FullScreenMode",
         )}
         ref={containerRef}
         onClick={handleClick}
@@ -302,12 +305,8 @@ const VideoPlayer: React.FC<OwnProps> = ({
           controlsList="nodownload"
           playsInline
           muted={isGif || isAudioMuted}
-          aria-label="Video player"
-          aria-describedby="video-description"
           aria-hidden={false}
           role="video"
-          preload="metadata"
-          crossOrigin="anonymous"
           autoPlay={false}
           {...handlersBuffering}
           onWaiting={() => setWaiting(true)}
@@ -333,7 +332,6 @@ const VideoPlayer: React.FC<OwnProps> = ({
           bufferedRangesSignal={bufferedRanges}
           isReady={isReady}
           fileSize={totalFileSize}
-          waitingSignal={waitingSignal}
           isForceMobileVersion={isMobile}
           isFullscreen={isFullscreen}
           isFullscreenSupported={Boolean(toggleFullscreen)}
@@ -352,18 +350,6 @@ const VideoPlayer: React.FC<OwnProps> = ({
         />
 
         <AmbientLight canvasRef={canvasRef} disabled={isAmbilightDisabled} />
-
-        <p id="video-description" className="sr-only">
-          Official trailer for Interstellar, a cinematic journey through space
-          and time, showcasing high-quality 1080p visuals. This video features
-          groundbreaking visuals and immersive sound design from Christopher
-          Nolan's acclaimed sci-fi epic. Interstellar explores themes of space
-          exploration, time dilation, and human survival, setting new standards
-          in modern filmmaking. Discover award-winning production values,
-          innovative storytelling, and a visionary approach that redefines the
-          genre. Experience the allure of one of the most influential films in
-          science fiction history.
-        </p>
 
         <div
           ref={readingRef}

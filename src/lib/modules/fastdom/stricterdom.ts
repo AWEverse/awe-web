@@ -1,252 +1,256 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import LAYOUT_CAUSES from "./layoutCauses";
 
+// Type Definitions
 type AnyFunction = (...args: any[]) => any;
-type NoneToVoidFunction = () => void; // assuming this is the intended type
-type Entities = keyof typeof LAYOUT_CAUSES;
 type Phase = "measure" | "mutate";
 type ErrorHandler = (error: Error) => void;
 
-/**
- * Default error handler that prints detailed information to the console.
- */
-const DEFAULT_ERROR_HANDLER: ErrorHandler = (error: Error): void => {
+// Default Error Handler with improved formatting
+const defaultErrorHandler: ErrorHandler = (error) => {
+  const [title, ...rest] = error.message.split("\n");
   console.group(
-    "%cLayout Strict Mode Error",
+    `%cLayout Strict Mode Error%c ${title}`,
     "color: red; font-weight: bold; font-size: 14px",
+    "color: inherit"
   );
-  console.error(error);
-  console.info(
-    "This error indicates that a layout measurement or mutation was triggered unexpectedly.",
-  );
-  console.info(
-    "Possible fixes:\n" +
-      "- Wrap measurement calls within forceMeasure() if you're triggering measurements during mutation.\n" +
-      "- Wrap mutation calls within forceMutation() if you intend to perform DOM changes during measurement.\n" +
-      "- Verify that your component lifecycle aligns with the allowed phase.",
-  );
+  console.log("%cFull Error Message:", "font-weight: bold", error.message);
+  console.log("%cStack Trace:", "font-weight: bold", error.stack);
   console.groupEnd();
 };
 
-let onError: ErrorHandler = DEFAULT_ERROR_HANDLER;
-
+// State Variables
+let currentPhase: Phase = "measure";
+let isStrictModeEnabled = false;
+let errorHandler: ErrorHandler = defaultErrorHandler;
 const nativeMethods = new Map<string, AnyFunction>();
-let phase: Phase = "measure";
-let isStrict = false;
-let observer: MutationObserver | undefined;
+let mutationObserver: MutationObserver | undefined;
+const allowedMutationNodes = new WeakSet<Node>(); // Use WeakSet for better memory management
+const reportedErrors = new Set<string>();
 
-export function setPhase(newPhase: Phase): void {
-  phase = newPhase;
+// Utility Functions
+function getElementInfo(element: Node): string {
+  if (element.nodeType !== Node.ELEMENT_NODE) return "unknown element";
+  const el = element as Element;
+  const tagName = el.tagName.toLowerCase();
+  const id = el.id ? `#${el.id}` : "";
+  const className = el.className
+    ? `.${el.className.split(" ").join(".")}`
+    : "";
+  return `${tagName}${id}${className}`;
 }
 
-export function getPhase(): Phase {
-  return phase;
+function extractLocationFromStack(stack: string | undefined): string {
+  if (!stack) return "unknown location";
+  const lines = stack.split("\n");
+  for (let i = 2; i < lines.length; i++) {
+    const match = lines[i].match(/at\s+(.*)\s+\((.*):(\d+):(\d+)\)/);
+    if (match) return `${match[2]}:${match[3]}:${match[4]}`;
+  }
+  return "unknown location";
 }
 
-export function getIsStrict(): boolean {
-  return isStrict;
-}
+// Phase Control
+export const setPhase = (newPhase: Phase) => { currentPhase = newPhase; };
+export const getPhase = () => currentPhase;
+export const getIsStrict = () => isStrictModeEnabled;
 
-export function enableStrict(): void {
-  if (!isStrict) {
-    isStrict = true;
+// Strict Mode Toggle
+export const enableStrict = () => {
+  if (!isStrictModeEnabled) {
+    reportedErrors.clear();
     setupLayoutDetectors();
     setupMutationObserver();
+    isStrictModeEnabled = true;
   }
-}
+};
 
-export function disableStrict(): void {
-  if (isStrict) {
+export const disableStrict = () => {
+  if (isStrictModeEnabled) {
     clearMutationObserver();
     clearLayoutDetectors();
-    isStrict = false;
+    isStrictModeEnabled = false;
+    reportedErrors.clear();
   }
-}
+};
 
-/**
- * Wraps a measurement callback so that it is only executed during the 'measure' phase.
- * Throws an error if called during the wrong phase.
- */
-export function forceMeasure<T>(cb: () => T): T {
-  if (phase !== "mutate") {
+// Force Methods
+export const forceMeasure = <T>(callback: () => T): T => {
+  if (currentPhase !== "mutate") {
+    const current = JSON.stringify(currentPhase);
     throw new Error(
-      `forceMeasure: Expected phase 'mutate', but current phase is '${phase}'.\n` +
-        `Suggestion: Wrap your measurement code within forceMeasure() only when in the mutate phase.`,
+      `forceMeasure: Expected 'mutate' phase to allow measurements, ` +
+      `but current phase is '${current}'. ` +
+      "Wrap measurements in forceMeasure() only during 'mutate' phase."
     );
   }
-  phase = "measure";
-  const result = cb();
-  phase = "mutate";
-  return result;
-}
+  const original = currentPhase;
+  currentPhase = "measure";
+  try {
+    return callback();
+  } finally {
+    currentPhase = original;
+  }
+};
 
-const forcedMutationAllowedFor = new Set<Node>();
-
-/**
- * Wraps a mutation callback so that it is only executed during the 'measure' phase.
- * Throws an error if called during the wrong phase.
- */
-export function forceMutation<T>(cb: () => T, nodes: Node | Node[]): T {
-  if (phase !== "measure") {
+export const forceMutation = <T>(callback: () => T, nodes: Node | Node[]): T => {
+  if (currentPhase !== "measure") {
+    const current = JSON.stringify(currentPhase);
     throw new Error(
-      `forceMutation: Expected phase 'measure', but current phase is '${phase}'.\n` +
-        `Suggestion: Call forceMutation() only during the measure phase when mutations are permitted.`,
+      `forceMutation: Expected 'measure' phase to allow mutations, ` +
+      `but current phase is '${current}'. ` +
+      "Wrap mutations in forceMutation() only during 'measure' phase."
     );
   }
-  if (isStrict) {
-    if (Array.isArray(nodes)) {
-      nodes.forEach((node) => forcedMutationAllowedFor.add(node));
-    } else {
-      forcedMutationAllowedFor.add(nodes);
+  if (isStrictModeEnabled) {
+    (Array.isArray(nodes) ? nodes : [nodes]).forEach(node => allowedMutationNodes.add(node));
+  }
+  try {
+    return callback();
+  } finally {
+    if (isStrictModeEnabled) {
+      (Array.isArray(nodes) ? nodes : [nodes]).forEach(node => allowedMutationNodes.delete(node));
     }
   }
-  return cb();
-}
+};
 
-/**
- * Allows a custom error handler to be set.
- */
-export function setHandler(handler?: ErrorHandler): void {
-  onError = handler || DEFAULT_ERROR_HANDLER;
-}
+// Custom Error Handler
+export const setHandler = (handler?: ErrorHandler) => {
+  errorHandler = handler || defaultErrorHandler;
+};
 
-function getEntityPrototype(name: string): any | undefined {
+const getEntityPrototype = (name: string): any | undefined => {
   const entity = (window as any)[name];
-  if (!entity) return undefined;
-  return typeof entity === "object" ? entity : entity.prototype;
-}
-
-/**
- * Overrides layout-related properties and methods to detect measurements.
- */
-function setupLayoutDetectors(): void {
-  Object.entries(LAYOUT_CAUSES).forEach(([name, causes]) => {
-    const prototype = getEntityPrototype(name);
-    if (!prototype) return; // Skip if the entity is not found
-
-    if ("props" in causes && Array.isArray(causes.props)) {
-      causes.props.forEach((prop: string) => {
-        const descriptor = Object.getOwnPropertyDescriptor(prototype, prop);
-        const nativeGetter = descriptor?.get;
-        if (typeof nativeGetter !== "function") return;
-
-        nativeMethods.set(`${name}#${prop}`, nativeGetter);
-        Object.defineProperty(prototype, prop, {
-          configurable: true,
-          get() {
-            onMeasure(prop);
-            return nativeGetter.call(this);
-          },
-        });
-      });
-    }
-
-    if ("methods" in causes && Array.isArray(causes.methods)) {
-      causes.methods.forEach((method: string) => {
-        const nativeMethod = prototype[method];
-        if (typeof nativeMethod !== "function") return;
-
-        nativeMethods.set(`${name}#${method}`, nativeMethod);
-        prototype[method] = function (...args: any[]) {
-          onMeasure(method);
-          return nativeMethod.apply(this, args);
-        };
-      });
-    }
-  });
-}
-
-/**
- * Restores the original layout properties and methods.
- */
-function clearLayoutDetectors(): void {
-  Object.entries(LAYOUT_CAUSES).forEach(([name, causes]) => {
-    const prototype = getEntityPrototype(name);
+  return entity ? (typeof entity === "object" ? entity : entity.prototype) : undefined;
+};
+// Layout Detection Setup
+const setupLayoutDetectors = () => {
+  Object.entries(LAYOUT_CAUSES).forEach(([entityName, causes]) => {
+    const prototype = getEntityPrototype(entityName);
     if (!prototype) return;
 
     if ("props" in causes && Array.isArray(causes.props)) {
-      causes.props.forEach((prop: string) => {
-        const nativeGetter = nativeMethods.get(`${name}#${prop}`);
-        if (!nativeGetter) return;
-        Object.defineProperty(prototype, prop, {
-          configurable: true,
-          get: nativeGetter,
-        });
-      });
-    }
+      if (causes.props && causes.props.length) {
+        causes.props.forEach(prop => {
+          const descriptor = Object.getOwnPropertyDescriptor(prototype, prop);
+          const nativeGetter = descriptor?.get;
+          if (!nativeGetter) return;
 
-    if ("methods" in causes && Array.isArray(causes.methods)) {
-      causes.methods.forEach((method: string) => {
-        const nativeMethod = nativeMethods.get(`${name}#${method}`);
-        if (!nativeMethod) return;
-        prototype[method] = nativeMethod;
-      });
+          nativeMethods.set(`${entityName}#${prop}`, nativeGetter);
+          Object.defineProperty(prototype, prop, {
+            configurable: true,
+            get: function () {
+              onLayoutError(prop, this);
+              return nativeGetter.call(this);
+            }
+          });
+        });
+      }
+
+
+      if ("methods" in causes && Array.isArray(causes.props)) {
+        if (causes.methods?.length) {
+          causes.methods.forEach(method => {
+            const nativeMethod = prototype[method];
+            if (typeof nativeMethod !== "function") return;
+
+            nativeMethods.set(`${entityName}#${method}`, nativeMethod);
+            prototype[method] = function (...args: any[]) {
+              onLayoutError(method, this);
+              return nativeMethod.apply(this, args);
+            };
+          });
+        }
+      }
+    }
+  });
+};
+
+const clearLayoutDetectors = () => {
+  Object.entries(LAYOUT_CAUSES).forEach(([entityName, causes]) => {
+    const prototype = getEntityPrototype(entityName);
+    if (!prototype) return;
+
+    if ("props" in causes && Array.isArray(causes.props)) {
+
+      if (causes.props?.length) {
+        causes.props.forEach(prop => {
+          const nativeGetter = nativeMethods.get(`${entityName}#${prop}`);
+          if (nativeGetter) {
+            const descriptor = Object.getOwnPropertyDescriptor(
+              prototype,
+              prop
+            );
+            descriptor?.get &&
+              Object.defineProperty(prototype, prop, descriptor);
+          }
+        });
+      }
+
+      if ("methods" in causes && Array.isArray(causes.props)) {
+
+        if (causes.methods?.length) {
+          causes.methods.forEach(method => {
+            const nativeMethod = nativeMethods.get(`${entityName}#${method}`);
+            if (nativeMethod) prototype[method] = nativeMethod;
+          });
+        }
+      }
     }
   });
   nativeMethods.clear();
-}
+};
 
-/**
- * Sets up a MutationObserver to catch unexpected DOM mutations.
- */
-function setupMutationObserver(): void {
-  observer = new MutationObserver((mutations) => {
-    if (phase !== "mutate") {
-      mutations.forEach(applyMutation);
-    }
-    forcedMutationAllowedFor.clear();
+// Mutation Observer Setup
+const setupMutationObserver = () => {
+  mutationObserver = new MutationObserver(mutations => {
+    if (currentPhase === "mutate") return;
+    mutations.forEach(handleMutation);
   });
-  observer.observe(document.body, {
+  mutationObserver.observe(document.body, {
     childList: true,
     attributes: true,
     subtree: true,
-    characterData: false,
+    characterData: false
   });
-}
+};
 
-/**
- * Stops observing DOM mutations.
- */
-function clearMutationObserver(): void {
-  observer?.disconnect();
-  observer = undefined;
-}
+const clearMutationObserver = () => {
+  mutationObserver?.disconnect();
+  mutationObserver = undefined;
+};
 
-/**
- * Called whenever a layout measurement is detected.
- * Logs a detailed error if the measurement happens in an unexpected phase.
- */
-function onMeasure(propName: string): void {
-  if (phase !== "measure") {
-    const message =
-      `Unexpected measurement detected: "${propName}" in phase '${phase}'.\n` +
-      `Suggestion: Ensure that measurements occur only during the 'measure' phase. If you intended to measure, wrap your code in forceMeasure().`;
-    onError(new Error(message));
-  }
-}
+// Error Handling Functions
+const onLayoutError = (property: string, element: Node) => {
+  if (currentPhase === "measure") return;
+  const location = extractLocationFromStack(new Error().stack);
+  const elementInfo = getElementInfo(element);
+  const errorMessage = `Unexpected layout measurement: "${property}" on ${elementInfo} ` +
+    `during '${currentPhase}' phase at ${location}. ` +
+    "Use forceMeasure() for intentional measurements outside 'measure' phase.";
+  reportError(errorMessage);
+};
 
-/**
- * Called for each mutation record when the MutationObserver fires.
- * Logs detailed information if an unexpected mutation is detected.
- */
-function applyMutation(mutation: MutationRecord): void {
-  const { target, type, attributeName } = mutation;
-  if (!document.contains(target)) return;
-  if (forcedMutationAllowedFor.has(target)) return;
+const handleMutation = (mutation: MutationRecord) => {
+  if (allowedMutationNodes.has(mutation.target)) return;
+  if (!document.contains(mutation.target)) return;
+  if (mutation.type === "childList" && (mutation.target as HTMLElement).isContentEditable) return;
+  if (mutation.attributeName?.startsWith("data-")) return;
 
-  // Allow mutations for contentEditable elements.
-  if (
-    type === "childList" &&
-    target instanceof HTMLElement &&
-    target.isContentEditable
-  )
-    return;
-  // Ignore attribute mutations for data-* attributes.
-  if (attributeName?.startsWith("data-")) return;
+  const detail = mutation.type === "attributes"
+    ? mutation.attributeName
+    : mutation.type;
+  const elementInfo = getElementInfo(mutation.target);
+  const location = extractLocationFromStack(new Error().stack);
+  const errorMessage = `Unexpected DOM mutation: ${detail} on ${elementInfo} ` +
+    `during '${currentPhase}' phase at ${location}. ` +
+    "Use forceMutation() for intentional mutations during 'measure' phase.";
+  reportError(errorMessage);
+};
 
-  const detail = type === "attributes" ? attributeName : type;
-  const message =
-    `Unexpected mutation detected: "${detail}".\n` +
-    `Suggestion: Wrap mutations within forceMutation() if this change is intentional, or review your code to avoid unintended DOM changes.`;
-  onError(new Error(message));
-}
+const reportError = (message: string) => {
+  if (reportedErrors.has(message)) return;
+  reportedErrors.add(message);
+  const error = new Error(message);
+  errorHandler(error);
+};

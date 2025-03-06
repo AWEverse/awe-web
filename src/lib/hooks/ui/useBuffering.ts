@@ -84,10 +84,10 @@ const useBuffering = (
 
   const setIsBuffered = useDebouncedFunction(
     _setIsBuffered,
-    [],
     DEBOUNCE,
     false,
     true,
+    [],
   );
 
   const handleBuffering = useStableCallback<BufferingEvent>((e) => {

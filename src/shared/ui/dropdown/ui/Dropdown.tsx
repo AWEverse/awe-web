@@ -10,6 +10,7 @@ import { useBoundaryCheck } from "@/shared/hooks/mouse/useBoundaryCheck";
 import { useEffectWithPreviousDeps } from "@/shared/hooks/effects/useEffectWithPreviousDependencies";
 import useKeyboardListeners from "@/lib/hooks/events/useKeyboardListeners";
 import trapFocus from "@/lib/utils/trapFocus";
+import { useClickAway } from "@/lib/hooks/events/useClick";
 
 interface OwnTriggerProps<T = HTMLElement> extends React.HTMLAttributes<T> {
   onTrigger: NoneToVoidFunction;
@@ -76,6 +77,8 @@ const DropdownMenu: FC<OwnProps & OwnSharedProps> = ({
   });
 
   useBodyClass("has-open-dialog", isOpen);
+
+  useClickAway(dropdownRef, handleClose);
 
   useBoundaryCheck({
     elementRef: dropdownRef,

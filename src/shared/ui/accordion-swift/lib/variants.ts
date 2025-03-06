@@ -3,7 +3,7 @@ export const TRANSITION_DURATION = 0.2;
 // Helper functions for computing style values
 const computeMargin = ({ isFirstChild, isLastChild }: { isFirstChild: boolean; isLastChild: boolean }) => {
   return isFirstChild && isLastChild
-    ? undefined
+    ? "0px"
     : `${!isFirstChild ? "0.5rem" : "0"} 0 ${!isLastChild ? "0.5rem" : "0"} 0`;
 };
 
@@ -33,7 +33,8 @@ export const itemVariants = {
     isNextChild: boolean;
   }) => ({
     borderRadius: computeBorderRadiusClosed(custom),
-    transition: { margin: 0, duration: TRANSITION_DURATION }
+    transition: { margin: "0px", duration: TRANSITION_DURATION },
+    margin: "0px",
   }),
 };
 

@@ -1,72 +1,58 @@
+/* Optimized CSS Variables */
 :root {
-  --header-z-index: 1000;
-  --header-background: var(--awe-palette-background-default);
-  --header-border: 2px solid black;
-  --header-blur: blur(3px);
-  --header-mask-gradient: linear-gradient(to bottom, black 1px, transparent);
-  --layout-shadow: 0 4px 8px rgba(0, 0, 0, 0.05);
-  --header-height: 56px;
+  --layout-header-z-index: 1000;
+  --layout-header-height: 56px;
+  --background-pattern: radial-gradient(transparent 1px, #0b1012 1px);
+  --blur-effect: blur(2px); /* Reduced blur for better performance */
 }
 
+/* Header Component */
 .LayoutHeader {
-  height: var(--header-height);
-  z-index: var(--header-z-index);
-  position: relative;
-  padding: 1rem;
-  min-height: 2rem;
-  max-height: 4rem;
-  border-bottom: var(--header-border);
-  background: {
-    image: radial-gradient(transparent 1px, var(--header-background) 1px);
-    size: 4px 4px;
-    color: rgba(255, 255, 255, 0.8); // Fallback base
-  }
+  position: sticky;
+  top: 0;
+  height: var(--layout-header-height);
+  z-index: var(--layout-header-z-index);
+  padding: 0 0.5rem;
   display: flex;
+  gap: 0.25rem;
+  justify-content: space-between;
   align-items: center;
-  gap: 0.75rem;
+  background-image: var(--background-pattern);
+  background-size: 4px 4px;
 
-  width: 100%;
-
-  // Modern backdrop filter support
-  @supports (backdrop-filter: none) or (-webkit-backdrop-filter: none) {
-    background-color: transparent;
-    backdrop-filter: var(--header-blur);
-    -webkit-backdrop-filter: var(--header-blur);
+  /* Optimized backdrop filter */
+  @supports (backdrop-filter: blur(0)) {
+    backdrop-filter: var(--blur-effect);
+    -webkit-backdrop-filter: var(--blur-effect);
+    background-color: rgba(0, 0, 0, 0.05); /* Fallback for better contrast */
   }
+}
 
-  &__Search {
-    flex: 0 1 732px;
-    margin: 0 auto;
+.LayoutHeader__Search {
+  flex: 1;
+  max-width: 732px;
+  margin: 0 auto;
+
+  @media (max-width: 768px) {
+    max-width: 100%;
   }
-
-  transform: translateZ(0);
 }
 
 .LayoutOutlet {
   display: flex;
   flex-direction: column;
-  min-height: 100vh;
-  min-height: 100dvh;
-  isolation: isolate;
+  min-height: 100dvh; /* Use device viewport height */
+  isolation: isolate; /* Only if absolutely needed for blending modes */
 }
 
 .LayoutBody {
   flex: 1;
-  z-index: 1;
-  padding: 0 2.75rem;
   overflow-y: auto;
   position: relative;
-  max-height: calc(100dvh - var(--header-height));
-}
+  max-height: calc(100dvh - var(--layout-header-height));
+  will-change: scroll-position;
 
-@supports not (contain: layout) {
-  .LayoutHeader {
-    overflow: hidden;
-  }
-}
-
-@media (prefers-reduced-motion: no-preference) {
-  .LayoutHeader {
-    transition: backdrop-filter 0.3s ease;
+  @supports not (min-height: 100dvh) {
+    max-height: calc(100vh - var(--layout-header-height));
   }
 }

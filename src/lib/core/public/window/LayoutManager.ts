@@ -29,31 +29,7 @@ export type LayoutState = {
 // Android Landscape: ✅ (both queries)
 // Desktop:           ✅ when window ratio ≥ 1/1
 // Tablet:            ✅ in landscape mode
-const QUERIES = {
-  [EMediaQueryKey.Mobile]: `
-    (max-width: ${MOBILE_SCREEN_MAX_WIDTH}px),
-    (max-width: ${MOBILE_SCREEN_LANDSCAPE_MAX_WIDTH}px) and 
-    (max-height: ${MOBILE_SCREEN_LANDSCAPE_MAX_HEIGHT}px)
-  `,
 
-  [EMediaQueryKey.Tablet]: `
-    (min-width: ${MOBILE_SCREEN_MAX_WIDTH + 1}px) and 
-    (max-width: ${MIN_SCREEN_WIDTH_FOR_STATIC_LEFT_COLUMN}px)
-  `,
-
-  [EMediaQueryKey.Landscape]: IS_IOS
-    ? "(orientation: landscape)"
-    : `
-        (orientation: landscape) and (min-aspect-ratio: 1/1),
-        /* Legacy fallback for Android browsers */
-        (orientation: landscape) and (min-device-aspect-ratio: 1/1)
-      `,
-
-  [EMediaQueryKey.Touch]: `
-    (pointer: coarse) or 
-    (hover: none)
-  `,
-};
 
 let state: Readonly<LayoutState> = {
   isMobile: false,
@@ -71,6 +47,32 @@ const DEBOUNCE_MS = 100;
 const debouncedUpdate = debounce(updateLayoutState, DEBOUNCE_MS);
 
 function initializeMediaQueries() {
+  const QUERIES = {
+    [EMediaQueryKey.Mobile]: `
+    (max-width: ${MOBILE_SCREEN_MAX_WIDTH}px),
+    (max-width: ${MOBILE_SCREEN_LANDSCAPE_MAX_WIDTH}px) and
+    (max-height: ${MOBILE_SCREEN_LANDSCAPE_MAX_HEIGHT}px)
+  `,
+
+    [EMediaQueryKey.Tablet]: `
+    (min-width: ${MOBILE_SCREEN_MAX_WIDTH + 1}px) and
+    (max-width: ${MIN_SCREEN_WIDTH_FOR_STATIC_LEFT_COLUMN}px)
+  `,
+
+    [EMediaQueryKey.Landscape]: IS_IOS
+      ? "(orientation: landscape)"
+      : `
+        (orientation: landscape) and (min-aspect-ratio: 1/1),
+        /* Legacy fallback for Android browsers */
+        (orientation: landscape) and (min-device-aspect-ratio: 1/1)
+      `,
+
+    [EMediaQueryKey.Touch]: `
+    (pointer: coarse) or
+    (hover: none)
+  `,
+  };
+
   Object.entries(QUERIES).forEach(([key, query]) => {
     const mqKey = key as EMediaQueryKey;
     const mq = window.matchMedia(query);

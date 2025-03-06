@@ -1,5 +1,6 @@
 import { throttle } from "@/lib/core";
 import { requestMeasure } from "@/lib/modules/fastdom";
+import { useStableCallback } from "@/shared/hooks/base";
 import useResizeObserver from "@/shared/hooks/DOM/useResizeObserver";
 import { useRef, useEffect, useCallback } from "react";
 
@@ -15,14 +16,11 @@ const useAmbilight = (
   const callbackId = useRef<number | NodeJS.Timeout | undefined>(undefined);
   const isRVFCSupported = useRef(false);
 
-  const getVideoElement = useCallback(() => videoRef.current, [videoRef]);
-  const getCanvasElement = useCallback(() => canvasRef.current, [canvasRef]);
-
-  const stopAmbilightRepaint = useCallback(() => {
+  const stopAmbilightRepaint = useStableCallback(() => {
     if (callbackId.current === undefined) return;
 
     if (isRVFCSupported.current) {
-      getVideoElement()?.cancelVideoFrameCallback(callbackId.current as number);
+      videoRef.current?.cancelVideoFrameCallback(callbackId.current as number);
     } else {
       if (typeof callbackId.current === "number") {
         cancelAnimationFrame(callbackId.current);
@@ -31,45 +29,42 @@ const useAmbilight = (
       }
     }
     callbackId.current = undefined;
-  }, [getVideoElement]);
+  });
 
-  const updateCanvasDimensionsIfNeeded = useCallback(
+  const updateCanvasDimensionsIfNeeded = useStableCallback(
     (entry?: ResizeObserverEntry) => {
-      const video = getVideoElement();
-      const canvas = getCanvasElement();
+      const video = videoRef.current;
+      const canvas = canvasRef.current;
 
-      requestMeasure(() => {
-        if (video && canvas) {
-          const entryOrContainer = entry
-            ? entry.contentRect
-            : { width: video.clientWidth, height: video.clientHeight };
+      if (video && canvas) {
+        const entryOrContainer = entry
+          ? entry.contentRect
+          : { width: video.clientWidth, height: video.clientHeight };
 
-          const { width: _w, height: _h } = entryOrContainer;
+        const { width: _w, height: _h } = entryOrContainer;
 
-          const dpr = window.devicePixelRatio || 1;
-          const width = _w * dpr;
-          const height = _h * dpr;
+        const dpr = window.devicePixelRatio || 1;
+        const width = _w * dpr;
+        const height = _h * dpr;
 
-          if (canvas.width !== width || canvas.height !== height) {
-            canvas.width = width;
-            canvas.height = height;
-          }
+        if (canvas.width !== width || canvas.height !== height) {
+          canvas.width = width;
+          canvas.height = height;
         }
-      });
-    },
-    [getVideoElement, getCanvasElement],
+      }
+    }
   );
 
   useResizeObserver(videoRef, (entry) => {
     updateCanvasDimensionsIfNeeded(entry);
-    if (!getVideoElement()?.paused) paintFrame();
+    if (!videoRef.current?.paused) paintFrame();
   });
 
   const paintFrame = useCallback(
     throttle(
       () => {
-        const videoElement = getVideoElement();
-        const canvasElement = getCanvasElement();
+        const videoElement = videoRef.current;
+        const canvasElement = canvasRef.current;
 
         if (
           !videoElement ||
@@ -121,12 +116,12 @@ const useAmbilight = (
       intervalMs,
       true,
     ),
-    [isDisabled, getVideoElement, getCanvasElement],
+    [isDisabled],
   );
 
   const startAmbilightRepaint = useCallback(() => {
     stopAmbilightRepaint();
-    const videoElement = getVideoElement();
+    const videoElement = videoRef.current;
     if (!videoElement) return;
 
     isRVFCSupported.current = "requestVideoFrameCallback" in HTMLVideoElement.prototype;
@@ -138,13 +133,13 @@ const useAmbilight = (
       lastPaintRef.current = performance.now();
       callbackId.current = requestAnimationFrame(paintFrame);
     }
-  }, [stopAmbilightRepaint, getVideoElement, paintFrame, updateCanvasDimensionsIfNeeded]);
+  }, [stopAmbilightRepaint, paintFrame, updateCanvasDimensionsIfNeeded]);
 
   useEffect(() => {
     if (isDisabled) return;
 
-    const videoElement = getVideoElement();
-    const canvasElement = getCanvasElement();
+    const videoElement = videoRef.current;
+    const canvasElement = canvasRef.current;
     if (!videoElement || !canvasElement) return;
 
     const handleVisibilityChange = () => {
@@ -177,7 +172,7 @@ const useAmbilight = (
       videoElement.removeEventListener("loadeddata", startAmbilightRepaint);
       videoElement.removeEventListener("error", handleError);
     };
-  }, [isDisabled, startAmbilightRepaint, stopAmbilightRepaint, getVideoElement, getCanvasElement]);
+  }, [isDisabled, startAmbilightRepaint, stopAmbilightRepaint]);
 
   useEffect(() => {
     if (isDisabled) stopAmbilightRepaint();

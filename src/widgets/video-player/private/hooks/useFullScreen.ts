@@ -144,7 +144,12 @@ function checkIfFullscreen(): boolean {
 async function requestFullscreen(element: PartialHTMLElementSupport): Promise<void> {
   try {
     if (element.requestFullscreen) {
-      await element.requestFullscreen();
+      await element.requestFullscreen().then(() => {
+        // Once in fullscreen, try to lock the screen orientation to landscape
+        window.screen.orientation.lock('landscape').catch(err => {
+          console.error('Orientation lock failed:', err);
+        });
+      });
     } else if (element.webkitRequestFullscreen) {
       await element.webkitRequestFullscreen();
     } else if (element.mozRequestFullScreen) {
@@ -157,6 +162,14 @@ async function requestFullscreen(element: PartialHTMLElementSupport): Promise<vo
 
 async function requestExitFullscreen(): Promise<void> {
   const _document = document as PartialDocumentSupport;
+
+  try {
+    if (screen.orientation.unlock) {
+      screen.orientation.unlock();
+    }
+  } catch {
+
+  }
 
   try {
     if (_document.exitFullscreen) {

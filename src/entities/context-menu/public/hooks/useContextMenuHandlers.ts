@@ -5,6 +5,7 @@ import {
   EMouseButton,
   IVector2,
   EKeyboardKey,
+  debounce
 } from "@/lib/core";
 import { ReadonlySignal } from "@/lib/core/public/signals";
 import { requestMutation } from "@/lib/modules/fastdom";
@@ -15,19 +16,10 @@ import {
 import { RefObject, useReducer, useRef, useCallback, useEffect } from "react";
 import useEffectSync from "../../../../shared/hooks/effects/useEffectSync";
 import { useStableCallback } from "@/shared/hooks/base";
-import { noop } from "@/lib/utils/listener";
+import { } from "@/lib/utils/listener";
 
 const LONG_TAP_DURATION_MS = 200;
 const DEFAULT_IOS_PWA_CONTEXT_MENU_DELAY_MS = 100;
-
-function debounce<T extends (...args: any[]) => void>(func: T, delay: number): T {
-  let timeout: ReturnType<typeof setTimeout>;
-
-  return ((...args: any[]) => {
-    clearTimeout(timeout);
-    timeout = setTimeout(() => func(...args), delay);
-  }) as T;
-}
 
 function stopEvent(e: Event, shouldStop: boolean = true) {
   if (shouldStop) {
@@ -167,6 +159,9 @@ const useContextMenuHandlers = (
     if (e.shiftKey && e.code === EKeyboardKey.F10) {
       e.preventDefault();
       const element = elementRef.current;
+
+      if (!element) return;
+
       const rect = element?.getBoundingClientRect();
       const anchor = rect ? { x: rect.left, y: rect.top } : { x: 0, y: 0 };
 
@@ -185,11 +180,11 @@ const useContextMenuHandlers = (
       shouldDisableOnLongTap ||
       (readySignal && !readySignal.value)
     ) {
-      return noop;
+      return;
     }
 
     const element = elementRef.current;
-    if (!element) return noop;
+    if (!element) return;
 
     const clearLongPressTimer = () => {
       if (timerRef.current) {

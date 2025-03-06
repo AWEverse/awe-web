@@ -1,6 +1,7 @@
-import { clamp, throttle } from "@/lib/core";
-import { useEffect, RefObject } from "react";
+import { clamp, IS_MOBILE, throttle } from "@/lib/core";
+import { useEffect, RefObject, useRef } from "react";
 import windowSize from "@/lib/utils/windowSize";
+import useResizeObserver from "../DOM/useResizeObserver";
 
 interface UseBoundaryCheckParams {
   elementRef: RefObject<HTMLElement | null>;
@@ -17,6 +18,12 @@ interface UseBoundaryCheckParams {
 const DEFAULT_OUTBOX_SIZE = 50;
 const DEFAULT_THROTTLE_INTERVAL = 100;
 
+function generateVirtualElement(x: number, y: number) {
+  return {
+    getBoundingClientRect: () => new DOMRect(x, y),
+  };
+}
+
 export function useBoundaryCheck({
   elementRef,
   isActive,
@@ -31,7 +38,7 @@ export function useBoundaryCheck({
   } = options || {};
 
   useEffect(() => {
-    if (!isActive) return;
+    if (!isActive || IS_MOBILE) return;
 
     const element = elementRef.current;
     if (!element) return;

@@ -50,7 +50,6 @@ type OwnProps = {
   posterSize?: ApiDimensions;
 
   // UI State
-  waitingSignal: ReadonlySignal<boolean>;
   isForceMobileVersion?: boolean;
   isFullscreen: boolean;
   isFullscreenSupported: boolean;
@@ -98,7 +97,6 @@ const VideoPlayerControls: FC<OwnProps> = ({
   url,
   fileSize,
   posterSize,
-  waitingSignal,
   isForceMobileVersion,
   isFullscreen,
   isFullscreenSupported,
@@ -205,7 +203,6 @@ const VideoPlayerControls: FC<OwnProps> = ({
       onClick={stopEvent}
     >
       <VideoPlayerMetter
-        waitingSignal={waitingSignal}
         currentTimeSignal={currentTimeSignal}
         duration={duration}
         bufferedRangesSignal={bufferedRangesSignal}

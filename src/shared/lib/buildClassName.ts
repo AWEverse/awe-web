@@ -1,3 +1,4 @@
+import murmurHash2 from '@/lib/core/public/cryptography/utils/murmurHash2';
 import { useMemo } from 'react';
 
 /**
@@ -16,37 +17,6 @@ export type ClassValue =
  * An array of class name values.
  */
 export type Parts = ClassValue[];
-
-/**
- * Utility for MurmurHash3 hashing algorithm (32-bit version).
- *
- * @param {string} key - The input string to hash.
- * @param {number} seed - Optional seed for the hash.
- * @returns {number} A 32-bit hash of the input string.
- */
-function murmurHash3(key: string, seed: number = 0): number {
-  let h1 = seed ^ key.length;
-
-  for (let i = 0; i < key.length; i++) {
-    let k1 = key.charCodeAt(i);
-    k1 = (k1 * 0xcc9e2d51) & 0xffffffff;
-    k1 = (k1 << 15) | (k1 >>> 17); // Rotate left 15 bits
-    k1 = (k1 * 0x1b873593) & 0xffffffff;
-
-    h1 ^= k1;
-    h1 = (h1 << 13) | (h1 >>> 19); // Rotate left 13 bits
-    h1 = (h1 * 5 + 0xe6546b64) & 0xffffffff;
-  }
-
-  h1 ^= key.length;
-  h1 ^= h1 >>> 16;
-  h1 = (h1 * 0x85ebca6b) & 0xffffffff;
-  h1 ^= h1 >>> 13;
-  h1 = (h1 * 0xc2b2ae35) & 0xffffffff;
-  h1 ^= h1 >>> 16;
-
-  return h1 >>> 0;
-}
 
 /**
  * Generates a fast hash for an object by iterating over its own enumerable properties.
@@ -81,7 +51,9 @@ function fastHash(parts: Parts, depth: number = 0, cacheRefs: Map<any, string> =
   if (depth > 10) return '|depth:exceeded';
 
   const result: string[] = [];
-  for (const part of parts) {
+  for (let i = 0, len = parts.length; i < len; ++i) {
+    const part = parts[i];
+
     if (part === null || part === undefined) continue;
 
     if (Array.isArray(part)) {
@@ -118,8 +90,8 @@ function processPart(part: ClassValue, out: string[]): void {
   if (part === null || part === undefined) return;
 
   if (Array.isArray(part)) {
-    for (const subPart of part) {
-      processPart(subPart, out);
+    for (let i = 0, len = part.length; i < len; ++i) {
+      processPart(part[i], out);
     }
     return;
   }
@@ -149,15 +121,16 @@ export function useClassNameBuilder(): (...parts: Parts) => string {
   console.log(cache);
 
   return (...parts: Parts): string => {
-    const key = murmurHash3(fastHash(parts));
+    const key = murmurHash2(fastHash(parts), 32);
 
     if (cache.has(key)) {
       return cache.get(key)!;
     }
 
     const classNames: string[] = [];
-    for (const part of parts) {
-      processPart(part, classNames);
+
+    for (let i = 0, len = parts.length; i < len; ++i) {
+      processPart(parts[i], classNames);
     }
 
     const result = classNames.join(' ');
@@ -166,6 +139,7 @@ export function useClassNameBuilder(): (...parts: Parts) => string {
     // Evict the oldest cache entry if exceeding a size limit
     if (cache.size > 1000) {
       const firstKey = cache.keys().next().value;
+
       if (firstKey !== undefined) {
         cache.delete(firstKey);
       }
@@ -183,8 +157,10 @@ export function useClassNameBuilder(): (...parts: Parts) => string {
  */
 export default function buildClassName(...parts: Parts): string {
   const classNames: string[] = [];
-  for (const part of parts) {
-    processPart(part, classNames);
+
+  for (let i = 0, len = parts.length; i < len; ++i) {
+    processPart(parts[i], classNames);
   }
+
   return classNames.join(' ');
 }
