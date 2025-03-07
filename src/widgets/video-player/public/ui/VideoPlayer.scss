@@ -17,7 +17,6 @@
   @media (max-height: 640px) {
     max-height: min(100dvh, var(--max-player-height));
   }
-
 }
 
 /* Override user agent fullscreen styles with higher specificity */
@@ -85,12 +84,6 @@
   touch-action: manipulation;
   user-select: none;
   overscroll-behavior: contain;
-  contain: layout size style;
-
-  // Modern browser optimizations
-  @supports (height: 100dvh) {
-    max-height: 100dvh;
-  }
 
   &::-webkit-media-controls {
     display: none !important;

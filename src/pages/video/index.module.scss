@@ -3,13 +3,13 @@
   --right-column-breakpoint: 882px;
   --right-column-min-width: 300px;
   --right-column-max-width: 402px;
-  --padding-base: 1rem;
+  --padding-base: 4.25rem;
   --padding-mobile: 0.5rem;
   --container-gap: var(--video-container-gap);
 
   display: flex;
   flex-direction: column;
-  padding: var(--padding-base);
+  padding: var(--padding-mobile);
   gap: var(--video-container-gap);
   position: relative;
   overflow: hidden;

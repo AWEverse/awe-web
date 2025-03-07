@@ -1,40 +1,20 @@
-import createMatchMediaPolyfillIfNeeded from "./window/matchMediaPolyfill";
+import createLandscapeOrientaion from "./createLandscapeOrientaion";
+import { delegate, wrapCallback } from "./createListeners";
+import { createOrientationLock } from "./createOrientationLock";
+import { createUnlockOrientation } from "./createUnlockOrientation";
+import { findOrientationDelegate, } from "./installPolyfill";
+import { IScreenOrientation, ExtendedScreen } from "./types";
 
-interface DelegateFound {
-  delegate: any;
-  event: string;
-}
-
-declare function findDelegate(obj: any): DelegateFound;
-declare function delegate(method: string, delegateObj: any, event: string): any;
-declare function getLock(): (orientation: string) => Promise<void>;
-declare function getUnlock(): () => void;
-
-function getMql(): MediaQueryList {
-  createMatchMediaPolyfillIfNeeded();
-
-  return window.matchMedia('(orientation: landscape)');
-}
-declare function wrapCallback(cb: any, or: any): any;
-
-export interface IScreenOrientation extends ScreenOrientation {
-  lock: (orientation: string) => Promise<void>;
-}
-
-interface ExtendedScreen extends Screen {
-  msOrientation?: string;
-  mozOrientation?: string;
-}
 
 // Create a class that implements the interface.
 // Note: The implementations for event methods and lock/unlock will be added via delegation.
-class ScreenOrientation implements IScreenOrientation {
+class PScreenOrientation implements IScreenOrientation {
   addEventListener: (
     type: string,
     listener: EventListenerOrEventListenerObject,
     options?: boolean | AddEventListenerOptions,
   ) => void = () => { };
-  dispatchEvent: (event: Event) => boolean = () => false;
+  dispatchEvent: (event: Event) => boolean = () => true;
   removeEventListener: (
     type: string,
     listener: EventListenerOrEventListenerObject,
@@ -44,7 +24,7 @@ class ScreenOrientation implements IScreenOrientation {
   lock!: (orientation: string) => Promise<void>;
   unlock!: () => void;
 
-  onchange: ((this: IScreenOrientation, ev: Event) => any) | null = null;
+  onchange: ((this: ScreenOrientation, ev: Event) => any) | null = null;
 
   constructor() { }
 
@@ -65,37 +45,37 @@ export function createOrientation(): IScreenOrientation {
     "180": "portrait-secondary",
   };
 
-  const or = new ScreenOrientation();
-  const found = findDelegate(or);
+  const or = new PScreenOrientation();
+  const found = findOrientationDelegate(or);
 
-  ScreenOrientation.prototype.addEventListener = delegate(
+  PScreenOrientation.prototype.addEventListener = delegate(
     "addEventListener",
     found.delegate,
-    found.event,
+    found.eventName,
   );
 
-  ScreenOrientation.prototype.dispatchEvent = delegate(
+  PScreenOrientation.prototype.dispatchEvent = delegate(
     "dispatchEvent",
     found.delegate,
-    found.event,
+    found.eventName,
   );
 
-  ScreenOrientation.prototype.removeEventListener = delegate(
+  PScreenOrientation.prototype.removeEventListener = delegate(
     "removeEventListener",
     found.delegate,
-    found.event,
+    found.eventName,
   );
 
-  ScreenOrientation.prototype.lock = getLock();
-  ScreenOrientation.prototype.unlock = getUnlock();
+  PScreenOrientation.prototype.lock = createOrientationLock();
+  PScreenOrientation.prototype.unlock = createUnlockOrientation();
 
   Object.defineProperties(or, {
     onchange: {
       get() {
-        return found.delegate["on" + found.event] || null;
+        return found.delegate["on" + found.eventName] || null;
       },
       set(cb: any) {
-        found.delegate["on" + found.event] = wrapCallback(cb, or);
+        found.delegate["on" + found.eventName] = wrapCallback(cb, or);
       },
       configurable: true,
       enumerable: true,
@@ -110,7 +90,7 @@ export function createOrientation(): IScreenOrientation {
           scr.mozOrientation ||
           // @deprecated
           orientationMap[String(window.orientation)] ||
-          (getMql().matches ? "landscape-primary" : "portrait-primary")
+          (createLandscapeOrientaion().matches ? "landscape-primary" : "portrait-primary")
         );
       },
       configurable: true,

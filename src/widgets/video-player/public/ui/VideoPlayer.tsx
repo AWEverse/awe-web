@@ -259,8 +259,6 @@ const VideoPlayer: React.FC<OwnProps> = ({
     },
   );
 
-  screen.orientation.lock();
-
   const isIntersectingForPlaying =
     useIsIntersecting(containerRef, observeIntersectionForPlaying) &&
     isIntersectingForLoading;

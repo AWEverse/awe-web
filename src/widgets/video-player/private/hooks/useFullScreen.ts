@@ -3,6 +3,8 @@ import { IS_IOS, IS_REQUEST_FULLSCREEN_SUPPORTED } from "@/lib/core";
 import { useStableCallback } from "@/shared/hooks/base";
 import React, { useState, useLayoutEffect, useCallback } from "react";
 
+import "@/lib/core/public/polyfill/ScreenOrientation/screenOrientation";
+
 type FullscreenControls = [boolean, () => Promise<void>];
 
 const FULLSCREEN_EVENTS = [
@@ -146,7 +148,7 @@ async function requestFullscreen(element: PartialHTMLElementSupport): Promise<vo
     if (element.requestFullscreen) {
       await element.requestFullscreen().then(() => {
         // Once in fullscreen, try to lock the screen orientation to landscape
-        window.screen.orientation.lock('landscape').catch(err => {
+        screen.orientation.lock('landscape').catch(err => {
           console.error('Orientation lock failed:', err);
         });
       });
