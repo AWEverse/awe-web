@@ -14,7 +14,7 @@ type OrientationLockType =
 interface ScreenOrientationPolyfill extends Omit<ScreenOrientation, 'type' | 'lock' | 'unlock'> {
   type: OrientationType;
   lock(orientation: OrientationLockType): Promise<void>;
-  unlock(): Promise<void>;
+  unlock(): void;
   addEventListener(type: 'change', listener: (this: this, ev: Event) => any, options?: boolean | AddEventListenerOptions): void;
   removeEventListener(type: 'change', listener: (this: this, ev: Event) => any, options?: boolean | EventListenerOptions): void;
 }
@@ -66,21 +66,26 @@ const createScreenOrientationPolyfill = (): ScreenOrientationPolyfill => {
     if (!lockedOrientation) return 0;
     const currentType = getNativeOrientation();
     const currentAngle = angleMap[currentType];
-    if (lockedOrientation === 'landscape') {
-      if (currentType.startsWith('portrait')) {
-        const targetAngle = angleMap['landscape-primary'];
+
+    switch (lockedOrientation) {
+      case ('landscape'): {
+        if (currentType.startsWith('portrait')) {
+          const targetAngle = angleMap['landscape-primary'];
+          return targetAngle - currentAngle;
+        }
+
+        return 0;
+      } case ('portrait'): {
+        if (currentType.startsWith('landscape')) {
+          const targetAngle = angleMap['portrait-primary'];
+          return targetAngle - currentAngle;
+        }
+
+        return 0;
+      } default: {
+        const targetAngle = angleMap[lockedOrientation as OrientationType];
         return targetAngle - currentAngle;
       }
-      return 0;
-    } else if (lockedOrientation === 'portrait') {
-      if (currentType.startsWith('landscape')) {
-        const targetAngle = angleMap['portrait-primary'];
-        return targetAngle - currentAngle;
-      }
-      return 0;
-    } else {
-      const targetAngle = angleMap[lockedOrientation as OrientationType];
-      return targetAngle - currentAngle;
     }
   };
 
@@ -90,6 +95,7 @@ const createScreenOrientationPolyfill = (): ScreenOrientationPolyfill => {
   };
 
   const polyfill: ScreenOrientationPolyfill = {
+
     get type(): OrientationType {
       return getNativeOrientation();
     },
@@ -103,13 +109,16 @@ const createScreenOrientationPolyfill = (): ScreenOrientationPolyfill => {
         throw new DOMException('Orientation already locked', 'InvalidStateError');
       }
 
-      if (!document.fullscreenElement && !(document as any).webkitFullscreenElement) {
+      const _document = document as PartialDocumentSupport;
+      const _orientation = screen.orientation as ScreenOrientationPolyfill;
+
+      if (!document.fullscreenElement && !_document.webkitFullscreenElement) {
         throw new DOMException('Requires fullscreen mode', 'SecurityError');
       }
 
       if (ORIENTATION_LOCK_SUPPORTED) {
         try {
-          await (screen.orientation as any).lock(orientation);
+          await _orientation.lock(orientation);
           lockedOrientation = orientation;
           return;
         } catch (err) {
@@ -118,7 +127,7 @@ const createScreenOrientationPolyfill = (): ScreenOrientationPolyfill => {
       }
 
       if (orientation === 'any') {
-        await this.unlock();
+        this.unlock();
         return;
       }
 
@@ -126,11 +135,12 @@ const createScreenOrientationPolyfill = (): ScreenOrientationPolyfill => {
       applyRotation();
     },
 
-    async unlock(): Promise<void> {
+    unlock(): void {
       if (!lockedOrientation) return;
+      const _orientation = screen.orientation as ScreenOrientationPolyfill;
 
       if (ORIENTATION_UNLOCK_SUPPORTED) {
-        (screen.orientation as any).unlock();
+        _orientation.unlock();
       } else {
         applyVisualRotation();
       }
