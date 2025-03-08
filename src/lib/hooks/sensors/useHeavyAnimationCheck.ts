@@ -1,22 +1,56 @@
 import { useCallback, useEffect, useMemo, useRef } from "react";
-import { createCallbackManager } from "../../utils/callbacks";
-import { useStableCallback } from "@/shared/hooks/base";
-import { getIsHeavyAnimating } from "@/lib/core";
+import { fastRaf, getIsHeavyAnimating } from "@/lib/core";
 
-const startCallbacks = createCallbackManager();
-const endCallbacks = createCallbackManager();
+function createThrottledCallbackManager() {
+  const callbacks = new Set<NoneToVoidFunction>();
+  let isProcessing = false;
 
-getIsHeavyAnimating.subscribe((IsHeavyAnimating) => {
-  (IsHeavyAnimating ? startCallbacks : endCallbacks).runCallbacks();
+  return {
+    addCallback: (callback: NoneToVoidFunction) => {
+      callbacks.add(callback);
+    },
+    removeCallback: (callback: NoneToVoidFunction) => {
+      callbacks.delete(callback);
+    },
+    runCallbacks: () => {
+      if (isProcessing) return;
+      isProcessing = true;
+
+      const processNext = () => {
+        if (callbacks.size === 0) {
+          isProcessing = false;
+          return;
+        }
+
+        const callback = callbacks.values().next().value;
+        if (callback) {
+          callbacks.delete(callback);
+          callback();
+          fastRaf(processNext);
+        } else {
+          isProcessing = false;
+        }
+      };
+
+      processNext();
+    },
+  };
+}
+
+const startCallbacks = createThrottledCallbackManager();
+const endCallbacks = createThrottledCallbackManager();
+
+getIsHeavyAnimating.subscribe((isHeavy) => {
+  (isHeavy ? startCallbacks : endCallbacks).runCallbacks();
 });
 
-const useHeavyAnimationCheck = (
-  onStart?: AnyToVoidFunction,
-  onEnd?: AnyToVoidFunction,
-  isDisabled = false,
-) => {
-  const lastOnStart = useStableCallback(onStart);
-  const lastOnEnd = useStableCallback(onEnd);
+export function useHeavyAnimationCheck(
+  onStart = () => { },
+  onEnd = () => { },
+  isDisabled = false
+) {
+  const lastOnStart = useRef(onStart).current;
+  const lastOnEnd = useRef(onEnd).current;
 
   useEffect(() => {
     if (isDisabled) return;
@@ -30,12 +64,12 @@ const useHeavyAnimationCheck = (
       startCallbacks.removeCallback(lastOnStart);
       endCallbacks.removeCallback(lastOnEnd);
     };
-  }, [isDisabled, lastOnEnd, lastOnStart]);
-};
+  }, [isDisabled, lastOnStart, lastOnEnd]);
+}
 
-export function useThrottledAnimation<T extends AnyToVoidFunction>(
+export function useThrottledAnimation<T extends (...args: any[]) => void>(
   afterHeavyAnimation: T,
-  deps: unknown[],
+  deps: unknown[]
 ) {
   const fnMemo = useCallback(afterHeavyAnimation, deps);
   const isScheduledRef = useRef(false);
@@ -49,15 +83,16 @@ export function useThrottledAnimation<T extends AnyToVoidFunction>(
           fnMemo(...args);
         } else {
           isScheduledRef.current = true;
-
-          const removeCallback = endCallbacks.addCallback(() => {
-            fnMemo(...args);
-            removeCallback();
-            isScheduledRef.current = false;
+          endCallbacks.addCallback(() => {
+            try {
+              fnMemo(...args);
+            } finally {
+              isScheduledRef.current = false;
+            }
           });
         }
       },
-    [fnMemo],
+    [fnMemo]
   );
 }
 

@@ -1,8 +1,6 @@
 import { useSyncExternalStore } from "react";
-import LayoutManager, {
-  type LayoutState,
-} from "@/lib/core/public/window/LayoutManager";
-import { IS_BROWSER } from "@/lib/core";
+
+import { IS_BROWSER, LayoutManager, type LayoutState } from "@/lib/core";
 import { useStableCallback } from "@/shared/hooks/base";
 
 type SelectorPayload<T> = (state: LayoutState) => T;

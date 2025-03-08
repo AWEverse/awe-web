@@ -1,81 +1,48 @@
-.signal-visualizer {
+.container {
   padding: 20px;
-  font-family: monospace;
-
-  .controls {
-    margin-bottom: 20px;
-
-    button {
-      padding: 8px 16px;
-      background: #007bff;
-      color: white;
-      border: none;
-      border-radius: 4px;
-      cursor: pointer;
-    }
-  }
+  max-width: 800px;
+  margin: 0 auto;
 }
 
-.signal-node {
-  border: 1px solid #ddd;
-  border-radius: 4px;
-  margin: 8px 0;
-  background: white;
+.button-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 15px;
+  margin-top: 20px;
+}
 
-  .node-header {
-    display: flex;
-    align-items: center;
-    padding: 8px;
-    background: #f8f9fa;
-    cursor: pointer;
+.btn {
+  padding: 10px 15px;
+  border: none;
+  border-radius: 5px;
+  background-color: #007bff;
+  color: white;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-size: 14px;
+}
 
-    .node-type {
-      font-weight: bold;
-      color: #2c3e50;
-    }
+.btn:hover {
+  background-color: #0056b3;
+  transform: translateY(-2px);
+}
 
-    .toggle {
-      margin-left: auto;
-      padding: 0 8px;
-    }
-  }
+.btn:active {
+  transform: translateY(0);
+}
 
-  .node-properties {
-    padding: 8px;
-    border-top: 1px solid #eee;
+.btn-success {
+  background-color: #28a745;
+}
 
-    .property {
-      margin: 4px 0;
-      padding: 4px;
-      background: #f8f9fa;
-      border-radius: 4px;
-    }
-  }
+.btn-success:hover {
+  background-color: #218838;
+}
 
-  .dependencies {
-    margin: 8px 0;
-    padding: 8px;
-    background: #f1f5f9;
+.btn-danger {
+  background-color: #dc3545;
+}
 
-    h4 {
-      margin: 0 0 8px 0;
-      color: #4a5568;
-    }
-
-    .linked-list {
-      display: flex;
-      align-items: center;
-      flex-wrap: wrap;
-      gap: 12px;
-
-      .connection-arrow {
-        color: #718096;
-        padding: 0 4px;
-      }
-
-      .signal-node {
-        margin: 4px 0;
-      }
-    }
-  }
+.btn-danger:hover {
+  background-color: #c82333;
 }

@@ -3,3 +3,4 @@ export * from "./ILifeCycle";
 export * from "./UserErrors";
 export * from "./Branch";
 export * from "./IDisposable";
+export * from "./Bitwise";

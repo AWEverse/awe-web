@@ -14,7 +14,7 @@
 .dropdownBackdrop {
   position: fixed;
   inset: 0;
-  z-index: 10;
+  z-index: 1000;
   touch-action: none;
   height: 100vh;
   width: 100vw;
@@ -30,7 +30,7 @@
   max-height: calc(100 * var(--vh) - 4.375rem); /* Limits height relative to viewport */
   min-width: 1rem;
   max-width: 19rem;
-  z-index: 100;
+  z-index: 1001;
   background-color: var(--dropdown-background); /* Consistent with variable */
   backdrop-filter: blur(10rem);
   user-select: none;
