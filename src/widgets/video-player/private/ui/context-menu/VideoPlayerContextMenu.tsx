@@ -7,6 +7,7 @@ import MenuMain, { type ActionType } from "./screens/MenuMain";
 import buildClassName from "@/shared/lib/buildClassName";
 
 import s from "./VideoPlayerContextMenu.module.scss";
+import useAppLayout from "@/lib/hooks/ui/useAppLayout";
 
 interface VideoPlayerContextMenuProps
   extends Omit<ContextMenuProps, "children"> {}
@@ -16,6 +17,8 @@ type Screen = "Main";
 const ANIMATION_DURATION = 0.125;
 
 const VideoPlayerContextMenu: FC<VideoPlayerContextMenuProps> = (props) => {
+  const isMobile = useAppLayout((state) => state.isMobile);
+
   const [screen, setScreen] = useState<Screen>("Main");
 
   const handleActionChange = useStableCallback((action: ActionType) => {});
@@ -45,16 +48,18 @@ const VideoPlayerContextMenu: FC<VideoPlayerContextMenuProps> = (props) => {
         </motion.div>
       </AnimatePresence>
 
-      <div className={buildClassName("key-container", s.keyNavigation)}>
-        <div className="key-item">
-          <kbd className="key-button">↨</kbd>
-          <span className="key-label">Jump</span>
+      {!isMobile && (
+        <div className={buildClassName("key-container", s.keyNavigation)}>
+          <div className="key-item">
+            <kbd className="key-button">↨</kbd>
+            <span className="key-label">Jump</span>
+          </div>
+          <div className="key-item">
+            <kbd className="key-button">↵</kbd>
+            <span className="key-label">Enter</span>
+          </div>
         </div>
-        <div className="key-item">
-          <kbd className="key-button">↵</kbd>
-          <span className="key-label">Enter</span>
-        </div>
-      </div>
+      )}
     </ContextMenu>
   );
 };

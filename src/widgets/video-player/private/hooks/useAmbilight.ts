@@ -190,6 +190,7 @@ const useAmbilight = (
       }
     };
 
+
     const handlePlay = () => {
       updateVideoState();
       resumeAmbilightRepaint();

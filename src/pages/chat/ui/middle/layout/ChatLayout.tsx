@@ -1,9 +1,7 @@
 import { FC, PropsWithChildren, useEffect, useRef } from "react";
-
 import s from "./ChatLayout.module.scss";
 import useChatStore from "@/pages/chat/store/useChatSelector";
 import buildStyle from "@/shared/lib/buildStyle";
-import { AnimatePresence, motion } from "framer-motion";
 
 const Root: FC<PropsWithChildren> = ({ children }) => {
   const isFooter = useChatStore((state) => state.isFooter);

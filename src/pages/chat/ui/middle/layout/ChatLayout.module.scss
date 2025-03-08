@@ -1,6 +1,7 @@
 .ChatContainer {
   --footer-height: 22px;
   --chat-height: calc(100dvh - var(--footer-height));
+  --right-column-width: 420px
 
   position: relative;
   overflow: hidden;

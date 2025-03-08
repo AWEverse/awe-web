@@ -14,13 +14,13 @@ enum EMediaQueryKey {
   Touch = "touch",
 }
 
-export type LayoutState = {
+export type LayoutState = Readonly<{
   isMobile: boolean;
   isTablet: boolean;
   isLandscape: boolean;
   isTouchScreen: boolean;
   isDesktop: boolean;
-};
+}>;
 
 // Expected results for different environments
 // iOS Portrait:      ❌
@@ -31,7 +31,7 @@ export type LayoutState = {
 // Tablet:            ✅ in landscape mode
 
 
-let state: Readonly<LayoutState> = {
+let state: LayoutState = {
   isMobile: false,
   isTablet: false,
   isLandscape: false,
