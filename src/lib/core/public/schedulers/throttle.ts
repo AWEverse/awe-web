@@ -1,47 +1,34 @@
-export default function throttle<F extends (...args: any[]) => void>(
+export default function throttle<F extends AnyToVoidFunction>(
   fn: F,
   ms: number,
   shouldRunFirst = true,
-): (...args: Parameters<F>) => void {
-  // If shouldRunFirst is false, we want to delay the very first call.
-  // Otherwise, we start with 0 so that the first call is executed immediately.
-  let lastExecutionTime = shouldRunFirst ? 0 : Date.now();
-  let timeoutId: ReturnType<typeof setTimeout> | null = null;
-  let lastArgs: Parameters<F>;
+) {
+  let interval: number | undefined;
+  let isPending: boolean;
+  let args: Parameters<F>;
 
-  // Helper to invoke the function and update the last execution timestamp.
-  const invoke = () => {
-    lastExecutionTime = Date.now();
-    timeoutId = null;
-    fn(...lastArgs);
-  };
+  return (..._args: Parameters<F>) => {
+    isPending = true;
+    args = _args;
 
-  return (...args: Parameters<F>) => {
-    const now = Date.now();
-    lastArgs = args;
-
-    // For the very first call (only when shouldRunFirst is true),
-    // execute immediately.
-    if (shouldRunFirst && lastExecutionTime === 0) {
-      lastExecutionTime = now;
-      fn(...args);
-      return;
-    }
-
-    // Calculate how much time is left before we can invoke fn again.
-    const remaining = ms - (now - lastExecutionTime);
-
-    // If the wait period has passed, execute immediately.
-    if (remaining <= 0) {
-      if (timeoutId) {
-        clearTimeout(timeoutId);
-        timeoutId = null;
+    if (!interval) {
+      if (shouldRunFirst) {
+        isPending = false;
+        fn(...args);
       }
-      invoke();
-    }
-    // Otherwise, if there isn’t a scheduled call yet, schedule one.
-    else if (!timeoutId) {
-      timeoutId = setTimeout(invoke, remaining);
+
+      // eslint-disable-next-line no-restricted-globals
+      interval = self.setInterval(() => {
+        if (!isPending) {
+          // eslint-disable-next-line no-restricted-globals
+          self.clearInterval(interval!);
+          interval = undefined;
+          return;
+        }
+
+        isPending = false;
+        fn(...args);
+      }, ms);
     }
   };
 }

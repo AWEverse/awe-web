@@ -1,9 +1,9 @@
-import { createElement, StrictMode } from "react";
+import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import App from "./App";
 
 import { enableStrict, requestMutation } from "@/lib/modules/fastdom";
-import { optimizeView } from "./utils/optimizeView";
+import { optimizeView } from "./lib/utils/optimizeView";
 import { STRICTERDOM_ENABLED } from "@/lib/config/dev";
 
 import "@/styles/global.scss";

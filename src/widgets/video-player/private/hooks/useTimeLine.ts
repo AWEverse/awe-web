@@ -37,6 +37,8 @@ export const useTimeLine = (
       const video = e.currentTarget;
       if (!video || video.readyState < EMediaReadyState.HAVE_METADATA) return;
 
+      console.log("timeupdate")
+
       const newTime = round(video.currentTime);
       const newDuration = round(video.duration);
 

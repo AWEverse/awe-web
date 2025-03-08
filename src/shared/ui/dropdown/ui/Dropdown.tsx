@@ -10,6 +10,7 @@ import { useBoundaryCheck } from "@/shared/hooks/mouse/useBoundaryCheck";
 import { useEffectWithPreviousDeps } from "@/shared/hooks/effects/useEffectWithPreviousDependencies";
 import useKeyboardListeners from "@/lib/hooks/events/useKeyboardListeners";
 import trapFocus from "@/lib/utils/trapFocus";
+import { useClickAway } from "@/lib/hooks/events/useClick";
 
 interface OwnTriggerProps<T = HTMLElement> extends React.HTMLAttributes<T> {
   onTrigger: NoneToVoidFunction;
@@ -28,7 +29,7 @@ interface OwnProps {
   triggerButton?: FC<OwnTriggerProps>;
   isOpen?: boolean;
   shouldClose?: boolean;
-  usePortal?: boolean;
+  withPortal?: boolean;
   onOpen?: () => void;
   onClose?: () => void;
   onHide?: () => void;
@@ -56,6 +57,7 @@ const DropdownMenu: FC<OwnProps & OwnSharedProps> = ({
   triggerButton: TriggerButton,
   position = "top-right",
   shouldClose,
+  withPortal,
   onOpen,
   onClose,
   onEnter,
@@ -76,6 +78,8 @@ const DropdownMenu: FC<OwnProps & OwnSharedProps> = ({
   });
 
   useBodyClass("has-open-dialog", isOpen);
+
+  useClickAway(dropdownRef, handleClose);
 
   useBoundaryCheck({
     elementRef: dropdownRef,
@@ -134,13 +138,11 @@ const DropdownMenu: FC<OwnProps & OwnSharedProps> = ({
             aria-expanded={isOpen}
             data-position={position}
             tabIndex={-1}
-            className={buildClassName(s.dropdownMenu)}
+            className={buildClassName(s.dropdownMenu, className)}
             onMouseEnter={onBackdropMouseEnter}
             onTransitionEnd={onTransitionEnd}
           >
-            <div className={buildClassName(s.dropdownBody, className)}>
-              {children}
-            </div>
+            {children}
           </motion.div>
         )}
       </AnimatePresence>

@@ -4,7 +4,6 @@ import React, { FC, lazy, memo, useEffect, useRef, useState } from "react";
 import VideoPlayerMetter from "./VideoPlayerMetter";
 
 import { ReadonlySignal } from "@/lib/core/public/signals";
-import { IconButton } from "@mui/material";
 import {
   FullscreenExitRounded,
   FullscreenRounded,
@@ -29,6 +28,7 @@ import SettingsDropdown from "./controls/SettingsDropdown";
 import { TriggerProps } from "@/shared/ui/dropdown";
 import s from "./VideoPlayerControls.module.scss";
 import { formatMediaDuration } from "../lib/time/formatMediaDuration";
+import { IconButtonMemo } from "@/shared/ui/IconButton";
 
 type OwnProps = {
   // Playback Control
@@ -50,7 +50,6 @@ type OwnProps = {
   posterSize?: ApiDimensions;
 
   // UI State
-  waitingSignal: ReadonlySignal<boolean>;
   isForceMobileVersion?: boolean;
   isFullscreen: boolean;
   isFullscreenSupported: boolean;
@@ -77,12 +76,12 @@ const HIDE_CONTROLS_TIMEOUT_MS = 3000;
 const DEBOUNCE = 200;
 
 const TriggerButton: FC<TriggerProps> = ({ onTrigger }) => (
-  <IconButton
+  <IconButtonMemo
     onClick={onTrigger}
     className={buildClassName(s.control, s.blendMode)}
   >
     <SettingsRounded className={s.icon} />
-  </IconButton>
+  </IconButtonMemo>
 );
 
 const VideoPlayerControls: FC<OwnProps> = ({
@@ -98,7 +97,6 @@ const VideoPlayerControls: FC<OwnProps> = ({
   url,
   fileSize,
   posterSize,
-  waitingSignal,
   isForceMobileVersion,
   isFullscreen,
   isFullscreenSupported,
@@ -205,7 +203,6 @@ const VideoPlayerControls: FC<OwnProps> = ({
       onClick={stopEvent}
     >
       <VideoPlayerMetter
-        waitingSignal={waitingSignal}
         currentTimeSignal={currentTimeSignal}
         duration={duration}
         bufferedRangesSignal={bufferedRangesSignal}
@@ -221,7 +218,7 @@ const VideoPlayerControls: FC<OwnProps> = ({
 
       {!isForceMobileVersion && (
         <>
-          <IconButton
+          <IconButtonMemo
             className={buildClassName(s.control, s.blendMode)}
             onClick={onPlayPause}
           >
@@ -230,16 +227,16 @@ const VideoPlayerControls: FC<OwnProps> = ({
             ) : (
               <PlayArrowRounded className={s.icon} />
             )}
-          </IconButton>
-          <IconButton className={buildClassName(s.control, s.blendMode)}>
+          </IconButtonMemo>
+          <IconButtonMemo className={buildClassName(s.control, s.blendMode)}>
             <SkipNextRounded className={s.icon} />
-          </IconButton>
-          <IconButton
+          </IconButtonMemo>
+          <IconButtonMemo
             className={buildClassName(s.control, s.blendMode)}
             onClick={onVolumeClick}
           >
             <VolumeUpRounded className={s.icon} />
-          </IconButton>
+          </IconButtonMemo>
 
           <label className={s.slider}>
             <input
@@ -277,22 +274,22 @@ const VideoPlayerControls: FC<OwnProps> = ({
           />
 
           {isPictureInPictureSupported && (
-            <IconButton
+            <IconButtonMemo
               className={buildClassName(s.control, s.blendMode)}
               onClick={onPictureInPictureChange}
             >
               <PictureInPictureAltRounded className={s.icon} />
-            </IconButton>
+            </IconButtonMemo>
           )}
 
-          <IconButton className={buildClassName(s.control, s.blendMode)}>
+          <IconButtonMemo className={buildClassName(s.control, s.blendMode)}>
             <WidthFullRounded className={s.icon} />
-          </IconButton>
+          </IconButtonMemo>
         </>
       )}
 
       {isFullscreenSupported && (
-        <IconButton
+        <IconButtonMemo
           className={buildClassName(s.control, s.blendMode)}
           onClick={onChangeFullscreen}
         >
@@ -301,7 +298,7 @@ const VideoPlayerControls: FC<OwnProps> = ({
           ) : (
             <FullscreenRounded className={s.icon} />
           )}
-        </IconButton>
+        </IconButtonMemo>
       )}
     </section>
   );

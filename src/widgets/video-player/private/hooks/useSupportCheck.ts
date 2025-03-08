@@ -49,7 +49,7 @@ export default function useUnsupportedMedia(
 
   const onError = useStableCallback((event: Event) => {
     const target = event.currentTarget as HTMLVideoElement;
-    const { error } = target;
+    const error = target.error;
 
     if (!error) return;
 

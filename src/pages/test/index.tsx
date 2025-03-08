@@ -1,108 +1,17 @@
 import React from "react";
-import "./styles.scss";
-import AnimatedList from "@/shared/ui/AnimatedList";
+
+import { VideoPlayer } from "@/widgets/video-player";
 
 const TestPage: React.FC = () => {
   return (
-    <AnimatedList
-      items={[
-        "Item 1",
-        "Item 2",
-        "Item 3",
-        "Item 4",
-        "Item 5",
-        "Item 6",
-        "Item 7",
-        "Item 8",
-        "Item 9",
-        "Item 10",
-        "Item 11",
-        "Item 12",
-        "Item 13",
-        "Item 14",
-        "Item 15",
-        "Item 1",
-        "Item 2",
-        "Item 3",
-        "Item 4",
-        "Item 5",
-        "Item 6",
-        "Item 7",
-        "Item 8",
-        "Item 9",
-        "Item 10",
-        "Item 11",
-        "Item 12",
-        "Item 13",
-        "Item 14",
-        "Item 15",
-        "Item 1",
-        "Item 2",
-        "Item 3",
-        "Item 4",
-        "Item 5",
-        "Item 6",
-        "Item 7",
-        "Item 8",
-        "Item 9",
-        "Item 10",
-        "Item 11",
-        "Item 12",
-        "Item 13",
-        "Item 14",
-        "Item 15",
-        "Item 1",
-        "Item 2",
-        "Item 3",
-        "Item 4",
-        "Item 5",
-        "Item 6",
-        "Item 7",
-        "Item 8",
-        "Item 9",
-        "Item 10",
-        "Item 11",
-        "Item 12",
-        "Item 13",
-        "Item 14",
-        "Item 15",
-        "Item 1",
-        "Item 2",
-        "Item 3",
-        "Item 4",
-        "Item 5",
-        "Item 6",
-        "Item 7",
-        "Item 8",
-        "Item 9",
-        "Item 10",
-        "Item 11",
-        "Item 12",
-        "Item 13",
-        "Item 14",
-        "Item 15",
-        "Item 1",
-        "Item 2",
-        "Item 3",
-        "Item 4",
-        "Item 5",
-        "Item 6",
-        "Item 7",
-        "Item 8",
-        "Item 9",
-        "Item 10",
-        "Item 11",
-        "Item 12",
-        "Item 13",
-        "Item 14",
-        "Item 15",
-      ]}
-      height={400}
-      itemSize={50}
-      onItemSelect={(item, index) =>
-        console.log(`Selected: ${item} at ${index}`)
-      }
-    />
+    <div style={{ padding: "5rem" }}>
+      <VideoPlayer
+        audioVolume={0}
+        isAudioMuted={false}
+        playbackSpeed={0}
+        totalFileSize={0}
+      />
+    </div>
   );
 };
 

@@ -5,7 +5,7 @@ import {
 } from "../../../../shared/lib/extraClassHelpers";
 import { useStateRef } from "../../../../shared/hooks/base";
 import { clamp, IVector2 } from "@/lib/core";
-import { noop } from "@/lib/utils/listener";
+import windowSize from "@/lib/utils/windowSize";
 
 
 interface Layout {
@@ -21,8 +21,8 @@ interface Layout {
 }
 
 interface StaticPositionOptions {
-  positionX?: "left" | "right";
-  positionY?: "top" | "bottom";
+  positionX?: "left" | "right" | string;
+  positionY?: "top" | "bottom" | string;
   transformOriginX?: number;
   transformOriginY?: number;
   style?: string;
@@ -69,7 +69,6 @@ export default function useMenuPosition(
   const { anchor } = options as DynamicPositionOptions;
   const optionsRef = useStateRef(options);
 
-
   useLayoutEffect(() => {
     if (!isOpen) return;
 
@@ -107,7 +106,8 @@ function getLayoutMeasurements(
   menuEl: HTMLElement | null,
   menuElMinWidth: number,
 ): LayoutMeasurements {
-  const docEl = document.documentElement;
+  const { width, height } = windowSize.dimensions;
+
   const rootRect = rootEl?.getBoundingClientRect() ?? EMPTY_RECT;
   const triggerRect = triggerEl.getBoundingClientRect();
 
@@ -131,8 +131,8 @@ function getLayoutMeasurements(
       marginTop: menuMarginTop,
     },
     viewport: {
-      width: docEl.clientWidth,
-      height: docEl.clientHeight,
+      width: width,
+      height: height,
     },
   };
 }

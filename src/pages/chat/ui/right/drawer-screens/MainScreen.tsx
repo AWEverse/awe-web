@@ -13,6 +13,7 @@ import useFloatingButton from "../../hooks/useFloatingButton";
 import buildClassName from "@/shared/lib/buildClassName";
 import TallyCounter from "@/shared/ui/tally-counter/ui/TallyCounter";
 import { IS_TOUCH_ENV } from "@/lib/core";
+import { ScrollProvider } from "@/shared/context";
 
 interface OwnProps {
   nodeRef?: React.RefObject<HTMLDivElement>;
@@ -44,61 +45,67 @@ const MainScreen: FC<OwnProps> = ({ nodeRef, className }) => {
     useFloatingButton(IS_TOUCH_ENV, false);
 
   return (
-    <div
-      ref={nodeRef}
-      className={className}
-      onMouseEnter={handleMouseEnter}
-      onMouseLeave={handleMouseLeave}
-    >
-      <div className={s.MainScreenBody}>
-        <HeaderNavigation
-          className={"RightHeaderNavigation"}
-          endDecorator={
-            <IconButton onClick={openProfileEditing}>
-              <EditRounded />
-            </IconButton>
-          }
-          name="Andrii Volynets"
-          onPrevClick={closeProfileColumn}
-        />
-        <InfoSection />
+    <ScrollProvider containerRef={containerRef}>
+      <div
+        ref={nodeRef}
+        className={className}
+        onMouseEnter={handleMouseEnter}
+        onMouseLeave={handleMouseLeave}
+      >
+        <div
+          ref={containerRef}
+          data-scrollable={true}
+          className={s.MainScreenBody}
+        >
+          <HeaderNavigation
+            className={"RightHeaderNavigation"}
+            endDecorator={
+              <IconButton onClick={openProfileEditing}>
+                <EditRounded />
+              </IconButton>
+            }
+            name="Andrii Volynets"
+            onPrevClick={closeProfileColumn}
+          />
+          <InfoSection />
 
-        <TabList
-          activeTab={currentIndex}
-          className={s.TabListFolders}
-          tabs={tabsData}
-          variant="folders"
-          onSwitchTab={handleTabChange}
-        />
+          <TabList
+            activeTab={currentIndex}
+            className={s.TabListFolders}
+            tabs={tabsData}
+            variant="folders"
+            onSwitchTab={handleTabChange}
+          />
 
-        <Square className={s.Square} currentColumn={columnsCount}>
-          {Array.from({ length: 50 }, (_, i) => (
-            <img
-              key={i}
-              alt=""
-              src="https://picsum.photos/200"
-              style={{
-                width: "100%",
-                height: "100%",
-                padding: "1px",
-                borderRadius: "10px",
-              }}
-            />
-          ))}
-        </Square>
+          <Square className={s.Square} currentColumn={columnsCount}>
+            {Array.from({ length: 50 }, (_, i) => (
+              <img
+                key={i}
+                alt=""
+                src="https://picsum.photos/200"
+                style={{
+                  width: "100%",
+                  height: "100%",
+                  padding: "1px",
+                  borderRadius: "10px",
+                }}
+              />
+            ))}
+          </Square>
+        </div>
+        <TallyCounter
+          loop
+          className={buildClassName(
+            s.MainScreenFab,
+            isButtonVisible && s.FabVisible,
+          )}
+          initialValue={1}
+          range={[1, 6]}
+          size="bigger"
+          onChange={handleColumnsChange}
+        />
       </div>
-      <TallyCounter
-        loop
-        className={buildClassName(
-          s.MainScreenFab,
-          isButtonVisible && s.FabVisible,
-        )}
-        initialValue={1}
-        range={[1, 6]}
-        size="bigger"
-        onChange={handleColumnsChange}
-      />
-    </div>
+    </ScrollProvider>
   );
 };
 

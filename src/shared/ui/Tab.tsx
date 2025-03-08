@@ -76,7 +76,10 @@ const Tab: FC<OwnProps> = ({
     handleContextMenu,
     handleContextMenuHide,
     handleContextMenuClose,
-  } = useContextMenuHandlers(tabRef, shoudlRenderContextMenu, false, false);
+  } = useContextMenuHandlers({
+    elementRef: tabRef,
+    isMenuDisabled: !shoudlRenderContextMenu,
+  });
 
   const { handleClick, handleMouseDown } = useFastClick(
     (e: React.MouseEvent<HTMLButtonElement>) => {

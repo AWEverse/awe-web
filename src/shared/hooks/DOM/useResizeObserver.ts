@@ -22,7 +22,9 @@ export default function useResizeObserver(
   const onResizeRef = useStateRef(onResize);
 
   useEffect(() => {
-    if (isDisabled || !ref.current) return;
+    if (isDisabled || !ref.current) {
+      return;
+    }
 
     const observer = new ResizeObserver(entries => {
       const entry = entries[0];
@@ -46,8 +48,6 @@ export default function useResizeObserver(
 
     observer.observe(ref.current, { box: "border-box" });
 
-    return () => {
-      observer.disconnect();
-    };
+    return () => { observer.disconnect() };
   }, [ref, isDisabled]);
 }

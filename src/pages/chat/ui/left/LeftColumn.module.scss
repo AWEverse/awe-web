@@ -7,8 +7,10 @@
   background-color: var(--awe-palette-background-default);
   padding: 0.5rem;
   width: 400px;
+  transform: translateX(-100%) !important;
 
-  @media (max-width: 640px) {
+
+  @media (max-width: 648px) {
     position: fixed;
     top: 0;
     left: 0;
@@ -17,11 +19,5 @@
     z-index: 4;
     border-right: none;
     border-bottom: 1px solid var(--awe-palette-divider);
-    transform: translateX(-100%);
-    transition: transform 250ms ease-out;
-
-    &[data-placement="show"] {
-      transform: translateX(0);
-    }
   }
 }

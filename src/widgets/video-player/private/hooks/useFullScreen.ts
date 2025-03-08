@@ -1,3 +1,4 @@
+import { DEBUG } from "@/lib/config/dev";
 import { IS_IOS, IS_REQUEST_FULLSCREEN_SUPPORTED } from "@/lib/core";
 import { useStableCallback } from "@/shared/hooks/base";
 import React, { useState, useLayoutEffect, useCallback } from "react";
@@ -35,22 +36,20 @@ export default function useFullscreen(
 ): FullscreenControls | [false] {
   const [isFullscreen, setIsFullscreen] = useState(() => checkIfFullscreen());
 
-  const handleFullscreenChange = useStableCallback(() => {
+  const handleFullscreenChange = useStableCallback(async () => {
     const newState = checkIfFullscreen();
     setIsFullscreen(newState);
 
     if (newState) {
       callbacks?.onEnter?.();
-      // Force controls in fullscreen for Firefox
       if (elRef.current instanceof HTMLVideoElement) {
-        elRef.current.controls = true;
+        elRef.current.controls = false; // Force controls in fullscreen for Firefox
       }
     } else {
       callbacks?.onExit?.();
     }
   });
 
-  // Event listeners setup
   useLayoutEffect(() => {
     if (!isSupported) return;
 
@@ -61,12 +60,10 @@ export default function useFullscreen(
       iosEnd: () => callbacks?.onExit?.(),
     };
 
-    // Add standard fullscreen listeners
     FULLSCREEN_EVENTS.forEach((event) => {
       document.addEventListener(event, handlers.fullscreen);
     });
 
-    // Add iOS-specific listeners
     if (IS_IOS && element) {
       IOS_FULLSCREEN_EVENTS.forEach((event, idx) => {
         element.addEventListener(
@@ -99,7 +96,7 @@ export default function useFullscreen(
     try {
       await requestFullscreen(element);
     } catch (error) {
-      console.error("Failed to enter fullscreen:", error);
+      DEBUG && console.error("Failed to enter fullscreen:", error);
     }
   }, [elRef, isFullscreen]);
 
@@ -109,12 +106,16 @@ export default function useFullscreen(
     try {
       await requestExitFullscreen();
     } catch (error) {
-      console.error("Failed to exit fullscreen:", error);
+      DEBUG && console.error("Failed to exit fullscreen:", error);
     }
   }, [isFullscreen]);
 
   const toggleFullscreen = useCallback(async () => {
-    await (isFullscreen ? exitFullscreen?.() : setFullscreen?.());
+    try {
+      await (isFullscreen ? exitFullscreen() : setFullscreen());
+    } catch (error) {
+      DEBUG && console.error("Failed to toggle fullscreen:", error);
+    }
   }, [isFullscreen, exitFullscreen, setFullscreen]);
 
   return isSupported ? [isFullscreen, toggleFullscreen] : [false];
@@ -142,25 +143,44 @@ export function useFullscreenStatus() {
   return isFullscreen;
 }
 
-// Helper functions
 function checkIfFullscreen(): boolean {
   return isSupported && Boolean(document[fullscreenProp as keyof Document]);
 }
 
-async function requestFullscreen(element: HTMLElement) {
-  const request =
-    element.requestFullscreen?.bind(element) ||
-    element.webkitRequestFullscreen?.bind(element) ||
-    element.mozRequestFullScreen?.bind(element);
+async function requestFullscreen(
+  element: PartialHTMLElementSupport,
+): Promise<void> {
+  const _requestFullscreen =
+    element.requestFullscreen ||
+    element.webkitRequestFullscreen ||
+    element.mozRequestFullScreen;
 
-  if (request) await request();
+  try {
+    await _requestFullscreen().then(() => {
+      // Once in fullscreen, try to lock the screen orientation to landscape
+      screen.orientation.lock("landscape").catch((err) => {
+        console.error("Orientation lock failed:", err);
+      });
+    });
+  } catch (error) {
+    DEBUG && console.error("Error entering fullscreen:", error);
+  }
 }
 
-async function requestExitFullscreen() {
-  const exit =
-    document.exitFullscreen?.bind(document) ||
-    document.webkitExitFullscreen?.bind(document) ||
-    document.mozCancelFullScreen?.bind(document);
+async function requestExitFullscreen(): Promise<void> {
+  const _document = document as PartialDocumentSupport;
+  const _exitFullscreen =
+    _document.exitFullscreen ||
+    _document.webkitExitFullscreen ||
+    _document.mozCancelFullScreen;
 
-  if (exit) await exit();
+  try {
+    await _exitFullscreen();
+
+    if (screen.orientation.unlock) {
+      screen.orientation.unlock();
+    }
+  } catch (error) {
+    DEBUG && console.error("Error exiting fullscreen:", error);
+  }
 }

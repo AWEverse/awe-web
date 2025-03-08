@@ -1,5 +1,4 @@
-import { useState, useMemo, memo } from "react";
-
+import { useState, useMemo, memo, useCallback } from "react";
 import { requestMeasure } from "@/lib/modules/fastdom";
 import buildClassName from "@/shared/lib/buildClassName";
 import { clamp01, debounce } from "@/lib/core";
@@ -29,39 +28,21 @@ const hexToRgba = (hex: string, opacity: number) => {
 };
 
 const RippleEffect: React.FC<OwnProps> = memo((props) => {
-  const {
-    duration = ANIMATION_DURATION_MS,
-    opacity = 0.175,
-    color = "#FFFFFF",
-    className,
-  } = props;
+  const { opacity = 0.175, color = "#FFFFFF", className } = props;
 
   const [ripples, setRipples] = useState<Ripple[]>([]);
 
-  const cleanUpDebounced = useMemo(() => {
-    return debounce(
-      () => {
-        setRipples([]);
-      },
-      duration,
-      false,
-    );
-  }, [duration]);
-
   const handleMouseDown = useStableCallback(
     (e: React.MouseEvent<HTMLDivElement, MouseEvent>) => {
-      if (e.button !== 0) {
-        return;
-      }
+      if (e.button !== 0) return;
 
       const container = e.currentTarget;
       const position = container.getBoundingClientRect();
 
       requestMeasure(() => {
         const rippleSize = container.offsetWidth / 2;
-
-        setRipples([
-          ...ripples,
+        setRipples((prevRipples) => [
+          ...prevRipples,
           {
             x: e.clientX - position.x - rippleSize / 2,
             y: e.clientY - position.y - rippleSize / 2,
@@ -69,8 +50,6 @@ const RippleEffect: React.FC<OwnProps> = memo((props) => {
           },
         ]);
       });
-
-      cleanUpDebounced();
     },
   );
 

@@ -39,38 +39,36 @@ const SettingsDropdown: FC<SettingsDropdownProps> = ({
   const handleSpeedTimerClick = useStableCallback(() => setScreen("Speed"));
   const handleQualityClick = useStableCallback(() => setScreen("Quality"));
 
-  const screenComponentMap: Record<Screen, JSX.Element> = {
-    Main: (
-      <SettingMain
-        onQualityClick={handleQualityClick}
-        onAmbientModeClick={handleAmbientModeClick}
-        onSpeedTimerClick={handleSpeedTimerClick}
-      />
-    ),
-    Speed: <SettingPlayBackSpeed onBackClick={resetScreen} />,
-    Quality: <SettingQuality onBackClick={resetScreen} />,
-    Timer: <SettingSleep onBackClick={resetScreen} />,
-  };
-
   const isMain = screen === "Main";
   const initialX = isMain ? "-100%" : "100%";
   const exitX = initialX;
 
   return (
-    <DropdownMenu
-      className="w-56 max-h-64 overflow-y-auto"
-      triggerButton={triggerButton}
-      position={position}
-    >
+    <DropdownMenu triggerButton={triggerButton} position={position}>
       <AnimatePresence initial={false} mode="popLayout">
         <motion.div
           key={screen}
           initial={{ x: initialX }}
           animate={{ x: 0 }}
           exit={{ x: exitX }}
-          transition={{ duration: ANIMATION_DURATION }}
+          transition={{
+            duration: ANIMATION_DURATION,
+          }}
         >
-          {screenComponentMap[screen]}
+          {
+            {
+              Main: (
+                <SettingMain
+                  onQualityClick={handleQualityClick}
+                  onAmbientModeClick={handleAmbientModeClick}
+                  onSpeedTimerClick={handleSpeedTimerClick}
+                />
+              ),
+              Speed: <SettingPlayBackSpeed onBackClick={resetScreen} />,
+              Quality: <SettingQuality onBackClick={resetScreen} />,
+              Timer: <SettingSleep onBackClick={resetScreen} />,
+            }[screen]
+          }
         </motion.div>
       </AnimatePresence>
     </DropdownMenu>

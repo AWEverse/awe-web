@@ -1,3 +1,4 @@
+@use '_chip.scss';
 @use '_font.scss';
 @use '_user.scss';
 @use '_border.scss';
@@ -5,14 +6,20 @@
 @use '_scrollbar.scss';
 @use '_markdown.scss';
 @use '_spacer.scss';
+@use '_kbd.scss';
 
-html.mode-dark {
-  color-scheme: dark;
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
 }
 
-html.mode-light {
-  color-scheme: light;
-}
 
 html,
 body {
@@ -40,8 +47,8 @@ body {
   --font-family-rounded: -ui-rounded, "Numbers Rounded", "Roboto", "Helvetica Neue", sans-serif;
   --font-family-condensed: "Roboto Condensed", "Roboto", "Helvetica Neue", sans-serif;
 
-  @media (max-width: 600px) {
-    height: calc(var(--vh, 1vh) * 100);
+  @media (max-width: 648px) {
+    height: calc(var(--vh, 1vh) * 100) !important;
   }
 }
 

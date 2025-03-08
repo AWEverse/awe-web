@@ -9,8 +9,15 @@
   user-select: none;
   height: 64px;
   width: 100%;
-  background-color: var(--awe-palette-secondary-main);
+  background-color: var(--awe-palette-secondary-mainChannel / 0.875);
+  backdrop-filter: blur(10rem);
   overflow: hidden;
+  z-index: 10;
+}
+
+.MediaTrackNavigation {
+  position: absolute;
+  left: 4px;
 }
 
 .slide {

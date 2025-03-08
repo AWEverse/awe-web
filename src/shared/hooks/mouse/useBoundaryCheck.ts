@@ -1,5 +1,7 @@
-import { clamp, throttle } from "@/lib/core";
-import { useEffect, RefObject } from "react";
+import { clamp, IS_MOBILE, throttle } from "@/lib/core";
+import { useEffect, RefObject, useRef } from "react";
+import windowSize from "@/lib/utils/windowSize";
+import useResizeObserver from "../DOM/useResizeObserver";
 
 interface UseBoundaryCheckParams {
   elementRef: RefObject<HTMLElement | null>;
@@ -16,6 +18,12 @@ interface UseBoundaryCheckParams {
 const DEFAULT_OUTBOX_SIZE = 50;
 const DEFAULT_THROTTLE_INTERVAL = 100;
 
+function generateVirtualElement(x: number, y: number) {
+  return {
+    getBoundingClientRect: () => new DOMRect(x, y),
+  };
+}
+
 export function useBoundaryCheck({
   elementRef,
   isActive,
@@ -30,38 +38,21 @@ export function useBoundaryCheck({
   } = options || {};
 
   useEffect(() => {
-    if (!isActive) return;
+    if (!isActive || IS_MOBILE) return;
+
+    const element = elementRef.current;
+    if (!element) return;
+
+    const rect = element.getBoundingClientRect();
+
+    const boundaries = position ? calculateAdjustedBoundaries(
+      position,
+      outboxSize,
+      extraPaddingX,
+      rect
+    ) : calculateDefaultBoundaries(rect, outboxSize);
 
     const handleMove = throttle((e: MouseEvent) => {
-      const element = elementRef.current;
-      if (!element) return;
-
-      const docEl = document.documentElement;
-      const viewport = {
-        width: docEl.clientWidth,
-        height: docEl.clientHeight,
-      };
-
-      const rect = element.getBoundingClientRect();
-      let boundaries: {
-        left: number;
-        right: number;
-        top: number;
-        bottom: number;
-      };
-
-      if (position) {
-        boundaries = calculateAdjustedBoundaries(
-          position,
-          outboxSize,
-          extraPaddingX,
-          viewport,
-          rect,
-        );
-      } else {
-        boundaries = calculateDefaultBoundaries(rect, outboxSize, viewport);
-      }
-
       const isOutside =
         e.clientX < boundaries.left ||
         e.clientX > boundaries.right ||
@@ -89,22 +80,25 @@ function calculateAdjustedBoundaries(
   position: { x: number; y: number },
   outboxSize: number,
   paddingX: number,
-  viewport: { width: number; height: number },
   rect: DOMRect,
 ) {
-  const spaceRight = viewport.width - position.x;
+
+  const { width, height } = windowSize.dimensions;
+
+  const spaceRight = width - position.x;
   const spaceLeft = position.x;
 
   let adjustedX = position.x;
+
   if (rect.width + paddingX <= spaceRight) {
     adjustedX += paddingX;
   } else if (rect.width + paddingX <= spaceLeft) {
     adjustedX -= rect.width + paddingX;
   } else {
-    adjustedX = spaceRight > spaceLeft ? viewport.width - rect.width : 0;
+    adjustedX = spaceRight > spaceLeft ? width - rect.width : 0;
   }
 
-  const spaceBottom = viewport.height - position.y;
+  const spaceBottom = height - position.y;
   const spaceTop = position.y;
 
   let adjustedY = position.y;
@@ -113,29 +107,30 @@ function calculateAdjustedBoundaries(
   } else if (rect.height <= spaceTop) {
     adjustedY -= rect.height;
   } else {
-    adjustedY = spaceBottom > spaceTop ? viewport.height - rect.height : 0;
+    adjustedY = spaceBottom > spaceTop ? height - rect.height : 0;
   }
 
-  adjustedX = clamp(adjustedX, 0, viewport.width - rect.width);
-  adjustedY = clamp(adjustedY, 0, viewport.height - rect.height);
+  adjustedX = clamp(adjustedX, 0, width - rect.width);
+  adjustedY = clamp(adjustedY, 0, height - rect.height);
 
   return {
     left: Math.max(adjustedX - outboxSize, 0),
-    right: Math.min(adjustedX + rect.width + outboxSize, viewport.width),
+    right: Math.min(adjustedX + rect.width + outboxSize, width),
     top: Math.max(adjustedY - outboxSize, 0),
-    bottom: Math.min(adjustedY + rect.height + outboxSize, viewport.height),
+    bottom: Math.min(adjustedY + rect.height + outboxSize, height),
   };
 }
 
 function calculateDefaultBoundaries(
   rect: DOMRect,
   outboxSize: number,
-  viewport: { width: number; height: number },
 ) {
+  const { width, height } = windowSize.dimensions;
+
   return {
     left: Math.max(rect.left - outboxSize, 0),
-    right: Math.min(rect.right + outboxSize, viewport.width),
+    right: Math.min(rect.right + outboxSize, width),
     top: Math.max(rect.top - outboxSize, 0),
-    bottom: Math.min(rect.bottom + outboxSize, viewport.height),
+    bottom: Math.min(rect.bottom + outboxSize, height),
   };
 }

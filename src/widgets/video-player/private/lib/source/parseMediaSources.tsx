@@ -9,15 +9,41 @@ interface MediaSource {
   [key: string]: any;
 }
 
-// Updated MIME type for mkv to video/webm for broader browser support.
+// Comprehensive MIME type mappings for all specified video formats
 const VIDEO_TYPES: Record<string, string> = {
+  mpeg: "video/mpeg",
   mp4: "video/mp4",
-  webm: "video/webm",
+  ogg: "video/ogg",
   ogv: "video/ogg",
+  mov: "video/quicktime",
+  qt: "video/quicktime",
+  webm: "video/webm",
+  wmv: "video/x-ms-wmv",
+  flv: "video/x-flv",
+  avi: "video/x-msvideo",
+  "3gp": "video/3gpp",
+  "3gpp": "video/3gpp",
+  "3g2": "video/3gpp2",
+  "3gpp2": "video/3gpp2",
+
+  // Additional MIME types
+  mkv: "video/webm", // Keeping original MIME type instead of video/webm
+  f4v: "video/x-f4v",
+  m4v: "video/x-m4v",
+  h264: "video/h264",
+  h265: "video/h265",
+  divx: "video/divx",
+  vob: "video/x-vob",
+  anim: "video/x-anim",
+  movie: "video/x-sgi-movie",
+  asf: "video/x-ms-asf",
+  ogm: "video/x-ogm",
+  mjpeg: "video/x-mjpeg",
+  rm: "video/x-pn-realvideo",
+
+  // Streaming formats
   m3u8: "application/x-mpegURL",
   mpd: "application/dash+xml",
-  mkv: "video/webm",
-  mov: "video/quicktime",
 };
 
 const parseMediaSources = (input: string | MediaSource[] | MediaSource) => {
@@ -40,7 +66,7 @@ const parseMediaSources = (input: string | MediaSource[] | MediaSource) => {
 
         return sourceObj;
       }
-      return source;
+      return { ...source };
     };
 
     const normalizeSources = (): MediaSource[] => {
@@ -48,37 +74,41 @@ const parseMediaSources = (input: string | MediaSource[] | MediaSource) => {
         return input.map(parseSource);
       }
       if (typeof input === "string") {
-        return input.split(",").map(parseSource);
+        return input.split(",").map((s) => parseSource(s.trim()));
       }
       return [parseSource(input)];
     };
 
     const sources = normalizeSources().map((source) => {
-      const extension = source.src
-        .split(/[#?]/)[0]
-        .split(".")
-        .pop()
-        ?.toLowerCase();
+      const extensionMatch = source.src.match(/\.([0-9a-z]+)(?:[?#]|$)/i);
+      const extension = extensionMatch ? extensionMatch[1].toLowerCase() : "";
 
-      const mimeType = source.type || VIDEO_TYPES[extension || ""] || "";
-      const isStreaming = [VIDEO_TYPES.m3u8, VIDEO_TYPES.mpd].includes(
-        mimeType,
-      );
+      const mimeType = source.type || VIDEO_TYPES[extension] || "";
+      const isStreaming = [
+        "application/x-mpegURL",
+        "application/dash+xml",
+      ].includes(mimeType);
+
+      const typeParts = [mimeType];
+      if (source.codecs) {
+        typeParts.push(`codecs="${source.codecs}"`);
+      }
+
+      if (isStreaming && source.type?.includes("charset")) {
+        typeParts.push('charset="UTF-8"');
+      }
+
+      const { width, height, src, type, codecs, ...rest } = source;
 
       return {
-        ...source,
-        type: [
-          mimeType,
-          source.codecs && `codecs="${source.codecs}"`,
-          isStreaming && 'charset="UTF-8"',
-        ]
-          .filter(Boolean)
-          .join("; "),
+        src,
+        type: typeParts.filter(Boolean).join("; "),
+        ...rest,
       };
     });
 
     return sources.map(({ src, type, ...rest }) => (
-      <source key={src} {...rest} src={src} type={type || undefined} />
+      <source key={src} src={src} type={type || undefined} {...rest} />
     ));
   }, [input]);
 

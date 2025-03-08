@@ -226,17 +226,26 @@ declare const Boolean: BooleanConstructor;
 //   webkitRequestFullscreen?: () => Promise<void>;
 // }
 
-// interface Document {
-//   exitFullscreen?: () => Promise<void>;
-//   msExitFullscreen?: () => Promise<void>;
-//   mozCancelFullScreen?: () => Promise<void>;
-//   webkitExitFullscreen?: () => Promise<void>;
 
-//   fullscreenElement?: Element | null;
-//   msFullscreenElement?: Element | null;
-//   mozFullScreenElement?: Element | null;
-//   webkitFullscreenElement?: Element | null;
-// }
+type PartialHTMLElementSupport = {
+  requestFullscreen?: () => Promise<void>;
+  msRequestFullscreen?: () => Promise<void>;
+  mozRequestFullScreen?: () => Promise<void>;
+  webkitRequestFullscreen?: () => Promise<void>;
+} & HTMLElement;
+
+
+type PartialDocumentSupport = {
+  exitFullscreen?: () => Promise<void>;
+  msExitFullscreen?: () => Promise<void>;
+  mozCancelFullScreen?: () => Promise<void>;
+  webkitExitFullscreen?: () => Promise<void>;
+
+  fullscreenElement?: Element | null;
+  msFullscreenElement?: Element | null;
+  mozFullScreenElement?: Element | null;
+  webkitFullscreenElement?: Element | null;
+} & Document;
 
 interface HTMLVideoElement {
   // WebKit methods

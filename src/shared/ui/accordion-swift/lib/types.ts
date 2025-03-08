@@ -2,7 +2,7 @@ import { ElementType, ReactNode } from "react";
 
 export interface AccordionItemProps {
   as?: string;
-  title: ReactNode;
+  title?: ReactNode;
   children: ReactNode;
   isOpen?: boolean;
   className?: string;

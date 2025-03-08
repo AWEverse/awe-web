@@ -1,5 +1,4 @@
 import { EMouseButton } from '@/lib/core';
-import stopEvent from '@/lib/utils/stopEvent';
 import { RefObject, useEffect } from 'react';
 
 export const BACKDROP_CLASSNAME = 'backdrop';
@@ -34,7 +33,9 @@ export default function useVirtualBackdrop(
           (target.matches(excludedClosestSelector) || target.closest(excludedClosestSelector))
         )
       ) {
-        stopEvent(e);
+        e.stopPropagation();
+        e.preventDefault();
+
         onClose?.();
       }
     };

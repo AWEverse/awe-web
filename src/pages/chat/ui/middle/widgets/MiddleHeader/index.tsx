@@ -77,7 +77,6 @@ const MiddleHeader: React.FC<{ sender?: any }> = ({ sender }) => {
       <>
         <div className="UserDetails" onClick={openProfileColumn}>
           <p>Andrii CLiyensa</p>
-          <DotAnimation content="Looking" />
         </div>
         <div className="MiddleHeaderActions">
           {!isTablet && (

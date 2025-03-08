@@ -84,14 +84,13 @@ const LeftColumn: FC<OwnProps> = ({ className }) => {
       {ScreenComponent && (
         <motion.div
           className={buildClassName(s.LeftColumn, className)}
-          data-placement={isOpen ? "show" : "hide"}
           aria-label={`Current screen: ${currentScreen}`}
           key={currentScreen}
           variants={screenVariants}
           initial="initial"
           animate="animate"
           exit="exit"
-          custom={(prevScreen || 0) < currentScreen}
+          custom={isOpen ? (prevScreen || 0) < currentScreen : false}
           transition={
             shouldReduceMotion ? { duration: 0 } : { duration: 0.125 }
           }

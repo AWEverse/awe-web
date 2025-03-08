@@ -1,3 +1,3 @@
-export { AccordionGroup } from "./ui/accordion-group";
-export { AccordionItem } from "./ui/accordion-item";
+export { AccordionSwiftGroup } from "./ui/accordion-swift-group";
+export { AccordionSwiftItem } from "./ui/accordion-swift-item";
 export type { AccordionGroupProps, AccordionItemProps } from "./lib/types";

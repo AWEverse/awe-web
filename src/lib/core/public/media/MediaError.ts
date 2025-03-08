@@ -53,7 +53,8 @@ export const getMediaErrorMessage = (errorCode: number): string => {
  * checkMediaError(videoEl);
  */
 export const checkMediaError = (mediaEl: HTMLMediaElement): void => {
-  const { error } = mediaEl;
+  const error = mediaEl.error;
+
   if (error) {
     const message = getMediaErrorMessage(error.code);
     console.error(`Media Error (${error.code}): ${message}`);
@@ -78,7 +79,8 @@ export const trackMediaError = (
   trackCallback: (error: { code: number; message: string }) => void,
 ): void => {
   mediaEl.onerror = () => {
-    const { error } = mediaEl;
+    const error = mediaEl.error;
+
     if (error) {
       const message = getMediaErrorMessage(error.code);
       console.error(

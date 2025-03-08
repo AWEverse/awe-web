@@ -11,30 +11,28 @@ export function isScriptRtl(
   text: string,
   callback: (result: boolean) => void,
 ): void {
-  // Immediate detection for empty strings
   if (!text) {
     callback(false);
     return;
   }
 
-  // First-pass check using Unicode RTL character ranges
   const hasStrongRtl =
     /[\u0590-\u05FF\u0600-\u06FF\u0700-\u074F\u0780-\u07BF\u0860-\u086F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF]/.test(
       text,
     );
   const hasWeakRtl = /[\u200F\u202B\u202E\u2067]/.test(text);
 
-  // Immediate answer for strong RTL indicators
   if (hasStrongRtl) {
     callback(true);
     return;
   }
 
-  // Fallback for environments without DOM
   if (typeof document === "undefined" || !document.body) {
     callback(hasWeakRtl);
     return;
   }
+
+  const fragment = document.createDocumentFragment();
 
   const testDiv = document.createElement("div");
   testDiv.style.cssText = `
@@ -50,11 +48,12 @@ export function isScriptRtl(
   const controlSpan = document.createElement("span");
   const testSpan = document.createElement("span");
 
-  controlSpan.textContent = "\u202A|\u202C"; // LTR embedding
-  testSpan.textContent = `${text}\u200E`; // Add LRM to prevent trailing effects
+  controlSpan.textContent = "\u202A|\u202C";
+  testSpan.textContent = `${text}\u200E`;
 
   testDiv.append(controlSpan, testSpan);
-  document.body.appendChild(testDiv);
+  fragment.appendChild(testDiv);
+  document.body.appendChild(fragment);
 
   try {
     const controlRect = controlSpan.getBoundingClientRect();

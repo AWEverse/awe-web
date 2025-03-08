@@ -14,7 +14,7 @@ interface OwnProps {
   tabs: readonly TabWithProperties[];
   activeTab: number;
   className?: string;
-  variant: TabProps["variant"];
+  variant?: TabProps["variant"];
   onSwitchTab: (index: number) => void;
   startDecorator?: ReactNode;
   endDecorator?: ReactNode;

@@ -1,5 +1,6 @@
 #!/bin/bash
 
+# Display usage information and exit
 usage() {
   echo "Usage: $0 [-m] -s <style_extension> -p <path> <ComponentName>"
   echo "  -m                        Add .module prefix to style file"
@@ -8,10 +9,12 @@ usage() {
   exit 1
 }
 
+# Default values
 MODULE_PREFIX=false
 STYLE_EXTENSION=""
 PATH_DIR=""
 
+# Parse command-line options
 while getopts "ms:p:" opt; do
   case $opt in
     m)
@@ -29,22 +32,17 @@ while getopts "ms:p:" opt; do
   esac
 done
 
+# Shift past the options
 shift $((OPTIND - 1))
 
-if [ -z "$1" ]; then
-  usage
-fi
-
-if [ -z "$STYLE_EXTENSION" ]; then
-  usage
-fi
-
-if [ -z "$PATH_DIR" ]; then
+# Validate required arguments
+if [ -z "$1" ] || [ -z "$STYLE_EXTENSION" ] || [ -z "$PATH_DIR" ]; then
   usage
 fi
 
 COMPONENT_NAME=$1
 
+# Construct file names
 if [ "$MODULE_PREFIX" = true ]; then
   STYLE_FILE="${COMPONENT_NAME}.module.${STYLE_EXTENSION}"
 else
@@ -55,20 +53,26 @@ TSX_FILE="${COMPONENT_NAME}.tsx"
 STYLE_PATH="${PATH_DIR}/${STYLE_FILE}"
 TSX_PATH="${PATH_DIR}/${TSX_FILE}"
 
-# Создаем директорию, если она не существует
+# Check if files already exist to prevent overwriting
+if [ -e "$TSX_PATH" ] || [ -e "$STYLE_PATH" ]; then
+  echo "Error: One of the files already exists: $TSX_PATH or $STYLE_PATH"
+  exit 1
+fi
+
+# Convert ComponentName to kebab-case for CSS class naming
+CLASS_NAME=$(echo "$COMPONENT_NAME" | sed -e 's/\([A-Z]\)/-\L\1/g' -e 's/^-//')
+
+# Create directory if it doesn’t exist
 mkdir -p "$PATH_DIR"
 
-cat > $TSX_PATH <<EOL
+# Create the TSX file with a minimal template
+cat > "$TSX_PATH" <<EOL
 import React from 'react';
 import s from './${STYLE_FILE}';
 
-interface OwnProps {
-  // Define props here
-}
-
-const ${COMPONENT_NAME}: React.FC<OwnProps> = (props) => {
+const ${COMPONENT_NAME} = () => {
   return (
-    <div className={s.${COMPONENT_NAME.toLowerCase()}}>
+    <div className={s['${CLASS_NAME}']}>
       {/* Add your component code here */}
     </div>
   );
@@ -77,10 +81,12 @@ const ${COMPONENT_NAME}: React.FC<OwnProps> = (props) => {
 export default ${COMPONENT_NAME};
 EOL
 
-cat > $STYLE_PATH <<EOL
-.${COMPONENT_NAME.toLowerCase()} {
+# Create the style file with the matching class name
+cat > "$STYLE_PATH" <<EOL
+.${CLASS_NAME} {
   /* Add your styles here */
 }
 EOL
 
+# Confirm file creation
 echo "Created ${TSX_PATH} and ${STYLE_PATH}"

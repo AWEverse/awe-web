@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useMemo } from 'react';
 import { useStableCallback, useStateRef } from '../base';
 
 type InitialState<T> = Iterable<T> | (() => Iterable<T>);
@@ -65,16 +65,24 @@ function useStateSet<T>(initialState?: InitialState<T>): StateSet<T> {
     });
   });
 
-  return {
-    values: Array.from(stateSet),
-    size: stateSet.size,
-    has,
-    add,
-    remove,
-    clear,
-    reset,
-    toggle,
-  };
+  const values = useMemo(() => Array.from(stateSet), [stateSet]);
+  const size = stateSet.size;
+
+  const result = useMemo(
+    () => ({
+      values,
+      size,
+      has,
+      add,
+      remove,
+      clear,
+      reset,
+      toggle,
+    }),
+    [values, size, has, add, remove, clear, reset, toggle],
+  );
+
+  return result;
 }
 
 export default useStateSet;

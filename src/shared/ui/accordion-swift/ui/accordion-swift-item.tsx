@@ -1,8 +1,9 @@
 import { useReducedMotion, motion, AnimatePresence } from "motion/react";
-import { FC, memo, JSX, useCallback } from "react";
+import { FC, memo, JSX, useCallback, useMemo, Children } from "react";
 import { AccordionItemProps as AccordionItemWithPrivateFieldsProps } from "../lib/types";
 import { itemVariants, contentVariants } from "../lib/variants";
 import buildClassName from "@/shared/lib/buildClassName";
+import "./accordion-item.scss";
 
 type AccordionItemPrivateFieldsProps = Readonly<
   Pick<
@@ -18,7 +19,7 @@ export type AccordionItemProps = Readonly<
   >
 >;
 
-export const AccordionItem: FC<AccordionItemProps> = memo(
+export const AccordionSwiftItem: FC<AccordionItemProps> = memo(
   ({
     as: Component = "div",
     title,
@@ -44,16 +45,19 @@ export const AccordionItem: FC<AccordionItemProps> = memo(
       }
     }, [index, onToggle]);
 
+    const _children = useMemo(
+      () => ({
+        array: Children.toArray(children),
+      }),
+      [children],
+    );
+
     return (
       <motion.div
-        data-state={isOpen ? "open" : "closed"}
         role="region"
         aria-expanded={isOpen}
         aria-labelledby={`accordion-header-${index}`}
-        className={buildClassName(
-          "accordion-item border border-gray-200 bg-white shadow-sm",
-          className,
-        )}
+        className={buildClassName("accordion-swift-item", className)}
         initial={false}
         animate={isOpen ? "open" : "closed"}
         variants={itemVariants}
@@ -67,17 +71,26 @@ export const AccordionItem: FC<AccordionItemProps> = memo(
       >
         <button
           id={`accordion-header-${index}`}
+          type="button"
+          aria-expanded={isOpen}
           onClick={handleToggle}
-          className="accordion-header block w-full h-full p-2 cursor-pointer text-left font-semibold text-gray-800 focus:outline-none"
-          aria-controls={`accordion-content-${index}`}
+          className="accordion-header"
+          aria-controls={`accordion-button-${index}`}
         >
-          <span className="font-medium">{title}</span>
+          {title ? (
+            <span className="font-medium">{title}</span>
+          ) : (
+            _children.array[0]
+          )}
         </button>
+
         <AnimatePresence initial={false}>
           {isOpen && (
             <motion.div
               id={`accordion-content-${index}`}
               key="content"
+              role="region"
+              aria-labelledby={`accordion-region-${index}`}
               initial="hidden"
               animate="visible"
               exit="hidden"
@@ -87,7 +100,7 @@ export const AccordionItem: FC<AccordionItemProps> = memo(
                 transform: "translateZ(0)",
               }}
             >
-              <div className="p-4 text-gray-700 ">{children}</div>
+              <div className="accordion-body">{children}</div>
             </motion.div>
           )}
         </AnimatePresence>
@@ -96,4 +109,4 @@ export const AccordionItem: FC<AccordionItemProps> = memo(
   },
 );
 
-AccordionItem.displayName = "AccordionItem";
+AccordionSwiftItem.displayName = "AccordionSwiftItem";

@@ -84,28 +84,17 @@ const ChatList: FC<OwnProps> = ({ className }) => {
       />
 
       <AnimatePresence custom={direction} initial={false} mode="popLayout">
-        <motion.div
-          className={buildClassName(s.ChatList)}
-          key={currentIndex}
-          custom={direction}
-          variants={variants}
-          initial="initial"
-          animate="animate"
-          exit="exit"
-          transition={{ duration: 0.2 }}
-        >
-          {Array.from({ length: 20 }, (_, i) => (
-            <Fragment key={i}>
-              <ChatListItem
-                animation={ChatAnimationTypes.Move}
-                chatId={`${i}`}
-                currentUserId="1"
-                orderDiff={i}
-              />
-              <hr className={s.ChatListDivider} />
-            </Fragment>
-          ))}
-        </motion.div>
+        {Array.from({ length: 20 }, (_, i) => (
+          <Fragment key={i}>
+            <ChatListItem
+              animation={ChatAnimationTypes.Move}
+              chatId={`${i}`}
+              currentUserId="1"
+              orderDiff={i}
+            />
+            <hr className={s.ChatListDivider} />
+          </Fragment>
+        ))}
       </AnimatePresence>
     </>
   );

@@ -15,7 +15,6 @@ import useMenuPosition from "@/entities/context-menu/public/hooks/useMenuPositio
 import Portal from "@/shared/ui/Portal";
 import { useClickAway } from "@/lib/hooks/events/useClick";
 import { useBoundaryCheck } from "@/shared/hooks/mouse/useBoundaryCheck";
-
 import "./ContextMenu.scss";
 import { useEffectWithPreviousDeps } from "@/shared/hooks/effects/useEffectWithPreviousDependencies";
 import { dispatchHeavyAnimation, IVector2 } from "@/lib/core";
@@ -23,8 +22,8 @@ import useBodyClass from "@/shared/hooks/DOM/useBodyClass";
 import useKeyboardListeners from "@/lib/hooks/events/useKeyboardListeners";
 import { useStableCallback } from "@/shared/hooks/base";
 
+// Animation constants for the context menu
 const ANIMATION_DURATION = 0.125;
-
 const ANIMATION_PROPS = {
   initial: { opacity: 0, scale: 0.85 },
   animate: { opacity: 1, scale: 1 },
@@ -42,10 +41,10 @@ export type ContextMenuOptionType<T> = Readonly<{
 }>;
 
 type RenderButtonProps = Readonly<{
+  ref: React.Ref<HTMLButtonElement> | null;
   onClick: (ev: React.MouseEvent) => void;
   onKeyDown: (ev: KeyboardEvent) => void;
   isMenuShowing: boolean;
-  ref: React.Ref<HTMLButtonElement> | null;
   menuNode: ReactNode;
 }>;
 
@@ -54,7 +53,6 @@ interface OwnProps {
   position: IVector2;
   children: ReactNode;
   className?: string;
-  menuClassName?: string;
   style?: CSSProperties;
   withPortal?: boolean;
   isDense?: boolean;
@@ -72,7 +70,6 @@ const ContextMenu: FC<Readonly<OwnProps>> = ({
   position,
   children,
   className,
-  menuClassName,
   style,
   withPortal,
   isDense,
@@ -98,14 +95,19 @@ const ContextMenu: FC<Readonly<OwnProps>> = ({
   const getTriggerElement = useStableCallback(
     () => triggerRef?.current || document.body,
   );
+
   const getRootElement = useStableCallback(() => containerRef.current);
   const getMenuElement = useStableCallback(() => bubbleRef.current);
-  const getLayout = useStableCallback(() => ({
-    isDense,
-    shouldAvoidNegativePosition: true,
-    withPortal: true,
-    menuElMinWidth: noCompact ? 220 : 120,
-  }));
+
+  const getLayout = useCallback(
+    () => ({
+      isDense,
+      shouldAvoidNegativePosition: true,
+      withPortal: true,
+      menuElMinWidth: noCompact ? 220 : 120,
+    }),
+    [isDense, noCompact],
+  );
 
   useMenuPosition(isOpen, containerRef, bubbleRef, {
     anchor: position,
@@ -140,7 +142,6 @@ const ContextMenu: FC<Readonly<OwnProps>> = ({
     } else {
       document.removeEventListener("scroll", handleClose, true);
     }
-
     return () => {
       document.removeEventListener("scroll", handleClose, true);
     };
@@ -151,26 +152,27 @@ const ContextMenu: FC<Readonly<OwnProps>> = ({
       <motion.div
         key={"context-menu"}
         ref={containerRef}
-        className={buildClassName("context-menu-container", className)}
+        className={"context-menu-container"}
         style={style}
         {...ANIMATION_PROPS}
         onAnimationEnd={onCloseAnimationEnd}
         layout={layout}
       >
         <div
-          className={buildClassName("context-menu-bubble", menuClassName)}
+          className={buildClassName("context-menu-bubble", className)}
           ref={bubbleRef}
           onContextMenu={stopEvent}
+          tabIndex={0}
         >
           {children}
         </div>
       </motion.div>
     ),
-    [className, menuClassName, style, children, onCloseAnimationEnd],
+    [className, style, children, onCloseAnimationEnd],
   );
 
   return (
-    <AnimatePresence>
+    <AnimatePresence mode="wait">
       {isOpen && (withPortal ? <Portal>{menuEl}</Portal> : menuEl)}
     </AnimatePresence>
   );

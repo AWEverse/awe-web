@@ -157,19 +157,3 @@
 .another {
   color: #6b6a6a;
 }
-
-.light {
-  position: absolute;
-  width: var(--light-size);
-  height: var(--light-size);
-  z-index: 1;
-  border-radius: 50%;
-  top: var(--light-position-y);
-  left: var(--light-position-x);
-  background: radial-gradient(
-    ellipse at center,
-    rgb(162, 160, 160) 0%,
-    rgba(238, 238, 238, 0) 50%
-  );
-  pointer-events: none;
-}

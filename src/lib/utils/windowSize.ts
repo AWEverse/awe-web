@@ -1,4 +1,4 @@
-import { IS_IOS, throttle } from "../core";
+import { IS_IOS, round, throttle } from "../core";
 import { requestNextMutation } from "../modules/fastdom";
 
 interface IDimensions {
@@ -20,7 +20,7 @@ const dimensions: IDimensions = {
 let initialHeight = dimensions.height;
 
 const updateCssVars = () => {
-  const vh = dimensions.height * 0.01;
+  const vh = round(dimensions.height * 0.01, 2);
 
   return () => {
     document.documentElement.style.setProperty("--vh", `${vh}px`);
@@ -28,7 +28,7 @@ const updateCssVars = () => {
 }
 
 function getVisualViewportDimensions(): IDimensions {
-  if (!visualViewport) return dimensions;
+  if (!visualViewport) return { ...dimensions };
 
   return {
     width: Math.round(visualViewport.width),
@@ -68,12 +68,16 @@ const throttledResize = throttle(
 export function initializeViewportListeners() {
   if (typeof window === "undefined") return;
 
+  window.removeEventListener("resize", throttledResize);
+  window.removeEventListener("orientationchange", handleOrientationChange);
+
   window.addEventListener("resize", throttledResize, { passive: true });
   window.addEventListener("orientationchange", handleOrientationChange, {
     passive: true,
   });
 
   if (visualViewport) {
+    visualViewport.removeEventListener("resize", throttledResize);
     visualViewport.addEventListener("resize", throttledResize, {
       passive: true,
     });
@@ -82,7 +86,6 @@ export function initializeViewportListeners() {
   requestNextMutation(updateCssVars);
 }
 
-// Initialize automatically in non-SSR environments
 if (typeof window !== "undefined") {
   initializeViewportListeners();
 }

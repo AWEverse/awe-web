@@ -169,7 +169,7 @@ const ChatMessage: FC<OwnProps & StateProps> = ({ isOwn, message }) => {
     handleBeforeContextMenu,
     handleContextMenu,
     handleContextMenuClose,
-  } = useContextMenuHandlers(messageRef, false, false, false);
+  } = useContextMenuHandlers({ elementRef: messageRef });
 
   const { handleClick, handleMouseDown } = useFastClick(
     (e: React.MouseEvent<HTMLDivElement>) => {

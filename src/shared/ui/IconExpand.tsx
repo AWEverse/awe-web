@@ -27,12 +27,15 @@ const IconExpand: FC<OwnProps & DivProps> = ({
     <div
       className={classNames}
       data-open={checked}
+      data-has-label={!!label}
       tabIndex={0}
+      role="button"
+      aria-pressed={checked}
       onClick={onClick}
       {...rest}
     >
       <span className={s.iconSVG}>{icon}</span>
-      <span className={s.iconLabel}>{label}</span>
+      {label && <span className={s.iconLabel}>{label}</span>}
     </div>
   );
 };

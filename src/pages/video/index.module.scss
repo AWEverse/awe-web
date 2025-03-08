@@ -1,46 +1,57 @@
 .VideoRoot {
-  --right-column-width: 402px;
+  --video-container-gap: 1rem;
+  --right-column-breakpoint: 882px;
   --right-column-min-width: 300px;
-  --padding-overflow: 1rem;
-  --gap: calc(var(--padding-overflow) / 2);
-  
+  --right-column-max-width: 402px;
+  --padding-base: 5rem;
+  --padding-mobile: 0.5rem;
+  --container-gap: var(--video-container-gap);
+
   display: flex;
-  height: 100%;
-  gap: var(--gap);
-  flex-direction: row;
-  padding: var(--padding-overflow) calc(var(--padding-overflow) * 6);
+  flex-direction: column;
+  padding: var(--padding-mobile);
+  gap: var(--video-container-gap);
+  position: relative;
+  overflow: hidden;
+  touch-action: pan-y;
+  -webkit-overflow-scrolling: touch;
 
-  @media (max-width: 1024px) {
-    --right-column-width: 320px;
-    padding: 1rem calc(var(--padding-overflow) * 4);
+  @media (min-width: 1024px) {
+    padding-inline: calc(var(--padding-base));
   }
 
-  @media (max-width: 992px) {
-    --right-column-width: 280px;
-    padding: 1rem calc(var(--padding-overflow) * 2);
+  @media (min-width: 769px) and (max-width: 1024px) {
+    padding-inline: calc(var(--padding-base) / 1.5);
   }
 
-  @media (max-width: 882px) {
-    --right-column-width: 100%;
-    flex-direction: column;
+  @media (min-width: 769px) {
+    flex-direction: row;
   }
 
   @media (max-width: 768px) {
-    --padding-overflow: 6px;
-    padding: var(--padding-overflow);
+    padding: var(--padding-mobile);
   }
 }
 
-
 .LeftColumn {
-  @media (min-width: 882px) {
-    width: calc(100dvw - (var(--right-column-width) + var(--padding-overflow) + var(--gap)));
+  flex: 1 1 auto;
+  min-width: 0;
+
+  @media (max-width: 768px) {
+    padding-inline: 0;
   }
 }
 
 .RightColumn {
-  width: 100%;
-  max-width: var(--right-column-width);
+  max-width: var(--right-column-max-width);
   min-width: var(--right-column-min-width);
-  overflow: auto;
+  flex-shrink: 0;
+
+  @media (max-width: var(--right-column-breakpoint)) {
+    max-width: 100%;
+    min-width: 0;
+    width: 100%;
+    order: 2;
+    padding-top: calc(var(--video-container-gap) * 2);
+  }
 }

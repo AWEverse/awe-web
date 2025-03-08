@@ -1,81 +1,20 @@
-import { useState, useEffect, useRef, useMemo } from "react";
-import { useStableCallback } from "../base";
-import { useDebouncedFunction } from "../shedulers";
+import { useEffect, useState } from "react";
+import windowSize from "@/lib/utils/windowSize";
 
 type WindowSize = {
-  width: number;
   height: number;
-  isResizing: boolean;
+  width: number;
 };
 
+
 const useWindowSize = (): WindowSize => {
-  const [size, setSize] = useState(() => ({
-    width: typeof window !== "undefined" ? window.innerWidth : 0,
-    height: typeof window !== "undefined" ? window.innerHeight : 0,
-  }));
-
-  const isResizing = useRef(false);
-  const animationFrame = useRef<number>(0);
-  const lastUpdate = useRef(Date.now());
-  const debounceMs = 250;
-
-  const handleResize = useStableCallback(() => {
-    if (!isResizing.current) {
-      isResizing.current = true;
-    }
-
-    const now = Date.now();
-    const timeSinceLastUpdate = now - lastUpdate.current;
-
-    if (timeSinceLastUpdate >= debounceMs) {
-      lastUpdate.current = now;
-
-      console.log("window resize");
-
-      setSize({
-        width: window.innerWidth,
-        height: window.innerHeight,
-      });
-    }
-
-    if (animationFrame.current) {
-      cancelAnimationFrame(animationFrame.current);
-    }
-
-    animationFrame.current = requestAnimationFrame(() => {
-      isResizing.current = false;
-    });
-  });
-
-  const debouncedResizeHandler = useDebouncedFunction(
-    handleResize,
-    debounceMs,
-    true,
-    false,
-  );
+  const [size, setSize] = useState<WindowSize>(windowSize.dimensions);
 
   useEffect(() => {
-    if (typeof window === "undefined") return;
+    setSize(windowSize.dimensions);
+  }, [windowSize.dimensions])
 
-    window.addEventListener("resize", debouncedResizeHandler, {
-      passive: true,
-    });
-
-    return () => {
-      window.removeEventListener("resize", debouncedResizeHandler);
-      if (animationFrame.current) {
-        cancelAnimationFrame(animationFrame.current);
-      }
-    };
-  }, [debouncedResizeHandler]);
-
-  return useMemo(
-    () => ({
-      ...size,
-      isResizing: isResizing.current,
-    }),
-    [size.width, size.height, isResizing.current],
-  );
+  return size;
 };
 
 export default useWindowSize;
