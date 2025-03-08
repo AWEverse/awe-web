@@ -1,6 +1,5 @@
 import React, { memo, useCallback, useRef, useState } from "react";
 import { Avatar } from "@mui/material";
-import DotAnimation from "@/shared/ui/dot-animation";
 import ArrowBackRoundedIcon from "@mui/icons-material/ArrowBackRounded";
 import "./index.scss";
 import MiddleHeaderActions from "./MiddleHeaderActions";
@@ -10,14 +9,13 @@ import IconButton from "@/shared/ui/IconButton";
 import { motion, AnimatePresence } from "framer-motion";
 import { useStableCallback } from "@/shared/hooks/base";
 import Modal from "@/shared/ui/Modal";
-import { createSelectorHooks } from "@/lib/hooks/selectors/createSelectorHooks";
 import captureKeyboardListeners from "@/lib/utils/captureKeyboardListeners";
 import MiddleHeaderSearch from "./MiddleHeaderSearch";
-import useChatStore from "@/pages/chat/store/useChatSelector";
 import buildClassName from "@/shared/lib/buildClassName";
 import { DatePicker } from "@/entities/date-picker";
 import { useComponentDidMount } from "@/shared/hooks/effects/useLifecycle";
 import useAppLayout from "@/lib/hooks/ui/useAppLayout";
+import useChatState from "@/pages/chat/store/state/useChatState";
 
 const TRANSITION_DURATION = 0.125;
 
@@ -34,22 +32,30 @@ const variants = {
   },
 };
 
-const useStore = createSelectorHooks(useChatStore);
-
 const MiddleHeader: React.FC<{ sender?: any }> = ({ sender }) => {
   const headerRef = useRef<HTMLDivElement>(null);
   const { isTablet } = useAppLayout();
   const [openDateModal, setOpenDateModal] = useState(false);
 
-  const isChatSearching = useStore.isChatSearching();
-  const toggleChatSearching = useStore.toggleChatSearching();
-  const openProfileColumn = useStore.openProfileColumn();
-  const toggleChatList = useStore.toggleChatList();
+  // const isMiddleSearchOpen = useStore.isMiddleSearchOpen();
+  // const toggleMiddleSearch = useStore.toggleMiddleSearch();
+  // const openProfileColumn = useStore.openProfileColumn();
+  // const toggleChatList = useStore.toggleChatList();
 
-  // Handle ESC key press
+  const {
+    isMiddleSearchOpen,
+    toggleMiddleSearch,
+    toggleLeftPanel,
+    setRightPanelOpen,
+  } = useChatState();
+
+  const openProfileColumn = () => {
+    setRightPanelOpen(true);
+  };
+
   useComponentDidMount(() => {
     const keyboardCleanup = captureKeyboardListeners({
-      bindings: { onEsc: () => isChatSearching && toggleChatSearching() },
+      bindings: { onEsc: () => isMiddleSearchOpen && toggleMiddleSearch() },
     });
     return keyboardCleanup;
   });
@@ -64,21 +70,24 @@ const MiddleHeader: React.FC<{ sender?: any }> = ({ sender }) => {
         <IconButton onClick={handleDateModalOpen}>
           <CalendarMonthRounded />
         </IconButton>
-        <IconButton onClick={toggleChatSearching}>
+        <IconButton onClick={toggleMiddleSearch}>
           <CloseRounded />
         </IconButton>
       </>
     ),
-    [handleDateModalOpen, toggleChatSearching],
+    [handleDateModalOpen, toggleMiddleSearch],
   );
 
   const renderMain = useCallback(
     () => (
       <>
-        <div className="UserDetails" onClick={openProfileColumn}>
+        <div
+          className="UserDetails allow-width-right-column-header"
+          onClick={openProfileColumn}
+        >
           <p>Andrii CLiyensa</p>
         </div>
-        <div className="MiddleHeaderActions">
+        <div className="MiddleHeaderActions allow-space-right-column-header">
           {!isTablet && (
             <PinnedMessageButton
               activeIndex={0}
@@ -96,7 +105,7 @@ const MiddleHeader: React.FC<{ sender?: any }> = ({ sender }) => {
   return (
     <>
       <div ref={headerRef} className="MiddleHeaderWrapper">
-        <IconButton className="BackButton" onClick={toggleChatList}>
+        <IconButton className="BackButton" onClick={toggleLeftPanel}>
           <ArrowBackRoundedIcon />
         </IconButton>
         <Avatar
@@ -108,22 +117,24 @@ const MiddleHeader: React.FC<{ sender?: any }> = ({ sender }) => {
         <div className={"HeaderBodyWrapper"}>
           <AnimatePresence>
             <motion.div
-              key={isChatSearching ? "search" : "main"}
+              key={isMiddleSearchOpen ? "search" : "main"}
               initial={
-                isChatSearching
+                isMiddleSearchOpen
                   ? variants.search.initial
                   : variants.main.initial
               }
               animate={
-                isChatSearching
+                isMiddleSearchOpen
                   ? variants.search.animate
                   : variants.main.animate
               }
-              exit={isChatSearching ? variants.search.exit : variants.main.exit}
+              exit={
+                isMiddleSearchOpen ? variants.search.exit : variants.main.exit
+              }
               transition={{ duration: TRANSITION_DURATION }}
               className="HeaderTransition"
             >
-              {isChatSearching ? renderSearch() : renderMain()}
+              {isMiddleSearchOpen ? renderSearch() : renderMain()}
             </motion.div>
           </AnimatePresence>
         </div>
@@ -134,7 +145,7 @@ const MiddleHeader: React.FC<{ sender?: any }> = ({ sender }) => {
           activeIndex={0}
           className={buildClassName(
             "UnderHeader",
-            isChatSearching && "UnderHeader__Hidden",
+            isMiddleSearchOpen && "UnderHeader__Hidden",
           )}
           segmentCount={4}
         />

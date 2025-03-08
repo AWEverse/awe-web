@@ -1,0 +1,91 @@
+.ChatLayoutRoot {
+  --footer-height: 22px;
+  --chat-height: calc(100dvh - var(--footer-height));
+  --right-column-width: 420px;
+  --middle-utils-width: 456px;
+  --chat-input-padding: 0.8125rem;
+
+  @media (min-width: 1276px) {
+    --chat-padding-x: calc(var(--right-column-width) / 2 + var(--chat-input-padding) * 2);
+  }
+
+  @media (min-width: 1025px) and (max-width: 1275px) {
+    --chat-padding-x: calc(var(--right-column-width) / 6 + var(--chat-input-padding) * 2);
+  }
+
+  @media (max-width: 1024px) {
+    --chat-padding-x: calc(var(--right-column-width) / 8 + var(--chat-input-padding) * 2);
+  }
+
+  @media (min-width: 768px) and (max-width: 1023px) {
+    --chat-padding-x: calc(var(--chat-input-padding));
+  }
+
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+
+  height: 100dvh;
+}
+
+.ChatLayoutBody {
+  position: relative;
+  display: flex;
+  width: 100dvw;
+  height: 100%;
+  overflow: hidden;
+
+  @media (max-width: 640px) {
+    flex-direction: column;
+  }
+
+  @media (min-width: 1276px) {
+    // The !important here is ensuring that the transform value is applied,
+    // preventing other conflicting transform
+    // styles that might have been applied earlier in the cascade once as default only.
+    // ANOTHER USES OF this keyword not allowed
+    &.is-right-column-active {
+      .allow-space-right-column-header {
+        transform: translate3d(
+          calc(-1 * var(--right-column-width, 320px) * var(--reflect, 1)),
+          0,
+          0
+        ) !important;
+      }
+
+      .allow-width-right-column-header {
+        max-width: calc(
+          100% - var(--right-column-width, 320px) - var(--middle-utils-width, 0)
+        ) !important;
+      }
+
+      .allow-space-right-column-messages {
+        transform: translate3d(
+          calc(-0.5 * var(--right-column-width, 320px) * var(--reflect, 1)),
+          var(--translateY, 0),
+          0
+        ) !important;
+      }
+
+      // .allow-space-right-column-message  s {
+      //   max-width: calc(100% - var(--right-column-width, 320px)) !important;
+      // }
+    }
+  }
+}
+
+.ChatLayoutMiddleWrapper {
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  flex: 3;
+}
+
+.ChatLayoutFooter {
+  z-index: 100;
+  overflow: hidden;
+  background-color: gray;
+}

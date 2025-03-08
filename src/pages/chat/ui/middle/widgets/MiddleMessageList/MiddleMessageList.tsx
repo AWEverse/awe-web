@@ -40,7 +40,7 @@ const MiddleMessageList: FC<OwnProps & StateProps> = () => {
           ref={containerRef}
           id="chat-scroll-area"
           data-scrolled="true"
-          className={"MiddleMessageList"}
+          className={"MiddleMessageList allow-space-right-column-messages"}
           onScroll={handleScroll}
         >
           {Array.from({ length: 20 }).map((_, index) => (

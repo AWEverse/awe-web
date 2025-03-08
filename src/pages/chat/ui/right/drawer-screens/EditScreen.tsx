@@ -1,13 +1,11 @@
-import { AddAPhotoOutlined } from "@mui/icons-material";
 import { FC, memo } from "react";
-import useChatStore from "@/pages/chat/store/useChatSelector";
 import TextInput from "@/shared/ui/TextInput";
 
 import s from "./EditScreen.module.scss";
-import Img from "@/shared/ui/Image";
 import HeaderNavigation from "../../common/HeaderNavigation";
 import buildClassName from "@/shared/lib/buildClassName";
 import TextArea from "@/shared/ui/TextArea";
+import useChatStore from "@/pages/chat/store/state/useChatState";
 
 interface OwnProps {
   nodeRef?: React.RefObject<HTMLDivElement>;
@@ -15,38 +13,21 @@ interface OwnProps {
 }
 
 const EditScreen: FC<OwnProps> = ({ nodeRef, className }) => {
-  const handleClose = useChatStore((state) => state.closeProfileEditing);
+  const { toggleRightEditingPanel } = useChatStore();
 
   return (
     <div ref={nodeRef} className={buildClassName(s.EditScreen, className)}>
       <HeaderNavigation
         className={"RightHeaderNavigation"}
         name="Andrii, Edit your profile"
-        onPrevClick={handleClose}
-      />
-
-      <Img
-        alt=""
-        caption={
-          <>
-            <AddAPhotoOutlined />
-            <p>Add a photo</p>
-          </>
-        }
-        captionClassName={s.ImgCaption}
-        className={s.Avatar}
-        figureClassName={s.EditAvatar}
-        src="https://avatars.githubusercontent.com/u/116294957?v=4"
+        onPrevClick={toggleRightEditingPanel}
       />
 
       <section className={s.EditForm}>
         <TextInput label="Name" />
         <TextInput label="Surname" />
 
-        <TextArea
-          label="Description (optional)"
-          maxLengthIndicator="Max. 200 characters"
-        />
+        <TextArea label="Description (optional)" />
       </section>
 
       <article className={s.EditExplanation}>

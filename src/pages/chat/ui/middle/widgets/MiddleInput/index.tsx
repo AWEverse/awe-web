@@ -9,7 +9,7 @@ interface StateProps {}
 
 const MiddleInput: FC<OwnProps & StateProps> = () => {
   return (
-    <div className="MiddleInput">
+    <div className="MiddleInput allow-space-right-column-messages">
       <TextArea
         id="middle-input"
         placeholder="Type a message"

@@ -8,7 +8,6 @@ import { FC, memo } from "react";
 import UserMultipleIcon from "@/shared/common/icons/UserMultipleIcon";
 import ActionButton from "@/shared/ui/ActionButton";
 import { Box, Stack } from "@mui/material";
-import ClickSpark from "@/shared/ui/ClickSpark";
 
 const ChatPage: FC = () => {
   return (
@@ -19,7 +18,7 @@ const ChatPage: FC = () => {
         <RightColumn />
       </ChatLayout.Main>
 
-      <ChatLayout.Footer>
+      {/* <ChatLayout.Footer>
         <Box
           sx={{
             borderTop: "1px solid",
@@ -42,7 +41,7 @@ const ChatPage: FC = () => {
             />
           </Stack>
         </Box>
-      </ChatLayout.Footer>
+      </ChatLayout.Footer> */}
     </ChatLayout.Root>
   );
 };
