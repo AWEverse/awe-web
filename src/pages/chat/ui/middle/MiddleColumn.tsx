@@ -11,14 +11,14 @@ interface OwnProps {}
 interface StateProps {}
 
 const MiddleColumn: FC<OwnProps & StateProps> = () => {
-	return (
-		<ChatLayout.MainContainer>
-			<MiddleHeader />
-			<MessagesBackdrop />
-			<MiddleMessageList />
-			<MiddleInput />
-		</ChatLayout.MainContainer>
-	);
+  return (
+    <ChatLayout.MainContainer>
+      <MiddleHeader />
+      <MessagesBackdrop />
+      <MiddleMessageList />
+      <MiddleInput />
+    </ChatLayout.MainContainer>
+  );
 };
 
 export default memo(MiddleColumn);

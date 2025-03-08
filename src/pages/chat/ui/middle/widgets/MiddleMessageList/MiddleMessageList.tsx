@@ -3,13 +3,7 @@ import React, { FC, memo, useRef } from "react";
 import "./MiddleMessageList.scss";
 import ChatMessage from "../../message";
 import { ScrollProvider } from "@/shared/context";
-import {
-  useDebouncedFunction,
-  useThrottledFunction,
-} from "@/shared/hooks/shedulers";
-import { throttle } from "@/lib/core";
 import { useStableCallback } from "@/shared/hooks/base";
-import { requestNextMutation } from "@/lib/modules/fastdom";
 
 interface OwnProps {}
 

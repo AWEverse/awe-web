@@ -4,46 +4,18 @@ import buildClassName from "@/shared/lib/buildClassName";
 import useChatStore from "@/pages/chat/store/state/useChatState";
 
 const Root: FC<PropsWithChildren> = ({ children }) => {
-  return (
-    <main
-      className={"ChatLayoutRoot"}
-      role="main"
-      aria-label="Chat application"
-    >
-      {children}
-    </main>
-  );
-};
-
-const Main: FC<PropsWithChildren> = ({ children }) => {
-  const mainRef = useRef<HTMLDivElement>(null);
-
   const { isRightPanelOpen } = useChatStore();
 
   return (
-    <section
-      ref={mainRef}
+    <div
       className={buildClassName(
-        "ChatLayoutBody",
+        "ChatLayoutRoot",
         isRightPanelOpen && "is-right-column-active",
       )}
-      role="region"
-      aria-label="Chat main content"
+      aria-label="Chat application container"
     >
       {children}
-    </section>
-  );
-};
-
-const Footer: FC<PropsWithChildren> = ({ children }) => {
-  return (
-    <footer
-      className={"ChatLayoutFooter"}
-      role="contentinfo"
-      aria-label="Chat footer"
-    >
-      {children}
-    </footer>
+    </div>
   );
 };
 
@@ -53,10 +25,11 @@ const MainContainer: FC<PropsWithChildren> = ({ children }) => {
       aria-label="Chat scrollable content"
       className={"ChatLayoutMiddleWrapper"}
       role="region"
+      aria-live="polite"
     >
       {children}
     </section>
   );
 };
 
-export default { Root, Main, Footer, MainContainer };
+export default { Root, MainContainer };

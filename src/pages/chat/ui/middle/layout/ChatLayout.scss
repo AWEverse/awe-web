@@ -5,6 +5,15 @@
   --middle-utils-width: 456px;
   --chat-input-padding: 0.8125rem;
 
+  position: relative;
+  display: flex;
+  max-width: 100dvw;
+  max-height: 100dvh;
+  height: 100%;
+  width: 100%;
+
+  overflow: hidden;
+
   @media (min-width: 1276px) {
     --chat-padding-x: calc(var(--right-column-width) / 2 + var(--chat-input-padding) * 2);
   }
@@ -20,21 +29,6 @@
   @media (min-width: 768px) and (max-width: 1023px) {
     --chat-padding-x: calc(var(--chat-input-padding));
   }
-
-  position: relative;
-  overflow: hidden;
-  display: flex;
-  flex-direction: column;
-
-  height: 100dvh;
-}
-
-.ChatLayoutBody {
-  position: relative;
-  display: flex;
-  width: 100dvw;
-  height: 100%;
-  overflow: hidden;
 
   @media (max-width: 640px) {
     flex-direction: column;
