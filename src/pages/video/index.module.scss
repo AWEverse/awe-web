@@ -3,7 +3,7 @@
   --right-column-breakpoint: 882px;
   --right-column-min-width: 300px;
   --right-column-max-width: 402px;
-  --padding-base: 4.25rem;
+  --padding-base: 5rem;
   --padding-mobile: 0.5rem;
   --container-gap: var(--video-container-gap);
 
@@ -16,9 +16,16 @@
   touch-action: pan-y;
   -webkit-overflow-scrolling: touch;
 
-  @media (min-width: 768px) {
+  @media (min-width: 1024px) {
+    padding-inline: calc(var(--padding-base));
+  }
+
+  @media (min-width: 769px) and (max-width: 1024px) {
+    padding-inline: calc(var(--padding-base) / 1.5);
+  }
+
+  @media (min-width: 769px) {
     flex-direction: row;
-    padding-inline: calc(var(--padding-base) * 1.5);
   }
 
   @media (max-width: 768px) {
@@ -36,7 +43,6 @@
 }
 
 .RightColumn {
-  width: 100%;
   max-width: var(--right-column-max-width);
   min-width: var(--right-column-min-width);
   flex-shrink: 0;

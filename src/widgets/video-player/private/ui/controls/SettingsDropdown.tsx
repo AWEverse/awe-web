@@ -39,19 +39,6 @@ const SettingsDropdown: FC<SettingsDropdownProps> = ({
   const handleSpeedTimerClick = useStableCallback(() => setScreen("Speed"));
   const handleQualityClick = useStableCallback(() => setScreen("Quality"));
 
-  const screenComponentMap: Record<Screen, JSX.Element> = {
-    Main: (
-      <SettingMain
-        onQualityClick={handleQualityClick}
-        onAmbientModeClick={handleAmbientModeClick}
-        onSpeedTimerClick={handleSpeedTimerClick}
-      />
-    ),
-    Speed: <SettingPlayBackSpeed onBackClick={resetScreen} />,
-    Quality: <SettingQuality onBackClick={resetScreen} />,
-    Timer: <SettingSleep onBackClick={resetScreen} />,
-  };
-
   const isMain = screen === "Main";
   const initialX = isMain ? "-100%" : "100%";
   const exitX = initialX;
@@ -68,7 +55,20 @@ const SettingsDropdown: FC<SettingsDropdownProps> = ({
             duration: ANIMATION_DURATION,
           }}
         >
-          {screenComponentMap[screen]}
+          {
+            {
+              Main: (
+                <SettingMain
+                  onQualityClick={handleQualityClick}
+                  onAmbientModeClick={handleAmbientModeClick}
+                  onSpeedTimerClick={handleSpeedTimerClick}
+                />
+              ),
+              Speed: <SettingPlayBackSpeed onBackClick={resetScreen} />,
+              Quality: <SettingQuality onBackClick={resetScreen} />,
+              Timer: <SettingSleep onBackClick={resetScreen} />,
+            }[screen]
+          }
         </motion.div>
       </AnimatePresence>
     </DropdownMenu>

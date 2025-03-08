@@ -35,7 +35,7 @@ import { useVideoBuffering } from "../../private/hooks/useVideoBuffering";
 import { useVideoPlayback } from "../../private/hooks/useVideoPlayback";
 import { noop } from "@/lib/utils/listener";
 import { useTimeLine } from "../../private/hooks/useTimeLine";
-import VideoPlayerContextMenu from "../../private/ui/VideoPlayerContextMenu";
+import VideoPlayerContextMenu from "../../private/ui/context-menu/VideoPlayerContextMenu";
 import { useScrollProvider } from "@/shared/context";
 import useKeyHandler from "../../private/hooks/useKeyHandler";
 import { useThrottledFunction } from "@/shared/hooks/shedulers";
@@ -361,7 +361,6 @@ const VideoPlayer: React.FC<OwnProps> = ({
         position={contextMenuAnchor!}
         onClose={handleContextMenuClose}
         withPortal
-        menuClassName="p-2"
       />
     </>
   );

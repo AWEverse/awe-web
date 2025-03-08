@@ -53,7 +53,6 @@ interface OwnProps {
   position: IVector2;
   children: ReactNode;
   className?: string;
-  menuClassName?: string;
   style?: CSSProperties;
   withPortal?: boolean;
   isDense?: boolean;
@@ -71,7 +70,6 @@ const ContextMenu: FC<Readonly<OwnProps>> = ({
   position,
   children,
   className,
-  menuClassName,
   style,
   withPortal,
   isDense,
@@ -154,22 +152,23 @@ const ContextMenu: FC<Readonly<OwnProps>> = ({
       <motion.div
         key={"context-menu"}
         ref={containerRef}
-        className={buildClassName("context-menu-container", className)}
+        className={"context-menu-container"}
         style={style}
         {...ANIMATION_PROPS}
         onAnimationEnd={onCloseAnimationEnd}
         layout={layout}
       >
         <div
-          className={buildClassName("context-menu-bubble", menuClassName)}
+          className={buildClassName("context-menu-bubble", className)}
           ref={bubbleRef}
           onContextMenu={stopEvent}
+          tabIndex={0}
         >
           {children}
         </div>
       </motion.div>
     ),
-    [className, menuClassName, style, children, onCloseAnimationEnd],
+    [className, style, children, onCloseAnimationEnd],
   );
 
   return (

@@ -7,7 +7,6 @@ import {
   useMemo,
   useEffect,
 } from "react";
-
 import s from "./SearchInput.module.scss";
 import CircularProgress from "@mui/material/CircularProgress";
 import { CloseRounded, SearchRounded } from "@mui/icons-material";
@@ -15,10 +14,12 @@ import { useRefInstead, useStableCallback } from "@/shared/hooks/base";
 import buildClassName from "../lib/buildClassName";
 import { requestMeasure } from "@/lib/modules/fastdom";
 import { useBooleanState } from "../hooks/state";
+import { EKeyboardKey } from "@/lib/core";
+import I18n from "./i18n";
+import { useTranslation } from "react-i18next";
 
 interface OwnProps {
   ref?: RefObject<HTMLInputElement>;
-  children?: React.ReactNode;
   parentContainerClassName?: string;
   resultsItemSelector?: string;
   className?: string;
@@ -31,7 +32,6 @@ interface OwnProps {
   autoComplete?: string;
   canClose?: boolean;
   labels?: ReactNode[];
-  labelsVariant?: "text" | "literal" | "dot";
   size?: "small" | "medium" | "large";
   startDecorator?: ReactNode;
   endDecorator?: ReactNode;
@@ -76,34 +76,32 @@ const SearchInput: FC<OwnProps> = ({
     useBooleanState(focused);
 
   useEffect(() => {
-    if (!inputRef.current) {
-      return;
-    }
-
+    if (!inputRef.current) return;
     if (focused) {
-      inputRef.current.focus();
+      requestMeasure(() => {
+        inputRef.current!.focus();
+      });
     } else {
       inputRef.current.blur();
     }
-  }, [focused, placeholder]);
+  }, [focused]);
 
-  const handleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    onChange?.(event);
+  const handleChange = useCallback(
+    (event: React.ChangeEvent<HTMLInputElement>) => {
+      onChange?.(event);
+    },
+    [onChange],
+  );
 
-    if (!isInputFocused) {
-      handleFocus();
-    }
-  };
-
-  const handleFocus = () => {
+  const handleFocus = useCallback(() => {
     markInputFocused();
     onFocus?.();
-  };
+  }, [markInputFocused, onFocus]);
 
-  const handleBlur = () => {
+  const handleBlur = useCallback(() => {
     unmarkInputFocused();
     onBlur?.();
-  };
+  }, [unmarkInputFocused, onBlur]);
 
   const handleReset = useCallback(() => {
     onReset?.();
@@ -111,22 +109,17 @@ const SearchInput: FC<OwnProps> = ({
 
   const handleKeyDown = useStableCallback(
     (e: React.KeyboardEvent<HTMLInputElement>) => {
-      if (!resultsItemSelector) {
-        return;
-      }
-
-      if (e.key === "ArrowDown" || e.key === "Enter") {
+      if (!resultsItemSelector) return;
+      if (e.code === EKeyboardKey.ArrowDown || e.code === EKeyboardKey.Enter) {
         const element = document.querySelector(
           resultsItemSelector,
         ) as HTMLElement;
-
         requestMeasure(() => {
           element?.focus();
         });
       }
-
       const isBackspace =
-        e.key === "Backspace" &&
+        e.code === EKeyboardKey.Backspace &&
         e.currentTarget.selectionStart === 0 &&
         e.currentTarget.selectionEnd === 0;
 
@@ -136,11 +129,8 @@ const SearchInput: FC<OwnProps> = ({
     },
   );
 
-  const placeholderIntl = "Search...";
-
   const renderLabels = useMemo(() => {
     if (!labels) return null;
-
     return (
       <>
         <label className={s.labelsContainer} htmlFor={inputId}>
@@ -155,17 +145,13 @@ const SearchInput: FC<OwnProps> = ({
     );
   }, [inputId, labels]);
 
-  const renderLoading = () => {
-    return (
-      isLoading && (
-        <CircularProgress className={s.spinner} onClick={onSpinnerClick} />
-      )
+  const renderLoading = () =>
+    isLoading && (
+      <CircularProgress className={s.spinner} onClick={onSpinnerClick} />
     );
-  };
 
   const renderCloseButton = () => {
     const canRender = !isLoading && (value || canClose) && onReset;
-
     return (
       canRender && (
         <button
@@ -180,6 +166,10 @@ const SearchInput: FC<OwnProps> = ({
     );
   };
 
+  const { t: translation } = useTranslation();
+
+  const SearchPlaceholder = translation("search.placeholder");
+
   return (
     <form
       autoComplete="off"
@@ -191,23 +181,21 @@ const SearchInput: FC<OwnProps> = ({
       )}
       data-loading={isLoading}
       role="search"
+      aria-busy={isLoading}
       onSubmit={(e) => e.preventDefault()}
     >
       <label className={s.visuallyHidden} htmlFor={inputId}>
-        {placeholderIntl}
+        {SearchPlaceholder}
       </label>
-
       {startDecorator}
-
       <div className={s.searchIcon}>
         <SearchRounded />
         <i className={s.dot}></i>
       </div>
-
       {labels && renderLabels}
       <input
         ref={inputRef}
-        aria-label={placeholderIntl}
+        aria-label={SearchPlaceholder}
         autoComplete={autoComplete}
         className={buildClassName(s.input, className, !labels && s.noLabels)}
         type="text"
@@ -215,7 +203,7 @@ const SearchInput: FC<OwnProps> = ({
         tabIndex={tabIndex}
         disabled={disabled}
         id={inputId}
-        placeholder={placeholder || placeholderIntl}
+        placeholder={placeholder || SearchPlaceholder}
         value={value}
         onBlur={handleBlur}
         onChange={handleChange}

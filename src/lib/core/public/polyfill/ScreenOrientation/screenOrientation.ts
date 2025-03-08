@@ -76,6 +76,7 @@ const createScreenOrientationPolyfill = (): ScreenOrientationPolyfill => {
   // Apply CSS rotation to the target element (fullscreen element or the document root).
   const applyVisualRotation = (degrees?: number): void => {
     const targetElement = (document.fullscreenElement || document.documentElement) as HTMLElement;
+
     if (degrees !== undefined) {
       targetElement.style.transform = `rotate(${degrees}deg)`;
       targetElement.style.transformOrigin = "center center";
@@ -143,16 +144,16 @@ const createScreenOrientationPolyfill = (): ScreenOrientationPolyfill => {
         throw new DOMException("Requires fullscreen mode", "SecurityError");
       }
 
-      // Attempt to use the native lock if supported.
-      if (ORIENTATION_LOCK_SUPPORTED) {
-        try {
-          await _orientation.lock(orientation);
-          lockedOrientation = orientation;
-          return;
-        } catch (err) {
-          console.warn("Native orientation lock failed:", err);
-        }
-      }
+      // // Attempt to use the native lock if supported.
+      // if (ORIENTATION_LOCK_SUPPORTED) {
+      //   try {
+      //     await _orientation.lock(orientation);
+      //     lockedOrientation = orientation;
+      //     return;
+      //   } catch (err) {
+      //     console.warn("Native orientation lock failed:", err);
+      //   }
+      // }
 
       // For orientation "any", simply unlock.
       if (orientation === "any") {

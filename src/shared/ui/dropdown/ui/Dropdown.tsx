@@ -29,7 +29,7 @@ interface OwnProps {
   triggerButton?: FC<OwnTriggerProps>;
   isOpen?: boolean;
   shouldClose?: boolean;
-  usePortal?: boolean;
+  withPortal?: boolean;
   onOpen?: () => void;
   onClose?: () => void;
   onHide?: () => void;
@@ -57,6 +57,7 @@ const DropdownMenu: FC<OwnProps & OwnSharedProps> = ({
   triggerButton: TriggerButton,
   position = "top-right",
   shouldClose,
+  withPortal,
   onOpen,
   onClose,
   onEnter,
@@ -137,13 +138,11 @@ const DropdownMenu: FC<OwnProps & OwnSharedProps> = ({
             aria-expanded={isOpen}
             data-position={position}
             tabIndex={-1}
-            className={buildClassName(s.dropdownMenu)}
+            className={buildClassName(s.dropdownMenu, className)}
             onMouseEnter={onBackdropMouseEnter}
             onTransitionEnd={onTransitionEnd}
           >
-            <div className={buildClassName(s.dropdownBody, className)}>
-              {children}
-            </div>
+            {children}
           </motion.div>
         )}
       </AnimatePresence>

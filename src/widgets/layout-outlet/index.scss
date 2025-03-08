@@ -1,6 +1,6 @@
 /* Optimized CSS Variables */
 :root {
-  --layout-header-z-index: 1000;
+  --layout-header-z-index: 10;
   --layout-header-height: 56px;
   --background-pattern: radial-gradient(transparent 1px, #0b1012 1px);
   --blur-effect: blur(2px); /* Reduced blur for better performance */
@@ -8,8 +8,7 @@
 
 /* Header Component */
 .LayoutHeader {
-  position: sticky;
-  top: 0;
+  position: relative;
   height: var(--layout-header-height);
   z-index: var(--layout-header-z-index);
   padding: 0 0.5rem;
@@ -19,6 +18,7 @@
   align-items: center;
   background-image: var(--background-pattern);
   background-size: 4px 4px;
+
 
   /* Optimized backdrop filter */
   @supports (backdrop-filter: blur(0)) {
@@ -37,6 +37,11 @@
     max-width: 100%;
   }
 }
+
+ .LayoutHeader__SearchContainer {
+  z-index: 20;
+  transition: width 0.3s;
+ }
 
 .LayoutOutlet {
   display: flex;

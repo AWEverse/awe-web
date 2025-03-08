@@ -1,3 +1,4 @@
+@use '_chip.scss';
 @use '_font.scss';
 @use '_user.scss';
 @use '_border.scss';
@@ -5,7 +6,7 @@
 @use '_scrollbar.scss';
 @use '_markdown.scss';
 @use '_spacer.scss';
-
+@use '_kbd.scss';
 
 .sr-only {
   position: absolute;
