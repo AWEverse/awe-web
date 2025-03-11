@@ -8,7 +8,6 @@ import buildClassName from "@/shared/lib/buildClassName";
 import { AnimatePresence, motion } from "framer-motion";
 
 interface OwnProps {
-  ref?: React.RefObject<HTMLDivElement | null>;
   className?: string;
 }
 

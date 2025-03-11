@@ -1,12 +1,33 @@
-.RightColumn {
+.RightColumnWrapper {
   position: absolute;
   right: 0;
   height: 100%;
   overflow: hidden;
-  min-width: 0;
-  max-width: var(--right-column-width);
   background-color: var(--awe-palette-background-default);
   z-index: 100;
+    transform: translate3d(0, 0, 0);
+
+  transition: transform var(--transition-standard-in, 0.3s ease-in);
+
+
+  &[data-shown="false"] {
+    transform: translate3d(
+      calc(1 * var(--right-column-width, 420px) * var(--reflect, 1)),
+      0,
+      0
+    );
+  }
+}
+
+.RightColumn {
+  @media (min-width: 649px) {
+    width: 100%;
+    max-width: var(--right-column-width);
+  }
+
+  @media (max-width: 648px) {
+    width: 100vw;
+  }
 }
 
 .RightHeaderNavigation {

@@ -1,6 +1,7 @@
 .ChatLayoutRoot {
   --footer-height: 22px;
   --chat-height: calc(100dvh - var(--footer-height));
+  --left-column-width: 380px;
   --right-column-width: 420px;
   --middle-utils-width: 456px;
   --chat-input-padding: 0.8125rem;
@@ -62,7 +63,7 @@
         ) !important;
       }
 
-      // .allow-space-right-column-message  s {
+      // .allow-space-right-column-messages {
       //   max-width: calc(100% - var(--right-column-width, 320px)) !important;
       // }
     }

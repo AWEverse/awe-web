@@ -3,18 +3,19 @@ import { createRoot } from "react-dom/client";
 import App from "./App";
 
 import { enableStrict, requestMutation } from "@/lib/modules/fastdom";
-import { optimizeView } from "./lib/utils/optimizeView";
 import { STRICTERDOM_ENABLED } from "@/lib/config/dev";
 
 import "@/styles/global.scss";
 import "@/styles/index.css";
 import initI18n from "./providers/i18n-provider";
+import initAnimationsStore from "@/store/animations/initAnimationsStore";
+import initViewOptimizer from "./lib/utils/initViewOptimizer";
 
 // if (STRICTERDOM_ENABLED) {
 //   enableStrict();
 // }
 
-async function init() {
+async function initApplication() {
   const rootElement = document.getElementById("root");
 
   if (!rootElement) {
@@ -29,10 +30,10 @@ async function init() {
         <App />
       </StrictMode>,
     );
-
-    optimizeView();
   });
 }
 
-init();
+initViewOptimizer();
+initAnimationsStore();
 initI18n();
+initApplication();

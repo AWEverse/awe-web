@@ -13,7 +13,6 @@ interface StateProps {}
 
 const MiddleHeaderSearch: FC<OwnProps & StateProps> = () => {
   const [value, _setValue] = useState("");
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [isFocus, setIsFocus] = useState(false);
 
   const hasValue = Boolean(value);

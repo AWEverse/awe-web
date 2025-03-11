@@ -33,7 +33,7 @@ export const itemVariants = {
     isNextChild: boolean;
   }) => ({
     borderRadius: computeBorderRadiusClosed(custom),
-    transition: { margin: "0px", duration: TRANSITION_DURATION },
+    transition: { duration: TRANSITION_DURATION },
     margin: "0px",
   }),
 };

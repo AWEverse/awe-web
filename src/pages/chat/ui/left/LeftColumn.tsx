@@ -10,7 +10,6 @@ import MainScreen from "./screens/MainScreen";
 import useChatStore from "../../store/state/useChatState";
 import useAppLayout from "@/lib/hooks/ui/useAppLayout";
 
-// Lazy-loaded components
 const SettingsNavigation = lazy(
   () => import("./screens/settings/SettingsNavigation"),
 );
@@ -28,14 +27,12 @@ const PersonalizationSetting = lazy(
   () => import("./screens/settings/PersonalizationSetting"),
 );
 
-// Skeleton components
 const MainSkeleton = () => <div className={s.skeleton}>Main Skeleton</div>;
 const SettingsSkeleton = () => (
   <div className={s.skeleton}>Settings Skeleton</div>
 );
 const GenericSkeleton = () => <div className={s.skeleton}>Loading...</div>;
 
-// Screen mapping
 const screens = {
   [LeftColumnScreenType.Main]: MainScreen,
   [LeftColumnScreenType.Archived]: ArchivedScreen,
@@ -48,7 +45,6 @@ const screens = {
   [LeftColumnScreenType.PersonalizationSetting]: PersonalizationSetting,
 };
 
-// Skeleton mapping
 const skeletons = {
   [LeftColumnScreenType.Main]: <MainSkeleton />,
   [LeftColumnScreenType.SettingsNavigation]: <SettingsSkeleton />,
@@ -77,9 +73,10 @@ interface OwnProps {
 
 const LeftColumn: FC<OwnProps> = ({ className }) => {
   const isMobile = useAppLayout((state) => state.isMobile);
-  const { isLeftPanelOpen, setLeftPanelOpen } = useChatStore();
 
-  const currentScreen = LeftColumnScreenType.Main; // Replace with actual state management
+  const { isLeftPanelOpen } = useChatStore();
+
+  const currentScreen = LeftColumnScreenType.Main;
   const prevScreen = usePrevious(currentScreen);
   const shouldReduceMotion = useReducedMotion();
 
@@ -104,7 +101,6 @@ const LeftColumn: FC<OwnProps> = ({ className }) => {
     return currentIndex > prevIndex ? 1 : -1;
   }, [currentScreen, prevScreen]);
 
-  // Dynamic transition duration
   const transition = {
     duration: shouldReduceMotion ? 0 : 0.3,
     ease: "easeInOut",
@@ -114,25 +110,30 @@ const LeftColumn: FC<OwnProps> = ({ className }) => {
   const Fallback = skeletons[currentScreen] || skeletons.default;
 
   return (
-    <AnimatePresence initial={false} mode="wait">
-      {isLeftPanelOpen && ScreenComponent && (
-        <motion.div
-          className={buildClassName(s.LeftColumn, className)}
-          aria-label={`Current screen: ${currentScreen}`}
-          key={currentScreen}
-          variants={screenVariants}
-          initial="initial"
-          animate="animate"
-          exit="exit"
-          custom={direction}
-          transition={transition}
-        >
-          <Suspense fallback={Fallback}>
-            <ScreenComponent />
-          </Suspense>
-        </motion.div>
-      )}
-    </AnimatePresence>
+    <section
+      data-mobile={isMobile}
+      className={buildClassName(s.LeftColumn, className)}
+      data-shown={isLeftPanelOpen}
+    >
+      <AnimatePresence initial={false} mode="wait">
+        {ScreenComponent && (
+          <motion.div
+            aria-label={`Current screen: ${currentScreen}`}
+            key={currentScreen}
+            variants={screenVariants}
+            initial="initial"
+            animate="animate"
+            exit="exit"
+            custom={direction}
+            transition={transition}
+          >
+            <Suspense fallback={Fallback}>
+              <ScreenComponent />
+            </Suspense>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </section>
   );
 };
 

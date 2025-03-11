@@ -1,4 +1,4 @@
-import { FC, useState, useCallback, useMemo } from "react";
+import { FC, useState, useCallback, useMemo, memo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import s from "./MainScreen.module.scss";
 import buildClassName from "@/shared/lib/buildClassName";
@@ -31,7 +31,7 @@ const fadeVariants = {
   exit: { opacity: 0 },
 };
 
-const MainScreen: FC<OwnProps> = ({ className }) => {
+const MainScreen: FC<OwnProps> = ({}) => {
   const [content, setContent] = useState<ScreenType>("chat");
   // const { isButtonVisible, handleMouseEnter, handleMouseLeave } =
   //   useFloatingButton(false);
@@ -79,4 +79,4 @@ const MainScreen: FC<OwnProps> = ({ className }) => {
   );
 };
 
-export default MainScreen;
+export default memo(MainScreen);

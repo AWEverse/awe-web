@@ -16,13 +16,10 @@ export default function fastRaf(
   callback: () => void,
   withTimeoutFallback: boolean = false,
 ): void {
-  // Skip if callback is already scheduled
   if (callbacks.has(callback)) return;
 
-  // Add callback to the map
   callbacks.set(callback, {});
 
-  // Set up individual fallback timeout if requested
   if (withTimeoutFallback) {
     const timeoutId = window.setTimeout(() => {
       executeCallback(callback);
@@ -30,7 +27,6 @@ export default function fastRaf(
     callbacks.get(callback)!.timeoutId = timeoutId;
   }
 
-  // Schedule RAF if not already scheduled
   if (!rafScheduled) {
     rafScheduled = true;
     requestAnimationFrame(() => {

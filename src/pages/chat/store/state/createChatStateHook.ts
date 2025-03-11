@@ -1,7 +1,7 @@
 import { useSyncExternalStore } from "react";
 import { ChatStateManager, ChatStateFlags } from "./types";
 
-export interface ChatStateHook {
+export type ChatStateHook = {
   isLeftPanelOpen: boolean;
   isRightPanelOpen: boolean;
   isRightPanelEditing: boolean;
@@ -22,8 +22,10 @@ export interface ChatStateHook {
 
   toggleMiddleSearch: () => void;
   toggleMiddlePinnedMessages: () => void;
-}
+};
 
+
+// TODO: resolve issue with returning a whole object
 export default function (manager: ChatStateManager): ChatStateHook {
   useSyncExternalStore(
     manager.subscribe,

@@ -1,25 +1,32 @@
-export default function debounce<F extends AnyToVoidFunction>(
+export default function debounce<F extends (...args: any[]) => void>(
   fn: F,
   ms: number,
-  shouldRunFirst = true,
-  shouldRunLast = true,
-) {
-  let waitingTimeout: number | undefined;
+  shouldRunFirst: boolean = true,
+  shouldRunLast: boolean = true,
+  thisArg?: any,
+): (...args: Parameters<F>) => void {
+  if (typeof fn !== 'function') {
+    throw new TypeError('fn must be a function');
+  }
 
-  return (...args: Parameters<F>) => {
-    if (waitingTimeout) {
+  if (typeof ms !== 'number' || isNaN(ms) || ms < 0) {
+    throw new TypeError('ms must be a non-negative number');
+  }
+
+  let waitingTimeout: NodeJS.Timeout | undefined;
+
+  return function (...args: Parameters<F>) {
+    if (waitingTimeout !== undefined) {
       clearTimeout(waitingTimeout);
       waitingTimeout = undefined;
     } else if (shouldRunFirst) {
-      fn(...args);
+      fn.apply(thisArg, args);
     }
 
-    // eslint-disable-next-line no-restricted-globals
-    waitingTimeout = self.setTimeout(() => {
+    waitingTimeout = setTimeout(() => {
       if (shouldRunLast) {
-        fn(...args);
+        fn.apply(thisArg, args);
       }
-
       waitingTimeout = undefined;
     }, ms);
   };
