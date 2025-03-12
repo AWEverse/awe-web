@@ -71,6 +71,8 @@
 .MiddleHeaderActions {
   gap: 0.5rem;
   margin-left: auto;
+  transform: translate3d(0, 0, 0);
+  transition: transform var(--transition-standard-in, 0.3s ease-in);
 }
 
 .InAction {

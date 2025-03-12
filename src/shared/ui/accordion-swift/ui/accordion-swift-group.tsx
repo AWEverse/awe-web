@@ -12,6 +12,9 @@ import {
 } from "../lib/types";
 import useStateSet from "@/shared/hooks/state/useStateSet";
 
+import "./accordion-swift-group.scss";
+import buildClassName from "@/shared/lib/buildClassName";
+
 export const AccordionSwiftGroup: FC<Readonly<AccordionGroupProps>> =
   React.memo(
     ({
@@ -58,10 +61,15 @@ export const AccordionSwiftGroup: FC<Readonly<AccordionGroupProps>> =
 
       return (
         <div
-          className={className}
+          className={buildClassName(
+            "accordion-swift-group",
+            "accordion-stepper",
+            className,
+          )}
           role="tablist"
           aria-multiselectable={allowMultiple}
         >
+          <div className="splite"></div>
           {Children.map(children, (child, index) => {
             if (!isValidElement(child)) {
               return child;

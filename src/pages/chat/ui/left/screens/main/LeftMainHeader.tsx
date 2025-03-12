@@ -2,9 +2,9 @@ import { FC, useState, memo } from "react";
 import s from "./LeftMainHeader.module.scss";
 import SearchInput from "@/shared/ui/SearchInput";
 import { ArrowForwardRounded } from "@mui/icons-material";
-import useChatStore from "@/pages/chat/store/useChatSelector";
 import IconButton from "@/shared/ui/IconButton";
 import { useStableCallback } from "@/shared/hooks/base";
+import useChatStore from "@/pages/chat/store/state/useChatState";
 
 interface OwnProps {
   onFocus?: () => void;
@@ -30,9 +30,8 @@ const useSearchInput = () => {
   return { value, handleChange, handleReset };
 };
 
-const LeftMainHeader: FC<OwnProps & StateProps> = (props) => {
-  const { onFocus, onBlur } = props;
-  const handleClose = useChatStore((state) => state.closeChatList);
+const LeftMainHeader: FC<OwnProps & StateProps> = ({ onFocus, onBlur }) => {
+  const { toggleLeftPanel } = useChatStore();
 
   const { value, handleChange, handleReset } = useSearchInput();
 
@@ -48,7 +47,7 @@ const LeftMainHeader: FC<OwnProps & StateProps> = (props) => {
         onFocus={onFocus}
         onReset={handleReset}
       />
-      <IconButton className={s.CloseButton} onClick={handleClose}>
+      <IconButton className={s.CloseButton} onClick={toggleLeftPanel}>
         <ArrowForwardRounded />
       </IconButton>
     </div>

@@ -3,29 +3,33 @@ import { AnimatePresence, motion } from "framer-motion";
 import EditScreen from "./drawer-screens/EditScreen";
 import MainScreen from "./drawer-screens/MainScreen";
 import "./RightColumn.scss";
-import useChatStore from "../../store/useChatSelector";
+import useChatState from "../../store/state/useChatState";
 
-const TRANSITION_DURATION = 0.125; // seconds
+const TRANSITION_DURATION = 0.3; // seconds
 
 const RightColumn: FC = () => {
-  const isProfileEditing = useChatStore((state) => state.isProfileEditing);
-  const isProfileColumn = useChatStore((state) => state.isProfileColumn);
+  const { isRightPanelOpen, isRightPanelEditing } = useChatState();
 
   return (
-    <AnimatePresence initial={false} mode="popLayout">
-      {isProfileColumn && (
-        <motion.div
-          className={"RightColumn"}
-          key={isProfileEditing ? "edit" : "main"}
-          initial={{ x: isProfileEditing ? "-100%" : "100%" }}
-          animate={{ x: 0 }}
-          exit={{ x: isProfileEditing ? "-100%" : "100%" }}
-          transition={{ duration: TRANSITION_DURATION }}
-        >
-          {isProfileEditing ? <EditScreen /> : <MainScreen />}
-        </motion.div>
-      )}
-    </AnimatePresence>
+    <section className="RightColumnWrapper" data-shown={isRightPanelOpen}>
+      <AnimatePresence initial={false} mode="popLayout">
+        {isRightPanelOpen && (
+          <motion.div
+            className={"RightColumn"}
+            key={isRightPanelEditing ? "edit" : "main"}
+            initial={{ x: "0" }}
+            animate={{ x: 0 }}
+            exit={{ x: "100%" }}
+            transition={{
+              duration: TRANSITION_DURATION,
+              ease: [0.4, 0, 0.2, 1],
+            }}
+          >
+            {isRightPanelEditing ? <EditScreen /> : <MainScreen />}
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </section>
   );
 };
 

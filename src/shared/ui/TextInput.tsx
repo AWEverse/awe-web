@@ -4,15 +4,13 @@ import {
   InputHTMLAttributes,
   memo,
   RefObject,
-  useMemo,
   useState,
+  useRef,
 } from "react";
 import buildClassName from "../lib/buildClassName";
 import { useRefInstead } from "@/shared/hooks/base";
 import { useStableCallback } from "@/shared/hooks/base";
-import useUniqueId, {
-  generateUniqueId,
-} from "@/lib/hooks/utilities/useUniqueId";
+import useUniqueId from "@/lib/hooks/utilities/useUniqueId";
 
 interface OwnProps extends InputHTMLAttributes<HTMLInputElement> {
   ref?: RefObject<HTMLInputElement>;
@@ -26,6 +24,7 @@ interface OwnProps extends InputHTMLAttributes<HTMLInputElement> {
   focused?: boolean;
   rounded?: "sm" | "md" | "lg" | "xl";
   variant?: "slide" | "move" | "zoom";
+  maxGraphemeLength?: number;
 }
 
 const TextInput: FC<OwnProps> = ({
@@ -39,25 +38,65 @@ const TextInput: FC<OwnProps> = ({
   helperText,
   focused,
   onChange,
+  maxGraphemeLength,
   ...props
 }) => {
   const uuid = useUniqueId("text-input", id);
-
   const inputRef = useRefInstead<HTMLInputElement>(ref);
   const [isInputFocused, setFocused] = useState(focused);
 
-  const handleChange = useStableCallback((e: ChangeEvent<HTMLInputElement>) => {
-    const { value } = e.currentTarget;
+  const previousValueRef = useRef<string>("");
+  const previousSelectionRef = useRef<{ start: number; end: number }>({
+    start: 0,
+    end: 0,
+  });
 
-    if (/^\s/.test(value)) {
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    previousValueRef.current = e.currentTarget.value;
+    previousSelectionRef.current = {
+      start: e.currentTarget.selectionStart ?? 0,
+      end: e.currentTarget.selectionEnd ?? 0,
+    };
+  };
+
+  const handleChange = useStableCallback((e: ChangeEvent<HTMLInputElement>) => {
+    const newValue = e.currentTarget.value;
+
+    if (maxGraphemeLength && countGraphemes(newValue) > maxGraphemeLength) {
+      e.currentTarget.value = previousValueRef.current;
+      e.currentTarget.setSelectionRange(
+        previousSelectionRef.current.start,
+        previousSelectionRef.current.end,
+      );
+      return;
+    }
+
+    if (/^\s/.test(newValue)) {
       e.currentTarget.value = "";
       return;
     }
 
-    setFocused(value.trim().length > 0);
-
+    setFocused(newValue.trim().length > 0);
     onChange?.(e);
   });
+
+  const handlePaste = (e: React.ClipboardEvent<HTMLInputElement>) => {
+    if (!maxGraphemeLength) return;
+
+    const pasteData = e.clipboardData.getData("text");
+    const currentValue = e.currentTarget.value;
+    const selectionStart = e.currentTarget.selectionStart ?? 0;
+    const selectionEnd = e.currentTarget.selectionEnd ?? 0;
+
+    const newValue =
+      currentValue.slice(0, selectionStart) +
+      pasteData +
+      currentValue.slice(selectionEnd);
+
+    if (countGraphemes(newValue) > maxGraphemeLength) {
+      e.preventDefault();
+    }
+  };
 
   const fullClassName = buildClassName(
     "input-group",
@@ -69,7 +108,7 @@ const TextInput: FC<OwnProps> = ({
   const renderLabel = () =>
     label ? (
       <label htmlFor={uuid}>
-        {label}&nbsp;{required && "(required)"}
+        {label} {required && "(required)"}
       </label>
     ) : null;
 
@@ -91,13 +130,20 @@ const TextInput: FC<OwnProps> = ({
         className={"form-control"}
         id={uuid}
         required={required}
+        onKeyDown={handleKeyDown}
         onChange={handleChange}
+        onPaste={handlePaste}
         {...props}
       />
       {renderLabel()}
       {renderHelper()}
     </div>
   );
+};
+
+const countGraphemes = (str: string): number => {
+  const segmenter = new Intl.Segmenter("en", { granularity: "grapheme" });
+  return Array.from(segmenter.segment(str)).length;
 };
 
 export default memo(TextInput);

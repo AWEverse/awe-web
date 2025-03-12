@@ -1,7 +1,6 @@
 import { FC, memo, useRef, useState } from "react";
 import InfoSection from "./main-sections/InfoSection";
 import HeaderNavigation from "../../common/HeaderNavigation";
-import useChatStore from "@/pages/chat/store/useChatSelector";
 import IconButton from "@/shared/ui/IconButton";
 import { EditRounded } from "@mui/icons-material";
 import { useStableCallback } from "@/shared/hooks/base";
@@ -14,6 +13,8 @@ import buildClassName from "@/shared/lib/buildClassName";
 import TallyCounter from "@/shared/ui/tally-counter/ui/TallyCounter";
 import { IS_TOUCH_ENV } from "@/lib/core";
 import { ScrollProvider } from "@/shared/context";
+import useChatStore from "@/pages/chat/store/state/useChatState";
+import useAppLayout from "@/lib/hooks/ui/useAppLayout";
 
 interface OwnProps {
   nodeRef?: React.RefObject<HTMLDivElement>;
@@ -23,8 +24,8 @@ interface OwnProps {
 const MainScreen: FC<OwnProps> = ({ nodeRef, className }) => {
   const containerRef = useRef<HTMLDivElement>(null);
 
-  const closeProfileColumn = useChatStore((state) => state.closeProfileColumn);
-  const openProfileEditing = useChatStore((state) => state.openProfileEditing);
+  const isMobile = useAppLayout((state) => state.isMobile);
+  const { toggleRightPanel, toggleRightEditingPanel } = useChatStore();
 
   const [currentIndex, setCurrentIndex] = useState(0);
   const [columnsCount, setColumnsCount] = useState(1);
@@ -60,12 +61,12 @@ const MainScreen: FC<OwnProps> = ({ nodeRef, className }) => {
           <HeaderNavigation
             className={"RightHeaderNavigation"}
             endDecorator={
-              <IconButton onClick={openProfileEditing}>
+              <IconButton onClick={toggleRightEditingPanel}>
                 <EditRounded />
               </IconButton>
             }
             name="Andrii Volynets"
-            onPrevClick={closeProfileColumn}
+            onPrevClick={toggleRightPanel}
           />
           <InfoSection />
 

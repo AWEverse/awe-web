@@ -6,11 +6,20 @@
   border-right: 2px solid rgba(var(--awe-palette-primary-mainChannel) / 0.875);
   background-color: var(--awe-palette-background-default);
   padding: 0.5rem;
-  width: 400px;
-  transform: translateX(-100%) !important;
-
+  width: 100%;
+  max-width: var(--left-column-width);
 
   @media (max-width: 648px) {
+    transition: transform var(--transition-standard-in, 0.3s ease-in);
+
+    &[data-shown="true"] {
+      transform: translate3d(0, 0, 0);
+    }
+
+    &[data-shown="false"] {
+      transform: translate3d(calc(-1 * var(--left-column-width, 380px) * var(--reflect, 1)), 0, 0);
+    }
+
     position: fixed;
     top: 0;
     left: 0;

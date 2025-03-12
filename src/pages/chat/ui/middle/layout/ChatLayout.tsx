@@ -1,43 +1,21 @@
-import { FC, PropsWithChildren, useEffect, useRef } from "react";
-import s from "./ChatLayout.module.scss";
-import useChatStore from "@/pages/chat/store/useChatSelector";
-import buildStyle from "@/shared/lib/buildStyle";
+import { FC, PropsWithChildren, useRef } from "react";
+import "./ChatLayout.scss";
+import buildClassName from "@/shared/lib/buildClassName";
+import useChatStore from "@/pages/chat/store/state/useChatState";
 
 const Root: FC<PropsWithChildren> = ({ children }) => {
-  const isFooter = useChatStore((state) => state.isFooter);
+  const { isRightPanelOpen } = useChatStore();
 
   return (
-    <main
-      className={s.ChatContainer}
-      role="main"
-      aria-label="Chat application"
-      style={buildStyle(`--footer-height: ${isFooter ? "22px" : "0px"}`)}
+    <div
+      className={buildClassName(
+        "ChatLayoutRoot",
+        isRightPanelOpen && "is-right-column-active",
+      )}
+      aria-label="Chat application container"
     >
       {children}
-    </main>
-  );
-};
-
-const Main: FC<PropsWithChildren> = ({ children }) => {
-  const mainRef = useRef<HTMLDivElement>(null);
-
-  return (
-    <section
-      ref={mainRef}
-      className={s.Body}
-      role="region"
-      aria-label="Chat main content"
-    >
-      {children}
-    </section>
-  );
-};
-
-const Footer: FC<PropsWithChildren> = ({ children }) => {
-  return (
-    <footer className={s.Footer} role="contentinfo" aria-label="Chat footer">
-      {children}
-    </footer>
+    </div>
   );
 };
 
@@ -45,12 +23,13 @@ const MainContainer: FC<PropsWithChildren> = ({ children }) => {
   return (
     <section
       aria-label="Chat scrollable content"
-      className={s.MainContainer}
+      className={"ChatLayoutMiddleWrapper"}
       role="region"
+      aria-live="polite"
     >
       {children}
     </section>
   );
 };
 
-export default { Root, Main, Footer, MainContainer };
+export default { Root, MainContainer };

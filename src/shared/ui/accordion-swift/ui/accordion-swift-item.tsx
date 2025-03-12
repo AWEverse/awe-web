@@ -3,7 +3,7 @@ import { FC, memo, JSX, useCallback, useMemo, Children } from "react";
 import { AccordionItemProps as AccordionItemWithPrivateFieldsProps } from "../lib/types";
 import { itemVariants, contentVariants } from "../lib/variants";
 import buildClassName from "@/shared/lib/buildClassName";
-import "./accordion-item.scss";
+import "./accordion-swift-item.scss";
 
 type AccordionItemPrivateFieldsProps = Readonly<
   Pick<

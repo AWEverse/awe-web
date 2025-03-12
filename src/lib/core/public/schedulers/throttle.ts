@@ -1,34 +1,48 @@
-export default function throttle<F extends AnyToVoidFunction>(
+export default function throttle<F extends (...args: any[]) => void>(
   fn: F,
   ms: number,
-  shouldRunFirst = true,
-) {
-  let interval: number | undefined;
-  let isPending: boolean;
-  let args: Parameters<F>;
+  shouldRunFirst: boolean = true,
+  thisArg?: any,
+): (...args: Parameters<F>) => void {
+  if (typeof fn !== 'function') {
+    throw new TypeError('fn must be a function');
+  }
 
-  return (..._args: Parameters<F>) => {
-    isPending = true;
-    args = _args;
+  if (typeof ms !== 'number' || isNaN(ms) || ms < 0) {
+    throw new TypeError('ms must be a non-negative number');
+  }
 
-    if (!interval) {
-      if (shouldRunFirst) {
-        isPending = false;
-        fn(...args);
-      }
+  let lastRunTime: number | undefined;
+  let timeout: NodeJS.Timeout | undefined;
+  let pendingArgs: Parameters<F> | undefined;
 
-      // eslint-disable-next-line no-restricted-globals
-      interval = self.setInterval(() => {
-        if (!isPending) {
-          // eslint-disable-next-line no-restricted-globals
-          self.clearInterval(interval!);
-          interval = undefined;
-          return;
-        }
+  return function (...args: Parameters<F>) {
+    const now = Date.now();
 
-        isPending = false;
-        fn(...args);
-      }, ms);
+    if (shouldRunFirst && lastRunTime === undefined) {
+      lastRunTime = now;
+      fn.apply(thisArg, args);
+      return;
+    }
+
+    if (timeout !== undefined) {
+      pendingArgs = args;
+      return;
+    }
+
+    const timeSinceLastRun = lastRunTime ? now - lastRunTime : ms;
+
+    if (timeSinceLastRun >= ms) {
+      lastRunTime = now;
+      fn.apply(thisArg, args);
+    } else {
+      pendingArgs = args;
+      timeout = setTimeout(() => {
+        lastRunTime = Date.now();
+        fn.apply(thisArg, pendingArgs!);
+        pendingArgs = undefined;
+        timeout = undefined;
+      }, ms - timeSinceLastRun);
     }
   };
 }
