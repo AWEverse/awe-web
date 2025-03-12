@@ -6,7 +6,7 @@ const updateNested = <T extends object, K extends keyof T>(
   updates: Partial<T[K]>
 ): T => ({
   ...obj,
-  [key]: { ...(obj[key] as object), ...updates } as T[K],
+  [key]: { ...obj[key], ...updates } as T[K],
 });
 
 export default function (state: AnimationState, action: Action): AnimationState {

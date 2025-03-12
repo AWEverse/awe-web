@@ -32,6 +32,7 @@ export default class Store<T, A> {
       listener,
       prevValue: selector(this.state),
     };
+
     this.subscriptions.add(subscription);
 
     listener(subscription.prevValue);

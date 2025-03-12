@@ -1,30 +1,8 @@
+import initialState from "./initialState";
+
 export type Level = 0 | 1 | 2;
 
-export interface AnimationState {
-  isPlaying: boolean;
-  loop: boolean;
-  level: Level;
-  type: string;
-  autoplayVideos: boolean;
-  autoplayGIFs: boolean;
-  stickerAnimations: {
-    enabled: boolean;
-    autoplayInPanel: boolean;
-    autoplayInChat: boolean;
-  };
-  interactiveEffects: {
-    enabled: boolean;
-    reactionEffect: boolean;
-    premiumStickersEffect: boolean;
-    emojiEffect: boolean;
-  };
-  chatAnimations: {
-    enabled: boolean;
-    wallpaperRotation: boolean;
-    animatedSpoilerEffect: boolean;
-  };
-  interfaceAnimations: boolean;
-}
+export type AnimationState = typeof initialState;
 
 export enum ActionType {
   PLAY = "PLAY",

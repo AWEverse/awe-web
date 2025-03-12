@@ -1,5 +1,3 @@
-import { AnimationState } from "./types";
-
 export default {
   isPlaying: false,
   loop: false,
@@ -25,4 +23,4 @@ export default {
     animatedSpoilerEffect: false,
   },
   interfaceAnimations: false,
-} as AnimationState;
+};
