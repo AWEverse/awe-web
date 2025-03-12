@@ -2,7 +2,11 @@ import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import App from "./App";
 
-import { enableStrict, requestMutation } from "@/lib/modules/fastdom";
+import {
+  enableStrict,
+  requestMutation,
+  requestNextMutation,
+} from "@/lib/modules/fastdom";
 import { DEBUG, STRICTERDOM_ENABLED } from "@/lib/config/dev";
 
 import "@/styles/global.scss";
@@ -11,7 +15,7 @@ import initI18n from "./providers/i18n-provider";
 import initAnimationsStore from "@/store/animations/initAnimationsStore";
 import initViewOptimizer from "./lib/utils/initViewOptimizer";
 
-// Enable strict mode if configured
+// // Enable strict mode if configured
 // if (STRICTERDOM_ENABLED) {
 //   enableStrict();
 // }
@@ -28,18 +32,20 @@ async function initApplication(): Promise<void> {
     return;
   }
 
-  requestMutation(() => {
+  requestNextMutation(() => {
     const root = createRoot(rootElement);
 
-    root.render(
-      <StrictMode>
-        <App />
-      </StrictMode>,
-    );
+    return () => {
+      root.render(
+        <StrictMode>
+          <App />
+        </StrictMode>,
+      );
 
-    if (DEBUG) {
-      console.log(">>> APPLICATION INIT COMPLETE");
-    }
+      if (DEBUG) {
+        console.log(">>> APPLICATION INIT COMPLETE");
+      }
+    };
   });
 }
 
