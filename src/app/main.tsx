@@ -1,70 +1,41 @@
-import { StrictMode } from "react";
-import { createRoot } from "react-dom/client";
-import App from "./App";
-
-import {
-  enableStrict,
-  requestMutation,
-  requestNextMutation,
-} from "@/lib/modules/fastdom";
-import { DEBUG, STRICTERDOM_ENABLED } from "@/lib/config/dev";
-
 import "@/styles/global.scss";
 import "@/styles/index.css";
-import initI18n from "./providers/i18n-provider";
-import initAnimationsStore from "@/store/animations/initAnimationsStore";
-import initViewOptimizer from "./lib/utils/initViewOptimizer";
 
-// // Enable strict mode if configured
-// if (STRICTERDOM_ENABLED) {
-//   enableStrict();
-// }
+import initViewOptimizer from "./lib/utils/initViewOptimizer";
+import initAppServices from "./services/initAppServices";
+import initAppRoot from "./services/initAppRoot";
+import initApplicationRequirements from "./services/initApplicationRequirements ";
 
 /**
- * Initializes the React application by rendering it into the DOM.
- * @returns {Promise<void>}
+ * Main application initialization sequence
+ * Organizes initialization steps to optimize loading performance
  */
-async function initApplication(): Promise<void> {
-  const rootElement = document.getElementById("root");
-
-  if (!rootElement) {
-    console.error("Root element not found");
-    return;
-  }
-
-  requestNextMutation(() => {
-    const root = createRoot(rootElement);
-
-    return () => {
-      root.render(
-        <StrictMode>
-          <App />
-        </StrictMode>,
-      );
-
-      if (DEBUG) {
-        console.log(">>> APPLICATION INIT COMPLETE");
-      }
-    };
-  });
-}
-
 (async () => {
   try {
-    // Run independent initialization steps in parallel
+    initApplicationRequirements();
 
-    await initApplication();
-    await Promise.all([
-      initViewOptimizer(),
-      initAnimationsStore(),
-      initI18n(),
-    ]).then((none) => {
-      if (none) {
-        console.log("ACTIVATED ");
-      }
-    });
+    await initAppServices();
+
+    initViewOptimizer();
+    initAppRoot();
   } catch (error) {
-    console.error("Application initialization failed:", error);
-    // Consider displaying an error message to the user
+    try {
+      await loadErrorModule(error);
+    } catch (importError) {
+      console.error("Failed to load error fallback:", importError);
+    }
   }
 })();
+
+async function loadErrorModule(error: unknown) {
+  const module = await import("./services/displayErrorFallback");
+  const displayErrorFallback = module.default;
+
+  displayErrorFallback(error, {
+    showErrorDetails: true,
+    supportEmail: "awe.supports@gmail.com",
+    supportUrl: "https://awe.support.com",
+    applicationName: "Application initialization",
+    allowRestart: true,
+  });
+}

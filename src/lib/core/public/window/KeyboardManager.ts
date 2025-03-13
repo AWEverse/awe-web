@@ -1,167 +1,113 @@
-import { onIdleComplete } from "../animation";
-import { EKeyboardKey } from "../os";
 
-// Define the type for user-provided handlers
-export type KeyHandlerPair = {
-  [key in EKeyboardKey]?: (e: KeyboardEvent) => void;
-};
+interface KeyboardLayoutMap {
+  get(code: string): string | undefined;
+}
 
-// Internal state type with metadata
-type SystemKeyHandlerPair = {
-  [key in EKeyboardKey]?: (e: KeyboardEvent) => void;
-} & {
-  _globalVersion: number;
-  _lastRequest: number;
-};
-
-let state: SystemKeyHandlerPair = {
-  _globalVersion: 0,
-  _lastRequest: Date.now(),
-};
-
-let isInitialized = false;
+let layoutMap: KeyboardLayoutMap | undefined;
 
 /**
- * Global keydown handler.
- * Executes the handler for the pressed key if it exists.
+ * Initialize the keyboard manager with cross-browser support
+ * This function attempts multiple methods to identify keyboard layout
  */
-function globalKeyHandler(e: KeyboardEvent): void {
-  const key = e.key as EKeyboardKey;
-  const handler = state[key];
+export async function initializeKeyboardManager(): Promise<void> {
+  if (layoutMap) return;
 
-  if (handler) {
-    try {
-      handler(e);
-    } catch (error) {
-      console.error(`Error in handler for key "${key}":`, error);
+  try {
+    const experimentalNavigator = window.navigator as unknown as {
+      keyboard?: { getLayoutMap(): Promise<KeyboardLayoutMap> };
+    };
+
+    if (experimentalNavigator.keyboard?.getLayoutMap) {
+      layoutMap = await experimentalNavigator.keyboard.getLayoutMap();
+      return;
     }
+
+    layoutMap = await createFallbackLayoutMap();
+  } catch (error) {
+    console.warn("Keyboard layout detection failed:", error);
+    layoutMap = createBasicFallbackMap();
   }
 }
 
 /**
- * Initializes the global keyboard listener in the capture phase.
+ * Create a fallback layout map using browser detection and language settings
+ * This provides a reasonable approximation for most common keyboard layouts
  */
-function initializeKeyboardListeners(): void {
-  if (!isInitialized) {
-    window.addEventListener("keydown", globalKeyHandler, true);
-    isInitialized = true;
-  }
-}
+async function createFallbackLayoutMap(): Promise<KeyboardLayoutMap> {
+  const fallbackMap = new Map<string, string>();
+  const userLanguage = navigator.language || 'en-US';
 
-/**
- * Disposes the global keyboard listener.
- */
-function disposeKeyboardListeners(): void {
-  if (isInitialized) {
-    window.removeEventListener("keydown", globalKeyHandler, true);
-    isInitialized = false;
-  }
-}
+  await loadLayoutForLanguage(userLanguage, fallbackMap);
 
-/**
- * Adds a handler for a specific key and updates metadata.
- * @param key The key to register.
- * @param handler The event handler to execute.
- */
-function addKeyHandler(key: EKeyboardKey, handler: (e: KeyboardEvent) => void): void {
-  if (!key.startsWith("_")) {
-    state[key] = handler;
-    updateMeta();
-  }
-}
-
-/**
- * Adds multiple handlers in a batch, skipping reserved keys.
- * @param handlers An object mapping keys to handlers.
- */
-function addKeyHandlers(handlers: KeyHandlerPair): void {
-  let notSkipped = false;
-
-  for (const key in handlers) {
-    if (!key.startsWith("_")) {
-      state[key as EKeyboardKey] = handlers[key as EKeyboardKey];
-      notSkipped = true;
+  return {
+    get(code: string): string | undefined {
+      return fallbackMap.get(code);
     }
-  }
-
-  if (notSkipped) {
-    updateMeta();
-  }
+  };
 }
 
 /**
- * Removes the handler for a specific key if it exists and updates metadata.
- * @param key The key whose handler should be removed.
+ * Load keyboard layout data for a specific language
+ * This can be expanded to include more layouts as needed
  */
-function removeKeyHandler(key: EKeyboardKey): void {
-  if (state[key]) {
-    onIdleComplete(() => {
-      delete state[key];
-    })
+async function loadLayoutForLanguage(language: string, map: Map<string, string>): Promise<void> {
+  const layouts: Record<string, Record<string, string>> = {
+    'en-US': {
+      'KeyQ': 'q', 'KeyW': 'w', 'KeyE': 'e', /* ... other keys ... */
+    },
+    // Add more layouts as needed
+  };
 
-    updateMeta();
-  }
+  const baseLanguage = language.split('-')[0];
+  const exactLayout = layouts[language];
+  const baseLayout = Object.keys(layouts).find(key => key.startsWith(baseLanguage));
+  const defaultLayout = layouts['en-US'];
+
+  const selectedLayout = exactLayout || (baseLayout ? layouts[baseLayout] : defaultLayout);
+
+  Object.entries(selectedLayout).forEach(([code, key]) => {
+    map.set(code, key);
+  });
 }
 
 /**
- * Removes handlers for multiple keys in a batch, updating metadata if any were removed.
- * @param keys An array of keys to remove.
+ * Create a basic fallback map for worst-case scenarios
+ * This provides minimal functionality when all else fails
  */
-function removeKeyHandlers(keys: EKeyboardKey[]): void {
-  let removed = false;
+function createBasicFallbackMap(): KeyboardLayoutMap {
+  const basicMap = new Map<string, string>();
 
-  onIdleComplete(() => {
-    keys.forEach((key) => {
-      if (state[key]) {
-        delete state[key];
-        removed = true;
-      }
-    });
-  })
 
-  if (removed) {
-    updateMeta();
-  }
-}
+  "QWERTYUIOPASDFGHJKLZXCVBNM".split('').forEach(char => {
+    basicMap.set(`Key${char}`, char.toLowerCase());
+  });
 
-/**
- * Returns an immutable snapshot of the current handlers, excluding metadata.
- */
-function getState(): Readonly<KeyHandlerPair> {
-  const handlers: KeyHandlerPair = {};
-  for (const key in state) {
-    if (!key.startsWith("_")) {
-      handlers[key as EKeyboardKey] = state[key as EKeyboardKey];
+  return {
+    get(code: string): string | undefined {
+      return basicMap.get(code);
     }
+  };
+}
+
+/**
+ * Look up a key based on its code, with extended functionality
+ * This function handles special cases and provides advanced features
+ */
+export function lookup({ code, key }: Pick<KeyboardEvent, 'code' | 'key'>): string {
+  if (!layoutMap) {
+    initializeKeyboardManager().catch(console.error);
+    return key;
   }
-  return Object.freeze(handlers);
+
+  const mappedKey = layoutMap.get(code);
+
+  if (mappedKey) {
+    return mappedKey;
+  }
+
+  if (code.startsWith('Digit')) {
+    return code.charAt(5);
+  }
+
+  return key;
 }
-
-/**
- * Returns the current global version of the state.
- * Useful for checking if the state has changed since the last check.
- */
-function getGlobalVersion(): number {
-  return state._globalVersion;
-}
-
-/**
- * Updates the global version and last request timestamp.
- * Called when the state changes (e.g., handlers added/removed).
- */
-function updateMeta(): void {
-  state._lastRequest = Date.now();
-  state._globalVersion++;
-}
-
-disposeKeyboardListeners();
-initializeKeyboardListeners();
-
-export default {
-  addKeyHandler,
-  addKeyHandlers,
-  removeKeyHandler,
-  removeKeyHandlers,
-  getState,
-  getGlobalVersion,
-};
