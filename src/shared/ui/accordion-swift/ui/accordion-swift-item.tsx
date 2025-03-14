@@ -1,106 +1,124 @@
+import React from "react";
 import { useReducedMotion, motion, AnimatePresence } from "motion/react";
-import { FC, memo, JSX, useCallback, useMemo, Children } from "react";
-import { AccordionItemProps as AccordionItemWithPrivateFieldsProps } from "../lib/types";
-import { itemVariants, contentVariants } from "../lib/variants";
+import { FC, memo, JSX, useCallback, useMemo } from "react";
 import buildClassName from "@/shared/lib/buildClassName";
+import { useAccordionContext } from "../lib/accordion-context";
+import { createItemProps, createContentProps } from "../lib/accordion-variants";
 import "./accordion-swift-item.scss";
 
-type AccordionItemPrivateFieldsProps = Readonly<
-  Pick<
-    AccordionItemWithPrivateFieldsProps,
-    StartsWithUnderscore<keyof AccordionItemWithPrivateFieldsProps>
-  >
->;
-
-export type AccordionItemProps = Readonly<
-  Omit<
-    AccordionItemWithPrivateFieldsProps,
-    keyof AccordionItemPrivateFieldsProps
-  >
->;
+export type AccordionItemProps = {
+  title?: React.ReactNode;
+  children: React.ReactNode;
+  index: number;
+  className?: string;
+  as?: React.ElementType;
+  isOpen?: boolean;
+  onToggle?: (index: number) => void;
+};
 
 export const AccordionSwiftItem: FC<AccordionItemProps> = memo(
   ({
-    as: Component = "div",
     title,
     children,
-    isOpen = false,
-    onToggle,
+    isOpen: propIsOpen,
+    onToggle: propOnToggle,
     index,
     className,
-    ...rest
   }): JSX.Element => {
-    const {
-      _isFirstChild = false,
-      _isLastChild = false,
-      _isNextChild = false,
-      _isPrevChild = false,
-    } = rest as AccordionItemPrivateFieldsProps;
-
     const shouldReduceMotion = useReducedMotion();
 
-    const handleToggle = useCallback(() => {
-      if (index !== undefined && onToggle) {
-        onToggle(index);
-      }
-    }, [index, onToggle]);
+    const { openIndexes, toggleIndex, childCount, allowMultiple } =
+      useAccordionContext();
 
-    const _children = useMemo(
-      () => ({
-        array: Children.toArray(children),
-      }),
-      [children],
-    );
+    const isOpen = propIsOpen ?? openIndexes.includes(index);
+
+    const positionProps = useMemo(() => {
+      const isFirstChild = index === 0;
+      const isLastChild = index === childCount - 1;
+      const isSingleChild = childCount === 1;
+
+      let isPrevChild = false;
+      let isNextChild = false;
+
+      if (!allowMultiple) {
+        const currentOpenIndex = openIndexes.length > 0 ? openIndexes[0] : -1;
+        isPrevChild = currentOpenIndex !== -1 && index === currentOpenIndex - 1;
+        isNextChild = currentOpenIndex !== -1 && index === currentOpenIndex + 1;
+      } else {
+        for (let i = 0, len = openIndexes.length; i < len; ++i) {
+          if (index === openIndexes[i] - 1) {
+            isPrevChild = true;
+          }
+
+          if (index === openIndexes[i] + 1) {
+            isNextChild = true;
+          }
+        }
+      }
+
+      return {
+        isFirstChild,
+        isLastChild,
+        isPrevChild,
+        isNextChild,
+        isSingleChild,
+      };
+    }, [index, childCount, openIndexes, allowMultiple]);
+
+    const handleToggle = useCallback(() => {
+      if (propOnToggle) {
+        propOnToggle(index);
+      } else {
+        toggleIndex(index);
+      }
+    }, [index, propOnToggle, toggleIndex]);
+
+    const [titleContent, bodyContent] = useMemo(() => {
+      if (title) {
+        return [title, children];
+      }
+
+      if (React.Children.count(children) > 1) {
+        const childrenArray = React.Children.toArray(children);
+        return [childrenArray[0], childrenArray.slice(1)];
+      }
+
+      return [null, children];
+    }, [title, children]);
+
+    const headerId = `accordion-header-${index}`;
+    const contentId = `accordion-content-${index}`;
 
     return (
       <motion.div
         role="region"
         aria-expanded={isOpen}
-        aria-labelledby={`accordion-header-${index}`}
+        aria-labelledby={headerId}
         className={buildClassName("accordion-swift-item", className)}
-        initial={false}
-        animate={isOpen ? "open" : "closed"}
-        variants={itemVariants}
-        custom={{
-          isFirstChild: _isFirstChild,
-          isLastChild: _isLastChild,
-          isPrevChild: _isPrevChild,
-          isNextChild: _isNextChild,
-        }}
-        transition={{ duration: shouldReduceMotion ? 0 : 0.2 }}
+        {...createItemProps(isOpen, positionProps, !!shouldReduceMotion)}
+        key={`accordion-item-${index}`}
       >
         <button
-          id={`accordion-header-${index}`}
+          id={headerId}
           type="button"
           aria-expanded={isOpen}
           onClick={handleToggle}
           className="accordion-header"
-          aria-controls={`accordion-button-${index}`}
+          aria-controls={contentId}
         >
-          {title ? (
-            <span className="font-medium">{title}</span>
-          ) : (
-            _children.array[0]
-          )}
+          {titleContent && <span className="font-medium">{titleContent}</span>}
         </button>
 
         <AnimatePresence initial={false}>
           {isOpen && (
             <motion.div
-              id={`accordion-content-${index}`}
+              id={contentId}
               key="content"
               role="region"
-              aria-labelledby={`accordion-region-${index}`}
-              initial="hidden"
-              animate="visible"
-              exit="hidden"
-              variants={contentVariants}
-              style={{
-                willChange: "height, opacity",
-                transform: "translateZ(0)",
-              }}
+              aria-labelledby={headerId}
+              {...createContentProps(!!shouldReduceMotion)}
             >
-              <div className="accordion-body">{children}</div>
+              <div className="accordion-body">{bodyContent}</div>
             </motion.div>
           )}
         </AnimatePresence>

@@ -143,7 +143,6 @@ const Tab: FC<OwnProps> = ({
           onClose={handleContextMenuClose}
           onCloseAnimationEnd={handleContextMenuHide}
           withPortal
-          menuClassName="p-2"
         >
           <ActionButton size="sm" fullWidth>
             Edit folder

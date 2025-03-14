@@ -12,13 +12,13 @@ const TestPage: FC<OwnProps & StateProps> = () => {
   return (
     <div style={{ padding: "10px" }}>
       <AccordionSwiftGroup allowMultiple>
-        <AccordionSwiftItem title={"First accordion 1"}>
+        <AccordionSwiftItem index={0} title={"First accordion 1"}>
           1) Lorem ipsum dolor sit, amet consectetur adipisicing elit.
           Laudantium, consequuntur. Consequuntur ratione repellat assumenda odio
           earum recusandae eaque excepturi cupiditate, dolore iure! Tempora quae
           culpa quia obcaecati et illo praesentium?
         </AccordionSwiftItem>
-        <AccordionSwiftItem title={"First accordion 2"}>
+        <AccordionSwiftItem index={1} title={"First accordion 2"}>
           2) Lorem ipsum dolor sit, amet consectetur adipisicing elit.
           Laudantium, consequuntur. Consequuntur ratione repellat assumenda odio
           earum recusandae eaque excepturi cupiditate, dolore iure! Tempora quae
@@ -28,7 +28,7 @@ const TestPage: FC<OwnProps & StateProps> = () => {
           cupiditate, dolore iure! Tempora quae culpa quia obcaecati et illo
           praesentium?
         </AccordionSwiftItem>
-        <AccordionSwiftItem title={"First accordion 3"}>
+        <AccordionSwiftItem index={2} title={"First accordion 3"}>
           3) Lorem ipsum dolor sit, amet consectetur adipisicing elit.
           Laudantium, consequuntur. Consequuntur ratione repellat assumenda odio
           earum recusandae eaque excepturi cupiditate, dolore iure! Tempora quae
