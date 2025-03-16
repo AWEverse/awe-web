@@ -6,12 +6,12 @@ import {
   memo,
   useRef,
   useCallback,
+  KeyboardEvent,
 } from "react";
 import buildClassName from "../lib/buildClassName";
 import { useRefInstead } from "@/shared/hooks/base";
 import { requestMutation, requestNextMutation } from "@/lib/modules/fastdom";
 import useUniqueId from "@/lib/hooks/utilities/useUniqueId";
-
 import "./TextArea.scss";
 import { useThrottledFunction } from "../hooks/shedulers";
 import { noop } from "@/lib/utils/listener";
@@ -26,15 +26,12 @@ type OwnProps = {
   label?: string;
   error?: string;
   success?: string;
-  maxLength?: number;
   maxLines?: number;
+  maxLengthCount?: number;
   maxLengthIndicator?: boolean;
   replaceNewlines?: boolean;
-  maxByteCount?: number;
-  maxLengthCount?: number;
-} & Omit<TextAreaProps, "maxLenght">;
+} & Omit<TextAreaProps, "maxLength">;
 
-// @Todo: fix responsive for height
 const TextArea: FC<OwnProps> = ({
   ref,
   id,
@@ -48,7 +45,6 @@ const TextArea: FC<OwnProps> = ({
   placeholder,
   autoComplete,
   inputMode,
-  maxByteCount,
   maxLengthCount,
   maxLengthIndicator,
   tabIndex,
@@ -107,22 +103,13 @@ const TextArea: FC<OwnProps> = ({
   const handleChange = useCallback(
     (e: ChangeEvent<HTMLTextAreaElement>) => {
       const target = e.currentTarget;
-
-      let updatedValue = target.value;
-
-      if (replaceNewlines) {
-        const previousSelectionEnd = target.selectionEnd;
-        updatedValue = updatedValue.replace(/\n/g, " ");
-        target.value = updatedValue;
-        target.selectionEnd = previousSelectionEnd;
-      }
-
+      const updatedValue = target.value;
       const valueLength = updatedValue.length;
 
-      if (maxLengthIndicator && indicatorRef.current) {
+      if (maxLengthIndicator && indicatorRef.current && maxLengthCount) {
         indicatorRef.current.textContent =
           valueLength > 0
-            ? `Characters left: ${valueLength}/${maxLengthCount}`
+            ? `Characters remaining: ${maxLengthCount - valueLength}`
             : "";
       }
 
@@ -139,16 +126,27 @@ const TextArea: FC<OwnProps> = ({
         });
       }
 
-      // mutate height = 0
       resizeHeight();
 
-      onChange?.({
-        ...e,
-        target: { ...e.target, value: updatedValue },
-        currentTarget: { ...e.currentTarget, value: updatedValue },
-      });
+      onChange?.(e);
     },
-    [replaceNewlines, maxLengthCount],
+    [maxLengthCount, maxLengthIndicator, onChange, resizeHeight],
+  );
+
+  const handleKeyDown = useCallback(
+    (e: KeyboardEvent<HTMLTextAreaElement>) => {
+      if (replaceNewlines && e.key === "Enter") {
+        e.preventDefault();
+        const target = e.currentTarget;
+        const newValue = target.value + " ";
+        onChange?.({
+          ...e,
+          target: { ...target, value: newValue },
+          currentTarget: { ...target, value: newValue },
+        });
+      }
+    },
+    [replaceNewlines, onChange],
   );
 
   return (
@@ -172,6 +170,7 @@ const TextArea: FC<OwnProps> = ({
         tabIndex={tabIndex}
         value={value || undefined}
         onChange={handleChange}
+        onKeyDown={handleKeyDown}
         {...rest}
       />
 

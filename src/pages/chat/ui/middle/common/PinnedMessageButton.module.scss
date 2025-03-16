@@ -1,4 +1,4 @@
-$roll-width: 4px;
+$roll-width: 3px;
 $border-width: 1px;
 $padding-left: $roll-width * 3 + $border-width;
 $padding-right: $roll-width + $border-width;
@@ -17,7 +17,7 @@ $transition-easing: cubic-bezier(0.4, 0, 0.2, 1);
   min-height: 48px;
   overflow: hidden;
   cursor: pointer;
-  user-select: none;  
+  user-select: none;
   background-color: var(--awe-palette-secondary-main);
   transition: all $transition-duration $transition-easing;
   z-index: 1;
@@ -65,7 +65,7 @@ $transition-easing: cubic-bezier(0.4, 0, 0.2, 1);
   flex-direction: column-reverse;
   align-self: center;
   gap: 1px;
-  padding: 4px 0;
+  padding: 3px 0;
   margin-left: $margin-left;
   z-index: 1;
 

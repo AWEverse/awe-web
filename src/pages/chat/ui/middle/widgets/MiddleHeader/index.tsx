@@ -47,7 +47,7 @@ const MiddleHeader: React.FC<{ sender?: any }> = ({ sender }) => {
     toggleMiddleSearch,
     toggleLeftPanel,
     setRightPanelOpen,
-  } = useChatState("middle.both");
+  } = useChatState();
 
   const openProfileColumn = () => {
     setRightPanelOpen(true);

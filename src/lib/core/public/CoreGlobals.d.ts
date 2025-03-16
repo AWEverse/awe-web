@@ -12,11 +12,11 @@ type Partial<T> = { [K in keyof T]?: T[K] };
  */
 type Undefined<T> = { [K in keyof T]: undefined };
 
-
 type NewMutableRefObject = Mutable<React.RefObject<T>>;
 
-
-type StartsWithUnderscore<T extends string> = T extends `_${string}` ? T : never;
+type StartsWithUnderscore<T extends string> = T extends `_${string}`
+  ? T
+  : never;
 
 /**
  * The `Impossible<T>` type maps over the properties of `T` (if any) and transforms them all into `never`.
@@ -193,7 +193,7 @@ type FixedSizeArray<T, N extends number> = N extends 0
   ? []
   : N extends 1
   ? [T]
-  : GrowExp<[T, T], N, [[T]]>;
+  : ExpandArrayUntilLengthReached<[T, T], N, [[T]]>;
 
 /**
  * Represents types that are considered "falsy".
@@ -226,14 +226,12 @@ declare const Boolean: BooleanConstructor;
 //   webkitRequestFullscreen?: () => Promise<void>;
 // }
 
-
 type PartialHTMLElementSupport = {
   requestFullscreen?: () => Promise<void>;
   msRequestFullscreen?: () => Promise<void>;
   mozRequestFullScreen?: () => Promise<void>;
   webkitRequestFullscreen?: () => Promise<void>;
 } & HTMLElement;
-
 
 type PartialDocumentSupport = {
   exitFullscreen?: () => Promise<void>;

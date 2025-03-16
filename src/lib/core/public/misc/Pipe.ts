@@ -1,28 +1,35 @@
-type AnyArray = AnyFunction[];
+/**
+ * Recursively computes the return type of the pipe function by applying each function in the pipeline.
+ * @template T - The type of the value being passed through the pipeline
+ * @template Fns - Tuple of functions in the pipeline
+ */
+export type PipeReturn<
+  T,
+  Fns extends ReadonlyArray<AnyFunction>,
+> = Fns extends []
+  ? T
+  : Fns extends [(arg: T) => infer R, ...infer Rest]
+  ? Rest extends ReadonlyArray<AnyFunction>
+  ? PipeReturn<R, Rest>
+  : never
+  : never;
 
 /**
- * Recursively computes the return type of the pipe function by applying each function in the pipeline to the result of the previous one.
- * @template T - The type of the initial value.
- * @template F - A tuple of functions applied in the pipeline.
+ * Creates a pipeline of functions, where each function takes the output of the previous function.
+ * @returns A function that accepts an initial value and applies the pipeline of functions to it
  */
-export type PipeReturn<T, F extends AnyArray> = F extends [
-  (arg: T) => infer R,
-  ...infer Rest,
-]
-  ? Rest extends AnyArray
-    ? PipeReturn<R, Rest>
-    : R
-  : T;
+export function pipe(): <T>(value: T) => T;
 
 /**
- * Applies a sequence of functions to an initial value.
- * Each function takes the result from the previous one and returns a new result.
+ * Creates a pipeline of functions, where each function takes the output of the previous function.
+ * @param fns - Functions to be applied in sequence
+ * @returns A function that accepts an initial value and applies the pipeline of functions to it
  */
-export function pipe<T>(): (value: T) => T;
-export function pipe<T, F extends [(arg: T) => any, ...AnyArray]>(
-  ...fns: F
-): (value: T) => PipeReturn<T, F>;
-export function pipe<T>(...fns: AnyArray) {
-  return (initialValue: T) =>
+export function pipe<T, Fns extends ReadonlyArray<AnyFunction>>(
+  ...fns: Fns & { 0: (arg: T) => any }
+): (value: T) => PipeReturn<T, Fns>;
+
+export function pipe<T>(...fns: ReadonlyArray<AnyFunction>) {
+  return (initialValue: T): unknown =>
     fns.reduce((result, fn) => fn(result), initialValue);
 }

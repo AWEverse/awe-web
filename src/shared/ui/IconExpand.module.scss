@@ -1,6 +1,6 @@
 .iconContainer {
   height: 30px;
-  padding: 0 5px;
+  padding: 0 6px;
   border-radius: 8px;
   display: flex;
   align-items: center;
@@ -8,7 +8,7 @@
   cursor: pointer;
   user-select: none;
   overflow: hidden;
-  max-width: 36px; /* Adjusted to accommodate icon width + padding */
+  max-width: 30px; /* Adjusted to accommodate icon width + padding */
   transition:
     max-width 300ms ease-in-out,
     background-color 300ms ease-in-out;
@@ -37,5 +37,5 @@
 .iconLabel {
   text-overflow: ellipsis;
   overflow: hidden;
-  padding-left: 5px;
+  padding-left: 6px;
 }

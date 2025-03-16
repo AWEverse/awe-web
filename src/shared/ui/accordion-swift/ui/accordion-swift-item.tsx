@@ -7,11 +7,11 @@ import { createItemProps, createContentProps } from "../lib/accordion-variants";
 import "./accordion-swift-item.scss";
 
 export type AccordionItemProps = {
+  as?: React.ElementType;
   title?: React.ReactNode;
   children: React.ReactNode;
   index: number;
   className?: string;
-  as?: React.ElementType;
   isOpen?: boolean;
   onToggle?: (index: number) => void;
 };
