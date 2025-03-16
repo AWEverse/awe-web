@@ -156,12 +156,7 @@ async function requestFullscreen(
     element.mozRequestFullScreen;
 
   try {
-    await _requestFullscreen().then(() => {
-      // Once in fullscreen, try to lock the screen orientation to landscape
-      screen.orientation.lock("landscape").catch((err) => {
-        console.error("Orientation lock failed:", err);
-      });
-    });
+    await _requestFullscreen();
   } catch (error) {
     DEBUG && console.error("Error entering fullscreen:", error);
   }

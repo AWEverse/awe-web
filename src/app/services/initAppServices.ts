@@ -1,6 +1,6 @@
 import initAnimationsStore from "@/store/animations/initAnimationsStore";
 import initI18n from "../providers/i18n-provider";
-import { KeyboardManager } from "@/lib/core";
+import initializeSecurityAsync from "./initializeDOMSecurity";
 
 export default async function () {
   await Promise.all([
@@ -8,6 +8,6 @@ export default async function () {
     initI18n()
   ]);
 
-  await KeyboardManager.initializeKeyboardManager();
+  await initializeSecurityAsync()
 };
 

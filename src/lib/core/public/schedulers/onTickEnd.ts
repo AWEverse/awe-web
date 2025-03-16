@@ -1,15 +1,28 @@
 let onTickEndCallbacks: NoneToVoidFunction[] | undefined;
+let isScheduled = false;
 
 export default function onTickEnd(callback: NoneToVoidFunction) {
   if (!onTickEndCallbacks) {
-    onTickEndCallbacks = [callback];
+    onTickEndCallbacks = [];
+  }
+
+  onTickEndCallbacks.push(callback);
+
+  if (!isScheduled) {
+    isScheduled = true;
 
     Promise.resolve().then(() => {
       const currentCallbacks = onTickEndCallbacks!;
       onTickEndCallbacks = undefined;
-      currentCallbacks.forEach(cb => cb());
+      isScheduled = false;
+
+      for (let i = 0; i < currentCallbacks.length; i++) {
+        try {
+          currentCallbacks[i]();
+        } catch (error) {
+          console.error('Error in onTickEnd callback:', error);
+        }
+      }
     });
   }
-
-  onTickEndCallbacks.push(callback);
 }

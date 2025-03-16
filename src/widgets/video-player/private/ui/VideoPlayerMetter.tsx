@@ -103,7 +103,6 @@ const VideoPlayerMetter: FC<VideoPlayerMetterProps> = ({
   useSeekerEvents({
     seekerRef: seekerContainer,
     previewRef: previewContainer,
-    isPreviewDisabled,
     isActive: true,
     duration,
     onSeek: handleSeek,

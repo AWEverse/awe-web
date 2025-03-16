@@ -1,30 +1,32 @@
 import { useCallback, useEffect, useRef } from "react";
-
 import { usePrevious } from "../base";
 import { useComponentWillUnmount } from "./useLifecycle";
 
 const NO_DEPS = [] as const;
 
-export default function <const T extends Readonly<AnyArray>>(
-  effect: (args: T | readonly []) => NoneToVoidFunction | void,
-  deps: T,
+type CleanupFn = () => void;
+type EffectFn<T extends readonly unknown[]> = (deps: T | typeof NO_DEPS) => void | CleanupFn;
+
+/**
+ * Custom effect hook that runs when dependencies change, with cleanup support.
+ */
+export default function useEffectSync<T extends readonly unknown[]>(
+  effect: EffectFn<T>,
+  deps: T
 ) {
-  const prevDeps = usePrevious<T>(deps);
-  const cleanupRef = useRef<NoneToVoidFunction | undefined>(null);
+  const prevDeps = usePrevious(deps);
+  const cleanupRef = useRef<CleanupFn | undefined>(undefined);
 
-  const memoizedEffect = useCallback(() => {
-    if (
-      !prevDeps ||
-      deps.some((currentDep, index) => currentDep !== prevDeps[index])
-    ) {
+  const runEffect = useCallback(() => {
+    const hasChanged = !prevDeps || deps.some((dep, i) => dep !== prevDeps[i]);
+
+    if (hasChanged) {
       cleanupRef.current?.();
-      cleanupRef.current = effect(prevDeps || NO_DEPS) ?? undefined;
+      cleanupRef.current = effect(prevDeps || NO_DEPS) || undefined;
     }
-  }, [deps, prevDeps, effect]);
+  }, [effect, deps, prevDeps]);
 
-  useEffect(() => {
-    memoizedEffect();
-  }, [memoizedEffect]);
+  useEffect(runEffect, [runEffect]);
 
   useComponentWillUnmount(() => {
     cleanupRef.current?.();

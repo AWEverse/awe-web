@@ -3,21 +3,24 @@ import { EffectCallback, useEffect } from "react";
 const NO_DEPS = [] as const;
 
 /**
- * A custom hook that runs a one-time effect (componentDidMount) when the component is mounted.
+ * Runs a one-time effect when the component mounts (similar to componentDidMount).
  *
- * @param {EffectCallback} effect - The effect callback function that will be executed once on mount.
+ * @param effect - The effect callback to execute on mount
  */
 export function useComponentDidMount(effect: EffectCallback) {
-  // Using an empty dependency array to ensure the effect only runs once, similar to componentDidMount.
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  useEffect(effect, NO_DEPS);
+  useEffect(() => {
+    effect();
+    // No cleanup needed for mount-only effect
+  }, NO_DEPS); // eslint-disable-line react-hooks/exhaustive-deps
 }
 
 /**
- * A custom hook that runs an effect during component unmount.
+ * Runs a cleanup effect when the component unmounts (similar to componentWillUnmount).
  *
- * @param {EffectCallback} cleanupEffect - The effect callback function that will be executed when the component unmounts.
+ * @param cleanupEffect - The cleanup callback to execute on unmount
  */
-export function useComponentWillUnmount(cleanupEffect: NoneToVoidFunction) {
-  useEffect(() => cleanupEffect, NO_DEPS);
+export function useComponentWillUnmount(cleanupEffect: () => void) {
+  useEffect(() => {
+    return cleanupEffect; // Return cleanup function directly
+  }, NO_DEPS); // eslint-disable-line react-hooks/exhaustive-deps
 }

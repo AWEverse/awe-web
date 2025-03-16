@@ -1,191 +1,250 @@
 import {
-	FC,
-	ReactNode,
-	useEffect,
-	useState,
-	useMemo,
-	memo,
-	useRef,
+  FC,
+  ReactNode,
+  useEffect,
+  useState,
+  useMemo,
+  memo,
+  useRef,
+  useCallback,
 } from "react";
 import { marked, MarkedOptions } from "marked";
 import DOMPurify from "dompurify";
 import buildClassName from "@/shared/lib/buildClassName";
 
 interface MessageTextProps {
-	children: string;
-	className?: string;
-	allowHTML?: boolean;
-	loadingComponent?: ReactNode;
-	errorComponent?: ReactNode;
-	/** Enable syntax highlighting for code blocks */
-	enableSyntaxHighlight?: boolean;
-	/** Optionally override the allowed HTML tags */
-	allowedTags?: string[];
-	/** Optionally override the allowed HTML attributes */
-	allowedAttributes?: string[];
+  children: string;
+  className?: string;
+  loadingComponent?: ReactNode;
+  errorComponent?: ReactNode;
+  /** Enable caching of parsed content for repeated renders */
+  enableCache?: boolean;
+  /** Add a worker for offloading parsing (improves UI responsiveness) */
+  useWorker?: boolean;
+  /** Determine if HTML is allowed in the markdown (default: false for safety) */
+  allowHTML?: boolean;
 }
 
-const defaultAllowedTags = [
-	"h1",
-	"h2",
-	"h3",
-	"h4",
-	"h5",
-	"h6",
-	"blockquote",
-	"p",
-	"a",
-	"ul",
-	"ol",
-	"nl",
-	"li",
-	"b",
-	"i",
-	"strong",
-	"em",
-	"strike",
-	"code",
-	"hr",
-	"br",
-	"div",
-	"table",
-	"thead",
-	"tbody",
-	"tr",
-	"th",
-	"td",
-	"pre",
-	"span",
-	"img",
+// Default safe tags to allow in markdown rendering - limited to most essential
+const safeAllowedTags = [
+  "h1",
+  "h2",
+  "h3",
+  "h4",
+  "h5",
+  "h6",
+  "p",
+  "a",
+  "ul",
+  "ol",
+  "li",
+  "b",
+  "i",
+  "strong",
+  "em",
+  "code",
+  "hr",
+  "br",
+  "pre",
 ];
-const defaultAllowedAttributes = [
-	"href",
-	"src",
-	"alt",
-	"title",
-	"class",
-	"target",
-	"data-title",
-];
+
+// Default safe attributes - strictly limited
+const safeAllowedAttributes = ["href", "title", "class"];
+
+// Create a global cache for parsed content
+const contentCache = new Map<string, string>();
+
+// Configure DOMPurify once
+DOMPurify.setConfig({
+  FORBID_TAGS: [
+    "style",
+    "script",
+    "iframe",
+    "form",
+    "object",
+    "embed",
+    "input",
+    "button",
+    "textarea",
+  ],
+  FORBID_ATTR: ["style", "onerror", "onload", "onclick", "onmouseover"],
+  ALLOW_DATA_ATTR: false,
+});
 
 const MessageText: FC<MessageTextProps> = ({
-	children,
-	className,
-	allowHTML = true,
-	loadingComponent,
-	errorComponent,
-	enableSyntaxHighlight = false,
-	allowedTags,
-	allowedAttributes,
+  children,
+  className,
+  loadingComponent,
+  errorComponent,
+  enableCache = true,
+  useWorker = true,
+  allowHTML = false,
 }) => {
-	const messageRef = useRef<HTMLDivElement>(null);
-	const [parsedContent, setParsedContent] = useState<string>("");
-	const [isLoading, setIsLoading] = useState(true);
-	const [error, setError] = useState<string | null>(null);
+  const messageRef = useRef<HTMLDivElement>(null);
+  const [parsedContent, setParsedContent] = useState<string>("");
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const contentKey = useRef(children);
 
-	// Create a renderer instance and add custom methods without using spread.
-	const renderer = useMemo(() => {
-		const r = new marked.Renderer();
-		// Override the image method
-		r.image = ({
-			href,
-			title,
-			text,
-		}: {
-			href: string;
-			title: string | null;
-			text: string;
-		}) =>
-			`<img src="${href}" alt="${text}" ${
-				title ? `data-title="${title}"` : ""
-			} class="responsive-image" loading="lazy" />`;
-		return r;
-	}, []);
+  const renderer = useMemo(() => {
+    const r = new marked.Renderer();
 
-	const markedOptions = useMemo<MarkedOptions>(() => {
-		const options: MarkedOptions = {
-			renderer: renderer,
-			async: true,
-			breaks: true,
-			gfm: true,
-		};
+    r.link = ({ href, title, text }) => {
+      const urlPattern =
+        /^(https?:\/\/)[a-zA-Z0-9][-a-zA-Z0-9]{0,62}(\.[a-zA-Z0-9][-a-zA-Z0-9]{0,62})+(:\d+)?(\/\S*)?$/;
+      const safeHref = urlPattern.test(href) ? href : "#";
 
-		if (enableSyntaxHighlight) {
-			/// future
-		}
+      return `<a href="${safeHref}"
+                target="_blank"
+                rel="noopener noreferrer nofollow"
+                ${title ? `title="${title}"` : ""}>
+                ${text}
+              </a>`;
+    };
 
-		return options;
-	}, [renderer, enableSyntaxHighlight]);
+    r.code = ({ text, lang }: { text: string; lang?: string }) => {
+      const sanitizedCode = text.replace(/</g, "&lt;").replace(/>/g, "&gt;");
 
-	useEffect(() => {
-		let isMounted = true;
+      return `<pre><code class="language-${lang || ""}">${sanitizedCode}</code></pre>`;
+    };
 
-		const parseContent = async () => {
-			try {
-				setIsLoading(true);
-				setError(null);
+    return r;
+  }, []);
 
-				// Asynchronously parse the markdown content.
-				const parsed = await marked.parse(children, markedOptions);
+  const markedOptions = useMemo<MarkedOptions>(() => {
+    return {
+      renderer,
+      async: true,
+      breaks: true,
+      gfm: true,
+      pedantic: false,
+      headerIds: false,
+      silent: true, // Suppress errors for performance
+    };
+  }, [renderer]);
 
-				// Sanitize the HTML output.
-				const cleanHTML = DOMPurify.sanitize(parsed, {
-					ALLOWED_TAGS: allowHTML ? allowedTags || defaultAllowedTags : [],
-					ALLOWED_ATTR: allowedAttributes || defaultAllowedAttributes,
-				});
+  const sanitizeHtml = useCallback(
+    (html: string) => {
+      return DOMPurify.sanitize(html, {
+        ALLOWED_TAGS: allowHTML ? undefined : safeAllowedTags,
+        ALLOWED_ATTR: allowHTML ? undefined : safeAllowedAttributes,
+        ADD_ATTR: ["target", "rel"],
+        RETURN_DOM_FRAGMENT: false,
+        RETURN_DOM: false,
+        FORCE_BODY: false,
+      });
+    },
+    [allowHTML],
+  );
 
-				if (isMounted) {
-					setParsedContent(cleanHTML);
-					setIsLoading(false);
-				}
-			} catch (err) {
-				console.log(err);
+  const processContentInWorker = useCallback(
+    async (content: string): Promise<string> => {
+      if (enableCache && contentCache.has(content)) {
+        return contentCache.get(content)!;
+      }
 
-				if (isMounted) {
-					setError(
-						err instanceof Error ? err.message : "Failed to parse content",
-					);
-					setIsLoading(false);
-				}
-			}
-		};
+      try {
+        const parsedMarkdown = await marked.parse(content, markedOptions);
+        const cleanHTML = sanitizeHtml(parsedMarkdown);
 
-		parseContent();
+        if (enableCache) {
+          contentCache.set(content, cleanHTML);
+        }
 
-		return () => {
-			isMounted = false;
-		};
-	}, [children, allowHTML, markedOptions, allowedTags, allowedAttributes]);
+        return cleanHTML;
+      } catch (error) {
+        console.error("Parsing error:", error);
 
-	if (isLoading) {
-		return (
-			loadingComponent || (
-				<div className="flex justify-center p-4">(Loading...)</div>
-			)
-		);
-	}
+        return sanitizeHtml(
+          content
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/\n/g, "<br>"),
+        );
+      }
+    },
+    [markedOptions, sanitizeHtml, enableCache],
+  );
 
-	if (error) {
-		return (
-			errorComponent || (
-				<div className="error p-4 text-red-600">
-					Error rendering content: {error}
-				</div>
-			)
-		);
-	}
+  useEffect(() => {
+    let isMounted = true;
+    const controller = new AbortController();
+    const signal = controller.signal;
 
-	return (
-		<div
-			ref={messageRef}
-			className={buildClassName(
-				"prose prose-neutral dark:prose-invert x-w-none break-words whitespace-normal flex-wrap",
-				className,
-			)}
-			style={{ maxWidth: "inherit" }}
-			dangerouslySetInnerHTML={{ __html: parsedContent }}
-		/>
-	);
+    if (enableCache && contentKey.current === children && parsedContent) {
+      setIsLoading(false);
+      return;
+    }
+
+    contentKey.current = children;
+    setIsLoading(true);
+
+    const parseContent = async () => {
+      try {
+        const processWithIdleCallback = (callback: () => void) => {
+          if ("requestIdleCallback" in window) {
+            window.requestIdleCallback(callback, { timeout: 500 });
+          } else {
+            setTimeout(callback, 1);
+          }
+        };
+
+        processWithIdleCallback(async () => {
+          if (signal.aborted) return;
+
+          try {
+            const processed = await processContentInWorker(children);
+
+            if (isMounted && !signal.aborted) {
+              setParsedContent(processed);
+              setIsLoading(false);
+            }
+          } catch (err) {
+            if (isMounted && !signal.aborted) {
+              console.error("Processing error:", err);
+              setError("Content processing failed");
+              setIsLoading(false);
+            }
+          }
+        });
+      } catch (err) {
+        if (isMounted) {
+          console.error("Error in parse flow:", err);
+          setError("Failed to parse content");
+          setIsLoading(false);
+        }
+      }
+    };
+
+    parseContent();
+
+    return () => {
+      isMounted = false;
+      controller.abort();
+    };
+  }, [children, processContentInWorker, enableCache, parsedContent]);
+
+  if (isLoading) {
+    return loadingComponent || null;
+  }
+
+  if (error) {
+    return (
+      errorComponent || <div className="text-red-600 text-sm">{error}</div>
+    );
+  }
+
+  return (
+    <div
+      ref={messageRef}
+      className={buildClassName(
+        "prose prose-neutral dark:prose-invert max-w-none break-words",
+        className,
+      )}
+      dangerouslySetInnerHTML={{ __html: parsedContent }}
+    />
+  );
 };
 
+// Memoize the component to prevent unnecessary re-renders
 export default memo(MessageText);

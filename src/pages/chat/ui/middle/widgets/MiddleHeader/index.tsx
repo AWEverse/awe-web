@@ -34,7 +34,9 @@ const variants = {
 
 const MiddleHeader: React.FC<{ sender?: any }> = ({ sender }) => {
   const headerRef = useRef<HTMLDivElement>(null);
-  const { isTablet } = useAppLayout();
+
+  const lessTablet = useAppLayout((state) => state.isTablet || state.isMobile);
+
   const [openDateModal, setOpenDateModal] = useState(false);
 
   // const isMiddleSearchOpen = useStore.isMiddleSearchOpen();
@@ -88,7 +90,7 @@ const MiddleHeader: React.FC<{ sender?: any }> = ({ sender }) => {
           <p>Andrii CLiyensa</p>
         </div>
         <div className="MiddleHeaderActions allow-space-right-column-header">
-          {!isTablet && (
+          {!lessTablet && (
             <PinnedMessageButton
               activeIndex={0}
               className="InAction"
@@ -99,7 +101,7 @@ const MiddleHeader: React.FC<{ sender?: any }> = ({ sender }) => {
         </div>
       </>
     ),
-    [isTablet, openProfileColumn],
+    [lessTablet, openProfileColumn],
   );
 
   return (
@@ -140,7 +142,7 @@ const MiddleHeader: React.FC<{ sender?: any }> = ({ sender }) => {
         </div>
       </div>
 
-      {isTablet && (
+      {lessTablet && (
         <PinnedMessageButton
           activeIndex={0}
           className={buildClassName(

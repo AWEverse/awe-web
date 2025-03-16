@@ -1,7 +1,5 @@
 import { EKeyboardKey } from '@/lib/core';
 import { useComponentDidMount } from '@/shared/hooks/effects/useLifecycle';
-import { useEffect } from 'react';
-
 
 type KeyboardKey = `${EKeyboardKey}`;
 
@@ -11,6 +9,7 @@ type KeyMapping = {
 
 interface Options {
   readonly shouldHandle?: (e: KeyboardEvent) => boolean;
+  readonly targetElement?: HTMLElement | Document;
 }
 
 /**
@@ -19,24 +18,20 @@ interface Options {
  * @param options Optional configuration, including a custom condition for handling key presses.
  */
 function useKeyHandler(mapping: KeyMapping, options: Options = {}) {
-  const { shouldHandle = (e) => !(e.target instanceof HTMLInputElement) } = options;
+  const { shouldHandle = (e) => !(e.target instanceof HTMLInputElement), targetElement = document } = options;
 
   useComponentDidMount(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (!shouldHandle(e)) {
-        return;
-      }
-
+      if (!shouldHandle(e)) return;
       const handler = mapping[e.code as KeyboardKey];
-
       if (handler) {
         e.preventDefault();
         handler(e);
       }
     };
 
-    document.addEventListener('keydown', handleKeyDown);
-    return () => document.removeEventListener('keydown', handleKeyDown);
+    targetElement.addEventListener('keydown', handleKeyDown as EventListener);
+    return () => targetElement.removeEventListener('keydown', handleKeyDown as EventListener);
   });
 }
 
