@@ -1,4 +1,4 @@
-import { defferMicrotasks, onIdle, throttleWith } from "../schedulers";
+import { defferMicrotasks, onIdle, requestIdleExecution, throttleWith } from "../schedulers";
 import { ReadonlySignal, signal, effect } from "../signals";
 
 const AUTO_END_TIMEOUT = 1000;
@@ -55,7 +55,7 @@ export function dispatchHeavyAnimation(
 export function onIdleComplete(callback: NoneToVoidFunction) {
   idleQueue.push(callback);
 
-  onIdle(() => {
+  requestIdleExecution(() => {
     if (!animationState.isActive.value && !blockingAnimationState.isActive.value) {
       const index = idleQueue.indexOf(callback);
 

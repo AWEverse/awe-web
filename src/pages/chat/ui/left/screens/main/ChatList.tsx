@@ -84,7 +84,7 @@ const ChatList: FC<OwnProps> = ({ className }) => {
 
       <AnimatePresence custom={direction} initial={false} mode="popLayout">
         {Array.from({ length: 20 }, (_, i) => (
-          <Fragment key={i}>
+          <div key={i}>
             <ChatListItem
               animation={ChatAnimationTypes.Move}
               chatId={`${i}`}
@@ -92,7 +92,7 @@ const ChatList: FC<OwnProps> = ({ className }) => {
               orderDiff={i}
             />
             <hr className={s.ChatListDivider} />
-          </Fragment>
+          </div>
         ))}
       </AnimatePresence>
     </>

@@ -94,7 +94,7 @@ const MiddleHeader: React.FC<{ sender?: any }> = ({ sender }) => {
             <PinnedMessageButton
               activeIndex={0}
               className="InAction"
-              segmentCount={4}
+              segmentCount={10}
             />
           )}
           <MiddleHeaderActions />
@@ -117,7 +117,7 @@ const MiddleHeader: React.FC<{ sender?: any }> = ({ sender }) => {
         />
 
         <div className={"HeaderBodyWrapper"}>
-          <AnimatePresence>
+          <AnimatePresence initial={false}>
             <motion.div
               key={isMiddleSearchOpen ? "search" : "main"}
               initial={
@@ -149,7 +149,7 @@ const MiddleHeader: React.FC<{ sender?: any }> = ({ sender }) => {
             "UnderHeader",
             isMiddleSearchOpen && "UnderHeader__Hidden",
           )}
-          segmentCount={4}
+          segmentCount={10}
         />
       )}
 

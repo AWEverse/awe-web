@@ -1,16 +1,6 @@
-import { useCallback } from "react";
-import useStateRef from "./useStateRef";
+import { useCallback, useEffect, useRef } from "react";
 
 const NO_DEPS = [] as const;
-
-interface UseStableCallbackOptions {
-  /**
-   * If true, the callback reference is updated synchronously with useLayoutEffect.
-   * This is useful for cases where timing is critical (e.g., animations or layout effects).
-   * Defaults to false, meaning the update happens asynchronously using useEffect.
-   */
-  sync?: boolean;
-}
 
 /**
  * A hook that returns a stable callback reference which always calls the latest
@@ -19,7 +9,6 @@ interface UseStableCallbackOptions {
  *
  * @template T - A function type.
  * @param callback - The callback function whose latest version should be always used.
- * @param options - Optional settings; set { sync: true } for synchronous updates.
  *
  * @returns A stable callback that always uses the most recent version of `callback`.
  *
@@ -29,18 +18,25 @@ interface UseStableCallbackOptions {
  *   // event handler logic
  * });
  *
- * // Synchronous update
- * const handleScroll = useStableCallback((event) => {
- *   // critical scroll handler logic
- * }, { sync: true });
  */
 export default function useStableCallback<T extends AnyFunction>(
   callback?: T,
-  options?: UseStableCallbackOptions,
 ): T {
-  const { sync = false } = options || { sync: false };
+  const callbackRef = useRef<T | undefined>(callback);
 
-  const callbackRef = useStateRef(callback);
+  useEffect(() => {
+    if (callback === undefined) {
+      return;
+    }
 
-  return useCallback((...args: Parameters<T>) => callbackRef.current?.(...args), NO_DEPS) as T;
+    callbackRef.current = callback;
+  }, [callback]);
+
+  return useCallback((...args: Parameters<T>): ReturnType<T> => {
+    if (callbackRef.current === undefined) {
+      return undefined as unknown as ReturnType<T>;
+    }
+
+    return callbackRef.current(...args);
+  }, NO_DEPS) as T;
 }

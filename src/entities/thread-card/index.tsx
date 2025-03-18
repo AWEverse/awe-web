@@ -1,9 +1,7 @@
-import React, { FC } from "react";
-import { Avatar, Typography } from "@mui/material";
-import { VerticalDivider } from "@/shared/ui/Divider";
+import React from "react";
 import Linkify from "@/shared/ui/Linkify";
-import s from "./index.module.scss";
 import { ROUTES } from "@/shared/config/routes/constants";
+import "./index.scss";
 
 interface ThreadCardProps {
   userAvatarSrc: string;
@@ -15,75 +13,80 @@ interface ThreadCardProps {
   metaText?: string;
   moreDecorator?: React.ReactNode;
   actionDecorator?: React.ReactNode;
+  positionInFeed?: number; // Added for aria-posinset
+  totalFeedSize?: number; // Added for aria-setsize
+  isBusy?: boolean; // Added for aria-busy
 }
 
-const ThreadCard: FC<ThreadCardProps> = ({
+const ThreadCard = ({
   userAvatarSrc,
   userAvatarAlt = "User avatar",
   userName,
   userTitle,
   userSubtitle,
-  userAvatars = [],
   metaText,
-  moreDecorator,
-  actionDecorator,
-}) => {
-  return (
-    <article aria-label={`Thread card by ${userName}`} className={s.threadCard}>
-      <a
-        className={s.link}
-        draggable={false}
-        href={ROUTES.DIALOGS.BASE}
-        title={`Go to ${userName}'s thread`}
-      ></a>
-      <div className={s.content}>
-        <VerticalDivider className={s.avatar} separatorposition={0}>
-          <Avatar alt={userAvatarAlt} src={userAvatarSrc} />
+  positionInFeed,
+  totalFeedSize = -1, // Default to -1 if total size is unknown
+  isBusy = false,
+}: ThreadCardProps) => {
+  const titleId = `${userName}-thread-title-${positionInFeed || "unknown"}`;
+  const subtitleId = `${userName}-thread-subtitle-${positionInFeed || "unknown"}`;
 
-          {userAvatars.length > 0 && (
-            <div aria-label="Other avatars" className={s.avatars}>
-              {userAvatars.map(({ src, alt }, index) => (
-                <Avatar
-                  key={index}
-                  alt={alt}
-                  className={s.partition}
-                  src={src}
-                  sx={{ width: "24px", height: "24px" }}
-                />
-              ))}
+  return (
+    <article
+      role="article"
+      draggable={false}
+      aria-labelledby={titleId}
+      aria-describedby={userSubtitle ? subtitleId : undefined}
+      aria-posinset={positionInFeed}
+      aria-setsize={totalFeedSize}
+      aria-busy={isBusy}
+      title={`${userName}'s thread`}
+      className="thread-card"
+    >
+      <div className="thread-card__content">
+        <header className="thread-card__header">
+          <div className="thread-card__header-list">
+            <img
+              className="thread-card__avatar"
+              alt={userAvatarAlt}
+              src={userAvatarSrc}
+              loading="lazy" // Improve performance for SEO
+            />
+            <a
+              className="thread-card__username"
+              href={`/profile/${encodeURIComponent(userName)}`} // Dynamic link for SEO
+              title={`Visit ${userName}'s profile`}
+            >
+              {userName}
+            </a>
+            <span>@{userName}</span>
+          </div>
+
+          <div className="thread-card__title-container">
+            <h3 id={titleId} className="thread-card__post-title">
+              {userTitle}
+            </h3>
+          </div>
+        </header>
+        <section className="thread-card__body">
+          {userSubtitle && (
+            <a
+              id={subtitleId}
+              className="thread-card__subtitle thread-card__link"
+              draggable={false}
+              href={ROUTES.DIALOGS.BASE}
+              title={`Thread by ${userName} about ${userTitle}`}
+            >
+              {userSubtitle}
+            </a>
+          )}
+          {metaText && (
+            <div className="thread-card__meta">
+              <Linkify markdown={metaText} />
             </div>
           )}
-        </VerticalDivider>
-
-        <div className={s.text}>
-          <header className={s.header}>
-            <Typography className={s.username} component="h2" fontWeight="bold">
-              {userName}
-            </Typography>
-
-            <div className={s.titleContainer}>
-              <Typography className={s.title} component="h3">
-                {userTitle}
-              </Typography>
-
-              {moreDecorator && (
-                <div className={s.moreDecorator}>{moreDecorator}</div>
-              )}
-            </div>
-          </header>
-
-          <section className={s.body}>
-            {userSubtitle && (
-              <Typography component="p">{userSubtitle}</Typography>
-            )}
-
-            {actionDecorator && (
-              <div className={s.actionDecorator}>{actionDecorator}</div>
-            )}
-
-            {metaText && <Linkify markdown={metaText} />}
-          </section>
-        </div>
+        </section>
       </div>
     </article>
   );

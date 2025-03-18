@@ -1,20 +1,60 @@
-$filter-value: 3rem;
-$gap-small: 0.5rem;
-$gap-large: 1.25rem;
-$radius-lg: var(--awe-radius-lg);
-$radius-md: var(--awe-radius-md);
+// Variables with more descriptive names
+$filter-blur-amount: 3rem;
+$spacing-small: 0.5rem;
+$spacing-large: 1.25rem;
+$border-radius-lg: var(--awe-radius-lg);
+$border-radius-md: var(--awe-radius-md);
 $font-size-title: var(--font-size-title);
 $font-size-desc: var(--font-size-desc);
+
+// Breakpoints
+$mobile: 480px;
+$tablet: 768px;
+$small-mobile: 425px;
+
+// Mixins for responsive design
+@mixin mobile {
+  @media (max-width: $mobile) {
+    @content;
+  }
+}
+
+@mixin tablet {
+  @media (max-width: $tablet) {
+    @content;
+  }
+}
+
+@mixin small-mobile {
+  @media (max-width: $small-mobile) {
+    @content;
+  }
+}
+
+// Optimize animation with GPU acceleration
+@keyframes zoom {
+  0% {
+    transform: scale(0.25) translateZ(0);
+  }
+  50% {
+    transform: scale(0.75) translateZ(0);
+  }
+  100% {
+    transform: scale(1) translateZ(0);
+  }
+}
 
 .headerWrapper {
   display: flex;
   flex-direction: column;
-  gap: $gap-small;
+  gap: $spacing-small;
   position: relative;
+  contain: layout; // Improve performance by isolating layout
 }
 
 .headerPicture {
   position: relative;
+  will-change: transform; // Hint for browser optimization
 
   img {
     width: 100%;
@@ -23,7 +63,7 @@ $font-size-desc: var(--font-size-desc);
     aspect-ratio: 16 / 9;
     object-fit: cover;
     object-position: center;
-    border-radius: $radius-lg;
+    border-radius: $border-radius-lg;
     z-index: 1;
   }
 
@@ -36,12 +76,13 @@ $font-size-desc: var(--font-size-desc);
     height: 120%;
     z-index: -1;
     background: var(--backdrop-img) center/cover no-repeat;
-    filter: blur($filter-value);
-    opacity: 0.85; // Fallback for older browsers
-
+    filter: blur($filter-blur-amount);
+    opacity: 0.85;
     animation: zoom 5s ease-in-out;
+    transform: translateZ(0); // Force GPU acceleration
+    pointer-events: none; // Prevent affecting mouse events
 
-    @media screen and (max-width: 480px) {
+    @include mobile {
       animation: zoom 1s ease-in-out;
       height: 150%;
       border-radius: 50%;
@@ -53,7 +94,7 @@ $font-size-desc: var(--font-size-desc);
     bottom: 4px;
     right: 4px;
     padding: 0.25rem 0.5rem;
-    border-radius: $radius-md;
+    border-radius: $border-radius-md;
     background-color: rgba(var(--awe-palette-secondary-mainChannel), 0.3);
     backdrop-filter: blur(6px);
     color: var(--awe-palette-text-primary);
@@ -64,13 +105,13 @@ $font-size-desc: var(--font-size-desc);
 
 .headerTitle {
   display: flex;
-  gap: $gap-large;
+  gap: $spacing-large;
   margin-top: -3.5rem;
   padding-inline: 1rem;
 
-  @media (max-width: 480px) {
+  @include mobile {
     flex-direction: column;
-    gap: $gap-small;
+    gap: $spacing-small;
 
     & > :first-of-type {
       align-self: center;
@@ -84,14 +125,14 @@ $font-size-desc: var(--font-size-desc);
   justify-content: space-between;
   align-items: flex-start;
 
-  @media (max-width: 480px) {
+  @include mobile {
     align-items: center;
   }
 
-  @media (max-width: 768px) {
+  @include tablet {
     flex-direction: column;
     align-items: center;
-    gap: $gap-small;
+    gap: $spacing-small;
   }
 }
 
@@ -103,10 +144,10 @@ $font-size-desc: var(--font-size-desc);
 .headerDescription {
   font-size: $font-size-desc;
   color: var(--awe-palette-text-secondary);
-  margin-top: $gap-small;
+  margin-top: $spacing-small;
 
   .descriptionText {
-    @media (max-width: 480px) {
+    @include mobile {
       text-align: center;
     }
   }
@@ -116,18 +157,18 @@ $font-size-desc: var(--font-size-desc);
   width: 100%;
   padding-block: 3.5rem;
 
-  @media (max-width: 425px) {
+  @include small-mobile {
     padding-block: 0.25rem;
   }
 
-  @media (min-width: 425px) and (max-width: 768px) {
+  @media (min-width: $small-mobile) and (max-width: $tablet) {
     padding-block: 2rem;
   }
 }
 
 .headerActions {
   display: flex;
-  gap: $gap-small;
+  gap: $spacing-small;
 }
 
 .headerAvatar {
@@ -136,17 +177,5 @@ $font-size-desc: var(--font-size-desc);
 
   img {
     border-radius: 50%;
-  }
-}
-
-@keyframes zoom {
-  0% {
-    transform: scale(0.25);
-  }
-  50% {
-    transform: scale(0.75);
-  }
-  100% {
-    transform: scale(1);
   }
 }

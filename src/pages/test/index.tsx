@@ -1,5 +1,12 @@
 import React, { useState, useCallback, useEffect, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import {
+  configure,
+  getStats,
+  requestMeasure,
+  requestMutation,
+  TaskPriority,
+} from "@/lib/modules/fastdom/expermental/new_fastdom";
 
 // Define types for gallery items
 export type GalleryItem = {
@@ -209,23 +216,40 @@ export function ResponsiveGallery({
   );
 }
 
+// Initial configuration
+configure({
+  maxQueueSize: 10000,
+  maxTasksPerFrame: 100,
+  enableProfiling: true,
+});
+
 // Example component with color items
 const TestPage: React.FC = () => {
-  const numColors = 12;
-  const colorItems: GalleryItem[] = Array.from({ length: numColors }).map(
-    (_, i) => {
-      const hue = Math.round((360 / numColors) * i);
-      return {
-        id: `color-${i}`,
-        color: `hsl(${hue}, 100%, 50%)`,
-        title: i % 3 === 0 ? `Color ${i + 1}` : undefined,
-        description:
-          i % 3 === 0 ? `This is a color with hue value of ${hue}` : undefined,
-      };
-    },
-  );
+  useEffect(() => {
+    console.log(1);
+    for (let i = 1; i < 1000; ++i) {
+      requestMutation(
+        () => setTimeout(() => console.log(4), 60),
+        TaskPriority.NORMAL,
+        `mutation-${i}`,
+      );
+    }
+    requestMeasure(
+      () => console.log(1),
+      TaskPriority.CRITICAL,
+      "measure-critical",
+    );
+    requestMeasure(() => console.log(2), TaskPriority.HIGH, "measure-high");
+    requestMeasure(() => console.log(3), TaskPriority.LOW, "measure-low");
 
-  return <ResponsiveGallery items={colorItems} />;
+    const interval = setInterval(
+      () => console.log("Stats:", getStats()),
+      10000,
+    );
+    return () => clearInterval(interval);
+  }, []);
+
+  return <></>;
 };
 
 export default TestPage;

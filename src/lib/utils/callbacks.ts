@@ -1,39 +1,43 @@
-export function createCallbackManager<
-  T extends AnyToVoidFunction = AnyToVoidFunction,
->(): {
-  addCallback: (callback: T) => () => void;
-  removeCallback: (callback: T) => void;
-  runCallbacks: (...args: Parameters<T>) => void;
-  hasCallbacks: () => boolean;
-} {
+/**
+ * Creates a manager for handling callbacks, allowing for adding, running, and removing callbacks.
+ *
+ * @template T - The type of the callback function, which can accept any arguments.
+ * @returns An object with methods to add, run, and check callbacks.
+ */
+export const createCallbackManager = <T extends AnyToVoidFunction>() => {
   const callbacks = new Set<T>();
 
-  const addCallback = (callback: T): (() => void) => {
-    callbacks.add(callback);
-    return () => removeCallback(callback);
-  };
-
-  const removeCallback = (callback: T): void => {
-    callbacks.delete(callback);
-  };
-
-  const runCallbacks = (...args: Parameters<T>): void => {
-    try {
-      callbacks.forEach((callback) => callback(...args));
-    } catch (e) {
-      console.error("Error executing callback:", e);
-    }
-  };
-
-  const hasCallbacks = () => callbacks.size > 0;
-
   return {
-    addCallback,
-    removeCallback,
-    runCallbacks,
-    hasCallbacks,
-  };
-}
+    /**
+     * Adds a callback function to the callback set and returns a function to remove it.
+     *
+     * @param {T} cb - The callback function to be added.
+     * @returns {NoneToVoidFunction} A function that, when called, removes the added callback.
+     */
+    addCallback: (cb: T): NoneToVoidFunction => (callbacks.add(cb), () => callbacks.delete(cb)),
 
-export type CallbackManager<T extends AnyToVoidFunction = AnyToVoidFunction> =
-  ReturnType<typeof createCallbackManager<T>>;
+    /**
+     * Executes all the callbacks in the set with the provided arguments.
+     *
+     * @param {...Parameters<T>} args - The arguments to pass to each callback function.
+     */
+    runCallbacks: (...args: Parameters<T>) =>
+      callbacks.forEach((cb) => cb(...args)),
+
+    /**
+     * Checks if there are any callbacks present in the set.
+     *
+     * @returns {boolean} `true` if there are callbacks, `false` otherwise.
+     */
+    hasCallbacks: (): boolean => !!callbacks.size,
+  };
+};
+
+/**
+ * Represents the type of the callback manager created by `createCallbackManager`.
+ *
+ * @template T - The type of the callback function managed by the callback manager.
+ */
+export type CallbackManager<T extends AnyToVoidFunction> = ReturnType<
+  typeof createCallbackManager<T>
+>;

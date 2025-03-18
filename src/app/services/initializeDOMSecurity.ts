@@ -1,3 +1,4 @@
+import { DEBUG } from "@/lib/config/dev";
 import { requestIdleExecution } from "@/lib/core";
 import DOMPurify from "dompurify";
 
@@ -20,6 +21,7 @@ export default async function initializeSecurityAsync(): Promise<void> {
           applyDetailedSecurityConfiguration();
 
           resolve();
+          if (DEBUG) console.info(">>> APPLICATION INIT: initializeSecurityAsync - success")
         });
       } catch (error) {
         console.error("Failed to initialize DOMPurify security configuration:", error);

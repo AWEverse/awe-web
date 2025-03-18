@@ -1,210 +1,141 @@
-import { FC, useRef, memo, useInsertionEffect, useMemo } from "react";
-import buildClassName from "../lib/buildClassName";
-import s from "./TrackNavigation.module.scss";
-import buildStyle from "../lib/buildStyle";
-import { requestMutation } from "@/lib/modules/fastdom";
+import React, { FC, useRef, memo, useMemo, useLayoutEffect } from "react";
+import buildClassName from "../lib/buildClassName"; // Utility to combine class names
+import s from "./TrackNavigation.module.scss"; // SCSS module for styles
+import { requestMutation } from "@/lib/modules/fastdom"; // FastDOM for efficient DOM updates
 
+// Define prop types
 type OwnProps = {
-  count: number;
-  visible?: number;
-  index: number;
-  size?: "small" | "medium" | "large";
-  height?: number;
-  width?: number;
+  count: number; // Total number of segments
+  visible?: number; // Number of segments visible at once (default: 4)
+  index: number; // Current active segment index
+  size?: "small" | "medium" | "large"; // Size variant (default: "small")
+  height?: number; // Container height in pixels (default: 20)
+  width?: number; // Container width in pixels (default: 10)
 };
 
-// All the dimentions are in px
-const MASK_HEIGHT = 20;
-const MASK_WIDTH = 10;
-const MASK_GAP = 2;
-const BORDER_MASK_LEVEL = 4;
-
-const TrackNavigation: FC<OwnProps> = ({
-  count,
-  index,
-  visible = 4,
-  size = "small",
-  height = MASK_HEIGHT,
-  width = MASK_WIDTH,
-}) => {
-  const containerRef = useRef<HTMLDivElement>(null);
-
-  const markupParams = useMemo(
-    () => calculateMarkup(count, index, visible, height, width),
-    [count, index, visible, height, width],
-  );
-
-  const clipPathMarkup = useMemo(
-    () => (
-      <svg height="0" width="0" aria-hidden="true">
-        <defs dangerouslySetInnerHTML={{ __html: markupParams.clipPath }} />
-      </svg>
-    ),
-    [markupParams.clipPath],
-  );
-
-  const containerStyle = useMemo(
-    () => ({
-      height: `${height}px`,
-    }),
-    [height],
-  );
-
-  const trackWrapperStyle = useMemo(
-    () => ({
-      clipPath: `url("#${markupParams.clipPathId}")`,
-      width: `${width}px`,
-      height: `${markupParams.trackHeight}px`,
-      transform: `translateY(-${markupParams.trackTranslateY}px)`,
-    }),
-    [width, markupParams],
-  );
-
-  const borderMarkStyle = useMemo(
-    () => ({
-      height: `${markupParams.markHeight}px`,
-      transform: `translateY(${markupParams.markTranslateY}px)`,
-    }),
-    [markupParams],
-  );
-
-  useInsertionEffect(() => {
-    const currentElement = containerRef.current;
-    if (!currentElement) return;
-
-    requestMutation(() => {
-      currentElement.style.transform = `translateY(-${markupParams.trackTranslateY}px)`;
-      currentElement.style.clipPath = `url("#${markupParams.clipPathId}")`;
-    });
-  }, [markupParams.trackTranslateY, markupParams.clipPathId]);
-
-  if (count === 1) {
-    return (
-      <div className={buildClassName(s.trackNavigationBorder, s[size])}>
-        <div ref={containerRef} className={s.trackNavigationBorderWrapper1} />
-        {clipPathMarkup}
-      </div>
-    );
-  }
-
-  return (
-    <div
-      className={buildClassName(
-        s.trackNavigationBorder,
-        count > BORDER_MASK_LEVEL && s.trackNavigationBorderMask,
-        s[size],
-      )}
-      style={containerStyle}
-    >
-      <div
-        ref={containerRef}
-        className={s.trackNavigationBorderWrapper}
-        style={trackWrapperStyle}
-      >
-        {clipPathMarkup}
-        <div className={s.trackNavigationBorderMark} style={borderMarkStyle} />
-      </div>
-    </div>
-  );
-};
-
-function calculateMarkup(
+/**
+ * Calculate all layout parameters for the track navigation.
+ */
+function calculateLayoutParameters(
   count: number,
   index: number,
   visible: number,
   height: number,
   width: number,
 ) {
-  const reverseIndex = count - index - 1;
-  const barHeight = getMaxHeight(count, visible, height);
-  const markHeight = getMaxHeight(count, visible, height);
-  const trackHeight = getTrackHeight(count, barHeight, height);
+  const GAP = 2; // Gap between segments in pixels
+  const CORNER_RADIUS = 1; // Radius for rounded corners in pixels
 
-  const clipPathId = `clipPath${count}`;
-  const clipPath = getClipPath(clipPathId, barHeight, count, width);
+  // Handle invalid inputs
+  if (count <= 0 || visible <= 0 || height <= 0) {
+    return {
+      segmentHeight: 0,
+      trackHeight: 0,
+      clipPathId: "",
+      clipPath: "",
+      markTranslateY: 0,
+      trackTranslateY: 0,
+    };
+  }
 
-  const markTranslateY = getMarkTranslateY(reverseIndex, barHeight);
-  const trackTranslateY = getTrackTranslateY(
-    reverseIndex,
+  const segmentHeight = calculateSegmentHeight(count, visible, height, GAP);
+  const trackHeight = calculateTrackHeight(count, segmentHeight, GAP);
+  const clipPathId = `track-clip-path-${count}-${visible}-${width}-${height}`;
+  const clipPath = generateClipPath(
+    clipPathId,
     count,
+    segmentHeight,
+    width,
+    GAP,
+    CORNER_RADIUS,
+  );
+  const markTranslateY = calculateMarkTranslateY(
+    count,
+    index,
+    segmentHeight,
+    GAP,
+  );
+  const trackTranslateY = calculateTrackTranslateY(
+    count,
+    index,
     visible,
-    barHeight,
+    segmentHeight,
     trackHeight,
     height,
+    GAP,
   );
 
   return {
-    markHeight,
+    segmentHeight,
+    trackHeight,
+    clipPathId,
     clipPath,
     markTranslateY,
     trackTranslateY,
-    trackHeight,
-    clipPathId,
   };
 }
 
-function getMaxHeight(count: number, visible: number, height: number): number {
-  if (count <= 0) {
-    return height;
-  }
-
-  if (count <= visible) {
-    return height / count - MASK_GAP;
-  }
-
-  return height / visible - MASK_GAP;
-}
-
-function getTrackHeight(count: number, barHeight: number, height: number) {
-  if (count <= 3) {
-    return height;
-  }
-
-  const includeAllGap = MASK_GAP * (count - 1);
-
-  return barHeight * count + includeAllGap;
-}
-
-function getClipPath(
-  id: string,
-  barHeight: number,
+/**
+ * Calculate the height of each segment.
+ */
+function calculateSegmentHeight(
   count: number,
-  width: number,
-) {
-  const radius = 1;
+  visible: number,
+  containerHeight: number,
+  gap: number,
+): number {
+  if (count <= 0) return containerHeight;
 
-  let d = "";
+  const effectiveCount = Math.min(count, visible);
+  const totalGapHeight = gap * (effectiveCount - 1);
+  const availableHeight = containerHeight - totalGapHeight;
 
-  for (let i = 0; i < count; i++) {
-    const yPos = (barHeight + MASK_GAP) * i;
-
-    d += drawRect(0, yPos, width, barHeight, radius);
-  }
-
-  return `<clipPath id="${id}"><path d="${d}" /></clipPath>`;
+  return Math.max(1, availableHeight / effectiveCount);
 }
 
-function drawRect(
+/**
+ * Calculate the total height of the track.
+ */
+function calculateTrackHeight(
+  count: number,
+  segmentHeight: number,
+  gap: number,
+): number {
+  if (count <= 0) return 0;
+
+  return segmentHeight * count + gap * (count - 1);
+}
+
+/**
+ * Generate an SVG clip path with rounded rectangles for each segment.
+ */
+function generateClipPath(
+  id: string,
+  count: number,
+  segmentHeight: number,
+  width: number,
+  gap: number,
+  radius: number,
+): string {
+  const pathCommands = [];
+  for (let i = 0; i < count; i++) {
+    const yPos = (segmentHeight + gap) * i;
+    pathCommands.push(drawRoundedRect(0, yPos, width, segmentHeight, radius));
+  }
+  return `<clipPath id="${id}"><path d="${pathCommands.join(" ")}" /></clipPath>`;
+}
+
+/**
+ * Draw a rounded rectangle path for the clip path.
+ */
+function drawRoundedRect(
   x: number,
   y: number,
   width: number,
   height: number,
   radius: number,
-) {
-  // Limit the radius to the smallest of the radius, half the width, or half the height.
-  // This prevents the rounded corners from overlapping the width or height.
+): string {
   const r = Math.min(radius, width / 2, height / 2);
-
-  // Return the SVG path commands as a string:
-  // M = "move to" the starting point (x + r, y), accounting for the rounded corner on the top-left
-  // h = "horizontal line" drawing to the right by (width - 2 * r), leaving room for the rounded corner on the top-right
-  // a = "arc" to draw the rounded corner (r, r) from the top-right corner
-  // v = "vertical line" drawing downward by (height - 2 * r), leaving room for the rounded corner on the bottom-right
-  // a = "arc" to draw the rounded corner (r, r) at the bottom-right corner
-  // h = "horizontal line" drawing to the left by (width - 2 * r), leaving room for the rounded corner on the bottom-left
-  // a = "arc" to draw the rounded corner (r, r) at the bottom-left corner
-  // v = "vertical line" drawing upward by (height - 2 * r), leaving room for the rounded corner on the top-left
-  // a = "arc" to draw the rounded corner (r, r) back to the starting point, closing the path
   return `M${x + r},${y}
           h${width - 2 * r}
           a${r},${r},0,0,1,${r},${r}
@@ -216,27 +147,127 @@ function drawRect(
           a${r},${r},0,0,1,${r},${-r}Z`;
 }
 
-function getMarkTranslateY(index: number, barHeight: number): number {
-  return (barHeight + MASK_GAP) * index;
-}
-
-function getTrackTranslateY(
-  index: number,
+/**
+ * Calculate the Y translation for the highlight mark.
+ */
+function calculateMarkTranslateY(
   count: number,
-  visible: number,
-  barHeight: number,
-  trackHeight: number,
-  height: number,
+  index: number,
+  segmentHeight: number,
+  gap: number,
 ): number {
-  if (index <= 1) {
-    return 0;
-  }
-
-  if (count - MASK_GAP <= index) {
-    return trackHeight - height;
-  }
-
-  return (barHeight + visible) / 2 + (index - MASK_GAP) * (barHeight + 2);
+  const safeIndex = Math.max(0, Math.min(count - 1, index));
+  return (segmentHeight + gap) * safeIndex;
 }
 
-export default memo(TrackNavigation);
+/**
+ * Calculate the Y translation for the track to center the current segment.
+ */
+function calculateTrackTranslateY(
+  count: number,
+  index: number,
+  visible: number,
+  segmentHeight: number,
+  trackHeight: number,
+  containerHeight: number,
+  gap: number,
+): number {
+  if (count <= visible) return 0;
+
+  const currentPosition = (segmentHeight + gap) * index;
+  const viewportCenter = containerHeight / 2;
+  const segmentCenter = currentPosition + segmentHeight / 2;
+  let offset = segmentCenter - viewportCenter;
+  const maxOffset = trackHeight - containerHeight;
+  offset = Math.max(0, Math.min(maxOffset, offset));
+
+  return offset;
+}
+
+/**
+ * TrackNavigation component.
+ */
+const TrackNavigation: FC<OwnProps> = memo(
+  ({ count, index, visible = 4, size = "small", height = 20, width = 10 }) => {
+    const containerRef = useRef<HTMLDivElement>(null);
+
+    const layoutParams = useMemo(() => {
+      return calculateLayoutParameters(count, index, visible, height, width);
+    }, [count, index, visible, height, width]);
+
+    const clipPathMarkup = useMemo(
+      () => (
+        <svg height="0" width="0" aria-hidden="true">
+          <defs dangerouslySetInnerHTML={{ __html: layoutParams.clipPath }} />
+        </svg>
+      ),
+      [layoutParams.clipPath],
+    );
+
+    const containerStyle = useMemo(() => ({ height: `${height}px` }), [height]);
+    const trackWrapperStyle = useMemo(
+      () => ({
+        clipPath: `url("#${layoutParams.clipPathId}")`,
+        width: `${width}px`,
+        height: `${layoutParams.trackHeight}px`,
+        transform: `translateY(-${layoutParams.trackTranslateY}px)`,
+      }),
+      [width, layoutParams],
+    );
+    const borderMarkStyle = useMemo(
+      () => ({
+        height: `${layoutParams.segmentHeight}px`,
+        transform: `translateY(${layoutParams.markTranslateY}px)`,
+      }),
+      [layoutParams],
+    );
+
+    useLayoutEffect(() => {
+      const currentElement = containerRef.current;
+      if (!currentElement) return;
+      requestMutation(() => {
+        currentElement.style.transform = `translateY(-${layoutParams.trackTranslateY}px)`;
+        currentElement.style.clipPath = `url("#${layoutParams.clipPathId}")`;
+      });
+    }, [layoutParams.trackTranslateY, layoutParams.clipPathId]);
+
+    if (count <= 0 || visible <= 0 || height <= 0) return null;
+
+    if (count === 1) {
+      return (
+        <div className={buildClassName(s.trackNavigationBorder, s[size])}>
+          <div
+            ref={containerRef}
+            className={s.trackNavigationBorderWrapper1}
+            style={{ height: `${height}px`, borderRadius: "1px" }}
+          />
+        </div>
+      );
+    }
+
+    return (
+      <div
+        className={buildClassName(
+          s.trackNavigationBorder,
+          count > 4 && s.trackNavigationBorderMask,
+          s[size],
+        )}
+        style={containerStyle}
+      >
+        <div
+          ref={containerRef}
+          className={s.trackNavigationBorderWrapper}
+          style={trackWrapperStyle}
+        >
+          {clipPathMarkup}
+          <div
+            className={s.trackNavigationBorderMark}
+            style={borderMarkStyle}
+          />
+        </div>
+      </div>
+    );
+  },
+);
+
+export default TrackNavigation;

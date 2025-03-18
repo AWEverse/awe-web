@@ -2,9 +2,10 @@
   position: relative;
   height: var(--mask-height);
   margin: 0.125rem 0;
-  width: 100%;
+  width: fit-content;
   min-width: 0.125rem;
   overflow-y: hidden;
+
 }
 
 .small {

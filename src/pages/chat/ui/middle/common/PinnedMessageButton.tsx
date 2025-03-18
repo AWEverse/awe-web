@@ -24,7 +24,7 @@ const PinnedMessageButton: FC<OwnProps & StateProps> = (props) => {
     nodeRef,
     className,
     children,
-    segmentCount = 4,
+    segmentCount = 10,
     style,
     onClick,
   } = props;

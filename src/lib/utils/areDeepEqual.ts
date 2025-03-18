@@ -1,38 +1,35 @@
-export function areDeepEqual<T>(value1: T, value2: T): boolean {
-  const type1 = typeof value1;
-  const type2 = typeof value2;
+export function areDeepEqual<T>(a: T, b: T): boolean {
+  if (a === b) return true;
 
-  if (type1 !== type2) {
-    return false;
+  const ta = typeof a;
+  if (ta !== typeof b) return false;
+
+  if (ta !== 'object' || !a || !b) return a === b;
+
+  const isArrA = a instanceof Array;
+  if (isArrA !== (b instanceof Array)) return false;
+
+  if (isArrA) {
+    const arrA = a as unknown[], arrB = b as unknown[];
+    const len = arrA.length;
+    if (len !== arrB.length) return false;
+
+    for (let i = 0; i < len; i++) {
+      if (!areDeepEqual(arrA[i], arrB[i])) return false;
+    }
+    return true;
   }
 
-  if (type1 !== "object" || value1 === null || value2 === null) {
-    return value1 === value2;
+  const objA = a as Record<string, any>;
+  const objB = b as Record<string, any>;
+  const keys = Object.keys(objA);
+
+  if (keys.length !== Object.keys(objB).length) return false;
+
+  for (let i = 0, len = keys.length; i < len; ++i) {
+    const k = keys[i];
+
+    if (!(k in objB) || !areDeepEqual(objA[k], objB[k])) return false;
   }
-
-  const isArray1 = Array.isArray(value1);
-  const isArray2 = Array.isArray(value2);
-
-  if (isArray1 !== isArray2) {
-    return false;
-  }
-
-  if (isArray1 && Array.isArray(value1) && Array.isArray(value2)) {
-    return (
-      value1.length === value2.length &&
-      value1.every((member1, i) => areDeepEqual(member1, value2[i]))
-    );
-  }
-
-  const object1 = value1 as Record<string, unknown>;
-  const object2 = value2 as Record<string, unknown>;
-
-  const keys1 = Object.keys(object1);
-  const keys2 = Object.keys(object2);
-
-  if (keys1.length !== keys2.length) {
-    return false;
-  }
-
-  return keys1.every((key1) => areDeepEqual(object1[key1], object2[key1]));
+  return true;
 }
