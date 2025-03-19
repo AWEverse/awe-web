@@ -1,8 +1,8 @@
-import buildClassName from '@/shared/lib/buildClassName';
-import { FC, memo, useMemo } from 'react';
-import { ZoomLevel } from '../lib/constans';
-import { CalendarViewProps } from '../lib/types';
-import { invoke } from '@/lib/core';
+import buildClassName from "@/shared/lib/buildClassName";
+import { FC, memo, useMemo } from "react";
+import { ZoomLevel } from "../lib/constans";
+import { CalendarViewProps } from "../lib/types";
+import { invoke } from "@/lib/core";
 
 const YearView: FC<CalendarViewProps> = ({ date, onSelectDate }) => {
   const { currentSystemDate } = date;
@@ -14,17 +14,22 @@ const YearView: FC<CalendarViewProps> = ({ date, onSelectDate }) => {
   );
 
   const handleClick = (year: number) => () => {
-    invoke(onSelectDate, { day: undefined, month: undefined, year, level: ZoomLevel.MONTH });
+    invoke(onSelectDate, {
+      day: undefined,
+      month: undefined,
+      year,
+      level: ZoomLevel.MONTH,
+    });
   };
 
   return (
     <>
-      {years.map(year => (
+      {years.map((year) => (
         <div
           key={year}
           className={buildClassName(
-            'calendarCell',
-            year === new Date().getFullYear() ? 'currentDay' : undefined,
+            "dp-calendar-cell",
+            year === new Date().getFullYear() ? "dp-current-day" : undefined,
           )}
           onClick={handleClick(year)}
         >

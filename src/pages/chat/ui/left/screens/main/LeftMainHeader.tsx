@@ -4,7 +4,7 @@ import SearchInput from "@/shared/ui/SearchInput";
 import { ArrowForwardRounded } from "@mui/icons-material";
 import IconButton from "@/shared/ui/IconButton";
 import { useStableCallback } from "@/shared/hooks/base";
-import useChatStore from "@/pages/chat/store/state/useChatState";
+import useChatStore from "@/pages/chat/store/useChatSelector";
 
 interface OwnProps {
   onFocus?: () => void;
@@ -31,7 +31,7 @@ const useSearchInput = () => {
 };
 
 const LeftMainHeader: FC<OwnProps & StateProps> = ({ onFocus, onBlur }) => {
-  const { toggleLeftPanel } = useChatStore();
+  const toggleLeftPanel = useChatStore((s) => s.toggleChatList);
 
   const { value, handleChange, handleReset } = useSearchInput();
 

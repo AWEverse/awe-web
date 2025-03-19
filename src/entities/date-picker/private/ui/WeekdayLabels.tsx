@@ -1,16 +1,14 @@
-import { FC, memo } from 'react';
-import { WEEKDAY_LETTERS } from '../lib/constans';
+import { FC, memo } from "react";
+import { WEEKDAY_LETTERS } from "../lib/constans";
 
-interface WeekdayLabelsProps {
-  formatMessage: (opts: { id: string }) => string;
-}
+interface WeekdayLabelsProps {}
 
-const WeekdayLabels: FC<WeekdayLabelsProps> = ({ formatMessage }) => {
+const WeekdayLabels: FC<WeekdayLabelsProps> = ({}) => {
   return (
-    <div className="weekdays">
-      {WEEKDAY_LETTERS.map(weekday => (
-        <div key={weekday} className="weekday">
-          {formatMessage({ id: weekday }).slice(0, 2)}
+    <div className="dp-weekdays">
+      {WEEKDAY_LETTERS.map((weekday) => (
+        <div key={weekday} className="dp-weekday">
+          {weekday}
         </div>
       ))}
     </div>

@@ -18,14 +18,19 @@ const MonthView: React.FC<CalendarViewProps> = ({ date, onSelectDate }) => {
   return MONTH_LIST.map((month, index) => {
     const key = index < MONTH_LIST.length - 4 ? month : `${month}_copy`;
 
-    const anotherMonth = index >= MONTH_LIST.length - 4 ? "another" : undefined;
+    const anotherMonth =
+      index >= MONTH_LIST.length - 4 ? "dp-day--another" : undefined;
     const currentMonth =
-      index === currentSystemDate.getMonth() ? "currentDay" : undefined;
+      index === currentSystemDate.getMonth() ? "dp-current-day" : undefined;
 
     return (
       <div
         key={key}
-        className={buildClassName("calendarCell", currentMonth, anotherMonth)}
+        className={buildClassName(
+          "dp-calendar-cell",
+          currentMonth,
+          anotherMonth,
+        )}
         onClick={handleClick(index)}
       >
         {""}

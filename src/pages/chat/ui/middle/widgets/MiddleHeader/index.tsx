@@ -15,7 +15,8 @@ import buildClassName from "@/shared/lib/buildClassName";
 import { DatePicker } from "@/entities/date-picker";
 import { useComponentDidMount } from "@/shared/hooks/effects/useLifecycle";
 import useAppLayout from "@/lib/hooks/ui/useAppLayout";
-import useChatState from "@/pages/chat/store/state/useChatState";
+import { createSelectorHooks } from "@/lib/hooks/selectors/createSelectorHooks";
+import useChatStore from "@/pages/chat/store/useChatSelector";
 
 const TRANSITION_DURATION = 0.125;
 
@@ -32,6 +33,8 @@ const variants = {
   },
 };
 
+const useStore = createSelectorHooks(useChatStore);
+
 const MiddleHeader: React.FC<{ sender?: any }> = ({ sender }) => {
   const headerRef = useRef<HTMLDivElement>(null);
 
@@ -39,21 +42,10 @@ const MiddleHeader: React.FC<{ sender?: any }> = ({ sender }) => {
 
   const [openDateModal, setOpenDateModal] = useState(false);
 
-  // const isMiddleSearchOpen = useStore.isMiddleSearchOpen();
-  // const toggleMiddleSearch = useStore.toggleMiddleSearch();
-  // const openProfileColumn = useStore.openProfileColumn();
-  // const toggleChatList = useStore.toggleChatList();
-
-  const {
-    isMiddleSearchOpen,
-    toggleMiddleSearch,
-    toggleLeftPanel,
-    setRightPanelOpen,
-  } = useChatState();
-
-  const openProfileColumn = () => {
-    setRightPanelOpen(true);
-  };
+  const isMiddleSearchOpen = useStore.isChatSearching();
+  const toggleMiddleSearch = useStore.toggleChatSearching();
+  const openProfileColumn = useStore.openProfileColumn();
+  const toggleChatList = useStore.toggleChatList();
 
   useComponentDidMount(() => {
     const keyboardCleanup = captureKeyboardListeners({
@@ -107,7 +99,7 @@ const MiddleHeader: React.FC<{ sender?: any }> = ({ sender }) => {
   return (
     <>
       <div ref={headerRef} className="MiddleHeaderWrapper">
-        <IconButton className="BackButton" onClick={toggleLeftPanel}>
+        <IconButton className="BackButton" onClick={toggleChatList}>
           <ArrowBackRoundedIcon />
         </IconButton>
         <Avatar

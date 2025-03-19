@@ -1,4 +1,4 @@
-import {
+import React, {
   FC,
   ReactNode,
   RefObject,
@@ -18,25 +18,23 @@ import { EKeyboardKey } from "@/lib/core";
 import I18n from "./i18n";
 import { useTranslation } from "react-i18next";
 
+type InputProps = React.DetailedHTMLProps<
+  React.InputHTMLAttributes<HTMLInputElement>,
+  HTMLInputElement
+>;
+
 interface OwnProps {
-  ref?: RefObject<HTMLInputElement>;
   parentContainerClassName?: string;
   resultsItemSelector?: string;
-  className?: string;
   inputId?: string;
-  value?: string;
   focused?: boolean;
   isLoading?: boolean;
-  placeholder?: string;
-  disabled?: boolean;
-  autoComplete?: string;
   canClose?: boolean;
   labels?: ReactNode[];
   size?: "small" | "medium" | "large";
   startDecorator?: ReactNode;
   endDecorator?: ReactNode;
   indicator?: string | number;
-  tabIndex?: number;
   onChange?: (e: React.ChangeEvent<HTMLInputElement>) => void;
   onReset?: NoneToVoidFunction;
   onFocus?: NoneToVoidFunction;
@@ -45,7 +43,7 @@ interface OwnProps {
   onSpinnerClick?: NoneToVoidFunction;
 }
 
-const SearchInput: FC<OwnProps> = ({
+const SearchInput: FC<OwnProps & InputProps> = ({
   ref,
   parentContainerClassName,
   className,

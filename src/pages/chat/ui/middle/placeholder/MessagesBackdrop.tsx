@@ -15,15 +15,16 @@ const MessagesBackdrop: React.FC<MessagesBackdropProps> = ({
   const classNames = buildClassName(s.MessagesBackdrop, className);
 
   return (
-    <></>
-    // <img
-    //   src={imageUrl}
-    //   decoding="async"
-    //   aria-label="Chat backdrop"
-    //   className={classNames}
-    //   role="img"
-    //   tabIndex={-1}
-    // ></img>
+    <img
+      src={imageUrl}
+      decoding="async"
+      loading="lazy"
+      fetchPriority="low"
+      aria-label="Chat backdrop"
+      className={classNames}
+      role="img"
+      tabIndex={-1}
+    ></img>
   );
 };
 

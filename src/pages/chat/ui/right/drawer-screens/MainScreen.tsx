@@ -13,8 +13,8 @@ import buildClassName from "@/shared/lib/buildClassName";
 import TallyCounter from "@/shared/ui/tally-counter/ui/TallyCounter";
 import { IS_TOUCH_ENV } from "@/lib/core";
 import { ScrollProvider } from "@/shared/context";
-import useChatStore from "@/pages/chat/store/state/useChatState";
 import useAppLayout from "@/lib/hooks/ui/useAppLayout";
+import useChatStore from "@/pages/chat/store/useChatSelector";
 
 interface OwnProps {
   nodeRef?: React.RefObject<HTMLDivElement>;
@@ -25,7 +25,8 @@ const MainScreen: FC<OwnProps> = ({ nodeRef, className }) => {
   const containerRef = useRef<HTMLDivElement>(null);
 
   const isMobile = useAppLayout((state) => state.isMobile);
-  const { toggleRightPanel, toggleRightEditingPanel } = useChatStore();
+  const toggleRightPanel = useChatStore((s) => s.toggleProfileColumn);
+  const toggleRightEditingPanel = useChatStore((s) => s.toggleProfileEditing);
 
   const [currentIndex, setCurrentIndex] = useState(0);
   const [columnsCount, setColumnsCount] = useState(1);

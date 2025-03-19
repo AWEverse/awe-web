@@ -3,13 +3,14 @@ import { AnimatePresence, motion } from "framer-motion";
 import EditScreen from "./drawer-screens/EditScreen";
 import MainScreen from "./drawer-screens/MainScreen";
 import "./RightColumn.scss";
-import useChatState from "../../store/state/useChatState";
+import useChatStore from "../../store/useChatSelector";
 
 const TRANSITION_DURATION = 0.3; // seconds
 const PANEL_WIDTH = 420; // Assuming 420px is the panel width
 
 const RightColumn: FC = () => {
-  const { isRightPanelOpen, isRightPanelEditing } = useChatState();
+  const isRightPanelOpen = useChatStore((s) => s.isProfileColumn);
+  const isRightPanelEditing = useChatStore((s) => s.isProfileEditing);
 
   return (
     <AnimatePresence>

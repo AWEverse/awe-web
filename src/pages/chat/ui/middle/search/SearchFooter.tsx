@@ -1,26 +1,20 @@
-import { FC, memo, useMemo, useEffect, JSX } from "react";
-import s from "./SearchFooter.module.scss";
-import captureKeyboardListeners, {
-  CaptureOptions,
-  HandlerName,
-} from "@/lib/utils/captureKeyboardListeners";
+import { HandlerName } from "@/lib/utils/captureKeyboardListeners";
 import buildClassName from "@/shared/lib/buildClassName";
+import { FC, memo, useEffect, ReactNode } from "react";
 
-type KeysArray = { key: HandlerName; action: NoneToVoidFunction | undefined }[];
+type NoneToVoidFunction = () => void;
 
-const INCEPTION_KEYS_SET = [
-  "onEnter",
-  "onBackspace",
-  "onDelete",
-  "onEsc",
-  "onUp",
-  "onDown",
-  "onLeft",
-  "onRight",
-  "onTab",
-  "onSpace",
-] as const;
+type KeysArray = {
+  key: HandlerName;
+  action: NoneToVoidFunction | undefined;
+  description?: string;
+}[];
 
+type CaptureOptions = {
+  bindings: Partial<Record<HandlerName, NoneToVoidFunction | undefined>>;
+};
+
+// Define constants
 const ARROWS = {
   onUp: "↑",
   onDown: "↓",
@@ -28,10 +22,46 @@ const ARROWS = {
   onRight: "→",
 };
 
+const KEY_CODES: Record<string, HandlerName> = {
+  Enter: "onEnter",
+  Backspace: "onBackspace",
+  Delete: "onDelete",
+  Escape: "onEsc",
+  ArrowUp: "onUp",
+  ArrowDown: "onDown",
+  ArrowLeft: "onLeft",
+  ArrowRight: "onRight",
+  Tab: "onTab",
+  " ": "onSpace",
+};
+
+// Utility to capture keyboard listeners
+function captureKeyboardListeners(options: CaptureOptions): () => void {
+  const { bindings } = options;
+
+  const handleKeyDown = (e: KeyboardEvent) => {
+    const key = KEY_CODES[e.key];
+
+    if (key && bindings[key]) {
+      const handler = bindings[key];
+      if (handler) {
+        e.preventDefault();
+        handler();
+      }
+    }
+  };
+
+  document.addEventListener("keydown", handleKeyDown);
+
+  return () => {
+    document.removeEventListener("keydown", handleKeyDown);
+  };
+}
+
 interface OwnProps {
   keys: KeysArray;
   className?: string;
-  formatString?: string; // Example: "{onTab} or {onUp} {onDown} to navigate {onEnter} to select {onEsc} to cancel"
+  formatString?: string;
 }
 
 const SearchFooter: FC<OwnProps> = ({ className, keys, formatString = "" }) => {
@@ -41,13 +71,12 @@ const SearchFooter: FC<OwnProps> = ({ className, keys, formatString = "" }) => {
     return () => listenersCleanup();
   }, [keys]);
 
-  const renderContent = useMemo(
-    () => renderFormattedString(keys, formatString),
-    [keys, formatString],
-  );
+  const renderContent = formatString
+    ? renderFormattedString(keys, formatString)
+    : renderDefaultContent(keys);
 
   return (
-    <div className={buildClassName(s.SearchFooter, className)}>
+    <div className={buildClassName("search-footer", className)}>
       {renderContent}
     </div>
   );
@@ -59,65 +88,78 @@ const buildKeyActions = (keys: KeysArray): CaptureOptions => {
       acc[key] = action;
       return acc;
     },
-    {} as Partial<Record<HandlerName, () => void | undefined>>,
+    {} as Partial<Record<HandlerName, NoneToVoidFunction | undefined>>,
   );
 
   return { bindings };
 };
 
-const renderFormattedString = (keys: KeysArray, formatString: string) => {
-  const stack: JSX.Element[] = [];
-  const renderedKeys = new Set<string>();
+const renderFormattedString = (
+  keys: KeysArray,
+  formatString: string,
+): ReactNode[] => {
+  const stack: ReactNode[] = [];
+  const renderedKeys = new Set<HandlerName>();
   let textContent = "";
 
-  const pushText = (index: number) => {
+  const pushText = () => {
     if (textContent.trim()) {
-      stack.push(
-        <span key={`text-${index}`} className={s.text}>
-          {textContent.trim()}
-        </span>,
-      );
+      stack.push(textContent.trim());
       textContent = "";
     }
   };
 
-  if (!formatString) return stack;
-
   const parts = formatString.split(/({[^}]+})/).filter(Boolean);
 
-  parts.forEach((part, index) => {
-    if (part.startsWith("{on") && part.endsWith("}")) {
-      const key = part.slice(1, -1) as HandlerName;
-      const originalKey = key.slice(2);
-      const kdbContent = ARROWS[key as keyof typeof ARROWS] || originalKey;
+  parts.forEach((part) => {
+    if (part.startsWith("{") && part.endsWith("}")) {
+      const keyName = part.slice(1, -1) as HandlerName;
 
-      if (INCEPTION_KEYS_SET.includes(key) && !renderedKeys.has(key)) {
-        const foundKey = keys.find(({ key: handlerKey }) => handlerKey === key);
+      if (
+        Object.values(KEY_CODES).includes(keyName) &&
+        !renderedKeys.has(keyName)
+      ) {
+        const foundKey = keys.find(({ key }) => key === keyName);
 
         if (foundKey) {
-          renderedKeys.add(key);
-          pushText(index);
+          renderedKeys.add(keyName);
+          pushText();
+
+          const kbdContent =
+            ARROWS[keyName as keyof typeof ARROWS] || keyName.slice(2);
           stack.push(
-            <kbd
-              key={`key-${index}`}
-              className={s.keyItem}
-              data-key={kdbContent}
-              title={`Press ${kdbContent} on keyboard`}
-              onClick={foundKey.action}
-            >
-              {kdbContent}
+            <kbd key={keyName} className="search-footer-key">
+              {kbdContent}
             </kbd>,
           );
         }
+      } else {
+        textContent += part;
       }
     } else {
       textContent += part;
     }
   });
 
-  pushText(parts.length);
+  pushText();
   return stack;
 };
 
+const renderDefaultContent = (keys: KeysArray): ReactNode[] => {
+  return keys
+    .filter((key) => key.action && key.description)
+    .map(({ key: keyName, description }) => {
+      const kbdContent =
+        ARROWS[keyName as keyof typeof ARROWS] || keyName.slice(2);
+
+      return (
+        <div key={keyName} className="search-footer-item">
+          <kbd className="search-footer-key">{kbdContent}</kbd>
+          <span className="search-footer-description">{description}</span>
+        </div>
+      );
+    });
+};
+
 export default memo(SearchFooter);
-export type { KeysArray };
+export type { KeysArray, HandlerName };

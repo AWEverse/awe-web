@@ -107,14 +107,6 @@ const WeekView: React.FC<CalendarViewProps> = ({
     [currentMonth, currentYear, onRightClick],
   );
 
-  // Memoized long press listeners
-  const longPressListeners = useLongPress({
-    onClick,
-    onStart: onLongPressStart,
-    onEnd: onLongPressEnd,
-    threshold: 300,
-  });
-
   // Memoized grid renderer
   const renderDays = useCallback(
     (days: number[], type: TimeLapse = "current") => {
@@ -129,31 +121,22 @@ const WeekView: React.FC<CalendarViewProps> = ({
           <DayCell
             key={`${type}-${day}`}
             className={buildClassName(
-              "calendarCell",
-              "dayCell",
-              !isCurrentMonth && "another",
-              isSelectedDay && "selectedDay",
-              isCurrentDay && "currentDay",
+              "dp-calendar-cell",
+              "dp-day-cell",
+              !isCurrentMonth && "dp-day--another",
+              isSelectedDay && "dp-day--selected",
+              isCurrentDay && "dp-current-day",
             )}
             data-day={day}
             data-type={type}
             onClick={handleSelectDate}
-            onContextMenu={handleRightClick}
-            {...longPressListeners}
           >
             {day}
           </DayCell>
         );
       });
     },
-    [
-      currentDay,
-      selectedDay,
-      dateMetadata,
-      handleSelectDate,
-      handleRightClick,
-      longPressListeners,
-    ],
+    [currentDay, selectedDay, dateMetadata, handleSelectDate, handleRightClick],
   );
 
   return (

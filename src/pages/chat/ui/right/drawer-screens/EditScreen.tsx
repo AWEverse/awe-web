@@ -4,10 +4,10 @@ import s from "./EditScreen.module.scss";
 import HeaderNavigation from "../../common/HeaderNavigation";
 import buildClassName from "@/shared/lib/buildClassName";
 import TextArea from "@/shared/ui/TextArea";
-import useChatStore from "@/pages/chat/store/state/useChatState";
 import ActionButton from "@/shared/ui/ActionButton";
 import { MAX_BIO_LENGTH } from "@/lib/config/app";
 import { useStableCallback } from "@/shared/hooks/base";
+import useChatStore from "@/pages/chat/store/useChatSelector";
 
 interface OwnProps {
   nodeRef?: React.RefObject<HTMLDivElement>;
@@ -15,7 +15,7 @@ interface OwnProps {
 }
 
 const EditScreen: FC<OwnProps> = ({ nodeRef, className }) => {
-  const { toggleRightEditingPanel } = useChatStore();
+  const toggleRightEditingPanel = useChatStore((s) => s.toggleProfileColumn);
 
   const [formData, setFormData] = useState({
     firstName: "",

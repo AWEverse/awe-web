@@ -61,29 +61,8 @@ $transition-easing: cubic-bezier(0.4, 0, 0.2, 1);
   width: $roll-width;
   height: 100%;
   border-radius: 8px;
-  display: flex;
-  flex-direction: column;
-  align-self: center;
-  gap: 1px;
   padding: 3px 0;
   margin-left: $margin-left;
   z-index: 1;
-
-  .rollerSegment {
-    width: $roll-width;
-    height: 100%;
-    background-color: var(--awe-palette-primary-softBg);
-    border: $border-width solid var(--awe-palette-secondary-700);
-    border-radius: 2px;
-    background-repeat: no-repeat;
-    outline: none;
-    transition:
-      background-color 0.5s cubic-bezier(1, -0.4, 0, 1.4),
-      background-position 0.15s cubic-bezier(1, -0.4, 0, 1.4);
-
-    &[data-active='true'] {
-      background-color: var(--awe-palette-primary-500);
-      transition: background-color $transition-duration $transition-easing;
-    }
-  }
+  transform: scaleY(-1);
 }

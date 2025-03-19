@@ -44,7 +44,9 @@ const SearchLastRequest: FC<OwnProps> = ({
     handleBeforeContextMenu,
     handleContextMenu,
     handleContextMenuClose,
-  } = useContextMenuHandlers(containerRef, false, false, false);
+  } = useContextMenuHandlers({
+    elementRef: containerRef,
+  });
 
   const { handleClick, handleMouseDown } = useFastClick(
     (e: React.MouseEvent<HTMLDivElement>) => {
@@ -89,7 +91,6 @@ const SearchLastRequest: FC<OwnProps> = ({
         position={contextMenuAnchor!}
         onClose={handleContextMenuClose}
         withPortal
-        menuClassName="p-2"
       >
         <p>Reply</p>
         <p>Copy</p>
