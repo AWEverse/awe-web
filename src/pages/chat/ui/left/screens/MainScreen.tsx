@@ -1,17 +1,12 @@
 import { FC, useState, useCallback, useMemo, memo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import s from "./MainScreen.module.scss";
-import buildClassName from "@/shared/lib/buildClassName";
 import LeftMainHeader from "./main/LeftMainHeader";
-import ChatList from "./main/ChatList";
+import LeftChatList from "./main/LeftChatList";
 import SearchList from "./search/SearchList";
 import LeftHeaderDropdownMenu from "./main/LeftHeaderDropdownMenu";
-import { CloseRounded, EditRounded } from "@mui/icons-material";
+import { CloseRounded } from "@mui/icons-material";
 import IconButton from "@/shared/ui/IconButton";
-import FloatingActionButton, {
-  IFloatingAction,
-} from "@/entities/FloatingActionButton";
-import useFloatingButton from "../../hooks/useFloatingButton";
 import { useStableCallback } from "@/shared/hooks/base";
 
 interface OwnProps {
@@ -22,7 +17,7 @@ type ScreenType = "search" | "chat";
 
 const screens = {
   search: SearchList,
-  chat: ChatList,
+  chat: LeftChatList,
 };
 
 const fadeVariants = {

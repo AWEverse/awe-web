@@ -6,7 +6,6 @@ import MiddleHeaderActions from "./MiddleHeaderActions";
 import PinnedMessageButton from "../../common/PinnedMessageButton";
 import { CalendarMonthRounded, CloseRounded } from "@mui/icons-material";
 import IconButton from "@/shared/ui/IconButton";
-import { motion, AnimatePresence } from "framer-motion";
 import { useStableCallback } from "@/shared/hooks/base";
 import Modal from "@/shared/ui/Modal";
 import captureKeyboardListeners from "@/lib/utils/captureKeyboardListeners";
@@ -17,21 +16,7 @@ import { useComponentDidMount } from "@/shared/hooks/effects/useLifecycle";
 import useAppLayout from "@/lib/hooks/ui/useAppLayout";
 import { createSelectorHooks } from "@/lib/hooks/selectors/createSelectorHooks";
 import useChatStore from "@/pages/chat/store/useChatSelector";
-
-const TRANSITION_DURATION = 0.125;
-
-const variants = {
-  search: {
-    initial: { y: -20, opacity: 0 },
-    animate: { y: 0, opacity: 1 },
-    exit: { y: -20, opacity: 0 },
-  },
-  main: {
-    initial: { y: 20, opacity: 0 },
-    animate: { y: 0, opacity: 1 },
-    exit: { y: 20, opacity: 0 },
-  },
-};
+import { HeaderContent } from "./MiddleHeaderContent";
 
 const useStore = createSelectorHooks(useChatStore);
 
@@ -57,81 +42,24 @@ const MiddleHeader: React.FC<{ sender?: any }> = ({ sender }) => {
   const handleDateModalOpen = useStableCallback(() => setOpenDateModal(true));
   const handleDateModalClose = useStableCallback(() => setOpenDateModal(false));
 
-  const renderSearch = useCallback(
-    () => (
-      <>
-        <MiddleHeaderSearch />
-        <IconButton onClick={handleDateModalOpen}>
-          <CalendarMonthRounded />
-        </IconButton>
-        <IconButton onClick={toggleMiddleSearch}>
-          <CloseRounded />
-        </IconButton>
-      </>
-    ),
-    [handleDateModalOpen, toggleMiddleSearch],
-  );
-
-  const renderMain = useCallback(
-    () => (
-      <>
-        <div
-          className="UserDetails allow-width-right-column-header"
-          onClick={openProfileColumn}
-        >
-          <p>Andrii CLiyensa</p>
-        </div>
-        <div className="MiddleHeaderActions allow-space-right-column-header">
-          {!lessTablet && (
-            <PinnedMessageButton
-              activeIndex={0}
-              className="InAction"
-              segmentCount={10}
-            />
-          )}
-          <MiddleHeaderActions />
-        </div>
-      </>
-    ),
-    [lessTablet, openProfileColumn],
-  );
-
   return (
     <>
       <div ref={headerRef} className="MiddleHeaderWrapper">
         <IconButton className="BackButton" onClick={toggleChatList}>
           <ArrowBackRoundedIcon />
         </IconButton>
+
         <Avatar
           className="UserAvatar"
           sizes="medium"
-          src="https://i.pravatar.cc/300"
+          src={sender?.avatar || "https://i.pravatar.cc/300"}
         />
 
-        <div className={"HeaderBodyWrapper"}>
-          <AnimatePresence initial={false}>
-            <motion.div
-              key={isMiddleSearchOpen ? "search" : "main"}
-              initial={
-                isMiddleSearchOpen
-                  ? variants.search.initial
-                  : variants.main.initial
-              }
-              animate={
-                isMiddleSearchOpen
-                  ? variants.search.animate
-                  : variants.main.animate
-              }
-              exit={
-                isMiddleSearchOpen ? variants.search.exit : variants.main.exit
-              }
-              transition={{ duration: TRANSITION_DURATION }}
-              className="HeaderTransition"
-            >
-              {isMiddleSearchOpen ? renderSearch() : renderMain()}
-            </motion.div>
-          </AnimatePresence>
-        </div>
+        <HeaderContent
+          senderName={sender?.name || "Andrii CLiyensa"}
+          isSearchOpen={isMiddleSearchOpen}
+          onDateModalOpen={handleDateModalOpen}
+        />
       </div>
 
       {lessTablet && (
