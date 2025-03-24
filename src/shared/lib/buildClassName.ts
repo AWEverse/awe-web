@@ -1,9 +1,6 @@
 import murmurHash2 from '@/lib/core/public/cryptography/utils/murmurHash2';
 import { useMemo } from 'react';
 
-/**
- * Type for valid class name values.
- */
 export type ClassValue =
   | string
   | number
@@ -13,154 +10,127 @@ export type ClassValue =
   | ClassValue[]
   | { [key: string]: ClassValue };
 
-/**
- * An array of class name values.
- */
 export type Parts = ClassValue[];
 
-/**
- * Generates a fast hash for an object by iterating over its own enumerable properties.
- *
- * @param {object} obj - The object to hash.
- * @returns {string} The hash representing the object's truthy keys.
-*/
-function fastHashObject(obj: { [key: string]: ClassValue }): string {
-  let combined = 0;
+// Optimized fast hash for objects using a single-pass DJB2-like algorithm
+function fastHashObject(obj: { [key: string]: ClassValue }): number {
+  let hash = 5381;
+
   for (const key in obj) {
-    if (Object.prototype.hasOwnProperty.call(obj, key) && obj[key]) {
-      // Compute a simple hash for the key using DJB2 algorithm.
-      let keyHash = 5381;
+    if (obj[key] && Object.prototype.hasOwnProperty.call(obj, key)) {
+      let keyHash = 0;
       for (let i = 0, len = key.length; i < len; i++) {
-        keyHash = ((keyHash << 5) + keyHash) + key.charCodeAt(i); // keyHash * 33 + char
+        keyHash = (keyHash * 33) ^ key.charCodeAt(i);
       }
-      combined ^= keyHash;
+      hash = (hash * 33) ^ keyHash;
     }
   }
-  return '|o:' + (combined >>> 0).toString(36);
+  return hash >>> 0;
 }
 
-/**
- * Computes a fast hash from various input parts.
- *
- * @param {Parts} parts - The array of class name parts to hash.
- * @param {number} depth - Recursion depth to prevent infinite loops.
- * @param {Map<any, string>} cacheRefs - A map for caching object hashes.
- * @returns {string} A unique hash string.
- */
-function fastHash(parts: Parts, depth: number = 0, cacheRefs: Map<any, string> = new Map<any, string>()): string {
-  if (depth > 10) return '|depth:exceeded';
+function fastHash(parts: Parts, depth: number = 0, cacheRefs: Map<any, number> = new Map()): number {
+  if (depth > 10) return 0xDEAD;
 
-  const result: string[] = [];
+  let hash = 0;
   for (let i = 0, len = parts.length; i < len; ++i) {
     const part = parts[i];
-
     if (part === null || part === undefined) continue;
 
     if (Array.isArray(part)) {
-      result.push('|a:', fastHash(part, depth + 1, cacheRefs));
+      hash = (hash * 31) ^ fastHash(part, depth + 1, cacheRefs);
       continue;
     }
 
     const type = typeof part;
-    if (type === 'string' || type === 'number') {
-      result.push(type === 'string' ? '|s:' : '|n:', part.toString());
+    if (type === 'string') {
+      let strHash = 0;
+      const str = part as string;
+      for (let j = 0, len = str.length; j < len; j++) {
+        strHash = (strHash * 33) ^ str.charCodeAt(j);
+      }
+      hash = (hash * 31) ^ strHash;
+    } else if (type === 'number') {
+      hash = (hash * 31) ^ (part as number | 0);
     } else if (type === 'boolean') {
-      result.push(part ? '|b:1' : '|b:0');
+      hash = (hash * 31) ^ (part ? 1 : 0);
     } else if (type === 'object') {
       const cachedHash = cacheRefs.get(part);
-      if (cachedHash) {
-        result.push(cachedHash);
-      } else if (typeof part === "object" && part !== null) {
-        const objectHash = fastHashObject(part);
+      if (cachedHash !== undefined) {
+        hash = (hash * 31) ^ cachedHash;
+      } else {
+        const objectHash = fastHashObject(part as { [key: string]: ClassValue });
         cacheRefs.set(part, objectHash);
-        result.push(objectHash);
+        hash = (hash * 31) ^ objectHash;
       }
     }
   }
-  return result.join('');
+  return hash >>> 0;
 }
 
-/**
- * Processes a class value and adds valid class names to the output array.
- *
- * @param {ClassValue} part - The class value to process.
- * @param {string[]} out - The output array for class names.
- */
-function processPart(part: ClassValue, out: string[]): void {
-  if (part === null || part === undefined) return;
+function processPart(part: ClassValue, out: string[], offset: number): number {
+  if (part === null || part === undefined) return offset;
 
   if (Array.isArray(part)) {
     for (let i = 0, len = part.length; i < len; ++i) {
-      processPart(part[i], out);
+      offset = processPart(part[i], out, offset);
     }
-    return;
+    return offset;
   }
 
   const type = typeof part;
   if (type === 'string' || type === 'number') {
     const str = String(part);
     if (str) {
-      out.push(str);
+      out[offset++] = str;
     }
-  } else if (type === 'object' && part !== null) {
-    for (const [key, value] of Object.entries(part)) {
-      if (value) {
-        out.push(key);
+  } else if (type === 'object' && part !== null && !Array.isArray(part)) {
+    const obj = part as { [key: string]: ClassValue };
+    const keys = Object.keys(obj);
+
+    for (let i = 0, len = keys.length; i < len; i++) {
+      const key = keys[i];
+      if (obj[key]) {
+        out[offset++] = key;
       }
     }
   }
+  return offset;
 }
 
-/**
- * Custom React hook for building class names with caching.
- *
- * @returns {(...parts: Parts) => string} A function that generates and caches class names.
- */
 export function useClassNameBuilder(): (...parts: Parts) => string {
   const cache = useMemo(() => new Map<number, string>(), []);
-  console.log(cache);
 
   return (...parts: Parts): string => {
-    const key = murmurHash2(fastHash(parts), 32);
+    const key = murmurHash2(fastHash(parts).toString(), 32);
+    const cached = cache.get(key);
+    if (cached !== undefined) return cached;
 
-    if (cache.has(key)) {
-      return cache.get(key)!;
-    }
-
-    const classNames: string[] = [];
+    const classNames = new Array<string>(parts.length * 2);
+    let length = 0;
 
     for (let i = 0, len = parts.length; i < len; ++i) {
-      processPart(parts[i], classNames);
+      length = processPart(parts[i], classNames, length);
     }
 
-    const result = classNames.join(' ');
+    const result = classNames.slice(0, length).join(' ');
     cache.set(key, result);
 
-    // Evict the oldest cache entry if exceeding a size limit
     if (cache.size > 1000) {
       const firstKey = cache.keys().next().value;
-
-      if (firstKey !== undefined) {
-        cache.delete(firstKey);
-      }
+      if (firstKey !== undefined) cache.delete(firstKey);
     }
 
     return result;
   };
 }
 
-/**
- * Builds a class name string from various parts without caching.
- *
- * @param {...Parts} parts - A list of class name parts.
- * @returns {string} A concatenated class name string.
- */
 export default function buildClassName(...parts: Parts): string {
-  const classNames: string[] = [];
+  const classNames = new Array<string>(parts.length * 2);
+  let length = 0;
 
   for (let i = 0, len = parts.length; i < len; ++i) {
-    processPart(parts[i], classNames);
+    length = processPart(parts[i], classNames, length);
   }
 
-  return classNames.join(' ');
+  return classNames.slice(0, length).join(' ');
 }

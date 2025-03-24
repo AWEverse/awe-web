@@ -1,43 +1,49 @@
-export default function murmurHash2(key: string, len: number): number {
+/**
+ * Optimized MurmurHash2 implementation based on MurmurHashNeutral2
+ * @param key - Input string to hash
+ * @param seed - Seed value for hash (default 0)
+ * @returns 32-bit unsigned integer hash
+ */
+export function murmurHash2(key: string, seed: number = 0): number {
   const m = 0x5bd1e995;
-  const seed = 0;
   const r = 24;
 
-  let h = seed ^ len;
+  const buffer = Buffer.from(key, 'utf-8'); // Convert string to UTF-8 byte array
+  const len = buffer.length;
+  let h = (seed ^ len) >>> 0; // Initialize with seed XOR length, ensure 32-bit
 
-  const buffer = Buffer.from(key, 'utf-8');
   let index = 0;
 
   while (index <= len - 4) {
-    let k = buffer[index++] |
-      (buffer[index++] << 8) |
-      (buffer[index++] << 16) |
-      (buffer[index++] << 24);
+    let k = (buffer[index] |
+      (buffer[index + 1] << 8) |
+      (buffer[index + 2] << 16) |
+      (buffer[index + 3] << 24)) >>> 0; // Combine bytes, ensure 32-bit
 
-    k *= m;
-    k ^= k >>> r;
-    k *= m;
+    k = (k * m) >>> 0; // Multiply and wrap to 32-bit
+    k ^= k >>> r; // Right shift and XOR
+    k = (k * m) >>> 0; // Multiply again
 
-    h *= m;
-    h ^= k;
+    h = (h * m) >>> 0; // Multiply h
+    h ^= k; // XOR with k
+    index += 4;
   }
 
-  switch (len - index) {
-    case 3:
-      h ^= buffer[index + 2] << 16;
-      break;
-    case 2:
+  const remaining = len - index;
+  if (remaining >= 1) {
+    h ^= buffer[index];
+    if (remaining >= 2) {
       h ^= buffer[index + 1] << 8;
-      break;
-    case 1:
-      h ^= buffer[index];
-      h *= m;
-      break;
+      if (remaining >= 3) {
+        h ^= buffer[index + 2] << 16;
+      }
+    }
+    h = (h * m) >>> 0;
   }
 
   h ^= h >>> 13;
-  h *= m;
+  h = (h * m) >>> 0;
   h ^= h >>> 15;
 
-  return h >>> 0; // Ensure unsigned 32-bit result
+  return h >>> 0;
 }

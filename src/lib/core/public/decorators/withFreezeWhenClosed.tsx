@@ -1,41 +1,36 @@
-import { FC, useRef, useMemo } from "react";
+import { FC, useRef } from "react";
 
-const NO_DEPS = [] as const;
-
-interface WrappedComponentProps {
+interface FreezeProps {
   isOpen: boolean;
   ignoreFreeze?: boolean;
-  [key: string]: unknown;
 }
 
-export default function withFreezeWhenClosed<T extends WrappedComponentProps>(
-  WrappedComponent: FC<T>,
-): FC<T> {
-  const EnhancedComponent: FC<T> = (props) => {
-    const openPropsRef = useRef<T>(props);
+export function withFreezeWhenClosed<P extends FreezeProps>(
+  WrappedComponent: FC<P>,
+): FC<P> {
+  const displayName =
+    WrappedComponent.displayName || WrappedComponent.name || "Component";
+
+  const FreezeComponent: FC<P> = (props) => {
+    const prevPropsRef = useRef<P>(props);
     const { isOpen, ignoreFreeze = false } = props;
 
-    if (isOpen) {
-      openPropsRef.current = props;
+    if (ignoreFreeze) {
+      return <WrappedComponent {...props} />;
     }
 
-    const frozenProps = useMemo(
-      () => ({
-        ...openPropsRef.current,
-        isOpen: false,
-      }),
-      NO_DEPS,
-    );
+    if (isOpen) {
+      prevPropsRef.current = props;
+    }
 
-    const finalProps = isOpen && !ignoreFreeze ? props : frozenProps;
+    const frozenProps = isOpen
+      ? props
+      : { ...prevPropsRef.current, isOpen: false };
 
-    return <WrappedComponent {...finalProps} />;
+    return <WrappedComponent {...frozenProps} />;
   };
 
-  // Improve debugging by setting display name
-  EnhancedComponent.displayName = `withFreezeWhenClosed(${
-    WrappedComponent.displayName || WrappedComponent.name || "Component"
-  })`;
+  FreezeComponent.displayName = `withFreezeWhenClosed(${displayName})`;
 
-  return EnhancedComponent;
+  return FreezeComponent;
 }
