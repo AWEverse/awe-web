@@ -4,47 +4,90 @@ import throttleWithRafFallback from "./throttleWithRafFallback";
 
 type TaskFunction = () => void;
 type ReflowTaskFunction = () => TaskFunction | void;
-
 type ErrorHandler = (error: Error) => void;
-let handleError: ErrorHandler = (error) =>
-  console.error("DOM task error:", error);
+type SchedulerCallback = (didTimeout?: boolean) => void;
+type Priority = "user-blocking" | "user-visible" | "background";
+
+let handleError: ErrorHandler = (error) => console.error("DOM task error:", error);
 
 const measureTasks = new Set<TaskFunction>();
 const mutationTasks = new Set<TaskFunction>();
 const reflowTasks = new Set<ReflowTaskFunction>();
 
-const processTasks = <T>(tasks: Set<T>, handler: (task: T) => void) => {
+const processTasks = <T>(tasks: Set<T>, handler: (task: T) => void): void => {
   if (tasks.size === 0) return;
 
   const queue = Array.from(tasks);
   tasks.clear();
 
-  for (let j = 0, len = queue.length; j < len; j++) {
+  for (const task of queue) {
     try {
-      handler(queue[j]);
+      handler(task);
     } catch (error) {
       handleError(error as Error);
     }
   }
 };
 
-const runUpdatePass = throttleWithRafFallback(async () => {
+const win = typeof window !== "undefined" ? window : ({} as any);
+const hasScheduler = "scheduler" in win && typeof win.scheduler.postTask === "function";
+const hasIdleCallback = "requestIdleCallback" in win;
+
+const scheduler = (() => {
+  if (hasScheduler) {
+    return {
+      postTask: (callback: SchedulerCallback, options?: { priority?: Priority }) =>
+        win.scheduler.postTask(callback, options),
+    };
+  }
+
+  if (hasIdleCallback) {
+    return {
+      postTask: (callback: SchedulerCallback, options?: { priority?: Priority }) => {
+        const timeout =
+          options?.priority === "user-blocking" ? 100 :
+            options?.priority === "user-visible" ? 300 : 500;
+
+        return win.requestIdleCallback(() => callback(false), { timeout });
+      },
+    };
+  }
+
+  return {
+    postTask: (callback: SchedulerCallback) =>
+      win.requestAnimationFrame(() => callback(false)),
+  };
+})();
+
+const runUpdatePass = (() => {
+  const update = async () => performUpdate();
+
+  if (scheduler) {
+    return (urgent = false) => {
+      const priority: Priority = urgent ? "user-blocking" : "user-visible";
+      scheduler.postTask(update, { priority });
+    };
+  }
+
+  const throttledUpdate = throttleWithRafFallback(update);
+  return () => throttledUpdate();
+})();
+
+async function performUpdate(): Promise<void> {
   try {
-    if (measureTasks.size) {
+    if (measureTasks.size > 0) {
       setPhase("measure");
       processTasks(measureTasks, (task) => safeExecDOM(task));
     }
 
-    // Ждем завершения микротасков
-    await Promise.resolve(); // Позволяем выполниться микротаскам
+    await Promise.resolve();
 
-    // Фаза мутации
-    if (mutationTasks.size) {
+    if (mutationTasks.size > 0) {
       setPhase("mutate");
       processTasks(mutationTasks, (task) => safeExecDOM(task));
     }
 
-    if (reflowTasks.size) {
+    if (reflowTasks.size > 0) {
       setPhase("measure");
       const followUp: TaskFunction[] = [];
 
@@ -52,59 +95,62 @@ const runUpdatePass = throttleWithRafFallback(async () => {
         safeExecDOM(() => {
           const result = task();
           if (result) followUp.push(result);
-        }),
+        })
       );
 
-      if (followUp.length) {
+      if (followUp.length > 0) {
         setPhase("mutate");
-        processTasks(new Set(followUp), (task) => safeExecDOM(task));
+        for (const task of followUp) {
+          safeExecDOM(task);
+        }
       }
     }
   } finally {
     setPhase("measure");
   }
-});
+}
 
 /**
  * Queue DOM read operations (measure phase).
- * @example
- * requestMeasure(() => console.log("Element width:", element.offsetWidth));
+ * @param fn - Function to execute during measure phase
+ * @param urgent - Whether to prioritize execution
  */
-export function requestMeasure(fn: TaskFunction) {
+export function requestMeasure(fn: TaskFunction, urgent = false): void {
   if (fn && !measureTasks.has(fn)) {
     measureTasks.add(fn);
-    runUpdatePass();
+    runUpdatePass(urgent);
   }
 }
 
 /**
  * Queue DOM write operations (mutate phase).
- * @example
- * requestMutation(() => element.style.color = "red");
+ * @param fn - Function to execute during mutation phase
+ * @param urgent - Whether to prioritize execution
  */
-export function requestMutation(fn: TaskFunction) {
+export function requestMutation(fn: TaskFunction, urgent = false): void {
   if (fn && !mutationTasks.has(fn)) {
     mutationTasks.add(fn);
-    runUpdatePass();
+    runUpdatePass(urgent);
   }
 }
 
 /**
  * Queue measure-then-mutate operations.
- * @example
- * requestNextMutation(() => {
- *   const height = element.offsetHeight;
- *   return () => element.style.height = `${height}px`;
- * });
+ * @param fn - Function that reads DOM and returns a write function
+ * @param urgent - Whether to prioritize execution
  */
-export function requestNextMutation(fn: ReflowTaskFunction) {
+export function requestNextMutation(fn: ReflowTaskFunction, urgent = false): void {
   if (fn && !reflowTasks.has(fn)) {
     reflowTasks.add(fn);
-    runUpdatePass();
+    runUpdatePass(urgent);
   }
 }
 
-export function setTaskErrorHandler(handler: ErrorHandler) {
+/**
+ * Set a custom error handler for task execution errors.
+ * @param handler - Function to handle errors
+ */
+export function setTaskErrorHandler(handler: ErrorHandler): void {
   handleError = handler;
 }
 

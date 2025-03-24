@@ -7,8 +7,8 @@ import { usePrevious } from "@/shared/hooks/base";
 import ArchivedScreen from "./screens/ArchivedScreen";
 import ContactsScreen from "./screens/ContactsScreen";
 import MainScreen from "./screens/MainScreen";
-import useChatStore from "../../store/state/useChatState";
 import useAppLayout from "@/lib/hooks/ui/useAppLayout";
+import useChatStore from "../../store/useChatSelector";
 
 const SettingsNavigation = lazy(
   () => import("./screens/settings/SettingsNavigation"),
@@ -74,7 +74,7 @@ interface OwnProps {
 const LeftColumn: FC<OwnProps> = ({ className }) => {
   const isMobile = useAppLayout((state) => state.isMobile);
 
-  const { isLeftPanelOpen } = useChatStore();
+  const isLeftPanelOpen = useChatStore((s) => s.isChatList);
 
   const currentScreen = LeftColumnScreenType.Main;
   const prevScreen = usePrevious(currentScreen);

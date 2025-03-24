@@ -17,6 +17,10 @@ export type DateRangeData = {
   currentSystemDate: Date;
   userSelectedDate: Date;
   dateRange: DateRange;
+  gridPosition: {
+    columns: number;
+    rows: number;
+  }
 };
 
 export type DateRange = Partial<{ from: Date; to: Date }>;

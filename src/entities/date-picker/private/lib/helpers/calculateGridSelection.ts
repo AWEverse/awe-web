@@ -2,6 +2,7 @@ import { CELL_SIZE, COLUMNS, ROWS } from '../constans';
 
 const MAX_WIDTH = 100; // 100%
 const MAX_HEIGHT = 100; // 100%
+const HEIGHT_PER_ROW = MAX_HEIGHT / ROWS;
 
 type Dimensions = {
   widthPercentage: number;
@@ -15,65 +16,51 @@ type Offsets = {
   bottom: number;
 };
 
+/**
+ * Calculate the percentage of a value relative to a dimension
+ */
+const calculatePercentage = (value: number, dimension: number) => (value * 100) / dimension;
+
+/**
+ * Calculate the column index (1-based) for a given date
+ */
+const calculateColumn = (date: number) => ((date % COLUMNS) + COLUMNS) % COLUMNS || COLUMNS;
+
+/**
+ * Generate a CSS clip-path polygon based on the given dimensions and offsets
+ */
 function generateClipPath(
   topLeft: Dimensions,
   bottomRight: Dimensions,
   offset: Offsets = { top: 0, left: 0, right: 0, bottom: 0 },
 ): string {
-  const { widthPercentage: topLeftWidth, heightPercentage: topLeftHeight } = topLeft;
-  const { widthPercentage: bottomRightWidth, heightPercentage: bottomRightHeight } = bottomRight;
+  const { top, left, right, bottom } = offset;
 
-  // Offsets for polygon calculations
-  const { top: topOffset, left: leftOffset, right: rightOffset, bottom: bottomOffset } = offset;
-
-  // Pre-calculate some boundary values
-  const maxWidthMinusRight = MAX_WIDTH - rightOffset;
-  const maxWidthMinusBottom = MAX_WIDTH - bottomOffset;
-
-  const polygonPoints = [
-    // Top-left corner
-    `${leftOffset}% ${topLeftHeight}%`,
-
-    // Top-right corner
-    `${topLeftWidth}% ${topLeftHeight}%`,
-
-    // Bottom-right corner of the cutout
-    `${topLeftWidth}% ${topOffset}%`,
-
-    // Right corner of the container
-    `${maxWidthMinusRight}% ${topOffset}%`,
-
-    // Bottom-right corner of the container
-    `${maxWidthMinusRight}% ${bottomRightHeight}%`,
-
-    // Bottom-right corner of the cutout
-    `${bottomRightWidth}% ${bottomRightHeight}%`,
-
-    // Bottom-left corner of the container
-    `${bottomRightWidth}% ${maxWidthMinusBottom}%`,
-
-    // Top-left corner of the container
-    `${leftOffset}% ${maxWidthMinusBottom}%`,
-  ];
-
-  return `polygon(${polygonPoints.join(', ')})`;
+  return `polygon(
+    ${left}% ${topLeft.heightPercentage}%,
+    ${topLeft.widthPercentage}% ${topLeft.heightPercentage}%,
+    ${topLeft.widthPercentage}% ${top}%,
+    ${MAX_WIDTH - right}% ${top}%,
+    ${MAX_WIDTH - right}% ${bottomRight.heightPercentage}%,
+    ${bottomRight.widthPercentage}% ${bottomRight.heightPercentage}%,
+    ${bottomRight.widthPercentage}% ${MAX_HEIGHT - bottom}%,
+    ${left}% ${MAX_HEIGHT - bottom}%
+  )`.replace(/\s+/g, ' ');
 }
 
-const calculatePercentage = (value: number, dimention: number) => (value * 100) / dimention;
-
-const calculateColumn = (endDate: number) => ((endDate % COLUMNS) + COLUMNS) % COLUMNS || COLUMNS;
-
-export default function calculateGridSelection(startDate: number, endDate: number) {
+/**
+ * Calculate grid selection clip path based on start and end dates
+ */
+export default function calculateGridSelection(startDate: number, endDate: number): string {
   const gridWidth = CELL_SIZE * COLUMNS;
   const gridHeight = CELL_SIZE * ROWS;
 
   const startRow = Math.ceil(startDate / COLUMNS);
   const startColumn = calculateColumn(startDate);
-
   const endRow = Math.floor(endDate / COLUMNS);
   const endColumn = calculateColumn(endDate);
 
-  const isLastColumn = endColumn === COLUMNS; // Adjusted to check against COLUMNS
+  const isLastColumn = endColumn === COLUMNS;
 
   const topLeft = {
     widthPercentage: calculatePercentage(startColumn * CELL_SIZE, gridWidth),
@@ -89,16 +76,12 @@ export default function calculateGridSelection(startDate: number, endDate: numbe
 
   const endColumnOffset = endColumn < COLUMNS ? 1 : 0;
 
-  const heightPerRow = MAX_HEIGHT / ROWS;
-
   const offsets = {
-    top: heightPerRow * (startRow - 1),
+    top: HEIGHT_PER_ROW * (startRow - 1),
     left: 0,
     right: 0,
-    bottom: heightPerRow * (ROWS - endRow - endColumnOffset),
+    bottom: HEIGHT_PER_ROW * (ROWS - endRow - endColumnOffset),
   };
 
-  const clipPathValue = generateClipPath(topLeft, bottomRight, offsets);
-
-  return clipPathValue;
+  return generateClipPath(topLeft, bottomRight, offsets);
 }

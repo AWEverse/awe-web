@@ -44,7 +44,9 @@ const MiddleHeaderSearch: FC<OwnProps & StateProps> = () => {
   return (
     <section className={s.MiddleHeaderSearch}>
       <SearchInput
-        size="large"
+        role="combobox"
+        aria-controls="search-results"
+        aria-expanded={isFocus}
         onBlur={handleBlur}
         onChange={handleChange}
         onFocus={handleFocus}

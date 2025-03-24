@@ -1,13 +1,18 @@
 import { useComponentDidMount } from '@/shared/hooks/effects/useLifecycle';
 
-const usePreventDefaultDragEventsGlobally = () => {
+const listenerOptions = { passive: false };
+
+const useGlobalDragEventPrevention = () => {
   useComponentDidMount(() => {
     const body = document.body;
 
     const handleDrag = (e: DragEvent) => {
       e.preventDefault();
       if (!e.dataTransfer) return;
-      if (!(e.target as HTMLElement).dataset.dropzone) {
+
+      const target = e.target as HTMLElement;
+
+      if (!target?.dataset?.dropzone) {
         e.dataTransfer.dropEffect = 'none';
       } else {
         e.dataTransfer.dropEffect = 'copy';
@@ -18,9 +23,9 @@ const usePreventDefaultDragEventsGlobally = () => {
       e.preventDefault();
     };
 
-    body.addEventListener('dragover', handleDrag);
-    body.addEventListener('dragenter', handleDrag);
-    body.addEventListener('drop', handleDrop);
+    body.addEventListener('dragover', handleDrag, listenerOptions);
+    body.addEventListener('dragenter', handleDrag, listenerOptions);
+    body.addEventListener('drop', handleDrop, listenerOptions);
 
     return () => {
       body.removeEventListener('dragover', handleDrag);
@@ -30,4 +35,4 @@ const usePreventDefaultDragEventsGlobally = () => {
   });
 };
 
-export default usePreventDefaultDragEventsGlobally;
+export default useGlobalDragEventPrevention;

@@ -18,6 +18,17 @@ interface SearchResultsProps {
   onTab?: () => void;
 }
 
+const ANIMATION_VARIANTS = {
+  hidden: { opacity: 0, y: -20 },
+  visible: { opacity: 1, y: 0 },
+  exit: { opacity: 0, y: -20 },
+};
+
+const TRANSITION = {
+  duration: 0.3,
+  ease: [0.25, 0.1, 0.25, 1.0], // Improved easing curve
+};
+
 const FADE_DURATION_MS = 0.25;
 
 const keyboardEventHandlers: HandlerName[] = [
@@ -69,30 +80,64 @@ const tabItems = [
 
 const SearchResults: FC<SearchResultsProps> = ({
   isVisible,
-  ...keyboardActions
+  onEnter,
+  onEsc,
+  onUp,
+  onDown,
+  onTab,
 }) => {
+  const [focusedIndex, setFocusedIndex] = useState(-1);
   const [activeTabIndex, setActiveTabIndex] = useState(0);
   const handleTabChange = useStableCallback(setActiveTabIndex);
 
   const isLoading = false;
 
   const mappedKeyboardActions = useMemo(
-    () =>
-      keyboardEventHandlers.map((handler: HandlerName) => ({
-        key: handler,
-        action: keyboardActions[handler as keyof typeof keyboardActions],
-      })),
-    [keyboardActions],
+    () => [
+      { key: "onTab", action: onTab },
+      { key: "onUp", action: onUp },
+      { key: "onDown", action: onDown },
+      { key: "onEnter", action: onEnter },
+      { key: "onEsc", action: onEsc },
+    ],
+    [],
   );
 
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    switch (e.key) {
+      case "ArrowDown":
+        e.preventDefault();
+        onDown?.();
+        break;
+      case "ArrowUp":
+        e.preventDefault();
+        onUp?.();
+        break;
+      case "Enter":
+        if (focusedIndex >= 0) onEnter?.();
+        break;
+      case "Escape":
+        onEsc?.();
+        break;
+      case "Tab":
+        onTab?.();
+        break;
+    }
+  };
+
   return (
-    <AnimatePresence>
+    <AnimatePresence mode="wait">
       {isVisible && (
         <motion.div
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: -20 }}
-          transition={{ duration: FADE_DURATION_MS }}
+          role="listbox"
+          onKeyDown={handleKeyDown}
+          tabIndex={-1}
+          variants={ANIMATION_VARIANTS}
+          initial="hidden"
+          animate="visible"
+          exit="exit"
+          transition={TRANSITION}
+          layoutId="search-results-container"
           className={buildClassName(
             s.SearchResults,
             isLoading && s.SearchResults__Loading,

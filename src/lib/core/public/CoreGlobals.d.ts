@@ -12,11 +12,11 @@ type Partial<T> = { [K in keyof T]?: T[K] };
  */
 type Undefined<T> = { [K in keyof T]: undefined };
 
-
 type NewMutableRefObject = Mutable<React.RefObject<T>>;
 
-
-type StartsWithUnderscore<T extends string> = T extends `_${string}` ? T : never;
+type StartsWithUnderscore<T extends string> = T extends `_${string}`
+  ? T
+  : never;
 
 /**
  * The `Impossible<T>` type maps over the properties of `T` (if any) and transforms them all into `never`.
@@ -193,19 +193,24 @@ type FixedSizeArray<T, N extends number> = N extends 0
   ? []
   : N extends 1
   ? [T]
-  : GrowExp<[T, T], N, [[T]]>;
+  : ExpandArrayUntilLengthReached<[T, T], N, [[T]]>;
 
 /**
- * Represents types that are considered "falsy".
+ * Represents types that are considered "falsy" in JavaScript.
  */
 type Falsy = false | 0 | "" | null | undefined;
+
+/**
+ * Represents types that are inherently "truthy" (non-falsy).
+ */
+type Truthy<T> = T extends Falsy ? never : T;
 
 /**
  * Custom constructor interface for `Boolean`, ensuring proper type inference for `Falsy` values.
  */
 interface BooleanConstructor {
-  new <T>(value: T | Falsy): value is T;
-  <T>(value: T | Falsy): value is T;
+  new <T>(value?: T | Falsy): value is T;
+  <T>(value?: T | Falsy): value is T;
   readonly prototype: boolean;
 }
 
@@ -215,6 +220,8 @@ interface BooleanConstructor {
  * @returns A boolean indicating the truthiness of the value.
  */
 declare const Boolean: BooleanConstructor;
+
+
 
 /**
  * Extends the HTMLElement interface to include cross-browser fullscreen support methods.
@@ -226,14 +233,12 @@ declare const Boolean: BooleanConstructor;
 //   webkitRequestFullscreen?: () => Promise<void>;
 // }
 
-
 type PartialHTMLElementSupport = {
   requestFullscreen?: () => Promise<void>;
   msRequestFullscreen?: () => Promise<void>;
   mozRequestFullScreen?: () => Promise<void>;
   webkitRequestFullscreen?: () => Promise<void>;
 } & HTMLElement;
-
 
 type PartialDocumentSupport = {
   exitFullscreen?: () => Promise<void>;
@@ -447,21 +452,39 @@ type SuperReturnType<F extends AnyFunction> = F extends (...args: any) => any
   ? ReturnType<F>
   : never;
 
+
 /**
- * `assumeType` is a type guard function that asserts that the given value `x` is of type `T`.
- * It helps to narrow down the type of `x` within a given block, making the compiler treat `x` as type `T` afterward.
+ * Asserts that the given value is of a specific type `T`.
  *
- * @template T - The type to which `x` is assumed to belong.
- * @param x - The value to assert as type `T`.
- *
- * This function is useful when you are certain that a value has a certain type but TypeScript's type inference is unable to determine it.
- * It is especially helpful in scenarios where you're working with values of unknown type.
- *
- * @example
- * let x: unknown = "hello";
- * assumeType<string>(x); // `x` is now treated as a `string` within this scope.
+ * @template T - The expected type.
+ * @param {unknown} x - The value to assert the type of.
+ * @throws {TypeError} If the value is not of type `T`.
  */
 declare function assumeType<T>(x: unknown): asserts x is T;
+
+/**
+ * Checks if a given value exists (is not `null` or `undefined`).
+ *
+ * @template T - The type of the value.
+ * @param {T} maybe - The value to check for existence.
+ * @returns {maybe is NonNullable<T>} - True if the value is not `null` or `undefined`, false otherwise.
+ */
+declare function exists<T>(maybe: T): maybe is NonNullable<T> {
+  return maybe != null;
+}
+
+/**
+ * Asserts that a given value exists (is not `null` or `undefined`).
+ *
+ * @template T - The type of the value.
+ * @param {unknown} maybe - The value to assert existence for.
+ * @throws {Error} If the value is `null` or `undefined`.
+ */
+declare function assertExists<T>(maybe: unknown): asserts maybe is NonNullable<T> {
+  if (maybe == null) {
+    throw new Error(`${maybe} doesn't exist`);
+  }
+}
 
 /**
  * Represents a fuzzy set, where each element has a membership degree.

@@ -1,7 +1,7 @@
 import { FC, Fragment, memo, useState } from "react";
-import ChatListItem from "./ChatListItem";
+import LeftChatListItem from "./LeftChatListItem";
 import { ChatAnimationTypes } from "./hooks/useChatAnimationType";
-import s from "./ChatList.module.scss";
+import s from "./LeftChatList.module.scss";
 import { usePrevious, useStableCallback } from "@/shared/hooks/base";
 import TabList from "@/shared/ui/TabList";
 import buildClassName from "@/shared/lib/buildClassName";
@@ -62,7 +62,7 @@ const variants = {
   }),
 };
 
-const ChatList: FC<OwnProps> = ({ className }) => {
+const LeftChatList: FC<OwnProps> = ({ className }) => {
   const [currentIndex, setCurrentIndex] = useState(0);
   const previousIndex = usePrevious(currentIndex);
 
@@ -76,7 +76,7 @@ const ChatList: FC<OwnProps> = ({ className }) => {
     <>
       <TabList
         activeTab={currentIndex}
-        className={s.TabListBorders}
+        className={s.LeftTabListBorders}
         tabs={tabsData}
         variant="pannels"
         onSwitchTab={handleTabChange}
@@ -84,19 +84,19 @@ const ChatList: FC<OwnProps> = ({ className }) => {
 
       <AnimatePresence custom={direction} initial={false} mode="popLayout">
         {Array.from({ length: 20 }, (_, i) => (
-          <Fragment key={i}>
-            <ChatListItem
+          <div key={i}>
+            <LeftChatListItem
               animation={ChatAnimationTypes.Move}
               chatId={`${i}`}
               currentUserId="1"
               orderDiff={i}
             />
-            <hr className={s.ChatListDivider} />
-          </Fragment>
+            <hr className={s.LeftChatListDivider} />
+          </div>
         ))}
       </AnimatePresence>
     </>
   );
 };
 
-export default memo(ChatList);
+export default memo(LeftChatList);

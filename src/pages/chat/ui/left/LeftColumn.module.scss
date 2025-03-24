@@ -3,7 +3,7 @@
   display: flex;
   flex-direction: column;
   height: 100dvh;
-  border-right: 2px solid rgba(var(--awe-palette-primary-mainChannel) / 0.875);
+  border-right: 2px solid var(--awe-palette-secondary-main);
   background-color: var(--awe-palette-background-default);
   padding: 0.5rem;
   width: 100%;

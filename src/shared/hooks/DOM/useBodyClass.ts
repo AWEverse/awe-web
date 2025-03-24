@@ -1,51 +1,77 @@
-import { requestMutation } from "@/lib/modules/fastdom";
 import { useLayoutEffect } from "react";
 
+// Global Map to track the number of instances requiring each class
+const bodyClassCounts = new Map<string, number>();
+
+/**
+ * Hook to manage a single class on the body element based on a condition.
+ * @param className The class to add or remove
+ * @param condition Whether the class should be present
+ */
 function useBodyClass(className: string, condition: boolean) {
   useLayoutEffect(() => {
     if (typeof document === "undefined" || !className) return;
 
     const body = document.body;
-    let needsUpdate = false;
 
-    const hasClass = body.classList.contains(className);
-    needsUpdate = condition ? !hasClass : hasClass;
+    if (condition) {
+      const currentCount = bodyClassCounts.get(className) || 0;
 
-    if (needsUpdate) {
-      body.classList.toggle(className, condition);
-    }
-
-    return () => {
-      if (!needsUpdate) return;
-
-
-      if (body.classList.contains(className)) {
-        body.classList.remove(className);
+      if (currentCount === 0) {
+        body.classList.add(className);
       }
 
-    };
+      bodyClassCounts.set(className, currentCount + 1);
+
+      return () => {
+        const currentCount = bodyClassCounts.get(className) || 0;
+        const newCount = currentCount - 1;
+        if (newCount <= 0) {
+          body.classList.remove(className);
+          bodyClassCounts.delete(className);
+        } else {
+          bodyClassCounts.set(className, newCount);
+        }
+      };
+    }
   }, [className, condition]);
 }
 
+/**
+ * Hook to manage multiple classes on the body element based on conditions.
+ * @param classConditions Record mapping class names to their conditions
+ */
 function useBodyClasses(classConditions: Record<string, boolean>) {
   useLayoutEffect(() => {
     if (typeof document === "undefined") return;
     const body = document.body;
 
-    Object.entries(classConditions).forEach(([className, condition]) => {
-      body.classList.toggle(className, condition);
+    const classesToManage = Object.entries(classConditions)
+      .filter(([_, condition]) => condition)
+      .map(([className]) => className);
+
+    classesToManage.forEach((className) => {
+      const currentCount = bodyClassCounts.get(className) || 0;
+      if (currentCount === 0) {
+        body.classList.add(className);
+      }
+      bodyClassCounts.set(className, currentCount + 1);
     });
 
-
     return () => {
-      Object.entries(classConditions).forEach(([className, condition]) => {
-        if (condition && body.classList.contains(className)) {
+      classesToManage.forEach((className) => {
+        const currentCount = bodyClassCounts.get(className) || 0;
+        const newCount = currentCount - 1;
+
+        if (newCount <= 0) {
           body.classList.remove(className);
+          bodyClassCounts.delete(className);
+        } else {
+          bodyClassCounts.set(className, newCount);
         }
       });
-
     };
-  }, [JSON.stringify(classConditions)]);
+  }, [classConditions]);
 }
 
 export { useBodyClasses };

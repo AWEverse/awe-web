@@ -1,25 +1,14 @@
 import { FC, useRef, useState, memo, ReactNode } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { useStableCallback } from "@/shared/hooks/base";
-import { throttle } from "@/lib/core";
 
-import {
-  CalendarAnimationType,
-  CalendarMode,
-  DateRangeData,
-  ISelectDate,
-} from "../../private/lib/types";
+import { CalendarAnimationType, CalendarMode } from "../../private/lib/types";
 import {
   CELL_SIZE,
   ZoomLevel,
-  CURRENT_MONTH,
-  DECEMBER,
-  JANUARY,
   NEXT_MONTH,
   PREVIOUS_MONTH,
-  LIGHT_SIZE,
 } from "../../private/lib/constans";
-
 import {
   WeekView,
   MonthView,
@@ -27,20 +16,81 @@ import {
   DatePickerNavigation,
   WeekdayLabels,
 } from "../../private/ui";
-
-import "./DatePicker.scss";
-import { initGridPosition, initDateRange } from "./config";
 import useSelectedOrCurrentDate from "../../private/lib/hooks/useSelectedOrCurrentDate";
-import { requestMeasure } from "@/lib/modules/fastdom";
 import useClipPathForDateRange from "../../private/lib/hooks/useClipPathForDateRange";
 import useCalendarStyles from "../../private/lib/hooks/useCalendarStyles";
-import LightEffect from "@/shared/ui/common/LightEffect";
-import useDateBoundary from "../../private/lib/hooks/useDateBoundary";
-import useIsDateDisabled from "../../private/lib/hooks/useIsDateDisabled";
 
-export const TRANSITION_DURATION = 0.2;
+import "./DatePicker.scss";
+import { initGridPosition } from "./config";
+import useDateSelection from "../../private/lib/hooks/useDateSelection";
+import calculateGridSelection from "../../private/lib/helpers/calculateGridSelection";
+import { isCurrentMonth } from "../../private/lib/validators";
+import { throttle } from "@/lib/core";
 
-interface OwnProps {
+const animationVariants = {
+  slide: {
+    initial: (direction: CalendarAnimationType) => ({
+      x: direction === "RTL" ? "100%" : direction === "LTR" ? "-100%" : 0,
+      opacity: 1,
+      scale: 0.95,
+    }),
+    animate: {
+      x: 0,
+      opacity: 1,
+      scale: 1,
+      transition: { duration: 0.2, ease: "easeInOut" },
+    },
+    exit: (direction: CalendarAnimationType) =>
+      direction === "zoomIn"
+        ? {
+            scale: 0.8,
+            opacity: 0,
+            y: -20,
+            transition: { duration: 0.25, ease: "easeInOut" },
+          }
+        : {
+            x: direction === "RTL" ? "-100%" : "100%",
+            opacity: 0,
+            scale: 0.95,
+            transition: { duration: 0.2, ease: "easeInOut" },
+          },
+  },
+  zoom: {
+    initial: { scale: 0.8, opacity: 0, y: 20 },
+    animate: {
+      scale: 1,
+      opacity: 1,
+      y: 0,
+      transition: { duration: 0.25, ease: "easeInOut" },
+    },
+    exit: (direction: CalendarAnimationType) =>
+      direction === "zoomIn"
+        ? {
+            scale: 0.8,
+            opacity: 0,
+            y: -20,
+            transition: { duration: 0.25, ease: "easeInOut" },
+          }
+        : {
+            x: direction === "RTL" ? "-100%" : "100%",
+            opacity: 0,
+            scale: 0.95,
+            transition: { duration: 0.2, ease: "easeInOut" },
+          },
+  },
+};
+
+const getActiveVariants = (direction: CalendarAnimationType) =>
+  direction === "zoomIn" ? animationVariants.zoom : animationVariants.slide;
+
+const ZOOM_LEVELS = [ZoomLevel.WEEK, ZoomLevel.MONTH, ZoomLevel.YEAR] as const;
+const CALENDAR_VIEWS = {
+  [ZoomLevel.WEEK]: WeekView,
+  [ZoomLevel.MONTH]: MonthView,
+  [ZoomLevel.YEAR]: YearView,
+} as const;
+
+interface DatePickerProps {
   className?: string;
   disabled?: boolean;
   label?: string;
@@ -57,269 +107,139 @@ interface OwnProps {
   size?: "small" | "medium" | "large";
 }
 
-const LEVELS = [ZoomLevel.WEEK, ZoomLevel.MONTH, ZoomLevel.YEAR];
+const useAnimationControl = () => {
+  const [direction, setDirection] = useState<CalendarAnimationType>("LTR");
 
-const CALENDAR_VIEWS = {
-  [ZoomLevel.WEEK]: WeekView,
-  [ZoomLevel.MONTH]: MonthView,
-  [ZoomLevel.YEAR]: YearView,
-};
-
-const animationVariants = {
-  initial: (direction: CalendarAnimationType) => ({
-    x: direction === "RTL" ? "100%" : direction === "LTR" ? "-100%" : 0,
-    opacity: direction === "zoomIn" ? 0 : 1,
-    scale: direction === "zoomIn" ? 0.8 : 0.95,
-  }),
-  animate: {
-    x: 0,
-    opacity: 1,
-    scale: 1,
-    transition: { duration: TRANSITION_DURATION, ease: "easeInOut" },
-  },
-  exit: (direction: CalendarAnimationType) => ({
-    x: direction === "RTL" ? "-100%" : "100%",
-    opacity: 0,
-    scale: 0.95,
-    transition: { duration: TRANSITION_DURATION, ease: "easeInOut" },
-  }),
-  zoom: {
-    initial: { scale: 0.8, opacity: 0 },
-    animate: {
-      scale: 1,
-      opacity: 1,
-      transition: { duration: TRANSITION_DURATION, ease: "easeInOut" },
+  const updateDirection = useStableCallback(
+    (newDirection: CalendarAnimationType) => {
+      setDirection(newDirection);
     },
-    exit: {
-      scale: 0.8,
-      opacity: 0,
-      transition: { duration: TRANSITION_DURATION, ease: "easeInOut" },
-    },
-  },
+  );
+
+  return { direction, updateDirection };
 };
 
-const getActiveVariants = (direction: CalendarAnimationType) => {
-  if (direction === "zoomIn") {
-    return animationVariants.zoom;
-  }
-  return {
-    initial: animationVariants.initial(direction),
-    animate: animationVariants.animate,
-    exit: animationVariants.exit(direction),
-  };
-};
-
-const DatePicker: FC<OwnProps> = ({
+const DatePicker: FC<DatePickerProps> = ({
   className,
-  disabled,
+  disabled = false,
   label,
-  locale,
+  locale = "default",
   minAt,
   maxAt,
-  selectedAt,
   mode = "all",
   onChange,
-  onClear,
+  // onClear,
   placeholder,
-  readonly,
-  range,
-  size,
+  // readonly = false,
+  // range = false,
+  selectedAt,
+  // size,
 }) => {
-  const initSelectedDate = useSelectedOrCurrentDate(selectedAt);
-
+  const initialDate = useSelectedOrCurrentDate(selectedAt);
   const gridRef = useRef<HTMLDivElement>(null);
-  // Use state for animation direction so changes trigger a re-render.
-  const [animationDirection, setAnimationDirection] =
-    useState<CalendarAnimationType>("LTR");
-  const selectedCount = useRef(0);
-  const isLongPressActive = useRef<boolean>(false);
-
   const [zoomLevel, setZoomLevel] = useState<ZoomLevel>(ZoomLevel.WEEK);
-  const [gridPosition, setGridPosition] = useState(initGridPosition);
-  const [date, setDate] = useState<DateRangeData>({
-    currentSystemDate: initSelectedDate,
-    userSelectedDate: initSelectedDate,
-    dateRange: initDateRange,
-  });
 
-  const canActivateSelect = date.dateRange.from && !date.dateRange.to;
-  const isDisabledSelectionRange = zoomLevel !== ZoomLevel.WEEK;
-
-  const { minDate, maxDate } = useDateBoundary({
-    isFutureMode: mode === "future",
-    isPastMode: mode === "past",
-    minAt,
-    maxAt,
-  });
-
-  const isDisabled =
-    useIsDateDisabled({
-      selectedDate: date.userSelectedDate,
-      isFutureMode: mode === "future",
-      isPastMode: mode === "past",
-      minDate,
-      maxDate,
-    }) && !disabled;
-
-  const clipPathValue = useClipPathForDateRange(
-    date.dateRange,
-    gridPosition,
-    isDisabledSelectionRange,
-  );
-
-  const transitionKey = date.currentSystemDate.getMonth();
-
-  const updateAnimationDirection = useStableCallback(
-    (newDirection: CalendarAnimationType) => {
-      setAnimationDirection(newDirection);
-    },
-  );
-
-  const setLongPressActive = useStableCallback((value?: boolean) => {
-    isLongPressActive.current = value ?? !isLongPressActive.current;
-  });
-
-  const updateMonth = useStableCallback((increment: number) => {
-    updateAnimationDirection(increment > 0 ? "RTL" : "LTR");
-
-    console.log(increment > 0 ? "RTL" : "LTR");
-
-    setDate((prev) => {
-      const newSystemDate = new Date(prev.currentSystemDate);
-      newSystemDate.setDate(1);
-      newSystemDate.setMonth(newSystemDate.getMonth() + increment);
-
-      if (isNaN(newSystemDate.getTime())) return prev;
-      if (minAt && newSystemDate < new Date(minAt)) return prev;
-      if (maxAt && newSystemDate > new Date(maxAt)) return prev;
-
-      onChange?.(prev.userSelectedDate);
-      return { ...prev, currentSystemDate: newSystemDate };
+  const { direction, updateDirection } = useAnimationControl();
+  const { date, setDate, handleSelectDate, handleLongPress, handleMouseOver } =
+    useDateSelection({
+      initialDate,
+      onChange,
+      changeMonth: (increment) => changeMonth(increment),
+      isRangeSelectionDisabled: zoomLevel !== ZoomLevel.WEEK,
+      minAt,
+      maxAt,
     });
-  });
 
-  const handlePrevMonth = useStableCallback(() => updateMonth(PREVIOUS_MONTH));
-  const handleNextMonth = useStableCallback(() => updateMonth(NEXT_MONTH));
-
-  const handleSelectDate = useStableCallback(
-    ({ day = 1, month = 0, year = 0, level = zoomLevel }: ISelectDate = {}) => {
-      const newDateObj = new Date(year, month, day);
-      if (minAt && newDateObj < new Date(minAt)) return;
-      if (maxAt && newDateObj > new Date(maxAt)) return;
-
-      if (!isDisabledSelectionRange) {
-        const currentMonth = date.currentSystemDate.getMonth();
-        const targetMonth = newDateObj.getMonth();
-        const monthDifference = targetMonth - currentMonth;
-        const isSameMonth = monthDifference === CURRENT_MONTH;
-
-        if (!isSameMonth) {
-          const isSwitchToPreviousMonth =
-            monthDifference === PREVIOUS_MONTH ||
-            (currentMonth === JANUARY && targetMonth === DECEMBER);
-          const isSwitchToNextMonth =
-            monthDifference === NEXT_MONTH ||
-            (currentMonth === DECEMBER && targetMonth === JANUARY);
-
-          if (isSwitchToPreviousMonth) updateMonth(PREVIOUS_MONTH);
-          else if (isSwitchToNextMonth) updateMonth(NEXT_MONTH);
-        }
-
-        if (isLongPressActive.current) {
-          selectedCount.current++;
-          if (selectedCount.current === 1) {
-            setDate((prev) => ({ ...prev, dateRange: { from: newDateObj } }));
-          } else if (selectedCount.current === 2) {
-            setDate((prev) => ({
-              ...prev,
-              dateRange: { ...prev.dateRange, to: newDateObj },
-            }));
-            setLongPressActive(false);
-            selectedCount.current = 0;
-          }
-        }
-      }
-
-      setDate((prev) => ({
-        ...prev,
-        userSelectedDate: newDateObj,
-      }));
-
-      if (zoomLevel !== level) {
-        updateAnimationDirection("zoomIn");
-        setZoomLevel(level);
-      }
-    },
-  );
-
-  const handleLongPress = useStableCallback(() => {
-    setLongPressActive(!isDisabledSelectionRange);
-  });
-
-  const handleMouseOver = useStableCallback(
-    throttle((e: React.MouseEvent<HTMLDivElement>) => {
-      if (isDisabledSelectionRange) return;
-      e.preventDefault();
-      const target = e.target as HTMLElement | null;
-      if (target && !date.dateRange?.to) {
-        requestMeasure(() => {
-          const column = Math.floor(target.offsetLeft / CELL_SIZE);
-          const row = Math.floor(target.offsetTop / CELL_SIZE);
-          setGridPosition({ columns: column, rows: row });
-        });
-      }
-    }, 100),
-  );
-
-  const shouldMouseOver = isLongPressActive.current
-    ? handleMouseOver
-    : undefined;
-
-  const handleSwitchZoom = useStableCallback(() => {
-    updateAnimationDirection("zoomIn");
-    setZoomLevel((prev) => LEVELS[(prev + 1) % LEVELS.length]);
-  });
-
-  const CalendarView = CALENDAR_VIEWS[zoomLevel];
   const { classNames, style } = useCalendarStyles(
     className,
     zoomLevel,
     CELL_SIZE,
   );
+  const canActivateSelect = Boolean(date.dateRange.from && !date.dateRange.to);
+  const clipPathValue = useClipPathForDateRange(
+    date.dateRange,
+    initGridPosition, // Fixed from previous oversight
+    zoomLevel !== ZoomLevel.WEEK,
+  );
 
-  // Get the active animation variants based on the current animation direction.
-  const activeVariants = getActiveVariants(animationDirection);
+  const changeMonth = useStableCallback((increment: number) => {
+    setDate((prev) => {
+      const newSystemDate = new Date(prev.currentSystemDate);
+      newSystemDate.setDate(1);
+      newSystemDate.setMonth(newSystemDate.getMonth() + increment);
+
+      if (!isCurrentMonth(newSystemDate)) {
+        updateDirection(increment > 0 ? "RTL" : "LTR");
+      }
+
+      if (
+        isNaN(newSystemDate.getTime()) ||
+        (minAt && newSystemDate < minAt) ||
+        (maxAt && newSystemDate > maxAt)
+      ) {
+        return prev;
+      }
+      return { ...prev, currentSystemDate: newSystemDate };
+    });
+  });
+
+  const handlePrevMonth = () => changeMonth(PREVIOUS_MONTH);
+  const handleNextMonth = () => changeMonth(NEXT_MONTH);
+  const handleSwitchZoom = () => {
+    updateDirection("zoomIn");
+    setZoomLevel(
+      (prev) =>
+        ZOOM_LEVELS[(ZOOM_LEVELS.indexOf(prev) + 1) % ZOOM_LEVELS.length],
+    );
+  };
+
+  const CalendarView = CALENDAR_VIEWS[zoomLevel];
+  const transitionKey = `${date.currentSystemDate.getMonth()}-${zoomLevel}`;
+
+  const handleMouseMove = useStableCallback(
+    throttle((e: React.MouseEvent<HTMLDivElement>) => {
+      const grid = gridRef.current;
+      if (!grid) return;
+
+      const rect = grid.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
+
+      grid.style.setProperty("--mouse-x", `${x}px`);
+      grid.style.setProperty("--mouse-y", `${y}px`);
+    }, 16),
+  );
 
   return (
     <div
-      data-activity={!isDisabled ? "Active" : "Disabled"}
-      data-mode={mode}
-      className="datePicker"
+      className="dp-container"
       style={style}
+      data-activity={disabled ? "Disabled" : "Active"}
+      data-mode={mode}
     >
+      {label && <label className="dp-label">{label}</label>}
       <DatePickerNavigation
-        month={date.currentSystemDate.toLocaleString(locale || "default", {
-          month: "long",
-        })}
+        month={date.currentSystemDate.toLocaleString(locale, { month: "long" })}
         year={date.currentSystemDate.getFullYear()}
         onPrevMonth={handlePrevMonth}
         onNextMonth={handleNextMonth}
         onZoomToggle={handleSwitchZoom}
       />
       <WeekdayLabels />
-      <hr />
+      <hr className="dp-divider" />
       <section
-        aria-label="Date picker"
         ref={gridRef}
-        className="gridWrapper"
-        onMouseOver={shouldMouseOver}
+        aria-label="Date picker"
+        onMouseOver={handleMouseOver}
+        onMouseMove={handleMouseMove}
+        className={`dp-grid-wrapper dp-spotlight ${classNames}`}
       >
-        <AnimatePresence initial={false} custom={animationDirection}>
+        <AnimatePresence initial={false} custom={direction} mode="popLayout">
           <motion.div
             key={transitionKey}
             className={classNames}
-            variants={activeVariants}
-            custom={animationDirection}
+            variants={getActiveVariants(direction)}
+            custom={direction}
             initial="initial"
             animate="animate"
             exit="exit"
@@ -333,12 +253,14 @@ const DatePicker: FC<OwnProps> = ({
           </motion.div>
         </AnimatePresence>
         <div
+          className="dp-selector-mask"
           data-visible={canActivateSelect}
-          className="calendarSelectorMask"
-          style={{ clipPath: clipPathValue }}
-        ></div>
+          style={{ clipPath: calculateGridSelection(9, 23) }}
+        />
       </section>
-      {placeholder && <section>{placeholder}</section>}
+      {placeholder && (
+        <section className="dp-placeholder">{placeholder}</section>
+      )}
     </div>
   );
 };

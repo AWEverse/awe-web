@@ -10,9 +10,9 @@ import { useComponentDidMount } from "@/shared/hooks/effects/useLifecycle";
 import { useBodyClasses } from "@/shared/hooks/DOM/useBodyClass";
 import { IS_TOUCH_ENV } from "@/lib/core";
 import { usePageVisibility } from "@/lib/hooks/ui/usePageVisibility";
-import usePreventDefaultDragEventsGlobally from "./lib/hooks/usePreventDefaultDragEventsGlobally";
 
 import "@/lib/core/public/templates/linq";
+import useGlobalDragEventPrevention from "./lib/hooks/useGlobalDragEventPrevention";
 
 interface StateProps {
   themeKey?: ThemeKey;
@@ -31,7 +31,7 @@ const App: FC<StateProps> = ({ themeKey = "dark" }) => {
     windowSize.update();
   });
 
-  usePreventDefaultDragEventsGlobally();
+  useGlobalDragEventPrevention();
 
   return (
     <ThemeProvider defaultMode={themeKey} theme={theme}>

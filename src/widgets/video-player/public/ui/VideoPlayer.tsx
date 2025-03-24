@@ -148,7 +148,7 @@ const VideoPlayer: React.FC<OwnProps> = ({
   const isUnsupported = useUnsupportedMedia(videoRef);
   const isAmbilightDisabled = isAmbient && isFullscreen;
 
-  useAmbilight(videoRef, canvasRef, isAmbilightDisabled);
+  useAmbilight(videoRef, canvasRef);
 
   const toggleAmbientLight = useStableCallback(() => {
     !isAmbient ? markAmbientOn() : markAmbientOff();

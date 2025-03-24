@@ -1,10 +1,11 @@
 .ChatLayoutRoot {
-  --footer-height: 22px;
-  --chat-height: calc(100dvh - var(--footer-height));
   --left-column-width: 380px;
   --right-column-width: 420px;
   --middle-utils-width: 456px;
+
+  --chat-input-size: 3.375rem;
   --chat-input-padding: 0.8125rem;
+  --chat-input-inner-padding: 0.5rem;
 
   position: relative;
   display: flex;

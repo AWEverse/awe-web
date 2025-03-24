@@ -35,6 +35,8 @@
   backdrop-filter: blur(10rem);
   user-select: none;
 
+  border: 1px solid var(--awe-palette-primary-main);
+
   /* Positioning based on data attributes */
   &[data-position="top-left"] {
     top: var(--menu-inset);

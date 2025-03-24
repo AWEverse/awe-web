@@ -3,47 +3,52 @@ import { RefObject, useEffect } from 'react';
 
 export const BACKDROP_CLASSNAME = 'backdrop';
 
-// This effect implements closing menus by clicking outside of them
-// without adding extra elements to the DOM
+/**
+ * High-performance hook for closing menus by clicking outside, without DOM overhead.
+ * @param isOpen - Whether the menu is open
+ * @param menuRef - Reference to the menu element
+ * @param onClose - Callback to close the menu
+ * @param ignoreRightClick - Skip handling right-click events
+ * @param excludedClosestSelector - CSS selector for elements to exclude from closing
+ */
 export default function useVirtualBackdrop(
   isOpen: boolean,
   menuRef: RefObject<HTMLElement | null>,
-  onClose?: () => void | undefined,
-  ignoreRightClick?: boolean,
+  onClose?: () => void,
+  ignoreRightClick = false,
   excludedClosestSelector?: string,
 ) {
   useEffect(() => {
-    if (!isOpen || !onClose) {
-      return undefined;
+    const menu = menuRef.current;
+
+    if (!isOpen || !onClose || !menu) {
+      return;
     }
 
-    const handleEvent = (e: MouseEvent) => {
-      const menu = menuRef.current;
-      const target = e.target as HTMLElement | null;
+    const handleClick = (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
 
-      if (!menu || !target || (ignoreRightClick && e.button === EMouseButton.Secondary)) {
+      if (ignoreRightClick && e.button === EMouseButton.Secondary) {
+        return;
+      }
+
+      if (menu.contains(target) && !target.classList.contains(BACKDROP_CLASSNAME)) {
         return;
       }
 
       if (
-        (!menu.contains(e.target as Node | null) ||
-          target.classList.contains(BACKDROP_CLASSNAME)) &&
-        !(
-          excludedClosestSelector &&
-          (target.matches(excludedClosestSelector) || target.closest(excludedClosestSelector))
-        )
+        excludedClosestSelector &&
+        (target.matches(excludedClosestSelector) || target.closest(excludedClosestSelector))
       ) {
-        e.stopPropagation();
-        e.preventDefault();
-
-        onClose?.();
+        return;
       }
+
+      e.stopPropagation();
+      e.preventDefault();
+      onClose();
     };
 
-    document.addEventListener('mousedown', handleEvent);
-
-    return () => {
-      document.removeEventListener('mousedown', handleEvent);
-    };
-  }, [excludedClosestSelector, ignoreRightClick, isOpen, menuRef, onClose]);
+    document.addEventListener('mousedown', handleClick, { passive: false });
+    return () => { document.removeEventListener('mousedown', handleClick); }
+  }, [isOpen, menuRef, onClose, ignoreRightClick, excludedClosestSelector]);
 }

@@ -1,38 +1,132 @@
-export function areDeepEqual<T>(value1: T, value2: T): boolean {
-  const type1 = typeof value1;
-  const type2 = typeof value2;
+export function areDeepEqual<T>(a: T, b: T): boolean {
+  if (a === b) {
+    return true;
+  }
 
-  if (type1 !== type2) {
+  const typeA = typeof a;
+  if (typeA !== typeof b) {
     return false;
   }
 
-  if (type1 !== "object" || value1 === null || value2 === null) {
-    return value1 === value2;
+  if (typeA !== "object" || a === null || b === null) {
+    return a === b;
   }
 
-  const isArray1 = Array.isArray(value1);
-  const isArray2 = Array.isArray(value2);
-
-  if (isArray1 !== isArray2) {
+  const isArrayA = Array.isArray(a);
+  if (isArrayA !== Array.isArray(b)) {
     return false;
   }
 
-  if (isArray1 && Array.isArray(value1) && Array.isArray(value2)) {
-    return (
-      value1.length === value2.length &&
-      value1.every((member1, i) => areDeepEqual(member1, value2[i]))
-    );
+  const stack: {
+    a: unknown;
+    b: unknown;
+    isArray: boolean;
+    keysOrLength: number | string[];
+    index: number;
+  }[] = [];
+
+  let stackSize = 0;
+
+  if (isArrayA) {
+    if ((a as T[]).length !== (b as T[]).length) {
+      return false;
+    }
+  } else {
+    if (Object.keys(a as object).length !== Object.keys(b as object).length) {
+      return false;
+    }
   }
 
-  const object1 = value1 as Record<string, unknown>;
-  const object2 = value2 as Record<string, unknown>;
+  stack[stackSize++] = {
+    a,
+    b,
+    isArray: isArrayA,
+    keysOrLength: isArrayA ? (a as T[]).length : Object.keys(a as object),
+    index: 0,
+  };
 
-  const keys1 = Object.keys(object1);
-  const keys2 = Object.keys(object2);
+  while (stackSize > 0) {
+    const item = stack[stackSize - 1];
+    const { isArray, keysOrLength, index } = item;
 
-  if (keys1.length !== keys2.length) {
-    return false;
+    const limit = isArray
+      ? (keysOrLength as number)
+      : (keysOrLength as string[]).length;
+
+    if (index >= limit) {
+      stackSize--;
+      continue;
+    }
+
+    let valA: unknown, valB: unknown, key: string | number;
+    if (isArray) {
+      const arrA = item.a as T[];
+      const arrB = item.b as T[];
+      key = index;
+
+      valA = arrA[index];
+      valB = arrB[index];
+    } else {
+      const objA = item.a as Record<string, T>;
+      const objB = item.b as Record<string, T>;
+      const keys = keysOrLength as string[];
+      key = keys[index];
+
+      if (!(key in objB)) {
+        return false;
+      }
+
+      valA = objA[key];
+      valB = objB[key];
+    }
+
+    if (valA === valB) {
+      item.index++;
+      continue;
+    }
+
+    const typeValA = typeof valA;
+    if (typeValA !== typeof valB) {
+      return false;
+    }
+
+    if (typeValA !== "object" || valA === null || valB === null) {
+      if (valA !== valB) {
+        return false;
+      }
+      item.index++;
+      continue;
+    }
+
+    const isNestedArrayA = Array.isArray(valA);
+    if (isNestedArrayA !== Array.isArray(valB)) {
+      return false;
+    }
+
+    if (isNestedArrayA) {
+      if ((valA as T[]).length !== (valB as T[]).length) {
+        return false;
+      }
+    } else {
+      if (
+        Object.keys(valA as object).length !==
+        Object.keys(valB as object).length
+      ) {
+        return false;
+      }
+    }
+
+    stack[stackSize++] = {
+      a: valA,
+      b: valB,
+      isArray: isNestedArrayA,
+      keysOrLength: isNestedArrayA
+        ? (valA as T[]).length
+        : Object.keys(valA as object),
+      index: 0,
+    };
   }
 
-  return keys1.every((key1) => areDeepEqual(object1[key1], object2[key1]));
+  stack.length = 0;
+  return true;
 }

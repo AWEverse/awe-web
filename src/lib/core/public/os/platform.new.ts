@@ -3,14 +3,26 @@
  * Uses feature detection whenever possible and falls back to userAgent parsing for legacy devices.
  */
 
+import {
+  getIsDesktop,
+  getIsMobile,
+  getIsTablet,
+} from "@/lib/hooks/ui/useAppLayout";
+
 /** Flag indicating if running in a browser environment */
-export const IS_BROWSER = typeof window !== "undefined" && typeof navigator !== "undefined";
+export const IS_BROWSER =
+  typeof window !== "undefined" && typeof navigator !== "undefined";
+
+/** Cached user agent string to avoid repeated calls to navigator.userAgent */
+const cachedUserAgent = IS_BROWSER ? navigator.userAgent.toLowerCase() : "";
 
 /** Low-level function to detect if a device supports touch inputs */
-const hasTouchSupport = (): boolean => IS_BROWSER && ('ontouchstart' in window || navigator.maxTouchPoints > 0);
+const hasTouchSupport = (): boolean =>
+  IS_BROWSER && ("ontouchstart" in window || navigator.maxTouchPoints > 0);
 
 /** Low-level function to retrieve screen width */
-const getScreenWidth = (): number => IS_BROWSER ? window.innerWidth || document.documentElement.clientWidth : 0;
+const getScreenWidth = (): number =>
+  IS_BROWSER ? window.innerWidth || document.documentElement.clientWidth : 0;
 
 /** Low-level function to detect coarse pointer capability using media queries */
 const supportsCoarsePointer = (): boolean =>
@@ -29,21 +41,18 @@ export function detectDeviceType(): "mobile" | "tablet" | "desktop" {
   const hasTouch = hasTouchSupport();
   const isCoarse = supportsCoarsePointer();
 
-  // Thresholds for device type detection based on touch and screen size
   if (hasTouch && (width <= 768 || isCoarse)) return "mobile";
   if (hasTouch && width <= 1024) return "tablet";
   return "desktop";
 }
 
-/** Low-level function to get the userAgent string */
-const getUserAgent = (): string => (IS_BROWSER ? navigator.userAgent.toLowerCase() : "");
-
 /** Detect specific browser environments via userAgent parsing */
 export const BrowserInfo = (() => {
-  const ua = getUserAgent();
+  const ua = cachedUserAgent;
   const isChrome = /chrome/.test(ua) && !/edge|opr/.test(ua);
   const isFirefox = /firefox/.test(ua);
-  const isSafari = /safari/.test(ua) && !/chrome|android|crios|opr|edge/.test(ua);
+  const isSafari =
+    /safari/.test(ua) && !/chrome|android|crios|opr|edge/.test(ua);
   const isEdge = /edg/.test(ua);
   const isIE = /msie|trident/.test(ua);
   const isOpera = /opr/.test(ua);
@@ -52,18 +61,19 @@ export const BrowserInfo = (() => {
 })();
 
 /**
- * Low-level function to retrieve the Chromium version if available.
+ * Retrieve the Chromium version if available.
  * Returns the version as a number or undefined.
  */
 export const getChromiumVersion = (): number | undefined => {
-  const ua = getUserAgent();
-  const match = ua.match(/Chrom(?:e|ium)\/([0-9.]+)/);
+  const match = cachedUserAgent.match(/Chrom(?:e|ium)\/([0-9.]+)/);
   return match ? parseFloat(match[1]) : undefined;
 };
 
-/** Normalize platform names detected via feature detection and userAgent parsing */
+/**
+ * Normalize platform names detected via feature detection and userAgent parsing.
+ */
 export const getNormalizedPlatform = (): string | undefined => {
-  const ua = getUserAgent();
+  const ua = cachedUserAgent;
   if (/iphone|ipad|ipod/.test(ua)) return "ios";
   if (/macintosh|macintel|macppc|mac68k/.test(ua)) return "macos";
   if (/win32|win64|windows|wince/.test(ua)) return "windows";
@@ -72,14 +82,39 @@ export const getNormalizedPlatform = (): string | undefined => {
   return undefined;
 };
 
-/** Combined export of detected environment flags */
+/**
+ * Detects the operating system version from the user agent string.
+ * This is a basic implementation and may require refinement for accuracy.
+ */
+export const getOSVersion = (): string | undefined => {
+  const ua = cachedUserAgent;
+  const osVersionMatch = ua.match(/(?:windows nt|mac os x|android) ([0-9.]+)/);
+  return osVersionMatch ? osVersionMatch[1] : undefined;
+};
+
+/** Combined export of detected environment flags with lazy evaluation */
 export const ENV = {
   IS_BROWSER,
-  deviceType: detectDeviceType(),
+  get deviceType() {
+    return detectDeviceType();
+  },
   BrowserInfo,
-  CHROMIUM_VERSION: getChromiumVersion(),
-  PLATFORM_ENV_NORMALIZED: getNormalizedPlatform(),
-  IS_MOBILE: detectDeviceType() === "mobile",
-  IS_TABLET: detectDeviceType() === "tablet",
-  IS_DESKTOP: detectDeviceType() === "desktop",
+  get CHROMIUM_VERSION() {
+    return getChromiumVersion();
+  },
+  get PLATFORM_ENV_NORMALIZED() {
+    return getNormalizedPlatform();
+  },
+  get OS_VERSION() {
+    return getOSVersion();
+  },
+  get IS_MOBILE() {
+    return getIsMobile();
+  },
+  get IS_TABLET() {
+    return getIsTablet();
+  },
+  get IS_DESKTOP() {
+    return getIsDesktop();
+  },
 };

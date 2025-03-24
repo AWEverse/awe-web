@@ -1,7 +1,8 @@
+/* Max Length Indicator */
 .max-length-indicator {
   position: absolute;
   right: 0.75rem;
-  bottom: -0.4625rem;
+  bottom: -0.5rem; /* Adjusted for cleaner measurement */
   padding: 0 0.25rem;
   border-radius: 0.25rem;
   color: var(--awe-palette-text-secondary);
@@ -10,6 +11,7 @@
   user-select: none;
 }
 
+/* Input Group Container */
 .input-group {
   position: relative;
 
@@ -25,24 +27,22 @@
     color: var(--awe-palette-text-disabled);
     transition: transform 0.15s ease-out, color 0.15s ease-out;
     cursor: var(--custom-cursor, text);
-    pointer-events: none;  
+    pointer-events: none;
     user-select: none;
     transform-origin: left center;
     white-space: nowrap;
   }
 
-  &.with-arrow {
-    &::after {
-      content: "";
-      position: absolute;
-      height: 0.75rem;
-      width: 0.75rem;
-      border-left: 1px var(--awe-palette-text-secondary) solid;
-      border-bottom: 1px var(--awe-palette-text-secondary) solid;
-      transform: rotate(-45deg);
-      right: 2rem;
-      top: 1rem;
-    }
+  &.with-arrow::after {
+    content: "";
+    position: absolute;
+    height: 0.75rem;
+    width: 0.75rem;
+    border-left: 1px solid var(--awe-palette-text-secondary);
+    border-bottom: 1px solid var(--awe-palette-text-secondary);
+    transform: rotate(-45deg);
+    right: 2rem;
+    top: 1rem;
   }
 
   &.touched label,
@@ -83,15 +83,14 @@
     label {
       left: auto;
       right: 0.75rem;
+      transform-origin: right center; /* Improved RTL scaling */
     }
 
-    &.with-arrow {
-      &::after {
-        border-left: none;
-        border-right: 1px var(--awe-palette-text-secondary) solid;
-        right: auto;
-        left: 2rem;
-      }
+    &.with-arrow::after {
+      border-left: none;
+      border-right: 1px solid var(--awe-palette-text-secondary);
+      right: auto;
+      left: 2rem;
     }
 
     &.touched label,
@@ -99,11 +98,12 @@
     &.success label,
     .form-control:focus + label,
     .form-control.focus + label {
-      transform: scale(0.75) translate(1.5rem, -2.25rem);
+      transform: scale(0.75) translate(0.5rem, -1.75rem); /* Fixed RTL translation */
     }
   }
 }
 
+/* Form Control Base Styles */
 .form-control {
   --border-width: 2px;
   display: block;
@@ -113,14 +113,13 @@
   border: var(--border-width) solid var(--awe-palette-divider);
   border-radius: var(--awe-radius-md);
   color: var(--awe-palette-text-primary);
-    background-color: var(--awe-palette-secondary-main);
+  background-color: var(--awe-palette-secondary-main);
   outline: none;
   transition: border-color 0.15s ease;
   word-break: break-word;
   -webkit-appearance: none;
   -moz-appearance: none;
   appearance: none;
-
   font-size: 1rem;
   line-height: 1.25rem;
 
@@ -130,7 +129,6 @@
 
   &:hover {
     border-color: var(--awe-palette-primary-main);
-
     & + label {
       color: var(--awe-palette-primary-main);
     }
@@ -141,7 +139,6 @@
     border-color: var(--awe-palette-primary-main);
     box-shadow: inset 0 0 0 1px var(--awe-palette-primary-main);
     caret-color: var(--awe-palette-primary-main);
-
     & + label {
       color: var(--awe-palette-primary-main);
     }
@@ -187,20 +184,20 @@
   }
 }
 
-select.form-control {
-  option {
-    line-height: 2rem;
-  }
+/* Select Options */
+select.form-control option {
+  line-height: 2rem;
 }
 
+/* Textarea Specific Styles */
 textarea.form-control {
   resize: none;
-  
   line-height: 1.3125rem;
-  padding-top: calc(0.7125rem - var(--border-width));
+  padding-top: calc(0.75rem - var(--border-width)); /* Aligned with base padding */
   padding-bottom: calc(1rem - var(--border-width));
 }
 
+/* Password Input Group */
 .input-group.password-input {
   position: relative;
 
@@ -219,7 +216,6 @@ textarea.form-control {
     justify-content: center;
     cursor: var(--custom-cursor, pointer);
     outline: none !important;
-
     color: var(--awe-palette-text-secondary);
     opacity: 0.7;
     font-size: 1.5rem;

@@ -1,16 +1,20 @@
-import { FC, memo } from 'react';
-import { WEEKDAY_LETTERS } from '../lib/constans';
+import { FC, memo } from "react";
+import I18n from "@/shared/ui/i18n";
 
-interface WeekdayLabelsProps {
-  formatMessage: (opts: { id: string }) => string;
-}
+interface WeekdayLabelsProps {}
 
-const WeekdayLabels: FC<WeekdayLabelsProps> = ({ formatMessage }) => {
+const TOTAL_CELL_COUNT = 7;
+const WEEK_ABBR_LENGTH = 3;
+
+const WeekdayLabels: FC<WeekdayLabelsProps> = ({}) => {
   return (
-    <div className="weekdays">
-      {WEEKDAY_LETTERS.map(weekday => (
-        <div key={weekday} className="weekday">
-          {formatMessage({ id: weekday }).slice(0, 2)}
+    <div className="dp-weekdays">
+      {Array.from({ length: TOTAL_CELL_COUNT }, (_, i) => (
+        <div key={`time.weekdays.${i}`} className="dp-weekday">
+          <I18n
+            i18nKey={`time.weekdays.${i}`}
+            manipulations={(s) => s.substring(0, WEEK_ABBR_LENGTH)}
+          />
         </div>
       ))}
     </div>

@@ -1,4 +1,4 @@
-import s from "./ChatListItem.module.scss";
+import s from "./LeftChatListItem.module.scss";
 import buildClassName from "@/shared/lib/buildClassName";
 import { Avatar } from "@mui/material";
 import {
@@ -57,11 +57,11 @@ type StateProps = {
   currentUserId: string;
 };
 
-const ChatListItem: React.FC<OwnProps & StateProps> = () => {
+const LeftChatListItem: React.FC<OwnProps & StateProps> = () => {
   const classNames = buildClassName(
     "awe-user",
     "awe-user-actions",
-    s.ChatListItem,
+    s.LeftChatListItem,
   );
 
   return (
@@ -91,4 +91,4 @@ const ChatListItem: React.FC<OwnProps & StateProps> = () => {
   );
 };
 
-export default memo(ChatListItem);
+export default memo(LeftChatListItem);

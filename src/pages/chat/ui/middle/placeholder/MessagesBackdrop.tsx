@@ -18,6 +18,8 @@ const MessagesBackdrop: React.FC<MessagesBackdropProps> = ({
     <img
       src={imageUrl}
       decoding="async"
+      loading="lazy"
+      fetchPriority="low"
       aria-label="Chat backdrop"
       className={classNames}
       role="img"

@@ -9,21 +9,28 @@
   color: var(--awe-palette-text-tertiary);
   user-select: none;
   cursor: pointer;
+  position: relative;
 
-  // Remove focus outlines for button states
-  &,
-  &:active,
-  &:focus {
+  &-title {
+    z-index: 1;
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--awe-palette-primary-main);
+    outline-offset: 2px;
+  }
+
+  &:focus:not(:focus-visible) {
     outline: none;
   }
 
-  // Active state styling
   &-active {
     .TabInner {
       color: var(--awe-palette-primary-main);
     }
+
     .platform {
-      opacity: 1 !important;
+      opacity: 1;
     }
   }
 
@@ -33,17 +40,17 @@
     align-items: center;
     white-space: nowrap;
     z-index: 1;
+    transform-origin: center center;
 
-    // Common padding for "Pannels" and "Fill" variants
     &.Pannels,
     &.Fill {
       padding: 0.125rem 1.125rem 0.35rem;
     }
 
     &.Pannels {
-      // Hover state for inactive pannels tabs
       &[data-active=false]:hover::before {
-        opacity: 1 !important;
+        opacity: 1;
+        transition: opacity 0.2s ease;
       }
 
       &::before {
@@ -53,15 +60,16 @@
         margin: 0 0.2325rem 0.225rem;
         border-radius: 0.75rem;
         background-color: rgba(var(--awe-palette-primary-mainChannel) / 0.3);
-        transition: opacity 0.3s ease;
+        transition: opacity 0.2s ease;
         opacity: 0;
+        pointer-events: none;
       }
     }
 
     &.Folders {
       padding: 0.35rem 1.125rem;
       border-radius: var(--awe-radius-md) var(--awe-radius-md) 0 0;
-      transition: background-color 0.3s ease;
+      transition: background-color 0.2s ease;
 
       &:hover {
         background-color: rgba(var(--awe-palette-primary-mainChannel) / 0.5);
@@ -82,13 +90,13 @@
     font-weight: 500;
     text-align: center;
     flex-shrink: 0;
-    z-index: 5;
+    z-index: 2;
+    transform-origin: center;
 
     &-active {
-      background: var(--awe-palette-primary-main) !important;
+      background: var(--awe-palette-primary-main);
     }
 
-    // Adjust line-height for specific platforms
     body.is-ios &,
     body.is-macos & {
       line-height: 1.25rem;
@@ -101,6 +109,7 @@
     left: 50%;
     transform: translateX(-50%);
     font-size: 0.75rem;
+    pointer-events: none;
   }
 
   .platform {
@@ -108,20 +117,16 @@
     bottom: 0;
     pointer-events: none;
     box-sizing: content-box;
-    transform-origin: left;
-    z-index: -1 !important;
+    transform-origin: center bottom;
+    z-index: 0;
     opacity: 0;
+    will-change: transform, opacity;
 
     &.animate {
-      transition: transform var(--slide-transition);
-
-      body.no-page-transitions & {
-        transition: none !important;
-      }
+      transition: none;
     }
   }
 
-  // Shared styles for platform variants with horizontal padding
   .platform-inner-pannels,
   .platform-folders {
     position: absolute;
@@ -130,6 +135,7 @@
     right: 1rem;
     height: 0.25rem;
     background-color: var(--awe-palette-primary-main);
+    pointer-events: none;
   }
 
   .platform-inner-pannels {
@@ -148,6 +154,7 @@
     height: 100%;
     background-color: var(--awe-palette-secondary-main);
     border-radius: 0.75rem 0.75rem 0 0;
+    will-change: transform; // GPU acceleration hint
 
     &::before,
     &::after {
@@ -158,6 +165,7 @@
       width: 30px;
       background-color: transparent;
       user-select: none;
+      pointer-events: none;
     }
 
     &::before {
@@ -180,5 +188,17 @@
     right: 0;
     height: 100%;
     background-color: var(--awe-palette-secondary-main);
+    pointer-events: none;
   }
 }
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideUp {
+  from { transform: translateY(5px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+

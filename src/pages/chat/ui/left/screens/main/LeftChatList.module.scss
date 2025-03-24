@@ -1,8 +1,8 @@
-.ChatList {
+.LeftChatList {
   height: 100%;
 }
 
-.TabListBorders {
+.LeftTabListBorders {
   position: sticky;
   top: 0;
   margin-bottom: 12px;
@@ -11,7 +11,7 @@
   background-color: var(--awe-palette-background-default);
 }
 
-.ChatListDivider {
+.LeftChatListDivider {
   height: 1px;
   background-color: var(--awe-palette-divider);
   border-color: var(--awe-palette-divider);

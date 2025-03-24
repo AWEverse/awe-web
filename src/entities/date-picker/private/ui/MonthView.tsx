@@ -1,37 +1,59 @@
-import React, { memo } from "react";
+import { memo, useCallback } from "react";
 import buildClassName from "@/shared/lib/buildClassName";
-import { MONTH_LIST, ZoomLevel } from "../lib/constans";
 import { CalendarViewProps } from "../lib/types";
+import I18n from "@/shared/ui/i18n";
+import { ZoomLevel } from "../lib/constans";
 
-const MonthView: React.FC<CalendarViewProps> = ({ date, onSelectDate }) => {
+const TOTAL_CELL_COUNT = 16;
+const MONTHS_PER_YEAR = 12;
+const MONTH_ABBR_LENGTH = 3;
+
+const MonthView = memo<CalendarViewProps>(({ date, onSelectDate }) => {
   const { currentSystemDate } = date;
 
-  const handleClick = (month: number) => () => {
-    onSelectDate?.({
-      day: undefined,
-      month,
-      year: currentSystemDate.getFullYear(),
-      level: ZoomLevel.WEEK,
-    });
-  };
+  const renderMonthCell = useCallback(
+    (index: number) => {
+      const currentYear = currentSystemDate.getFullYear();
+      const currentMonth = currentSystemDate.getMonth();
 
-  return MONTH_LIST.map((month, index) => {
-    const key = index < MONTH_LIST.length - 4 ? month : `${month}_copy`;
+      const monthIndex = index % MONTHS_PER_YEAR;
+      const isAnotherYear = index >= MONTHS_PER_YEAR;
+      const isCurrentMonth = index === currentMonth && !isAnotherYear;
 
-    const anotherMonth = index >= MONTH_LIST.length - 4 ? "another" : undefined;
-    const currentMonth =
-      index === currentSystemDate.getMonth() ? "currentDay" : undefined;
+      return (
+        <div
+          key={`month-${index}`}
+          className={buildClassName(
+            "dp-calendar-cell",
+            isCurrentMonth && "dp-current-day",
+            isAnotherYear && "dp-day--another",
+          )}
+          onClick={() =>
+            onSelectDate?.({
+              day: undefined,
+              month: monthIndex,
+              year: currentYear,
+              level: ZoomLevel.WEEK,
+            })
+          }
+        >
+          <I18n
+            i18nKey={`time.months.${monthIndex}`}
+            manipulations={(s) => s.substring(0, MONTH_ABBR_LENGTH)}
+          />
+        </div>
+      );
+    },
+    [currentSystemDate, onSelectDate],
+  );
 
-    return (
-      <div
-        key={key}
-        className={buildClassName("calendarCell", currentMonth, anotherMonth)}
-        onClick={handleClick(index)}
-      >
-        {""}
-      </div>
-    );
-  });
-};
+  return (
+    <>
+      {Array.from({ length: TOTAL_CELL_COUNT }, (_, i) => renderMonthCell(i))}
+    </>
+  );
+});
 
-export default memo(MonthView);
+MonthView.displayName = "MonthView";
+
+export default MonthView;

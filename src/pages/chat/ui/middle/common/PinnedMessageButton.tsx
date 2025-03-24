@@ -4,7 +4,7 @@ import { FC, useState, useMemo, memo } from "react";
 
 import s from "./PinnedMessageButton.module.scss";
 import buildClassName from "@/shared/lib/buildClassName";
-import Image from "@/shared/ui/Image";
+import TrackNavigation from "@/shared/ui/TrackNavigation";
 
 interface OwnProps {
   nodeRef?: React.Ref<HTMLDivElement>;
@@ -24,7 +24,7 @@ const PinnedMessageButton: FC<OwnProps & StateProps> = (props) => {
     nodeRef,
     className,
     children,
-    segmentCount = 4,
+    segmentCount = 10,
     style,
     onClick,
   } = props;
@@ -58,6 +58,14 @@ const PinnedMessageButton: FC<OwnProps & StateProps> = (props) => {
       style={style}
       onClick={handleClick}
     >
+      <div className={s.roller}>
+        <TrackNavigation
+          index={activeIndex}
+          count={segmentCount}
+          height={36}
+          width={3}
+        />
+      </div>
       <div
         aria-live="polite"
         className={s.roller}
@@ -65,12 +73,12 @@ const PinnedMessageButton: FC<OwnProps & StateProps> = (props) => {
       >
         {segments}
       </div>
-      {/* <Image
-        width={12}
-        height={12}
+      <img
+        width={36}
+        height={36}
         alt={`Pinned message avatar #${activeIndex + 1}`}
         src="https://i.pravatar.cc/300"
-      /> */}
+      />
       <div className={s.pinnedMessageItem}>
         <h5 className={s.pinnedAdditionalInfo}>
           Pinned message #{activeIndex + 1}

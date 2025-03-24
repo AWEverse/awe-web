@@ -1,10 +1,10 @@
 import { useMemo } from 'react';
 import calculateGridSelection from '../helpers/calculateGridSelection';
 import { DateRange } from '../types';
-import { COLUMNS, MAX_DATE_CELLS } from '../constans';
+import { COLUMNS, MAX_DATE_CELLS /*42*/ } from '../constans';
 
 export default function useClipPathForDateRange(
-  dateRange: DateRange,
+  dateRange: DateRange,// {from, to}
   gridPosition: { rows: number; columns: number },
   disabled: boolean,
 ) {

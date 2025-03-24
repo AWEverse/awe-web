@@ -8,12 +8,6 @@ export interface AccordionItemProps {
   className?: string;
   onToggle?: (index: number) => void;
   index?: number;
-
-  _isFirstChild?: boolean;
-  _isLastChild?: boolean;
-  _isNextChild?: boolean;
-  _isPrevChild?: boolean;
-  _isSingleChild?: boolean;
 }
 
 export interface AccordionGroupProps {

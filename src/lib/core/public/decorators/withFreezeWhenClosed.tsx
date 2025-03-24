@@ -1,34 +1,41 @@
-import { FC, useRef, ComponentProps } from "react";
+import { FC, useRef, useMemo } from "react";
 
-interface WithFreezeWhenClosedProps {
+const NO_DEPS = [] as const;
+
+interface WrappedComponentProps {
   isOpen: boolean;
+  ignoreFreeze?: boolean;
+  [key: string]: unknown;
 }
 
-export default function withFreezeWhenClosed<
-  T extends FC<WithFreezeWhenClosedProps & Record<string, unknown>>,
->(WrappedComponent: T) {
-  type WrappedProps = ComponentProps<T>;
+export default function withFreezeWhenClosed<T extends WrappedComponentProps>(
+  WrappedComponent: FC<T>,
+): FC<T> {
+  const EnhancedComponent: FC<T> = (props) => {
+    const openPropsRef = useRef<T>(props);
+    const { isOpen, ignoreFreeze = false } = props;
 
-  function ComponentWrapper(props: WrappedProps) {
-    const lastOpenProps = useRef<WrappedProps>(props);
-    const frozenProps = useRef<WrappedProps | null>(null);
-
-    if (props.isOpen) {
-      lastOpenProps.current = props;
-      frozenProps.current = null;
-    } else if (!frozenProps.current) {
-      frozenProps.current = {
-        ...lastOpenProps.current,
-        isOpen: false,
-      };
+    if (isOpen) {
+      openPropsRef.current = props;
     }
 
-    const actualProps = props.isOpen
-      ? lastOpenProps.current
-      : frozenProps.current!;
+    const frozenProps = useMemo(
+      () => ({
+        ...openPropsRef.current,
+        isOpen: false,
+      }),
+      NO_DEPS,
+    );
 
-    return <WrappedComponent {...(actualProps as any)} />;
-  }
+    const finalProps = isOpen && !ignoreFreeze ? props : frozenProps;
 
-  return ComponentWrapper as FC<WrappedProps>;
+    return <WrappedComponent {...finalProps} />;
+  };
+
+  // Improve debugging by setting display name
+  EnhancedComponent.displayName = `withFreezeWhenClosed(${
+    WrappedComponent.displayName || WrappedComponent.name || "Component"
+  })`;
+
+  return EnhancedComponent;
 }

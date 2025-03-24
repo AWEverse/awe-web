@@ -11,8 +11,8 @@ const useCalendarStyles = (
   const classNames = useMemo(
     () =>
       buildClassName(
-        'calendarGrid',
-        `${String(ZoomLevel[zoomLevel]).toLowerCase()}View`,
+        'dp-calendar-grid',
+        `dp-${String(ZoomLevel[zoomLevel]).toLowerCase()}-view`,
         className,
       ),
     [zoomLevel],

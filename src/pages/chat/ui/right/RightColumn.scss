@@ -7,16 +7,6 @@
   z-index: 100;
     transform: translate3d(0, 0, 0);
 
-  transition: transform var(--transition-standard-in, 0.3s ease-in);
-
-
-  &[data-shown="false"] {
-    transform: translate3d(
-      calc(1 * var(--right-column-width, 420px) * var(--reflect, 1)),
-      0,
-      0
-    );
-  }
 }
 
 .RightColumn {

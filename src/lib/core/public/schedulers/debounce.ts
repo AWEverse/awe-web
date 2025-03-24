@@ -1,33 +1,73 @@
-export default function debounce<F extends (...args: any[]) => void>(
+interface DebouncedFunction<F extends (...args: any[]) => any> {
+  (...args: Parameters<F>): void;
+  cancel: () => void;
+  flush: () => void;
+}
+
+export default function debounce<F extends (...args: any[]) => any>(
   fn: F,
-  ms: number,
-  shouldRunFirst: boolean = true,
-  shouldRunLast: boolean = true,
-  thisArg?: any,
-): (...args: Parameters<F>) => void {
+  wait: number,
+  leading = false,
+  trailing = true,
+): DebouncedFunction<F> {
   if (typeof fn !== 'function') {
     throw new TypeError('fn must be a function');
   }
 
-  if (typeof ms !== 'number' || isNaN(ms) || ms < 0) {
-    throw new TypeError('ms must be a non-negative number');
+  if (typeof wait !== 'number' || isNaN(wait) || wait < 0) {
+    throw new TypeError('wait must be a non-negative number');
   }
 
-  let waitingTimeout: NodeJS.Timeout | undefined;
 
-  return function (...args: Parameters<F>) {
-    if (waitingTimeout !== undefined) {
-      clearTimeout(waitingTimeout);
-      waitingTimeout = undefined;
-    } else if (shouldRunFirst) {
-      fn.apply(thisArg, args);
+  let timeout: NodeJS.Timeout | undefined;
+  let lastArgs: Parameters<F> | undefined;
+  let lastThis: any;
+
+  const debouncedFunction = function (this: any, ...args: Parameters<F>) {
+    lastArgs = args;
+    lastThis = this;
+
+    const callNow = leading && timeout === undefined;
+
+    if (timeout !== undefined) {
+      clearTimeout(timeout);
     }
 
-    waitingTimeout = setTimeout(() => {
-      if (shouldRunLast) {
-        fn.apply(thisArg, args);
+    timeout = setTimeout(() => {
+      timeout = undefined;
+      if (trailing) {
+        if (lastArgs !== undefined) {
+          fn.apply(lastThis, lastArgs);
+        }
       }
-      waitingTimeout = undefined;
-    }, ms);
+    }, wait);
+
+    if (callNow) {
+      fn.apply(lastThis, lastArgs);
+    }
   };
+
+  const cancel = () => {
+    if (timeout !== undefined) {
+      clearTimeout(timeout);
+      timeout = undefined;
+    }
+  };
+
+  const flush = () => {
+    if (timeout !== undefined) {
+      clearTimeout(timeout);
+      timeout = undefined;
+      if (lastArgs !== undefined) {
+        fn.apply(lastThis, lastArgs);
+      }
+    }
+  };
+
+  const debounced: DebouncedFunction<F> = Object.assign(debouncedFunction, {
+    cancel,
+    flush,
+  });
+
+  return debounced;
 }

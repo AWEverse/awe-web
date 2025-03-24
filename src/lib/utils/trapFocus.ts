@@ -1,16 +1,22 @@
 import { requestMeasure } from "../modules/fastdom";
 
-const FOCUSABLE_SELECTOR =
-  'button:not([hidden]):not([disabled]), [href]:not([hidden]):not([disabled]), input:not([hidden]):not([disabled]), select:not([hidden]):not([disabled]), textarea:not([hidden]):not([disabled]), [tabindex]:not([tabindex="-1"]):not([hidden]):not([disabled])';
+const FOCUSABLE_SELECTOR = `
+  button:not([hidden]):not([disabled]),
+  [href]:not([hidden]):not([disabled]),
+  input:not([hidden]):not([disabled]),
+  select:not([hidden]):not([disabled]),
+  textarea:not([hidden]):not([disabled]),
+  [tabindex]:not([tabindex="-1"]):not([hidden]):not([disabled])
+`;
 
 /**
  * Traps focus within a given container element by listening for "Tab" key events
  * and forcing the focus to loop through the focusable elements inside the container.
  *
  * @param {HTMLElement} container - The element inside which the focus should be trapped.
- * @returns {() => void} - A cleanup function to remove the focus trap.
+ * @returns {NoneToVoidFunction} - A cleanup function to remove the focus trap.
  */
-export default function trapFocus(container: HTMLElement): () => void {
+export default function trapFocus(container: HTMLElement): NoneToVoidFunction {
   const keydownHandler = (event: KeyboardEvent): void => {
     if (event.key !== "Tab") return;
 
@@ -18,7 +24,7 @@ export default function trapFocus(container: HTMLElement): () => void {
     event.stopPropagation();
 
     const focusableElements = Array.from(
-      container.querySelectorAll(FOCUSABLE_SELECTOR)
+      container.querySelectorAll(FOCUSABLE_SELECTOR),
     ) as HTMLElement[];
 
     if (!focusableElements.length) {
@@ -31,7 +37,7 @@ export default function trapFocus(container: HTMLElement): () => void {
     }
 
     const currentIndex = focusableElements.findIndex(
-      (el) => el === document.activeElement
+      (el) => el === document.activeElement,
     );
 
     const nextIndex =
@@ -50,7 +56,7 @@ export default function trapFocus(container: HTMLElement): () => void {
 
   if (!container.contains(document.activeElement)) {
     const focusableElements = Array.from(
-      container.querySelectorAll(FOCUSABLE_SELECTOR)
+      container.querySelectorAll(FOCUSABLE_SELECTOR),
     ) as HTMLElement[];
     const firstFocusable = focusableElements[0];
 

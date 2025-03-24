@@ -1,10 +1,10 @@
 import { FC, PropsWithChildren, useRef } from "react";
 import "./ChatLayout.scss";
 import buildClassName from "@/shared/lib/buildClassName";
-import useChatStore from "@/pages/chat/store/state/useChatState";
+import useChatStore from "@/pages/chat/store/useChatSelector";
 
 const Root: FC<PropsWithChildren> = ({ children }) => {
-  const { isRightPanelOpen } = useChatStore();
+  const isRightPanelOpen = useChatStore((s) => s.isProfileColumn);
 
   return (
     <div

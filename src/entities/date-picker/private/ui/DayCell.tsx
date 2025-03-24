@@ -4,10 +4,10 @@ interface DayCellProps {
   children: number;
   className?: string;
   onClick?: React.MouseEventHandler<HTMLDivElement>;
-  onContextMenu?: React.MouseEvent | React.TouchEvent;
-  onMouseDown?: React.MouseEvent | React.TouchEvent;
-  onMouseLeave?: React.MouseEvent | React.TouchEvent;
-  onMouseUp?: React.MouseEvent | React.TouchEvent;
+  onContextMenu?: React.MouseEventHandler<HTMLDivElement>;
+  onMouseDown?: React.MouseEventHandler<HTMLDivElement>;
+  onMouseLeave?: React.MouseEventHandler<HTMLDivElement>;
+  onMouseUp?: React.MouseEventHandler<HTMLDivElement>;
   onTouchEnd?: React.TouchEventHandler<HTMLDivElement>;
   onTouchStart?: React.TouchEventHandler<HTMLDivElement>;
 }
@@ -34,21 +34,9 @@ const DayCell: React.FC<DayCellProps> = ({
       onTouchEnd={onTouchEnd}
       onTouchStart={onTouchStart}
     >
-      <div>☺</div>
       <span>{children}</span>
     </div>
   );
 };
 
-const areEqual = (prev: DayCellProps, next: DayCellProps) =>
-  prev.className === next.className &&
-  prev.children === next.children &&
-  prev.onClick === next.onClick &&
-  prev.onContextMenu === next.onContextMenu &&
-  prev.onMouseDown === next.onMouseDown &&
-  prev.onMouseLeave === next.onMouseLeave &&
-  prev.onMouseUp === next.onMouseUp &&
-  prev.onTouchEnd === next.onTouchEnd &&
-  prev.onTouchStart === next.onTouchStart;
-
-export default memo(DayCell, areEqual);
+export default memo(DayCell);
