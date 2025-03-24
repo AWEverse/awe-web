@@ -1,30 +1,35 @@
 import { MAX_DATE_CELLS } from './constans';
 
-export function buildCalendarGrid(date: Date) {
+export interface CalendarGrid {
+  prevMonthGrid: number[];
+  currentMonthGrid: number[];
+  nextMonthGrid: number[];
+}
+
+export function buildCalendarGrid(date: Date): CalendarGrid {
   const year = date.getFullYear();
   const month = date.getMonth();
 
-  const prevMonthGrid: number[] = [];
-  const currentMonthGrid: number[] = [];
-  const nextMonthGrid: number[] = [];
+  const daysInCurrentMonth = 32 - new Date(year, month, 32).getDate();
+  const firstDay = new Date(Date.UTC(year, month, 1)).getUTCDay() || 7;
+  const daysInPrevMonth = 32 - new Date(year, month - 1, 32).getDate();
 
-  const firstDay = new Date(year, month, 1).getDay() || 7;
-  const totalDaysInPrevMonth = new Date(year, month, 0).getDate();
+  const prevMonthDaysCount = firstDay - 1;
+  const nextMonthDaysCount = MAX_DATE_CELLS - prevMonthDaysCount - daysInCurrentMonth;
 
-  for (let i = 1; i < firstDay; i++) {
-    prevMonthGrid.push(totalDaysInPrevMonth - firstDay + i + 1);
-  }
+  const prevMonthGrid = prevMonthDaysCount > 0 ?
+    Array.from({ length: prevMonthDaysCount }, (_, i) => daysInPrevMonth - prevMonthDaysCount + i + 1) :
+    [];
 
-  const daysInCurrentMonth = new Date(year, month + 1, 0).getDate();
-  for (let i = 1; i <= daysInCurrentMonth; i++) {
-    currentMonthGrid.push(i);
-  }
+  const currentMonthGrid = Array.from({ length: daysInCurrentMonth }, (_, i) => i + 1);
 
-  const lastRowDaysCount = MAX_DATE_CELLS - (currentMonthGrid.length + prevMonthGrid.length);
+  const nextMonthGrid = nextMonthDaysCount > 0 ?
+    Array.from({ length: nextMonthDaysCount }, (_, i) => i + 1) :
+    [];
 
-  for (let i = 1; i <= lastRowDaysCount; i++) {
-    nextMonthGrid.push(i);
-  }
-
-  return { prevMonthGrid, currentMonthGrid, nextMonthGrid };
+  return {
+    prevMonthGrid,
+    currentMonthGrid,
+    nextMonthGrid
+  };
 }

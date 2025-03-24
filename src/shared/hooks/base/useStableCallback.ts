@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef } from "react";
+import useStateRef from "./useStateRef";
 
 const NO_DEPS = [] as const;
 
@@ -13,30 +14,24 @@ const NO_DEPS = [] as const;
  * @returns A stable callback that always uses the most recent version of `callback`.
  *
  * @example
- * // Asynchronous update (default)
+ *
  * const handleClick = useStableCallback((event) => {
  *   // event handler logic
  * });
  *
  */
 export default function useStableCallback<T extends AnyFunction>(
-  callback?: T,
+  callback?: T
 ): T {
-  const callbackRef = useRef<T | undefined>(callback);
+  const callbackRef = useStateRef(callback);
 
-  useEffect(() => {
-    if (callback === undefined) {
-      return;
-    }
-
-    callbackRef.current = callback;
-  }, [callback]);
-
-  return useCallback((...args: Parameters<T>): ReturnType<T> => {
+  const stableCallback = useCallback((...args: Parameters<T>): ReturnType<T> => {
     if (callbackRef.current === undefined) {
       return undefined as unknown as ReturnType<T>;
     }
 
     return callbackRef.current(...args);
-  }, NO_DEPS) as T;
+  }, NO_DEPS);
+
+  return stableCallback as T;
 }

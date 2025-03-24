@@ -14,22 +14,32 @@ export const createCallbackManager = <T extends AnyToVoidFunction>() => {
      * @param {T} cb - The callback function to be added.
      * @returns {NoneToVoidFunction} A function that, when called, removes the added callback.
      */
-    addCallback: (cb: T): NoneToVoidFunction => (callbacks.add(cb), () => callbacks.delete(cb)),
+    addCallback: (cb: T): NoneToVoidFunction => {
+      callbacks.add(cb);
+
+      return () => {
+        callbacks.delete(cb);
+      };
+    },
 
     /**
      * Executes all the callbacks in the set with the provided arguments.
      *
      * @param {...Parameters<T>} args - The arguments to pass to each callback function.
      */
-    runCallbacks: (...args: Parameters<T>) =>
-      callbacks.forEach((cb) => cb(...args)),
-
+    runCallbacks: (...args: Parameters<T>) => {
+      for (const cb of callbacks) {
+        cb(...args);
+      }
+    },
     /**
      * Checks if there are any callbacks present in the set.
      *
      * @returns {boolean} `true` if there are callbacks, `false` otherwise.
      */
-    hasCallbacks: (): boolean => !!callbacks.size,
+    hasCallbacks: (): boolean => {
+      return Boolean(callbacks.size);
+    },
   };
 };
 

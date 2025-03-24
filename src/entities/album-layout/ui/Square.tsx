@@ -1,8 +1,9 @@
-import { FC, Children, useMemo, memo } from "react";
+import { FC, Children, useMemo, memo, useEffect } from "react";
 import { motion, AnimatePresence, LayoutGroup } from "framer-motion";
 import buildClassName from "@/shared/lib/buildClassName";
 import buildStyle from "@/shared/lib/buildStyle";
 import s from "./Square.module.scss";
+import { useElementSize } from "@/shared/hooks/DOM/useElementSize";
 
 // Reusable animation configuration
 const springConfig = {
@@ -39,6 +40,19 @@ const Square: FC<OwnProps> = memo(
       () => Children.toArray(children),
       [children],
     );
+
+    useEffect(() => {
+      const elRect = containerRef?.current.getBoundingClientRect();
+
+      if (!elRect) {
+        return;
+      }
+
+      const columns = Math.floor(elRect.width / (currentColumn + 1));
+      const rows = Math.ceil(memoizedChildren.length / (currentColumn + 1));
+
+      const toAnimateCount = columns * rows;
+    }, [currentColumn]);
 
     return (
       <div

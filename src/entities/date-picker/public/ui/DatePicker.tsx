@@ -23,6 +23,9 @@ import useCalendarStyles from "../../private/lib/hooks/useCalendarStyles";
 import "./DatePicker.scss";
 import { initGridPosition } from "./config";
 import useDateSelection from "../../private/lib/hooks/useDateSelection";
+import calculateGridSelection from "../../private/lib/helpers/calculateGridSelection";
+import { isCurrentMonth } from "../../private/lib/validators";
+import { throttle } from "@/lib/core";
 
 const animationVariants = {
   slide: {
@@ -80,7 +83,6 @@ const animationVariants = {
 const getActiveVariants = (direction: CalendarAnimationType) =>
   direction === "zoomIn" ? animationVariants.zoom : animationVariants.slide;
 
-// Calendar View Configuration
 const ZOOM_LEVELS = [ZoomLevel.WEEK, ZoomLevel.MONTH, ZoomLevel.YEAR] as const;
 const CALENDAR_VIEWS = {
   [ZoomLevel.WEEK]: WeekView,
@@ -88,7 +90,6 @@ const CALENDAR_VIEWS = {
   [ZoomLevel.YEAR]: YearView,
 } as const;
 
-// Types
 interface DatePickerProps {
   className?: string;
   disabled?: boolean;
@@ -106,7 +107,6 @@ interface DatePickerProps {
   size?: "small" | "medium" | "large";
 }
 
-// Animation Control Hook
 const useAnimationControl = () => {
   const [direction, setDirection] = useState<CalendarAnimationType>("LTR");
 
@@ -119,7 +119,6 @@ const useAnimationControl = () => {
   return { direction, updateDirection };
 };
 
-// Main DatePicker Component
 const DatePicker: FC<DatePickerProps> = ({
   className,
   disabled = false,
@@ -164,11 +163,14 @@ const DatePicker: FC<DatePickerProps> = ({
   );
 
   const changeMonth = useStableCallback((increment: number) => {
-    updateDirection(increment > 0 ? "RTL" : "LTR");
     setDate((prev) => {
       const newSystemDate = new Date(prev.currentSystemDate);
       newSystemDate.setDate(1);
       newSystemDate.setMonth(newSystemDate.getMonth() + increment);
+
+      if (!isCurrentMonth(newSystemDate)) {
+        updateDirection(increment > 0 ? "RTL" : "LTR");
+      }
 
       if (
         isNaN(newSystemDate.getTime()) ||
@@ -194,20 +196,19 @@ const DatePicker: FC<DatePickerProps> = ({
   const CalendarView = CALENDAR_VIEWS[zoomLevel];
   const transitionKey = `${date.currentSystemDate.getMonth()}-${zoomLevel}`;
 
-  const handleMouseMove: React.MouseEventHandler<HTMLDivElement> = (e) => {
-    if (!gridRef.current) return;
+  const handleMouseMove = useStableCallback(
+    throttle((e: React.MouseEvent<HTMLDivElement>) => {
+      const grid = gridRef.current;
+      if (!grid) return;
 
-    const rect = gridRef.current.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
+      const rect = grid.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
 
-    gridRef.current.style.setProperty("--mouse-x", `${x}px`);
-    gridRef.current.style.setProperty("--mouse-y", `${y}px`);
-    gridRef.current.style.setProperty(
-      "--spotlight-color",
-      "rgba(255, 255, 255, 0.25)",
-    );
-  };
+      grid.style.setProperty("--mouse-x", `${x}px`);
+      grid.style.setProperty("--mouse-y", `${y}px`);
+    }, 16),
+  );
 
   return (
     <div
@@ -254,7 +255,7 @@ const DatePicker: FC<DatePickerProps> = ({
         <div
           className="dp-selector-mask"
           data-visible={canActivateSelect}
-          style={{ clipPath: clipPathValue }}
+          style={{ clipPath: calculateGridSelection(9, 23) }}
         />
       </section>
       {placeholder && (

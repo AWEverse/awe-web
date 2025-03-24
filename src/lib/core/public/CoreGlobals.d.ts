@@ -196,16 +196,21 @@ type FixedSizeArray<T, N extends number> = N extends 0
   : ExpandArrayUntilLengthReached<[T, T], N, [[T]]>;
 
 /**
- * Represents types that are considered "falsy".
+ * Represents types that are considered "falsy" in JavaScript.
  */
 type Falsy = false | 0 | "" | null | undefined;
+
+/**
+ * Represents types that are inherently "truthy" (non-falsy).
+ */
+type Truthy<T> = T extends Falsy ? never : T;
 
 /**
  * Custom constructor interface for `Boolean`, ensuring proper type inference for `Falsy` values.
  */
 interface BooleanConstructor {
-  new <T>(value: T | Falsy): value is T;
-  <T>(value: T | Falsy): value is T;
+  new <T>(value?: T | Falsy): value is T;
+  <T>(value?: T | Falsy): value is T;
   readonly prototype: boolean;
 }
 
@@ -215,6 +220,8 @@ interface BooleanConstructor {
  * @returns A boolean indicating the truthiness of the value.
  */
 declare const Boolean: BooleanConstructor;
+
+
 
 /**
  * Extends the HTMLElement interface to include cross-browser fullscreen support methods.

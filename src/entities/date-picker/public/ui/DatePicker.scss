@@ -106,14 +106,17 @@
   left: 0;
   width: 100%;
   height: 100%;
-  z-index: 2;
+  z-index: 22;
   opacity: 0.5;
+  user-select: none;
+  inset: 0px;
+  pointer-events: none;
+
   will-change: clip-path, background-color;
   transition: clip-path 0.25s ease, background-color 0.25s ease;
 
-  &[data-visible="true"] {
-    background-color: var(--awe-palette-primary-main);
-  }
+  background-color: rgba(var(--awe-palette-primary-mainChannel) / 0.375);
+
 }
 
 .dp-day--selected {
@@ -153,11 +156,10 @@
 
 .dp-spotlight {
   position: relative;
-  padding: 2rem;
   overflow: hidden;
   --mouse-x: 50%;
   --mouse-y: 50%;
-  --spotlight-color: rgba(255, 255, 255, 0.05);
+  --spotlight-color: rgba(var(--awe-palette-primary-mainChannel) / 0.875);
 }
 
 .dp-spotlight::before {
@@ -175,5 +177,5 @@
 
 .dp-spotlight:hover::before,
 .dp-spotlight:focus-within::before {
-  opacity: 0.8;
+  opacity: 0.8 !important;
 }

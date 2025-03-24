@@ -15,8 +15,7 @@ export type Size = Readonly<{
  * - size: Current element dimensions (null before first measurement)
  * - isResizing: Boolean flag indicating if the element is actively resizing
  */
-export function useElementSize<T extends HTMLElement = HTMLDivElement>() {
-  const elementRef = useRef<T | null>(null);
+export function useElementSize<T extends HTMLElement = HTMLDivElement>(elementRef: React.RefObject<T>) {
   const sizeRef = useRef<Size | null>(null);
   const isResizing = useRef(false);
   const observerRef = useRef<ResizeObserver | null>(null);
@@ -91,7 +90,6 @@ export function useElementSize<T extends HTMLElement = HTMLDivElement>() {
   });
 
   return {
-    ref: elementRef,
     size: sizeRef,
     isResizing,
     measureNow,

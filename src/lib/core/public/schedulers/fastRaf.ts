@@ -19,12 +19,12 @@ let timeoutId: ReturnType<typeof setTimeout> | undefined;
 let rafScheduled = false;
 
 // Set to track unique callback functions and prevent duplicates
-let pendingCallbackFunctions = new Set<() => void>();
+let pendingCallbackFunctions = new Set<NoneToVoidFunction>();
 
 // Define the CallbackEntry type as a discriminated union based on hasFallback
 type CallbackEntry = {
   id: number;
-  callback: () => void;
+  callback: NoneToVoidFunction;
   executed: boolean;
 } & (
     | {
@@ -37,7 +37,13 @@ type CallbackEntry = {
     }
   );
 
-function addCallback(callback: () => void, hasFallback: boolean): void {
+/**
+ * Adds a callback to the pending list and schedules its execution.
+ * @param callback - The function to execute.
+ * @param hasFallback - Whether to include a timeout fallback.
+ */
+function addCallback(callback: NoneToVoidFunction, hasFallback: boolean) {
+  // Prevent duplicate callbacks
   if (pendingCallbackFunctions.has(callback)) {
     return;
   }
@@ -45,10 +51,8 @@ function addCallback(callback: () => void, hasFallback: boolean): void {
 
   const id = callbackIdCounter++;
 
-  // Add the callback entry based on whether it has a fallback
   if (hasFallback) {
     const additionTime = Date.now();
-
     pendingCallbacks.push({
       id,
       callback,
@@ -57,16 +61,14 @@ function addCallback(callback: () => void, hasFallback: boolean): void {
       executed: false,
     });
     const fallbackTime = additionTime + FAST_RAF_TIMEOUT_FALLBACK_MS;
-
+    // Reschedule timeout if this fallback time is earlier than the current one
     if (nextTimeoutTime === undefined || fallbackTime < nextTimeoutTime) {
       nextTimeoutTime = fallbackTime;
       if (timeoutId !== undefined) {
         clearTimeout(timeoutId);
       }
       const delay = Math.max(0, nextTimeoutTime - Date.now());
-      timeoutId = setTimeout(() => {
-        handleTimeout();
-      }, delay);
+      timeoutId = setTimeout(handleTimeout, delay);
     }
   } else {
     pendingCallbacks.push({
@@ -79,77 +81,79 @@ function addCallback(callback: () => void, hasFallback: boolean): void {
   }
 }
 
-function handleTimeout(): void {
+/**
+ * Handles timeout fallbacks by executing callbacks that have exceeded their delay
+ * and rescheduling the next timeout if necessary.
+ */
+function handleTimeout() {
   const currentTime = Date.now();
+  const len = pendingCallbacks.length;
+  let minFallbackTime = Infinity;
+  let writeIndex = 0;
 
-  for (let i = 0, len = pendingCallbacks.length; i < len; ++i) {
+  // Single pass to execute timed-out callbacks and compact the array
+  for (let i = 0; i < len; ++i) {
     const entry = pendingCallbacks[i];
 
-    if (
-      entry.hasFallback &&
-      entry.additionTime + FAST_RAF_TIMEOUT_FALLBACK_MS <= currentTime &&
-      !entry.executed
-    ) {
-      try {
-        entry.callback();
-      } catch (error) {
-        if (DEBUG) console.error("Error in callback:", error);
-      }
-      entry.executed = true;
-      pendingCallbackFunctions.delete(entry.callback);
-    }
-  }
-  pendingCallbacks = pendingCallbacks.filter((entry) => !entry.executed);
-
-  // Schedule the next timeout if there are still pending callbacks with fallbacks
-  if (pendingCallbacks.length > 0) {
-    let minFallbackTime = Infinity;
-    for (let i = 0, len = pendingCallbacks.length; i < len; ++i) {
-      const entry = pendingCallbacks[i];
-
-      if (entry.hasFallback) {
-        const fallbackTime = entry.additionTime + FAST_RAF_TIMEOUT_FALLBACK_MS;
-
+    if (entry.hasFallback && !entry.executed) {
+      const fallbackTime = entry.additionTime + FAST_RAF_TIMEOUT_FALLBACK_MS;
+      if (fallbackTime <= currentTime) {
+        try {
+          entry.callback();
+          entry.executed = true;
+          pendingCallbackFunctions.delete(entry.callback);
+        } catch (error) {
+          if (DEBUG) console.error("Error in callback:", error);
+        }
+      } else {
         if (fallbackTime < minFallbackTime) {
           minFallbackTime = fallbackTime;
         }
+        pendingCallbacks[writeIndex++] = entry;
       }
+    } else if (!entry.executed) {
+      pendingCallbacks[writeIndex++] = entry;
     }
-    if (minFallbackTime < Infinity) {
-      nextTimeoutTime = minFallbackTime;
+  }
 
-      const delay = Math.max(0, nextTimeoutTime - Date.now());
+  pendingCallbacks.length = writeIndex;
 
-      timeoutId = setTimeout(() => {
-        handleTimeout();
-      }, delay);
-    } else {
-      nextTimeoutTime = undefined;
-      timeoutId = undefined;
-    }
+  if (writeIndex > 0 && minFallbackTime < Infinity) {
+    nextTimeoutTime = minFallbackTime;
+    const delay = Math.max(0, nextTimeoutTime - currentTime);
+    timeoutId = setTimeout(handleTimeout, delay);
   } else {
     nextTimeoutTime = undefined;
     timeoutId = undefined;
   }
 }
 
-function executeAllCallbacks(): void {
-  for (let i = 0, len = pendingCallbacks.length; i < len; ++i) {
+/**
+ * Executes all pending callbacks via requestAnimationFrame and cleans up.
+ */
+function executeAllCallbacks() {
+  const len = pendingCallbacks.length;
+  let writeIndex = 0;
+
+  for (let i = 0; i < len; ++i) {
     const entry = pendingCallbacks[i];
 
     if (!entry.executed) {
       try {
         entry.callback();
+        entry.executed = true;
+        pendingCallbackFunctions.delete(entry.callback);
       } catch (error) {
         if (DEBUG) console.error("Error in callback:", error);
       }
-      entry.executed = true;
-      pendingCallbackFunctions.delete(entry.callback);
+    }
+
+    if (!entry.executed) {
+      pendingCallbacks[writeIndex++] = entry;
     }
   }
 
-  pendingCallbacks = pendingCallbacks.filter((entry) => !entry.executed);
-
+  pendingCallbacks.length = writeIndex;
   if (timeoutId !== undefined) {
     clearTimeout(timeoutId);
   }
@@ -157,10 +161,15 @@ function executeAllCallbacks(): void {
   timeoutId = undefined;
 }
 
+/**
+ * Schedules a callback to run on the next animation frame, with an optional timeout fallback.
+ * @param callback - The function to execute.
+ * @param withTimeoutFallback - If true, ensures execution within 35ms via a timeout.
+ */
 export default function fastRaf(
-  callback: () => void,
+  callback: NoneToVoidFunction,
   withTimeoutFallback: boolean = false,
-): void {
+) {
   addCallback(callback, withTimeoutFallback);
 
   if (!rafScheduled) {
