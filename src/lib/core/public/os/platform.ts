@@ -2,36 +2,38 @@
  * Flag indicating if the environment is a browser.
  * Detects whether `window` is defined, which is typically the case in a browser environment.
  */
-export const IS_BROWSER = typeof window !== "undefined";
+export const IS_BROWSER = typeof window !== 'undefined';
+
+const PLATFORM_PATTERNS = [
+  { key: 'iphone', platform: 'iOS' },
+  { key: 'ipad', platform: 'iOS' },
+  { key: 'ipod', platform: 'iOS' },
+  { key: 'macintosh', platform: 'macOS' },
+  { key: 'macintel', platform: 'macOS' },
+  { key: 'macppc', platform: 'macOS' },
+  { key: 'mac68k', platform: 'macOS' },
+  { key: 'win32', platform: 'Windows' },
+  { key: 'win64', platform: 'Windows' },
+  { key: 'windows', platform: 'Windows' },
+  { key: 'wince', platform: 'Windows' },
+  { key: 'android', platform: 'Android' },
+  { key: 'linux', platform: 'Linux' },
+];
 
 /**
- * Detects the platform based on the user agent string.
- * It returns a string representing the platform or `undefined` if it cannot be detected.
- *
- * @returns {string | undefined} The platform name, e.g., "iOS", "macOS", "Windows", etc.
+ * Detects the platform using a single-pass, C-like efficient parsing of userAgent.
+ * @returns {string | undefined} The detected platform name or undefined if unrecognized.
  */
 export function getPlatform(): string | undefined {
-  const userAgent = window.navigator.userAgent.toLowerCase();
+  if (!IS_BROWSER) return undefined;
 
-  // Platform-specific checks
-  if (/iphone|ipad|ipod/.test(userAgent)) {
-    return "iOS";
-  }
+  const ua = navigator.userAgent.toLowerCase();
 
-  if (/(macintosh|macintel|macppc|mac68k)/.test(userAgent)) {
-    return "macOS";
-  }
-
-  if (/win32|win64|windows|wince/.test(userAgent)) {
-    return "Windows";
-  }
-
-  if (/android/.test(userAgent)) {
-    return "Android";
-  }
-
-  if (/linux/.test(userAgent)) {
-    return "Linux";
+  for (let i = 0; i < PLATFORM_PATTERNS.length; i++) {
+    const { key, platform } = PLATFORM_PATTERNS[i];
+    if (ua.includes(key)) {
+      return platform;
+    }
   }
 
   return undefined;
@@ -39,18 +41,18 @@ export function getPlatform(): string | undefined {
 
 /**
  * The current platform environment detected based on the user agent.
- * This will be updated automatically when the platform is detected.
  */
 export const PLATFORM_ENV = getPlatform();
 
-/** Extracted and normalized userAgent string for further browser-specific checks */
-const userAgent = navigator.userAgent.toLowerCase();
+/** Extracted and normalized userAgent string for further checks */
+const userAgent = IS_BROWSER ? navigator.userAgent.toLowerCase() : '';
 
-export const IS_MAC_OS = PLATFORM_ENV === "macOS";
-export const IS_WINDOWS = PLATFORM_ENV === "Windows";
-export const IS_LINUX = PLATFORM_ENV === "Linux";
-export const IS_IOS = PLATFORM_ENV === "iOS";
-export const IS_ANDROID = PLATFORM_ENV === "Android";
+/** Platform-specific flags */
+export const IS_MAC_OS = PLATFORM_ENV === 'macOS';
+export const IS_WINDOWS = PLATFORM_ENV === 'Windows';
+export const IS_LINUX = PLATFORM_ENV === 'Linux';
+export const IS_IOS = PLATFORM_ENV === 'iOS';
+export const IS_ANDROID = PLATFORM_ENV === 'Android';
 
 /**
  * Flag indicating if the device is mobile (either iOS or Android).
@@ -59,41 +61,34 @@ export const IS_MOBILE = IS_IOS || IS_ANDROID;
 
 /**
  * Chromium version detected from the user agent.
- * If the user agent matches a Chromium browser, returns the version number.
+ * Returns the version number if a Chromium browser is detected, otherwise undefined.
  */
-export const CHROMIUM_VERSION = (() => {
-  try {
+export const CHROMIUM_VERSION = IS_BROWSER
+  ? (() => {
     const match = navigator.userAgent.match(/Chrom(?:e|ium)\/([0-9.]+)/);
-    return match ? +match[1] : undefined;
-  } catch {
-    return undefined;
-  }
-})();
+    return match ? parseFloat(match[1]) : undefined;
+  })()
+  : undefined;
 
 /**
  * Flag indicating if the browser is Safari.
- * Specifically excludes browsers that identify as Chrome or Android.
+ * Excludes browsers identifying as Chrome or Android.
  */
-export const IS_SAFARI =
-  /safari/i.test(userAgent) && !/chrome|android/i.test(userAgent);
+export const IS_SAFARI = userAgent.includes('safari') && !userAgent.includes('chrome') && !userAgent.includes('android');
 
 /**
  * Flag indicating if the browser is Yandex Browser.
- * Looks for "yabrowser" in the user agent string.
  */
-export const IS_YA_BROWSER = userAgent.includes("yabrowser");
+export const IS_YA_BROWSER = userAgent.includes('yabrowser');
 
 /**
  * Flag indicating if the browser is Firefox.
  * Detects several possible identifiers for Firefox-based browsers.
  */
-export const IS_FIREFOX = /firefox|iceweasel|icecat/i.test(userAgent);
+export const IS_FIREFOX = userAgent.includes('firefox') || userAgent.includes('iceweasel') || userAgent.includes('icecat');
 
 /**
  * Normalized version of the platform environment in lowercase, with spaces replaced by dashes.
- * For example, "macOS" will become "macos".
+ * For example, "macOS" becomes "macos".
  */
-export const PLATFORM_ENV_NORMALIZED = PLATFORM_ENV?.toLowerCase().replace(
-  " ",
-  "-",
-);
+export const PLATFORM_ENV_NORMALIZED = PLATFORM_ENV?.toLowerCase().replace(' ', '-') || '';

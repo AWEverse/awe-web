@@ -34,9 +34,9 @@ export const IS_PROGRESSIVE_SUPPORTED = IS_SERVICE_WORKER_SUPPORTED;
  * Check if the `filter` property is supported on canvas elements.
  * This is not available in test environments.
  */
-// export const IS_CANVAS_FILTER_SUPPORTED =
-//   !IS_TEST &&
-//   "filter" in (document.createElement("canvas")!.getContext("2d") || {});
+export const IS_CANVAS_FILTER_SUPPORTED =
+  !IS_TEST &&
+  "filter" in (document.createElement("canvas")!.getContext("2d") || {});
 
 /**
  * Check if the browser supports `requestFullscreen` for elements.
@@ -85,7 +85,7 @@ export const IS_OFFSET_PATH_SUPPORTED =
 export const IS_BACKDROP_BLUR_SUPPORTED =
   typeof CSS !== "undefined"
     ? CSS.supports("backdrop-filter: blur(0px)") ||
-      CSS.supports("-webkit-backdrop-filter: blur(0px)")
+    CSS.supports("-webkit-backdrop-filter: blur(0px)")
     : false;
 
 /**
