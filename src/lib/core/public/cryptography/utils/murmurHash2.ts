@@ -4,7 +4,7 @@
  * @param seed - Seed value for hash (default 0)
  * @returns 32-bit unsigned integer hash
  */
-export function murmurHash2(key: string, seed: number = 0): number {
+export default function murmurHash2(key: string, seed: number = 0): number {
   const m = 0x5bd1e995;
   const r = 24;
 

@@ -1,12 +1,5 @@
 import React, { useState, useCallback, useEffect, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import {
-  configure,
-  getStats,
-  requestMeasure,
-  requestMutation,
-  TaskPriority,
-} from "@/lib/modules/fastdom/expermental/new_fastdom";
 
 // Define types for gallery items
 export type GalleryItem = {
@@ -216,40 +209,9 @@ export function ResponsiveGallery({
   );
 }
 
-// Initial configuration
-configure({
-  maxQueueSize: 10000,
-  maxTasksPerFrame: 100,
-  enableProfiling: true,
-});
-
 // Example component with color items
 const TestPage: React.FC = () => {
-  useEffect(() => {
-    console.log(1);
-    for (let i = 1; i < 1000; ++i) {
-      requestMutation(
-        () => setTimeout(() => console.log(4), 60),
-        TaskPriority.NORMAL,
-        `mutation-${i}`,
-      );
-    }
-    requestMeasure(
-      () => console.log(1),
-      TaskPriority.CRITICAL,
-      "measure-critical",
-    );
-    requestMeasure(() => console.log(2), TaskPriority.HIGH, "measure-high");
-    requestMeasure(() => console.log(3), TaskPriority.LOW, "measure-low");
-
-    const interval = setInterval(
-      () => console.log("Stats:", getStats()),
-      10000,
-    );
-    return () => clearInterval(interval);
-  }, []);
-
-  return <></>;
+  return <video controls src={"/video_test/Интерстеллар.mp4"}></video>;
 };
 
 export default TestPage;

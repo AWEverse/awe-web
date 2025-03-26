@@ -66,21 +66,15 @@ const DisscusionsPage = () => {
   );
 
   return (
-    <Stack gap={1}>
-      <Box
-        sx={{
-          display: "flex",
-          flexDirection: { xs: "column", sm: "row" },
-          gap: { xs: 1, sm: 2 },
-          mt: 1,
-        }}
-      >
-        <div className="flex w-full gap-2 items-center">
-          <SearchInput size="large" labels={["Search", "Category", "Tag"]} />
+    <>
+      <div>
+        <div className={s.header}>
+          <SearchInput labels={["Search", "Category", "Tag"]} />
           <SortActions />
         </div>
+
         <Button variant="contained">New</Button>
-      </Box>
+      </div>
 
       <SectionList
         keyExtractor={(item, idx) => `${item.name}-${idx}`}
@@ -90,7 +84,7 @@ const DisscusionsPage = () => {
         sections={sections}
         wrapperClassName={s.wrapper}
       />
-    </Stack>
+    </>
   );
 };
 

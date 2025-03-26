@@ -85,11 +85,11 @@
   user-select: none;
   overscroll-behavior: contain;
 
-  &::-webkit-media-controls {
-    display: none !important;
-    opacity: 0;
-    pointer-events: none;
-  }
+  // &::-webkit-media-controls {
+  //   display: none !important;
+  //   opacity: 0;
+  //   pointer-events: none;
+  // }
 
   .is-touch-env & {
     touch-action: pan-y pinch-zoom;

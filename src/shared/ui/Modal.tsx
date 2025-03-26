@@ -4,10 +4,12 @@ import {
   MouseEvent,
   ReactNode,
   RefObject,
+  useCallback,
   useEffect,
+  useMemo,
   useRef,
 } from "react";
-import { AnimatePresence, motion } from "framer-motion";
+import { AnimatePresence, motion, Variants } from "framer-motion";
 import Portal from "./Portal";
 import trapFocus from "@/lib/utils/trapFocus";
 import captureKeyboardListeners from "@/lib/utils/captureKeyboardListeners";
@@ -19,12 +21,26 @@ import { dispatchHeavyAnimation } from "@/lib/core";
 import useBodyClass from "../hooks/DOM/useBodyClass";
 
 import "./Modal.scss";
+import { withFreezeWhenClosed } from "@/lib/core";
 
-const ANIMATION_DURATION = 0.15;
+const ANIMATION_DURATION = 0.125;
 
-type NoneToVoidFunction = () => void;
+// Predefined animation variants to prevent recalculation
+const BACKDROP_VARIANTS: Variants = {
+  initial: { opacity: 0 },
+  animate: { opacity: 1 },
+  exit: { opacity: 0 },
+};
 
-type OwnProps = {
+const DIALOG_VARIANTS: Variants = {
+  initial: { opacity: 0, y: "-10%" },
+  animate: { opacity: 1, y: 0 },
+  exit: { opacity: 0, y: "-10%" },
+};
+
+const TRANSITION = { duration: ANIMATION_DURATION };
+
+type ModalProps = {
   "aria-label"?: string;
   dialogRef?: RefObject<HTMLDivElement | null>;
   title?: string | ReactNode[];
@@ -37,150 +53,140 @@ type OwnProps = {
   backdropBlur?: boolean;
   children?: ReactNode;
   onClick?: (e: MouseEvent<HTMLDivElement>) => void;
-  onClose: NoneToVoidFunction;
-  onEnter?: NoneToVoidFunction;
+  onClose: () => void;
+  onEnter?: () => void;
 };
 
-/**
- * Custom hook to encapsulate the shared Framer Motion animation properties.
- */
-function useModalAnimation(duration: number = ANIMATION_DURATION) {
-  const backdropVariants = {
-    initial: { opacity: 0 },
-    animate: { opacity: 1 },
-    exit: { opacity: 0 },
-  };
+const Modal: FC<ModalProps> = memo(
+  ({
+    className,
+    contentClassName,
+    isOpen,
+    noBackdrop = false,
+    noBackdropClose = false,
+    backdropBlur = false,
+    children,
+    onClick,
+    onClose,
+    onEnter,
+    dialogRef,
+    "aria-label": ariaLabel,
+  }) => {
+    const modalRef = useRef<HTMLDivElement>(null);
+    const id = useUniqueId("modal", ariaLabel);
 
-  const dialogVariants = {
-    initial: { opacity: 0, y: "-10%" },
-    animate: { opacity: 1, y: 0 },
-    exit: { opacity: 0, y: "-10%" },
-  };
+    // Memoize class names to prevent unnecessary recalculations
+    const modalClasses = useMemo(
+      () =>
+        buildClassName(
+          "Modal",
+          backdropBlur && "backdropBlur",
+          noBackdrop && "nobackdrop",
+        ),
+      [backdropBlur, noBackdrop],
+    );
 
-  const transition = { duration };
+    const dialogClasses = useMemo(
+      () =>
+        buildClassName("Dialog", buildClassName(className, contentClassName)),
+      [className, contentClassName],
+    );
 
-  return { backdropVariants, dialogVariants, transition };
-}
+    const handleBackdropClick = useStableCallback(
+      (e: MouseEvent<HTMLDivElement>) => {
+        e.stopPropagation();
+        if (!noBackdropClose) {
+          onClose();
+        }
+      },
+    );
 
-/**
- * Modal component with customizable properties for handling display, interaction, and animations.
- */
-const Modal: FC<OwnProps> = ({
-  className,
-  contentClassName,
-  isOpen,
-  noBackdrop,
-  noBackdropClose = false,
-  backdropBlur,
-  children,
-  onClick,
-  onClose,
-  onEnter,
-  dialogRef,
-  "aria-label": ariaLabel,
-}) => {
-  const UUID = useUniqueId("modal", ariaLabel);
-  const modalRef = useRef<HTMLDivElement>(null);
-  const { backdropVariants, dialogVariants, transition } = useModalAnimation();
+    const handleModalClick = useCallback(
+      (e: MouseEvent<HTMLDivElement>) => {
+        e.stopPropagation();
+        onClick?.(e);
+      },
+      [onClick],
+    );
 
-  const handleClick = useStableCallback((e: MouseEvent<HTMLDivElement>) => {
-    e.stopPropagation();
-    if (!noBackdropClose) {
-      onClose();
-    }
-  });
+    const handleEnter = useCallback(
+      (e: KeyboardEvent) => {
+        if (!onEnter) return false;
+        e.preventDefault();
+        onEnter();
+        return true;
+      },
+      [onEnter],
+    );
 
-  const handleModalClick = useStableCallback(
-    (e: MouseEvent<HTMLDivElement>) => {
-      e.stopPropagation();
-      onClick?.(e);
-    },
-  );
+    useEffect(() => {
+      if (!isOpen || !modalRef.current) return;
 
-  const handleEnter = useStableCallback((e: KeyboardEvent) => {
-    if (!onEnter) return false;
-    e.preventDefault();
-    onEnter();
-    return true;
-  });
-
-  useEffect(() => {
-    const modal = modalRef.current;
-    if (isOpen && modal) {
-      const keyboardListenersCleanup = captureKeyboardListeners({
+      const modal = modalRef.current;
+      const keyboardCleanup = captureKeyboardListeners({
         bindings: { onEsc: onClose, onEnter: handleEnter },
       });
-
-      const trapFocusCleanup = trapFocus(modal);
+      const focusCleanup = trapFocus(modal);
 
       return () => {
-        keyboardListenersCleanup();
-        trapFocusCleanup();
+        keyboardCleanup();
+        focusCleanup();
       };
-    }
-  }, [isOpen, onClose, handleEnter]);
+    }, [isOpen, onClose, handleEnter]);
 
-  useBodyClass("has-open-dialog", isOpen);
+    useBodyClass("has-open-dialog", isOpen);
 
-  useEffectWithPreviousDeps(
-    ([wasOpen]) => {
-      if (isOpen !== wasOpen) {
-        return dispatchHeavyAnimation(ANIMATION_DURATION);
-      }
-    },
-    [isOpen],
-  );
+    useEffectWithPreviousDeps(
+      ([prevIsOpen]) => {
+        if (isOpen !== prevIsOpen) {
+          return dispatchHeavyAnimation(ANIMATION_DURATION);
+        }
+      },
+      [isOpen],
+    );
 
-  const modalClasses = buildClassName(
-    "Modal",
-    backdropBlur && "backdropBlur",
-    noBackdrop && "nobackdrop",
-  );
-
-  const dialogClasses = buildClassName(
-    "Dialog",
-    buildClassName(className, contentClassName),
-  );
-  return (
-    <Portal>
-      <AnimatePresence>
-        {isOpen && (
-          <motion.div
-            id={UUID}
-            key={UUID}
-            ref={modalRef}
-            variants={backdropVariants}
-            initial="initial"
-            animate="animate"
-            exit="exit"
-            transition={transition}
-            aria-modal
-            aria-describedby="dialog-description"
-            aria-label={ariaLabel}
-            aria-labelledby="dialog-title"
-            className={modalClasses}
-            tabIndex={-1}
-            role="dialog"
-            onClick={handleClick}
-          >
+    return (
+      <Portal>
+        <AnimatePresence>
+          {isOpen && (
             <motion.div
-              ref={dialogRef}
-              variants={dialogVariants}
+              ref={modalRef}
+              id={id}
+              variants={BACKDROP_VARIANTS}
               initial="initial"
               animate="animate"
               exit="exit"
-              transition={transition}
-              className={dialogClasses}
-              onClick={handleModalClick}
+              transition={TRANSITION}
+              className={modalClasses}
+              tabIndex={-1}
+              role="dialog"
+              aria-modal="true"
+              aria-label={ariaLabel}
+              aria-describedby="dialog-description"
+              aria-labelledby="dialog-title"
+              onClick={handleBackdropClick}
             >
-              {children}
+              <motion.div
+                ref={dialogRef}
+                variants={DIALOG_VARIANTS}
+                initial="initial"
+                animate="animate"
+                exit="exit"
+                transition={TRANSITION}
+                className={dialogClasses}
+                onClick={handleModalClick}
+              >
+                {children}
+              </motion.div>
             </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </Portal>
-  );
-};
+          )}
+        </AnimatePresence>
+      </Portal>
+    );
+  },
+);
 
-export default memo(Modal);
-export type { OwnProps as ModalProps };
+Modal.displayName = "Modal";
+
+export default withFreezeWhenClosed(Modal);
+export type { ModalProps };

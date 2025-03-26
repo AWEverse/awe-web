@@ -66,10 +66,7 @@ export default function useFullscreen(
 
     if (IS_IOS && element) {
       IOS_FULLSCREEN_EVENTS.forEach((event, idx) => {
-        element.addEventListener(
-          event,
-          [handlers.iosStart, handlers.iosEnd][idx],
-        );
+        element.addEventListener(event, [handlers.iosStart, handlers.iosEnd][idx]);
       });
     }
 
@@ -80,10 +77,7 @@ export default function useFullscreen(
 
       if (IS_IOS && element) {
         IOS_FULLSCREEN_EVENTS.forEach((event, idx) => {
-          element.removeEventListener(
-            event,
-            [handlers.iosStart, handlers.iosEnd][idx],
-          );
+          element.removeEventListener(event, [handlers.iosStart, handlers.iosEnd][idx]);
         });
       }
     };
@@ -147,16 +141,15 @@ function checkIfFullscreen(): boolean {
   return isSupported && Boolean(document[fullscreenProp as keyof Document]);
 }
 
-async function requestFullscreen(
-  element: PartialHTMLElementSupport,
-): Promise<void> {
-  const _requestFullscreen =
-    element.requestFullscreen ||
-    element.webkitRequestFullscreen ||
-    element.mozRequestFullScreen;
-
+async function requestFullscreen(element: PartialHTMLElementSupport): Promise<void> {
   try {
-    await _requestFullscreen();
+    if (element.requestFullscreen) {
+      await element.requestFullscreen();
+    } else if (element.webkitRequestFullscreen) {
+      await element.webkitRequestFullscreen();
+    } else if (element.mozRequestFullScreen) {
+      await element.mozRequestFullScreen();
+    }
   } catch (error) {
     DEBUG && console.error("Error entering fullscreen:", error);
   }
@@ -164,16 +157,14 @@ async function requestFullscreen(
 
 async function requestExitFullscreen(): Promise<void> {
   const _document = document as PartialDocumentSupport;
-  const _exitFullscreen =
-    _document.exitFullscreen ||
-    _document.webkitExitFullscreen ||
-    _document.mozCancelFullScreen;
 
   try {
-    await _exitFullscreen();
-
-    if (screen.orientation.unlock) {
-      screen.orientation.unlock();
+    if (_document.exitFullscreen) {
+      await _document.exitFullscreen();
+    } else if (_document.webkitExitFullscreen) {
+      await _document.webkitExitFullscreen();
+    } else if (_document.mozCancelFullScreen) {
+      await _document.mozCancelFullScreen();
     }
   } catch (error) {
     DEBUG && console.error("Error exiting fullscreen:", error);

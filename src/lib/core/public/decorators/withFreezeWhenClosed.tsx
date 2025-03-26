@@ -1,11 +1,11 @@
 import { FC, useRef } from "react";
 
-interface FreezeProps {
+type FreezeRequiredProps = {
   isOpen: boolean;
   ignoreFreeze?: boolean;
-}
+};
 
-export function withFreezeWhenClosed<P extends FreezeProps>(
+export default function withFreezeWhenClosed<P extends FreezeRequiredProps>(
   WrappedComponent: FC<P>,
 ): FC<P> {
   const displayName =

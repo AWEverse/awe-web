@@ -56,8 +56,6 @@ const VideoPlayerMetter: FC<VideoPlayerMetterProps> = ({
 
   const [isSeeking, _setIsSeeking] = useState(false);
 
-  const canvasRef = useBufferedCanvas(bufferedRangesSignal.value, duration);
-
   const setIsSeeking = useDebouncedFunction(
     _setIsSeeking,
     SEEK_DEBOUNCE_MS,
@@ -143,11 +141,7 @@ const VideoPlayerMetter: FC<VideoPlayerMetterProps> = ({
         aria-valuemax={duration}
         itemProp="duration"
       >
-        <canvas
-          ref={canvasRef}
-          height={10}
-          style={{ width: "100%", height: "100%" }}
-        />
+        <canvas height={10} style={{ width: "100%", height: "100%" }} />
         <div
           ref={progressBar}
           className={buildClassName(

@@ -1,10 +1,10 @@
-import React, { FC, memo, useCallback, useEffect } from "react";
-import { AnimatePresence, motion } from "framer-motion";
+import React, { FC, memo, useCallback, useEffect, useRef } from "react";
+import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { useDropdownState } from "../hooks";
 import buildClassName from "@/shared/lib/buildClassName";
-import { useRefInstead } from "@/shared/hooks/base";
+import { useRefInstead, useStateRef } from "@/shared/hooks/base";
 import s from "./Dropdown.module.scss";
-import { dispatchHeavyAnimation } from "@/lib/core";
+import { dispatchHeavyAnimation, withFreezeWhenClosed } from "@/lib/core";
 import useBodyClass from "@/shared/hooks/DOM/useBodyClass";
 import { useBoundaryCheck } from "@/shared/hooks/mouse/useBoundaryCheck";
 import { useEffectWithPreviousDeps } from "@/shared/hooks/effects/useEffectWithPreviousDependencies";
@@ -13,7 +13,7 @@ import trapFocus from "@/lib/utils/trapFocus";
 import { useClickAway } from "@/lib/hooks/events/useClick";
 
 interface OwnTriggerProps<T = HTMLElement> extends React.HTMLAttributes<T> {
-  onTrigger: NoneToVoidFunction;
+  onTrigger: () => void;
   isOpen?: boolean;
 }
 
@@ -40,14 +40,8 @@ interface OwnProps {
   ) => void;
 }
 
-const SCALE_FACTOR = 0.85; //%
-const ANIMATION_DURATION = 0.15;
-
-const dropdownVariants = {
-  initial: { scale: SCALE_FACTOR, opacity: 0 },
-  animate: { scale: 1, opacity: 1 },
-  exit: { scale: SCALE_FACTOR, opacity: 0 },
-};
+const SCALE_FACTOR = 0.85; // Animation scale factor
+const ANIMATION_DURATION = 0.125; // Reduced for performance (was 0.15)
 
 const DropdownMenu: FC<OwnProps & OwnSharedProps> = ({
   ref,
@@ -65,12 +59,27 @@ const DropdownMenu: FC<OwnProps & OwnSharedProps> = ({
   onBackdropMouseEnter,
 }) => {
   const dropdownRef = useRefInstead<HTMLDivElement>(ref);
+  const shouldReduceMotion = useReducedMotion();
 
   const { isOpen, handleToggle, handleClose } = useDropdownState({
     onOpen,
     onClose,
     shouldClose,
   });
+
+  const dropdownVariants = useStateRef(
+    shouldReduceMotion
+      ? {
+          initial: { opacity: 0 },
+          animate: { opacity: 1 },
+          exit: { opacity: 0 },
+        }
+      : {
+          initial: { scale: SCALE_FACTOR, opacity: 0 },
+          animate: { scale: 1, opacity: 1 },
+          exit: { scale: SCALE_FACTOR, opacity: 0 },
+        },
+  ).current;
 
   useKeyboardListeners({
     bindings: { onEsc: onClose, onEnter },
@@ -99,7 +108,7 @@ const DropdownMenu: FC<OwnProps & OwnSharedProps> = ({
 
   useEffect(() => {
     if (isOpen && dropdownRef.current) {
-      return trapFocus(dropdownRef.current!);
+      return trapFocus(dropdownRef.current);
     }
   }, [isOpen]);
 
@@ -155,5 +164,5 @@ const DropdownMenu: FC<OwnProps & OwnSharedProps> = ({
 export default memo(DropdownMenu);
 export type {
   OwnTriggerProps as TriggerProps,
-  OwnSharedProps as DropdopwnSharedProps,
+  OwnSharedProps as DropdownSharedProps,
 };

@@ -40,6 +40,7 @@ import { useScrollProvider } from "@/shared/context";
 import useKeyHandler from "../../private/hooks/useKeyHandler";
 import { useThrottledFunction } from "@/shared/hooks/shedulers";
 import { useTouchControls } from "../../private/hooks/useTouchControls";
+import { useComponentDidMount } from "@/shared/hooks/effects/useLifecycle";
 
 const TopPannel = lazy(() => import("../../private/ui/mobile/TopPannel"));
 
@@ -273,6 +274,22 @@ const VideoPlayer: React.FC<OwnProps> = ({
     }
   });
 
+  useComponentDidMount(() => {
+    const video = videoRef.current;
+
+    if (video) {
+      const handleError = (e: any) => {
+        DEBUG && console.error("Video error:", e);
+      };
+
+      video.addEventListener("error", handleError);
+
+      return () => {
+        video.removeEventListener("error", handleError);
+      };
+    }
+  });
+
   return (
     <>
       <div
@@ -305,6 +322,7 @@ const VideoPlayer: React.FC<OwnProps> = ({
           muted={isGif || isAudioMuted}
           aria-hidden={false}
           role="video"
+          preload="metadata"
           autoPlay={false}
           {...handlersBuffering}
           onWaiting={() => setWaiting(true)}
