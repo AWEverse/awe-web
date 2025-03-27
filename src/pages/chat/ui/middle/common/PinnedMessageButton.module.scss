@@ -19,7 +19,6 @@ $transition-easing: cubic-bezier(0.4, 0, 0.2, 1);
   cursor: pointer;
   user-select: none;
   background-color: var(--awe-palette-secondary-main);
-  transition: all $transition-duration $transition-easing;
   z-index: 1;
 
   &:hover {

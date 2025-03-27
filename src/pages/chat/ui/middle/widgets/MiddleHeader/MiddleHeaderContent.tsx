@@ -57,10 +57,13 @@ export const HeaderContent: React.FC<HeaderContentProps> = ({
     () => (
       <>
         <div
-          className="UserDetails allow-width-right-column-header"
           onClick={openProfileColumn}
+          className="UserDetails allow-width-right-column-header"
         >
           <p>{senderName}</p>
+          <span>
+            Was online <time>a one hours ago</time>
+          </span>
         </div>
         <div className="MiddleHeaderActions allow-space-right-column-header">
           {!lessTablet && (

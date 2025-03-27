@@ -7,7 +7,7 @@ type SwipeDirection = "up" | "down" | "left" | "right";
 
 interface TouchControlConfig {
   swipeThreshold?: number;
-  debounceTime: number;
+  debounceTime?: number;
   zoneRatios?: [number, number, number];
   enableSwipe?: boolean;
   enableDoubleTap?: boolean;
@@ -21,46 +21,21 @@ interface TouchControlConfig {
   onDoubleTap?: (zone: TouchZone) => void;
 }
 
-interface TouchState {
-  startX: number;
-  startY: number;
-  startTime: number;
-  lastX: number;
-  lastY: number;
-  currentZone: TouchZone;
-  boundaries: { leftBound: number; centerBound: number };
-}
-
-const DEFAULT_CONFIG: TouchControlConfig = {
-  swipeThreshold: 50,
-  debounceTime: 300,
-  zoneRatios: [0.3, 0.4, 0.3],
-  enableSwipe: true,
-  enableDoubleTap: false,
-  doubleTapThreshold: 300,
-  doubleTapMovement: 10,
-};
-
-const getZoneBoundaries = (
-  element: HTMLElement,
-  zoneRatios: [number, number, number],
-) => {
-  const rect = element.getBoundingClientRect();
-  const width = rect.width;
-  const [leftRatio, centerRatio] = zoneRatios;
-
-  return {
-    leftBound: rect.left + width * leftRatio,
-    centerBound: rect.left + width * (leftRatio + centerRatio),
-  };
-};
-
 export const useTouchControls = (
   elementRef: RefObject<HTMLElement | null>,
-  config: TouchControlConfig = DEFAULT_CONFIG,
-  disable = false,
+  config: TouchControlConfig = {},
+  disable = false
 ) => {
-  const touchState = useRef<TouchState | null>(null);
+  const touchState = useRef<{
+    startX: number;
+    startY: number;
+    startTime: number;
+    lastX: number;
+    lastY: number;
+    currentZone: TouchZone;
+    boundaries: { leftBound: number; centerBound: number };
+  } | null>(null);
+
   const lastTouchTime = useRef(0);
   const lastTapDetails = useRef({
     time: 0,
@@ -69,29 +44,31 @@ export const useTouchControls = (
     zone: "unknown" as TouchZone,
   });
 
-  const mergedConfig = useMemo(
-    () => ({
-      ...DEFAULT_CONFIG,
-      ...config,
-    }),
-    [config],
-  );
-
   const {
-    swipeThreshold,
-    debounceTime,
-    zoneRatios,
-    enableSwipe,
-    enableDoubleTap,
-    doubleTapThreshold,
-    doubleTapMovement,
+    swipeThreshold = 50,
+    debounceTime = 300,
+    zoneRatios = [0.3, 0.4, 0.3],
+    enableSwipe = true,
+    enableDoubleTap = false,
+    doubleTapThreshold = 300,
+    doubleTapMovement = 10,
     onCenterZone,
     onLeftZone,
     onRightZone,
     onSwipe,
     onZoneChange,
     onDoubleTap,
-  } = mergedConfig;
+  } = useMemo(() => ({ ...config }), [config]);
+
+  const getZoneBoundaries = (element: HTMLElement) => {
+    const { left, width } = element.getBoundingClientRect();
+    const [leftRatio, centerRatio] = zoneRatios;
+
+    return {
+      leftBound: left + width * leftRatio,
+      centerBound: left + width * (leftRatio + centerRatio),
+    };
+  };
 
   const detectSwipe = useStableCallback((endX: number, endY: number) => {
     if (!touchState.current || !enableSwipe) return;
@@ -103,30 +80,27 @@ export const useTouchControls = (
 
     const velocity = Math.max(
       Math.abs(deltaX) / duration,
-      Math.abs(deltaY) / duration,
+      Math.abs(deltaY) / duration
     );
 
-    if (Math.abs(deltaX) > swipeThreshold!) {
+    if (Math.abs(deltaX) > swipeThreshold) {
       onSwipe?.(deltaX > 0 ? "right" : "left", velocity);
-    } else if (Math.abs(deltaY) > swipeThreshold!) {
+    } else if (Math.abs(deltaY) > swipeThreshold) {
       onSwipe?.(deltaY > 0 ? "down" : "up", velocity);
     }
   });
 
   const handleZoneAction = useStableCallback(
     throttle((zone: TouchZone) => {
-      switch (zone) {
-        case "left":
-          onLeftZone?.();
-          break;
-        case "center":
-          onCenterZone?.();
-          break;
-        case "right":
-          onRightZone?.();
-          break;
+      const zoneActions = {
+        left: onLeftZone,
+        center: onCenterZone,
+        right: onRightZone,
+      };
+      if (zone === "left" || zone === "center" || zone === "right") {
+        zoneActions[zone]?.();
       }
-    }, debounceTime),
+    }, debounceTime)
   );
 
   const checkDoubleTap = useStableCallback(
@@ -135,13 +109,13 @@ export const useTouchControls = (
 
       const { time, x, y, zone } = lastTapDetails.current;
       const currentTime = Date.now();
-      const isWithinTime = currentTime - time <= doubleTapThreshold!;
-      const isSamePosition =
-        Math.abs(startX - x) <= doubleTapMovement! &&
-        Math.abs(startY - y) <= doubleTapMovement!;
-      const isSameZone = zone === currentZone;
+      const isDoubleTap =
+        currentTime - time <= doubleTapThreshold &&
+        Math.abs(startX - x) <= doubleTapMovement &&
+        Math.abs(startY - y) <= doubleTapMovement &&
+        zone === currentZone;
 
-      if (isWithinTime && isSamePosition && isSameZone) {
+      if (isDoubleTap) {
         onDoubleTap?.(currentZone);
         lastTapDetails.current = { time: 0, x: 0, y: 0, zone: "unknown" };
       } else {
@@ -152,27 +126,28 @@ export const useTouchControls = (
           zone: currentZone,
         };
       }
-    },
+    }
   );
 
   const handleTouchStart = useStableCallback((e: TouchEvent) => {
-    if (Date.now() - lastTouchTime.current < debounceTime!) return;
+    if (Date.now() - lastTouchTime.current < debounceTime) return;
 
     const touch = e.touches[0];
     const element = elementRef.current!;
-    const boundaries = getZoneBoundaries(element, zoneRatios!);
+    const boundaries = getZoneBoundaries(element);
     const clientX = touch.clientX;
-    const currentZone = clientX < boundaries.leftBound
-      ? "left"
-      : clientX < boundaries.centerBound
-        ? "center"
-        : "right";
+    const currentZone =
+      clientX < boundaries.leftBound
+        ? "left"
+        : clientX < boundaries.centerBound
+          ? "center"
+          : "right";
 
     touchState.current = {
-      startX: touch.clientX,
+      startX: clientX,
       startY: touch.clientY,
       startTime: Date.now(),
-      lastX: touch.clientX,
+      lastX: clientX,
       lastY: touch.clientY,
       currentZone,
       boundaries,
@@ -188,28 +163,27 @@ export const useTouchControls = (
     const clientX = touch.clientX;
     const { boundaries, currentZone } = touchState.current;
 
-    const newZone = clientX < boundaries.leftBound
-      ? "left"
-      : clientX < boundaries.centerBound
-        ? "center"
-        : "right";
+    const newZone =
+      clientX < boundaries.leftBound
+        ? "left"
+        : clientX < boundaries.centerBound
+          ? "center"
+          : "right";
 
     if (newZone !== currentZone) {
       touchState.current.currentZone = newZone;
       onZoneChange?.(newZone);
     }
 
-    touchState.current.lastX = touch.clientX;
+    touchState.current.lastX = clientX;
     touchState.current.lastY = touch.clientY;
   });
 
   const handleTouchEnd = useStableCallback((_: TouchEvent) => {
     if (!touchState.current) return;
 
-    const touch = touchState.current!;
+    const { lastX, lastY, currentZone, startX, startY } = touchState.current;
     lastTouchTime.current = Date.now();
-
-    const { lastX, lastY, currentZone, startX, startY } = touch;
 
     detectSwipe(lastX, lastY);
     handleZoneAction(currentZone);
@@ -239,11 +213,10 @@ export const useTouchControls = (
     };
   }, [elementRef, disable]);
 
-  const getCurrentZone = useStableCallback(() => touchState.current?.currentZone || "unknown");
+  const getCurrentZone = useStableCallback(() =>
+    touchState.current?.currentZone || "unknown"
+  );
   const getTouchState = useStableCallback(() => touchState.current);
 
-  return {
-    getCurrentZone,
-    getTouchState
-  };
+  return { getCurrentZone, getTouchState };
 };

@@ -31,7 +31,6 @@ import { useBooleanState, useTriggerReRender } from "@/shared/hooks/state";
 import parseMediaSources from "../../private/lib/source/parseMediaSources";
 import { useFastClick } from "@/shared/hooks/mouse/useFastClick";
 import { useContextMenuHandlers } from "@/entities/context-menu";
-import { useVideoBuffering } from "../../private/hooks/useVideoBuffering";
 import { useVideoPlayback } from "../../private/hooks/useVideoPlayback";
 import { noop } from "@/lib/utils/listener";
 import { useTimeLine } from "../../private/hooks/useTimeLine";
@@ -83,7 +82,7 @@ const VideoPlayer: React.FC<OwnProps> = ({
   const { isMobile } = useAppLayout();
 
   const containerRef = useRef<HTMLDivElement>(null);
-  const videoRef = useRef<HTMLVideoElement | null>(null);
+  const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const readingRef = useRef<HTMLDivElement>(null);
 
@@ -118,10 +117,7 @@ const VideoPlayer: React.FC<OwnProps> = ({
   const handleEnterFullscreen = useStableCallback(async () => {});
   const handleLeaveFullscreen = useStableCallback(async () => {});
 
-  const { isReady, bufferedRanges, handlersBuffering } = useVideoBuffering();
-
-  const { currentTime, duration, handleSeek, handleTimeUpdate } =
-    useTimeLine(videoRef);
+  const { currentTime, duration, handleSeek } = useTimeLine(videoRef);
 
   const isLooped = isGif || duration <= MAX_LOOP_DURATION;
 
@@ -130,8 +126,6 @@ const VideoPlayer: React.FC<OwnProps> = ({
     volume,
     isMuted,
     playbackRate,
-    handlePlay,
-    handlePause,
     togglePlayState,
     handleVolumeChange,
     handleMuteClick,
@@ -149,14 +143,27 @@ const VideoPlayer: React.FC<OwnProps> = ({
   const isUnsupported = useUnsupportedMedia(videoRef);
   const isAmbilightDisabled = isAmbient && isFullscreen;
 
-  useAmbilight(videoRef, canvasRef);
+  useAmbilight(
+    videoRef,
+    canvasRef,
+    {
+      fps: 30,
+      intensity: 0.8,
+      drawMode: "blur",
+      blurRadius: 20,
+      edgeThickness: 0.15,
+    },
+    isAmbilightDisabled,
+  );
 
   const toggleAmbientLight = useStableCallback(() => {
     !isAmbient ? markAmbientOn() : markAmbientOff();
   });
 
   const handleEnded = useStableCallback(() => {
-    if (!isLooped && isPlaying) handlePlay();
+    if (!isLooped && isPlaying) {
+      togglePlayState();
+    }
     toggleControls(isLooped);
   });
 
@@ -169,9 +176,21 @@ const VideoPlayer: React.FC<OwnProps> = ({
 
   useTouchControls(videoRef, {
     onLeftZone: () =>
-      handleSeek(clamp(currentTime.value - REWIND_STEP, 0, duration)),
+      handleSeek(
+        clamp(
+          currentTime.value + (currentTime.value - REWIND_STEP),
+          0,
+          duration,
+        ),
+      ),
     onRightZone: () =>
-      handleSeek(clamp(currentTime.value + REWIND_STEP, 0, duration)),
+      handleSeek(
+        clamp(
+          currentTime.value + (currentTime.value + REWIND_STEP),
+          0,
+          duration,
+        ),
+      ),
     onCenterZone: togglePlayState,
     zoneRatios: [0.2, 0.6, 0.2],
     debounceTime: 500,
@@ -274,22 +293,6 @@ const VideoPlayer: React.FC<OwnProps> = ({
     }
   });
 
-  useComponentDidMount(() => {
-    const video = videoRef.current;
-
-    if (video) {
-      const handleError = (e: any) => {
-        DEBUG && console.error("Video error:", e);
-      };
-
-      video.addEventListener("error", handleError);
-
-      return () => {
-        video.removeEventListener("error", handleError);
-      };
-    }
-  });
-
   return (
     <>
       <div
@@ -322,15 +325,13 @@ const VideoPlayer: React.FC<OwnProps> = ({
           muted={isGif || isAudioMuted}
           aria-hidden={false}
           role="video"
-          preload="metadata"
+          preload="auto"
           autoPlay={false}
-          {...handlersBuffering}
           onWaiting={() => setWaiting(true)}
           onContextMenu={handleContextMenu}
           onEnded={handleEnded}
           onClick={!isMobile ? handleVideoClick : undefined}
           onDoubleClick={!IS_TOUCH_ENV ? toggleFullscreen : undefined}
-          onTimeUpdate={handleTimeUpdate}
         >
           {parseMediaSources({
             src: mediaUrl,
@@ -345,8 +346,7 @@ const VideoPlayer: React.FC<OwnProps> = ({
           duration={duration}
           playbackRate={playbackRate}
           isMuted={isMuted}
-          bufferedRangesSignal={bufferedRanges}
-          isReady={isReady}
+          isReady={true}
           fileSize={totalFileSize}
           isForceMobileVersion={isMobile}
           isFullscreen={isFullscreen}

@@ -28,11 +28,13 @@
 
 .SlideContent {
   width: 100%;
-  height: 100%; 
+  height: 100%;
 }
 
 .SlideTrack {
   position: absolute;
+  left: 0.25rem;
+  transform: scaleY(-1);
 }
 
 .mark {

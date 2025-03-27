@@ -104,9 +104,8 @@ const SlideButton: FC<SlideButtonProps & ActionButtonProps> = ({
         };
   }, [type, direction]);
 
-  // Stable mouse event handlers
-  const handleMouseEnter = useCallback(() => setIsHovered(true), []);
-  const handleMouseLeave = useCallback(() => setIsHovered(false), []);
+  const handleMouseEnter = useStableCallback(() => setIsHovered(true));
+  const handleMouseLeave = useStableCallback(() => setIsHovered(false));
 
   return (
     <ActionButton
@@ -117,7 +116,7 @@ const SlideButton: FC<SlideButtonProps & ActionButtonProps> = ({
       aria-label={`Slide control (${slideIndex + 1} of ${totalSlides})`}
       {...rest}
     >
-      <div className="absolute left-1 z-10">
+      <div className={s.SlideTrack}>
         <TrackNavigation count={totalSlides} index={slideIndex} />
       </div>
 

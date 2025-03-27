@@ -6,6 +6,7 @@ import { FC, memo, useEffect, useState } from "react";
 import s from "./MiddleHeaderSearch.module.scss";
 import SearchResults from "../../search/SearchResults";
 import { useDebouncedFunction } from "@/shared/hooks/shedulers";
+import buildClassName from "@/shared/lib/buildClassName";
 
 interface OwnProps {}
 
@@ -42,7 +43,7 @@ const MiddleHeaderSearch: FC<OwnProps & StateProps> = () => {
   });
 
   return (
-    <section className={s.MiddleHeaderSearch}>
+    <section className={buildClassName(s.MiddleHeaderSearch)}>
       <SearchInput
         role="combobox"
         aria-controls="search-results"

@@ -14,7 +14,6 @@ import useBufferedCanvas from "../hooks/useBufferedCanvas";
 
 interface VideoPlayerMetterProps {
   currentTimeSignal: ReadonlySignal<number>;
-  bufferedRangesSignal: ReadonlySignal<BufferedRange[]>;
   url?: string;
   duration: number;
   playbackRate: number;
@@ -33,7 +32,6 @@ const SEEK_DEBOUNCE_MS = 200;
 
 const VideoPlayerMetter: FC<VideoPlayerMetterProps> = ({
   currentTimeSignal,
-  bufferedRangesSignal,
   url,
   duration,
   playbackRate,

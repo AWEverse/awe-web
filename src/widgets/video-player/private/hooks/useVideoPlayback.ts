@@ -9,7 +9,7 @@ import { useStableCallback } from "@/shared/hooks/base";
 import useStateSignal from "@/lib/hooks/signals/useStateSignal";
 
 export const useVideoPlayback = (
-  videoRef: React.RefObject<HTMLVideoElement | null>,
+  videoRef: React.RefObject<HTMLVideoElement | null>
 ) => {
   const [isPlaying, setIsPlaying] = useState(false);
   const [volume, setVolume] = useStateSignal(1);
@@ -20,57 +20,50 @@ export const useVideoPlayback = (
     const video = videoRef.current;
     if (!video) return;
 
-    const handleVolumeChange = () => {
+    const updateVideoState = () => {
       setVolume(video.volume);
       setIsMuted(video.muted);
-    };
-
-    const handleRateChange = () => {
       setPlaybackRate(video.playbackRate);
+      setIsPlaying(!video.paused);
     };
 
-    const handlePlayEvent = () => {
-      setIsPlaying(true);
+    const eventHandlers = {
+      volumechange: updateVideoState,
+      ratechange: updateVideoState,
+      play: () => setIsPlaying(true),
+      pause: () => setIsPlaying(false),
     };
 
-    const handlePauseEvent = () => {
-      setIsPlaying(false);
-    };
+    Object.entries(eventHandlers).forEach(([event, handler]) => {
+      video.addEventListener(event, handler);
+    });
 
-    video.addEventListener("volumechange", handleVolumeChange);
-    video.addEventListener("ratechange", handleRateChange);
-    video.addEventListener("play", handlePlayEvent);
-    video.addEventListener("pause", handlePauseEvent);
-
-    handleVolumeChange();
-    handleRateChange();
-    setIsPlaying(!video.paused);
+    updateVideoState();
 
     return () => {
-      video.removeEventListener("volumechange", handleVolumeChange);
-      video.removeEventListener("ratechange", handleRateChange);
-      video.removeEventListener("play", handlePlayEvent);
-      video.removeEventListener("pause", handlePauseEvent);
+      Object.entries(eventHandlers).forEach(([event, handler]) => {
+        video.removeEventListener(event, handler);
+      });
     };
   }, [videoRef, setVolume, setPlaybackRate]);
 
-  const handlePlay = useStableCallback(() => {
-    setIsPlaying(true);
-  });
-
-  const handlePause = useStableCallback(() => {
-    setIsPlaying(false);
-  });
+  const safeVideoAction = useStableCallback((
+    action: (video: HTMLVideoElement) => void
+  ) => {
+    const video = videoRef.current;
+    if (video) return action(video);
+  }
+  );
 
   const togglePlayState = useStableCallback(async () => {
-    const video = videoRef.current;
-    if (!video) return;
     try {
-      if (video.paused) {
-        await playMedia(video);
-      } else {
-        pauseMedia(video);
-      }
+      safeVideoAction((video) => {
+        if (video.paused) {
+          void playMedia(video);
+        } else {
+          pauseMedia(video);
+        }
+      });
     } catch (error) {
       console.error("Error toggling playback:", error);
       setIsPlaying(false);
@@ -78,28 +71,25 @@ export const useVideoPlayback = (
   });
 
   const handleVolumeChange = useStableCallback((value: number) => {
-    const video = videoRef.current;
-    if (!video) return;
-
-    const newVolume = clamp01(value);
-    if (video.muted) video.muted = false;
-    video.volume = newVolume;
-
-    setVolume(newVolume);
-    setIsMuted(false);
+    safeVideoAction((video) => {
+      const newVolume = clamp01(value);
+      if (video.muted) video.muted = false;
+      video.volume = newVolume;
+      setVolume(newVolume);
+      setIsMuted(false);
+    });
   });
 
   const handleMuteClick = useStableCallback(() => {
-    const video = videoRef.current;
-    if (!video) return;
-
-    video.muted = !video.muted;
+    safeVideoAction((video) => {
+      video.muted = !video.muted;
+    });
   });
 
   const handlePlaybackRateChange = useStableCallback((value: number) => {
-    const video = videoRef.current;
-    if (!video) return;
-    setMediaPlayBackRate(video, value, 1);
+    safeVideoAction((video) => {
+      setMediaPlayBackRate(video, value, 1);
+    });
   });
 
   return {
@@ -107,8 +97,6 @@ export const useVideoPlayback = (
     volume,
     isMuted,
     playbackRate,
-    handlePlay,
-    handlePause,
     togglePlayState,
     handleVolumeChange,
     handleMuteClick,

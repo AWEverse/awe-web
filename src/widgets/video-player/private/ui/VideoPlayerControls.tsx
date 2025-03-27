@@ -28,7 +28,8 @@ import SettingsDropdown from "./controls/SettingsDropdown";
 import { TriggerProps } from "@/shared/ui/dropdown";
 import s from "./VideoPlayerControls.module.scss";
 import { formatMediaDuration } from "../lib/time/formatMediaDuration";
-import { IconButtonMemo } from "@/shared/ui/IconButton";
+import IconButton from "@/shared/ui/IconButton";
+import SignalFragment from "@/shared/ui/SignalFragment";
 
 type OwnProps = {
   // Playback Control
@@ -41,7 +42,6 @@ type OwnProps = {
   isMuted: boolean;
 
   // Buffered Media Info
-  bufferedRangesSignal: ReadonlySignal<BufferedRange[]>;
   isReady: boolean;
 
   // Media Properties
@@ -76,13 +76,22 @@ const HIDE_CONTROLS_TIMEOUT_MS = 3000;
 const DEBOUNCE = 200;
 
 const TriggerButton: FC<TriggerProps> = ({ onTrigger }) => (
-  <IconButtonMemo
+  <IconButton
     onClick={onTrigger}
     className={buildClassName(s.control, s.blendMode)}
   >
     <SettingsRounded className={s.icon} />
-  </IconButtonMemo>
+  </IconButton>
 );
+
+const timeCallback = (time: unknown) => {
+  if (typeof time !== "number") return "00:00";
+
+  return formatMediaDuration(time, {
+    includeHours: time > 3600,
+    forceTwoDigits: true,
+  });
+};
 
 const VideoPlayerControls: FC<OwnProps> = ({
   isPlaying,
@@ -92,7 +101,6 @@ const VideoPlayerControls: FC<OwnProps> = ({
   duration,
   playbackRate,
   isMuted,
-  bufferedRangesSignal,
   isReady,
   url,
   fileSize,
@@ -115,7 +123,6 @@ const VideoPlayerControls: FC<OwnProps> = ({
   onAmbientModeClick,
 }) => {
   const inputRef = useRef<HTMLInputElement>(null);
-  const timeRef = useRef<HTMLTimeElement>(null);
   const volumeRef = useRef<HTMLSpanElement>(null);
 
   const [isVisible, setVisibillity] = useState(true);
@@ -144,25 +151,6 @@ const VideoPlayerControls: FC<OwnProps> = ({
 
     return () => clearTimeout(timeoutId);
   }, [isPlaying, isVisible, isForceMobileVersion, isSeeking, onToggleControls]);
-
-  useSignalEffect(
-    bufferedRangesSignal,
-    (ranges) => {
-      const bufferedLength = ranges.sum((range) => range.end - range.start);
-    },
-    [duration],
-  );
-
-  useSignalEffect(currentTimeSignal, (time) => {
-    const currentTime = formatMediaDuration(time, {
-      includeHours: time > 3600,
-      forceTwoDigits: true,
-    });
-
-    if (timeRef.current) {
-      timeRef.current.textContent = currentTime;
-    }
-  });
 
   useSignalLayoutEffect(volumeSignal, (volume) => {
     const percentage = Math.round(volume * 100);
@@ -205,7 +193,6 @@ const VideoPlayerControls: FC<OwnProps> = ({
       <VideoPlayerMetter
         currentTimeSignal={currentTimeSignal}
         duration={duration}
-        bufferedRangesSignal={bufferedRangesSignal}
         playbackRate={10}
         isReady={isReady}
         isActive={isVisible}
@@ -218,7 +205,7 @@ const VideoPlayerControls: FC<OwnProps> = ({
 
       {!isForceMobileVersion && (
         <>
-          <IconButtonMemo
+          <IconButton
             className={buildClassName(s.control, s.blendMode)}
             onClick={onPlayPause}
           >
@@ -227,16 +214,16 @@ const VideoPlayerControls: FC<OwnProps> = ({
             ) : (
               <PlayArrowRounded className={s.icon} />
             )}
-          </IconButtonMemo>
-          <IconButtonMemo className={buildClassName(s.control, s.blendMode)}>
+          </IconButton>
+          <IconButton className={buildClassName(s.control, s.blendMode)}>
             <SkipNextRounded className={s.icon} />
-          </IconButtonMemo>
-          <IconButtonMemo
+          </IconButton>
+          <IconButton
             className={buildClassName(s.control, s.blendMode)}
             onClick={onVolumeClick}
           >
             <VolumeUpRounded className={s.icon} />
-          </IconButtonMemo>
+          </IconButton>
 
           <label className={s.slider}>
             <input
@@ -252,7 +239,9 @@ const VideoPlayerControls: FC<OwnProps> = ({
       )}
 
       <div className={buildClassName(s.Time, s.blendMode)}>
-        <time ref={timeRef} aria-label="Current time position"></time>
+        <time aria-label="Current time position">
+          <SignalFragment signal={currentTimeSignal} children={timeCallback} />
+        </time>
         <span>&nbsp;/&nbsp;</span>
         <time aria-label="Total duration">
           {formatMediaDuration(duration, {
@@ -274,22 +263,22 @@ const VideoPlayerControls: FC<OwnProps> = ({
           />
 
           {isPictureInPictureSupported && (
-            <IconButtonMemo
+            <IconButton
               className={buildClassName(s.control, s.blendMode)}
               onClick={onPictureInPictureChange}
             >
               <PictureInPictureAltRounded className={s.icon} />
-            </IconButtonMemo>
+            </IconButton>
           )}
 
-          <IconButtonMemo className={buildClassName(s.control, s.blendMode)}>
+          <IconButton className={buildClassName(s.control, s.blendMode)}>
             <WidthFullRounded className={s.icon} />
-          </IconButtonMemo>
+          </IconButton>
         </>
       )}
 
       {isFullscreenSupported && (
-        <IconButtonMemo
+        <IconButton
           className={buildClassName(s.control, s.blendMode)}
           onClick={onChangeFullscreen}
         >
@@ -298,7 +287,7 @@ const VideoPlayerControls: FC<OwnProps> = ({
           ) : (
             <FullscreenRounded className={s.icon} />
           )}
-        </IconButtonMemo>
+        </IconButton>
       )}
     </section>
   );

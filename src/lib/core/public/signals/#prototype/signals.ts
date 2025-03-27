@@ -4,7 +4,7 @@ import { defaultEquals } from './SignalsCompaire';
 import SignalDebugManager from './SignalDebugManager';
 import { SignalOptions, Listener, Compute, Cleanup, SignalCleanup } from './SignalsTypes';
 import SignalsConfig from './SignalsConfig';
-import { fastRaf } from '../schedulers';
+import { fastRaf } from '../../schedulers';
 
 
 /**
