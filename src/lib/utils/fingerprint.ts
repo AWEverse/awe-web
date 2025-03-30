@@ -1,5 +1,7 @@
-import { PLATFORM_ENV } from "../core";
+import { PLATFORM_ENV, SafeLocalStorage } from "../core";
 import { APPLICATION_PDF } from "./mimeTypes";
+
+export const FINGERPRINT_CACHE_KEY = 'clientFingerprint';
 
 interface ClientFingerprint {
   screenResolution: string;
@@ -190,3 +192,18 @@ export async function collectClientFingerprint(): Promise<ClientFingerprint> {
   };
 }
 
+
+export function getCachedClientFingerprint(): ClientFingerprint | null {
+
+  const cachedFingerprint = SafeLocalStorage.getItem<string | null>(FINGERPRINT_CACHE_KEY);
+  if (cachedFingerprint) {
+    try {
+      return JSON.parse(cachedFingerprint);
+    } catch (e) {
+      console.warn('Failed to parse cached fingerprint:', e);
+      return null;
+    }
+  }
+
+  return null;
+}
