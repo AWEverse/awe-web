@@ -1,7 +1,7 @@
 import { clamp } from "@/lib/core";
 import { requestMeasure, requestMutation } from "@/lib/modules/fastdom";
 import { useStableCallback } from "@/shared/hooks/base";
-import { useEffect, useRef } from "react";
+import { useCallback, useEffect, useRef } from "react";
 
 interface SeekerEventsProps {
   seekerRef: React.RefObject<HTMLElement | null>;
@@ -28,130 +28,136 @@ const useSeekerEvents = ({
   const stableOnSeekStart = useStableCallback(onSeekStart);
   const stableOnSeekEnd = useStableCallback(onSeekEnd);
 
-  const pointerId = useRef<number>(-1);
-  const lastOffset = useRef<number>(0);
-
-  const layoutCache = useRef<{
-    seekerRect: DOMRect;
-    previewWidth: number;
-    minOffset: number;
-    maxOffset: number;
-  }>({
-    seekerRect: new DOMRect(),
-    previewWidth: 0,
-    minOffset: 0,
-    maxOffset: 0,
+  const stateRef = useRef({
+    pointerId: -1,
+    lastOffset: 0,
+    layout: {
+      seekerRect: new DOMRect(),
+      previewWidth: 0,
+      minOffset: 0,
+      maxOffset: 0,
+    },
+    isDragging: false,
   });
+
+  const updateLayout = useCallback(() => {
+    const seeker = seekerRef.current;
+    if (!seeker) return;
+
+    requestMeasure(() => {
+      const seekerRect = seeker.getBoundingClientRect();
+      const previewWidth = previewRef?.current?.clientWidth || 0;
+
+      stateRef.current.layout = {
+        seekerRect,
+        previewWidth,
+        minOffset: -4,
+        maxOffset: seekerRect.width - previewWidth + 4,
+      };
+    });
+  }, [seekerRef, previewRef]);
+
+  const calculatePosition = useCallback((clientX: number): [number, number] => {
+    const { layout } = stateRef.current;
+    const relativeX = clamp(
+      (clientX - layout.seekerRect.left) / layout.seekerRect.width,
+      0,
+      1
+    );
+    const time = relativeX * duration;
+
+    if (isPreviewDisabled || !previewRef?.current) {
+      return [time, 0];
+    }
+
+    const offsetBase = clientX - layout.seekerRect.left - layout.previewWidth / 2;
+    return [time, clamp(offsetBase, layout.minOffset, layout.maxOffset)];
+  }, [duration, isPreviewDisabled, previewRef]);
+
+  const handlePointerMove = useCallback((e: PointerEvent) => {
+    if (e.pointerId !== stateRef.current.pointerId) return;
+
+    const [time, offset] = calculatePosition(e.clientX);
+    stableOnSeek?.(time);
+
+    if (previewRef?.current && !isPreviewDisabled && offset !== stateRef.current.lastOffset) {
+      stateRef.current.lastOffset = offset;
+      requestMutation(() => {
+        const preview = previewRef.current;
+        if (preview) {
+          preview.style.transform = `translateX(${offset}px)`;
+        }
+      });
+    }
+  }, [calculatePosition, stableOnSeek, isPreviewDisabled, previewRef]);
+
+  const cleanupPointer = useCallback(() => {
+    const seeker = seekerRef.current;
+    if (stateRef.current.pointerId !== -1 && seeker) {
+      seeker.releasePointerCapture(stateRef.current.pointerId);
+      stateRef.current.pointerId = -1;
+      stateRef.current.isDragging = false;
+    }
+  }, [seekerRef]);
 
   useEffect(() => {
     const seeker = seekerRef.current;
     if (!seeker || !isActive) return;
 
-    const updateLayoutCache = () => {
-      requestMeasure(() => {
-        const seekerRect = seeker.getBoundingClientRect();
-        const previewWidth = previewRef?.current?.clientWidth || 0;
-
-        layoutCache.current = {
-          seekerRect,
-          previewWidth,
-          minOffset: -4,
-          maxOffset: seekerRect.width - previewWidth + 4,
-        };
-      });
-    };
-
-    const calculatePosition = (clientX: number) => {
-      const cache = layoutCache.current;
-      if (!cache) return [0, 0];
-
-      const relativeX = clamp(
-        (clientX - cache.seekerRect.left) / cache.seekerRect.width,
-        0,
-        1
-      );
-      const time = relativeX * duration;
-
-      if (isPreviewDisabled || !previewRef?.current) {
-        return [time, 0];
-      }
-
-      const offsetBase = clientX - cache.seekerRect.left - cache.previewWidth / 2;
-      return [time, clamp(offsetBase, cache.minOffset, cache.maxOffset)];
-    };
+    seeker.style.touchAction = "none";
 
     const handlePointerDown = (e: PointerEvent) => {
-      if (pointerId.current !== -1) return;
+      if (stateRef.current.isDragging) return;
 
       seeker.setPointerCapture(e.pointerId);
-      pointerId.current = e.pointerId;
-      updateLayoutCache();
+      stateRef.current.pointerId = e.pointerId;
+      stateRef.current.isDragging = true;
+      updateLayout();
       stableOnSeekStart?.();
     };
 
-    const handlePointerMove = (e: PointerEvent) => {
-      if (e.pointerId !== pointerId.current) return;
-
-      const [time, offset] = calculatePosition(e.clientX);
-      stableOnSeek?.(time);
-
-      if (previewRef?.current && !isPreviewDisabled && offset !== lastOffset.current) {
-        lastOffset.current = offset;
-        requestMutation(() => {
-          if (previewRef.current) {
-            previewRef.current.style.transform = `translateX(${offset}px)`;
-          }
-        });
-      }
-    };
-
     const handlePointerUp = (e: PointerEvent) => {
-      if (e.pointerId !== pointerId.current) return;
+      if (e.pointerId !== stateRef.current.pointerId) return;
 
       const [time] = calculatePosition(e.clientX);
       stableOnSeekEnd?.(time);
-      releasePointer();
+      cleanupPointer();
     };
 
-    const handlePointerCancel = () => {
-      releasePointer();
-    };
+    const eventListeners: [keyof HTMLElementEventMap, EventListener][] = [
+      ["pointerdown", handlePointerDown as EventListener],
+      ["pointermove", handlePointerMove as EventListener],
+      ["pointerup", handlePointerUp as EventListener],
+      ["pointercancel", cleanupPointer as EventListener],
+      ["pointerleave", cleanupPointer as EventListener],
+    ];
 
-    const releasePointer = () => {
-      if (pointerId.current === -1) return;
-
-      seeker.releasePointerCapture(pointerId.current);
-      pointerId.current = -1;
-    };
-
-    seeker.style.touchAction = "none";
-
-    seeker.addEventListener("pointerdown", handlePointerDown);
-    seeker.addEventListener("pointermove", handlePointerMove);
-    seeker.addEventListener("pointerup", handlePointerUp);
-    seeker.addEventListener("pointercancel", handlePointerCancel);
-    seeker.addEventListener("pointerleave", handlePointerCancel);
+    eventListeners.forEach(([event, listener]) => {
+      seeker.addEventListener(event, listener);
+    });
 
     return () => {
       seeker.style.touchAction = "";
-      seeker.removeEventListener("pointerdown", handlePointerDown);
-      seeker.removeEventListener("pointermove", handlePointerMove);
-      seeker.removeEventListener("pointerup", handlePointerUp);
-      seeker.removeEventListener("pointercancel", handlePointerCancel);
-      seeker.removeEventListener("pointerleave", handlePointerCancel);
-      releasePointer();
+      eventListeners.forEach(([event, listener]) => {
+        seeker.removeEventListener(event, listener);
+      });
+      cleanupPointer();
     };
   }, [
     isActive,
-    duration,
-    isPreviewDisabled,
     seekerRef,
-    previewRef,
-    stableOnSeek,
     stableOnSeekStart,
     stableOnSeekEnd,
+    handlePointerMove,
+    calculatePosition,
+    updateLayout,
+    cleanupPointer,
   ]);
 
+  return {
+    updateLayout,
+    calculatePosition,
+  };
 };
 
 export default useSeekerEvents;

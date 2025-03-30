@@ -120,8 +120,6 @@ const formatTime = (duration: number, options: Partial<FormatOptions> = {}): str
   return parts.join(separator);
 };
 
-
-
 const memoizedFormatTime = memoizee(formatTime);
 
 export {
