@@ -118,6 +118,7 @@ const LeftColumn: FC<OwnProps> = ({ className }) => {
       <AnimatePresence initial={false} mode="wait">
         {ScreenComponent && (
           <motion.div
+            className="scrollable_area"
             aria-label={`Current screen: ${currentScreen}`}
             key={currentScreen}
             variants={screenVariants}

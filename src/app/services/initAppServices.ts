@@ -6,7 +6,7 @@ import initClientFingerprint from "./initClientFingerprint";
 export default async function () {
   await initAnimationsStore();
   await initI18n();
-  await initClientFingerprint();
+  // await initClientFingerprint();
   await initializeSecurityAsync()
 };
 

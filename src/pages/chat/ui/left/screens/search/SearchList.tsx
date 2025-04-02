@@ -5,7 +5,6 @@ import TabList from "@/shared/ui/TabList";
 import { useStableCallback } from "@/shared/hooks/base";
 
 interface OwnProps {
-  ref?: React.RefObject<HTMLDivElement | null>;
   className?: string;
 }
 
@@ -54,7 +53,7 @@ const tabsData = [
   },
 ];
 
-const SearchList: FC<OwnProps> = ({ ref, className }) => {
+const SearchList: FC<OwnProps> = ({ className }) => {
   const [currentIndex, setCurrentIndex] = useState(0);
 
   const handleTabChange = useStableCallback((index: number) => {
@@ -62,14 +61,7 @@ const SearchList: FC<OwnProps> = ({ ref, className }) => {
   });
 
   return (
-    <section
-      ref={ref}
-      className={buildClassName(
-        s.LeftMainSearchBody,
-        className,
-        "awe-scrollbar",
-      )}
-    >
+    <section className={buildClassName(s.LeftMainSearchBody, className)}>
       <TabList
         activeTab={currentIndex}
         className={s.TabListBorders}
@@ -78,7 +70,75 @@ const SearchList: FC<OwnProps> = ({ ref, className }) => {
         onSwitchTab={handleTabChange}
       />
       {/* <nav className={s.SeacrhNavBar}> Search result navigation </nav> */}
-
+      <ul className={s.SearchList}>
+        <li aria-details="Search result 1" className={`${s.SearchResult}`}>
+          <h2 className={s.SeacrhResultTitle}>Search result 1</h2>
+          <p>
+            Lorem ipsum dolor sit, amet consectetur adipisicing elit. Impedit
+            quae perferendis debitis sit? Asperiores nam aperiam, dolor unde,
+            quia aliquid omnis, officia recusandae molestias fugiat praesentium
+            consequatur? Minima, eveniet voluptate.
+          </p>
+        </li>
+        <li aria-details="Search result 2" className={s.SearchResult}>
+          <h2 className={s.SeacrhResultTitle}>Search result 2</h2>
+        </li>
+        <li aria-details="Search result 3" className={s.SearchResult}>
+          <h2 className={s.SeacrhResultTitle}>Search result 3</h2>
+        </li>
+        <li aria-details="Search result 4" className={s.SearchResult}>
+          <h2 className={s.SeacrhResultTitle}>Search result 4</h2>
+        </li>
+        <li aria-details="Search result 5" className={s.SearchResult}>
+          <h2 className={s.SeacrhResultTitle}>Search result 5</h2>
+        </li>
+      </ul>
+      <ul className={s.SearchList}>
+        <li aria-details="Search result 1" className={`${s.SearchResult}`}>
+          <h2 className={s.SeacrhResultTitle}>Search result 1</h2>
+          <p>
+            Lorem ipsum dolor sit, amet consectetur adipisicing elit. Impedit
+            quae perferendis debitis sit? Asperiores nam aperiam, dolor unde,
+            quia aliquid omnis, officia recusandae molestias fugiat praesentium
+            consequatur? Minima, eveniet voluptate.
+          </p>
+        </li>
+        <li aria-details="Search result 2" className={s.SearchResult}>
+          <h2 className={s.SeacrhResultTitle}>Search result 2</h2>
+        </li>
+        <li aria-details="Search result 3" className={s.SearchResult}>
+          <h2 className={s.SeacrhResultTitle}>Search result 3</h2>
+        </li>
+        <li aria-details="Search result 4" className={s.SearchResult}>
+          <h2 className={s.SeacrhResultTitle}>Search result 4</h2>
+        </li>
+        <li aria-details="Search result 5" className={s.SearchResult}>
+          <h2 className={s.SeacrhResultTitle}>Search result 5</h2>
+        </li>
+      </ul>
+      <ul className={s.SearchList}>
+        <li aria-details="Search result 1" className={`${s.SearchResult}`}>
+          <h2 className={s.SeacrhResultTitle}>Search result 1</h2>
+          <p>
+            Lorem ipsum dolor sit, amet consectetur adipisicing elit. Impedit
+            quae perferendis debitis sit? Asperiores nam aperiam, dolor unde,
+            quia aliquid omnis, officia recusandae molestias fugiat praesentium
+            consequatur? Minima, eveniet voluptate.
+          </p>
+        </li>
+        <li aria-details="Search result 2" className={s.SearchResult}>
+          <h2 className={s.SeacrhResultTitle}>Search result 2</h2>
+        </li>
+        <li aria-details="Search result 3" className={s.SearchResult}>
+          <h2 className={s.SeacrhResultTitle}>Search result 3</h2>
+        </li>
+        <li aria-details="Search result 4" className={s.SearchResult}>
+          <h2 className={s.SeacrhResultTitle}>Search result 4</h2>
+        </li>
+        <li aria-details="Search result 5" className={s.SearchResult}>
+          <h2 className={s.SeacrhResultTitle}>Search result 5</h2>
+        </li>
+      </ul>{" "}
       <ul className={s.SearchList}>
         <li aria-details="Search result 1" className={`${s.SearchResult}`}>
           <h2 className={s.SeacrhResultTitle}>Search result 1</h2>

@@ -7,11 +7,12 @@ import { useStableCallback } from "@/shared/hooks/base";
 interface TagCheckboxProps {
   name: string;
   checked?: boolean;
+  size?: "xs" | "sm" | "md" | "lg"; // Added size prop
   handleCheckboxChange: (name: string, checked: boolean) => void;
 }
 
 const TagCheckbox: FC<TagCheckboxProps> = memo((props) => {
-  const { name, checked = false, handleCheckboxChange } = props;
+  const { name, checked = false, size = "md", handleCheckboxChange } = props;
   const [isChecked, setIsChecked] = useState(checked);
 
   const toggleCheckbox = useStableCallback(() => {
@@ -22,12 +23,12 @@ const TagCheckbox: FC<TagCheckboxProps> = memo((props) => {
 
   return (
     <div
-      className={`${styles.chip} ${isChecked ? styles.checked : ""}`}
+      className={`${styles.chip} ${styles[size]} ${isChecked ? styles.checked : ""}`}
       role="button"
       tabIndex={0}
       onClick={toggleCheckbox}
     >
-      {isChecked && <CheckIcon className={styles.icon} />}
+      {isChecked && <CheckIcon className={`${styles.icon} ${styles[size]}`} />}
       <p>{name}</p>
       <RippleEffect />
     </div>

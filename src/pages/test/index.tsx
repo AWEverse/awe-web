@@ -1,217 +1,216 @@
-import React, { useState, useCallback, useEffect, useMemo } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import React, { useState } from "react";
+import nacl from "tweetnacl";
+import { Buffer } from "buffer";
 
-// Define types for gallery items
-export type GalleryItem = {
-  id: string;
-  color: string;
-  title?: string;
-  description?: string;
-};
-
-type GalleryProps = {
-  items: GalleryItem[];
-  initialSelectedId?: string | null;
-  gridConfig?: {
-    columns?: string;
-    gap?: string;
-    itemSize?: string;
-  };
-};
-
-export function ResponsiveGallery({
-  items,
-  initialSelectedId = null,
-  gridConfig = {
-    columns: "repeat(auto-fill, minmax(120px, 1fr))",
-    gap: "12px",
-    itemSize: "100%",
+const styles = {
+  container: {
+    overflow: "scroll",
+    height: "100dvh",
+    maxWidth: "800px",
+    margin: "0 auto",
+    padding: "30px",
+    fontFamily: "Arial, sans-serif",
+    backgroundColor: "#f5f5f5",
+    borderRadius: "8px",
+    boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
   },
-}: GalleryProps) {
-  const [selectedId, setSelectedId] = useState<string | null>(
-    initialSelectedId,
-  );
+  title: {
+    color: "#333",
+    marginBottom: "20px",
+    textAlign: "center" as const,
+  },
+  input: {
+    width: "100%",
+    padding: "10px",
+    margin: "10px 0",
+    border: "1px solid #ddd",
+    borderRadius: "4px",
+    fontSize: "16px",
+    backgroundColor: "black",
+  },
+  buttonContainer: {
+    display: "flex",
+    gap: "10px",
+    margin: "15px 0",
+  },
+  button: {
+    padding: "10px 20px",
+    border: "none",
+    borderRadius: "4px",
+    cursor: "pointer",
+    fontSize: "16px",
+    transition: "background-color 0.3s",
+  },
+  encryptButton: {
+    backgroundColor: "#4CAF50",
+    color: "white",
+  },
+  decryptButton: {
+    backgroundColor: "#2196F3",
+    color: "white",
+  },
+  toggleButton: {
+    backgroundColor: "#666",
+    color: "white",
+  },
+  output: {
+    padding: "15px",
+    backgroundColor: "black",
+    borderRadius: "4px",
+    margin: "10px 0",
+    wordBreak: "break-all" as const,
+    border: "1px solid #eee",
+  },
+  keyDisplay: {
+    padding: "15px",
+    backgroundColor: "black",
+    borderRadius: "4px",
+    margin: "10px 0",
+    fontSize: "14px",
+  },
+};
 
-  // Memoize selectedItem to avoid recalculating on every render
-  const selectedItem = useMemo(
-    () => (selectedId ? items.find((item) => item.id === selectedId) : null),
-    [selectedId, items],
-  );
+const AdvancedEncryptionPage: React.FC = () => {
+  const [message, setMessage] = useState("");
+  const [encryptedMessage, setEncryptedMessage] = useState("");
+  const [decryptedMessage, setDecryptedMessage] = useState("");
+  const [showKeys, setShowKeys] = useState(false);
 
-  // Handler to close the modal
-  const handleClose = useCallback(() => {
-    setSelectedId(null);
-  }, []);
+  // Generate key pairs for Alice and Bob
+  const [aliceKeys] = useState(() => nacl.box.keyPair());
+  const [bobKeys] = useState(() => nacl.box.keyPair());
 
-  // Add keydown listener only when modal is open
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape" && selectedId !== null) {
-        handleClose();
-      }
-    };
+  const handleEncrypt = () => {
+    try {
+      const nonce = nacl.randomBytes(nacl.box.nonceLength);
+      const messageUint8 = new TextEncoder().encode(message);
+      const encrypted = nacl.box(
+        messageUint8,
+        nonce,
+        bobKeys.publicKey,
+        aliceKeys.secretKey,
+      );
 
-    if (selectedId !== null) {
-      window.addEventListener("keydown", handleKeyDown);
-      return () => window.removeEventListener("keydown", handleKeyDown);
+      // Combine nonce and encrypted message for easier decryption
+      const fullMessage = new Uint8Array(nonce.length + encrypted.length);
+      fullMessage.set(nonce);
+      fullMessage.set(encrypted, nonce.length);
+
+      const encryptedBase64 = Buffer.from(fullMessage).toString("base64");
+      setEncryptedMessage(encryptedBase64);
+      setDecryptedMessage("");
+    } catch (error) {
+      console.error("Encryption error:", error);
+      setEncryptedMessage("Error during encryption");
     }
-  }, [selectedId, handleClose]);
+  };
+
+  const handleDecrypt = () => {
+    try {
+      const fullMessage = Buffer.from(encryptedMessage, "base64");
+      const nonce = fullMessage.subarray(0, nacl.box.nonceLength);
+      const encrypted = fullMessage.subarray(nacl.box.nonceLength);
+
+      const decrypted = nacl.box.open(
+        encrypted,
+        nonce,
+        aliceKeys.publicKey,
+        bobKeys.secretKey,
+      );
+
+      if (!decrypted) {
+        setDecryptedMessage("Decryption failed");
+        return;
+      }
+
+      const decryptedText = new TextDecoder().decode(decrypted);
+      setDecryptedMessage(decryptedText);
+    } catch (error) {
+      console.error("Decryption error:", error);
+      setDecryptedMessage("Error during decryption");
+    }
+  };
+
+  const publicKeyToString = (key: Uint8Array) =>
+    Buffer.from(key).toString("hex");
+  const secretKeyToString = (key: Uint8Array) =>
+    Buffer.from(key).toString("hex");
 
   return (
-    <div className="gallery-wrapper">
-      {/* Grid of items */}
-      <motion.ul
-        className="gallery-grid"
-        style={{
-          listStyle: "none",
-          padding: 0,
-          margin: 0,
-          display: "grid",
-          gridTemplateColumns: gridConfig.columns,
-          gap: gridConfig.gap,
-        }}
-      >
-        {items.map((item) => (
-          <motion.li
-            key={item.id}
-            onClick={() => setSelectedId(item.id)}
-            style={{
-              cursor: "pointer",
-              aspectRatio: "1",
-              borderRadius: "8px",
-            }}
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-          >
-            <motion.div
-              layoutId={`item-${item.id}`}
-              style={{
-                backgroundColor: item.color,
-                width: gridConfig.itemSize,
-                height: "100%",
-                borderRadius: "8px",
-              }}
-            />
-          </motion.li>
-        ))}
-      </motion.ul>
+    <div style={styles.container}>
+      <h2 style={styles.title}>Advanced Encryption Demo</h2>
 
-      {/* Modal overlay and enlarged item */}
-      <AnimatePresence>
-        {selectedId && selectedItem && (
-          <>
-            {/* Overlay */}
-            <motion.div
-              key="overlay"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 0.6 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.15 }}
-              className="gallery-overlay"
-              onClick={handleClose}
-              style={{
-                position: "fixed",
-                top: 0,
-                left: 0,
-                right: 0,
-                bottom: 0,
-                backgroundColor: "black",
-                zIndex: 100,
-              }}
-            />
+      <textarea
+        value={message}
+        onChange={(e) => setMessage(e.target.value)}
+        placeholder="Enter your secret message"
+        style={styles.input}
+      />
 
-            {/* Enlarged item container */}
-            <div
-              className="gallery-modal-container"
-              onClick={handleClose}
-              style={{
-                position: "fixed",
-                top: 0,
-                left: 0,
-                right: 0,
-                bottom: 0,
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                zIndex: 101,
-                padding: "5vw",
-              }}
-            >
-              <motion.div
-                key="modal"
-                layoutId={`item-${selectedItem.id}`}
-                onClick={(e) => e.stopPropagation()}
-                initial={{ opacity: 0.8 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                transition={{ duration: 0.15 }}
-                className="gallery-modal"
-                style={{
-                  backgroundColor: selectedItem.color,
-                  maxWidth: "90vw",
-                  maxHeight: "90vh",
-                  width: selectedItem.title
-                    ? "min(500px, 90vw)"
-                    : "min(300px, 80vw)",
-                  aspectRatio: selectedItem.title ? "auto" : "1",
-                  borderRadius: "16px",
-                  boxShadow: "0 10px 40px rgba(0,0,0,0.3)",
-                  position: "relative",
-                }}
-              >
-                {selectedItem.title && (
-                  <div
-                    className="modal-content"
-                    style={{
-                      padding: "clamp(16px, 5vw, 24px)",
-                    }}
-                  >
-                    <div
-                      style={{
-                        display: "flex",
-                        justifyContent: "space-between",
-                        alignItems: "center",
-                        marginBottom: "16px",
-                      }}
-                    >
-                      <h2 style={{ margin: 0 }}>{selectedItem.title}</h2>
-                      <button
-                        onClick={handleClose}
-                        style={{
-                          background: "none",
-                          border: "none",
-                          fontSize: "24px",
-                          cursor: "pointer",
-                          padding: "8px",
-                          borderRadius: "50%",
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "center",
-                          width: "40px",
-                          height: "40px",
-                        }}
-                        aria-label="Close"
-                      >
-                        ×
-                      </button>
-                    </div>
-                    {selectedItem.description && (
-                      <p>{selectedItem.description}</p>
-                    )}
-                  </div>
-                )}
-              </motion.div>
-            </div>
-          </>
-        )}
-      </AnimatePresence>
+      <div style={styles.buttonContainer}>
+        <button
+          onClick={handleEncrypt}
+          style={{ ...styles.button, ...styles.encryptButton }}
+          onMouseOver={(e) =>
+            (e.currentTarget.style.backgroundColor = "#45a049")
+          }
+          onMouseOut={(e) =>
+            (e.currentTarget.style.backgroundColor = "#4CAF50")
+          }
+        >
+          Encrypt Message
+        </button>
+        <button
+          onClick={handleDecrypt}
+          style={{ ...styles.button, ...styles.decryptButton }}
+          onMouseOver={(e) =>
+            (e.currentTarget.style.backgroundColor = "#1e88e5")
+          }
+          onMouseOut={(e) =>
+            (e.currentTarget.style.backgroundColor = "#2196F3")
+          }
+          disabled={!encryptedMessage}
+        >
+          Decrypt Message
+        </button>
+        <button
+          onClick={() => setShowKeys(!showKeys)}
+          style={{ ...styles.button, ...styles.toggleButton }}
+          onMouseOver={(e) => (e.currentTarget.style.backgroundColor = "#555")}
+          onMouseOut={(e) => (e.currentTarget.style.backgroundColor = "#666")}
+        >
+          {showKeys ? "Hide" : "Show"} Keys
+        </button>
+      </div>
+
+      {showKeys && (
+        <div style={styles.keyDisplay}>
+          <p>
+            <strong>Alice's Public Key:</strong>{" "}
+            {publicKeyToString(aliceKeys.publicKey)}
+          </p>
+          <p>
+            <strong>Bob's Public Key:</strong>{" "}
+            {publicKeyToString(bobKeys.publicKey)}
+          </p>
+        </div>
+      )}
+
+      {encryptedMessage && (
+        <div style={styles.output}>
+          <strong>Encrypted Message:</strong>
+          <p>{encryptedMessage}</p>
+        </div>
+      )}
+
+      {decryptedMessage && (
+        <div style={styles.output}>
+          <strong>Decrypted Message:</strong>
+          <p>{decryptedMessage}</p>
+        </div>
+      )}
     </div>
   );
-}
-
-// Example component with color items
-const TestPage: React.FC = () => {
-  return <video controls src={"/video_test/Интерстеллар.mp4"}></video>;
 };
 
-export default TestPage;
+export default AdvancedEncryptionPage;
