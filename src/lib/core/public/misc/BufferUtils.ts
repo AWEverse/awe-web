@@ -22,9 +22,11 @@ export default {
     let binary = '';
     const bytes = new Uint8Array(buffer);
     const len = bytes.byteLength;
+
     for (let i = 0; i < len; i++) {
       binary += String.fromCharCode(bytes[i]);
     }
+
     return btoa(binary);
   },
 
@@ -32,13 +34,20 @@ export default {
    * Convert base64 string back to binary data
    */
   base64ToBuffer(base64: string): Uint8Array {
-    const binary = atob(base64);
-    const len = binary.length;
-    const bytes = new Uint8Array(len);
-    for (let i = 0; i < len; i++) {
-      bytes[i] = binary.charCodeAt(i);
+    try {
+      const binary = atob(base64);
+      const len = binary.length;
+      const bytes = new Uint8Array(len);
+
+      for (let i = 0; i < len; i++) {
+        bytes[i] = binary.charCodeAt(i);
+      }
+
+      return bytes;
+    } catch (e) {
+      console.error('Failed to decode base64:', e);
+      return new Uint8Array(0); // Or some default value
     }
-    return bytes;
   }
 };
 

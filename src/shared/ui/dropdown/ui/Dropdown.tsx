@@ -29,7 +29,6 @@ interface OwnProps {
   triggerButton?: FC<OwnTriggerProps>;
   isOpen?: boolean;
   shouldClose?: boolean;
-  withPortal?: boolean;
   onOpen?: () => void;
   onClose?: () => void;
   onHide?: () => void;
@@ -41,7 +40,7 @@ interface OwnProps {
 }
 
 const SCALE_FACTOR = 0.85; // Animation scale factor
-const ANIMATION_DURATION = 0.125; // Reduced for performance (was 0.15)
+const ANIMATION_DURATION = 0.125; // Reduced for performance
 
 const DropdownMenu: FC<OwnProps & OwnSharedProps> = ({
   ref,
@@ -51,7 +50,6 @@ const DropdownMenu: FC<OwnProps & OwnSharedProps> = ({
   triggerButton: TriggerButton,
   position = "top-right",
   shouldClose,
-  withPortal,
   onOpen,
   onClose,
   onEnter,
@@ -75,9 +73,9 @@ const DropdownMenu: FC<OwnProps & OwnSharedProps> = ({
           exit: { opacity: 0 },
         }
       : {
-          initial: { scale: SCALE_FACTOR, opacity: 0 },
-          animate: { scale: 1, opacity: 1 },
-          exit: { scale: SCALE_FACTOR, opacity: 0 },
+          initial: { transform: `scale(${SCALE_FACTOR})`, opacity: 0 },
+          animate: { transform: "scale(1)", opacity: 1 },
+          exit: { transform: `scale(${SCALE_FACTOR})`, opacity: 0 },
         },
   ).current;
 
@@ -141,6 +139,9 @@ const DropdownMenu: FC<OwnProps & OwnSharedProps> = ({
             transition={{
               duration: ANIMATION_DURATION,
               ease: "easeInOut",
+            }}
+            style={{
+              willChange: "transform, opacity",
             }}
             role="menu"
             aria-hidden={!isOpen}

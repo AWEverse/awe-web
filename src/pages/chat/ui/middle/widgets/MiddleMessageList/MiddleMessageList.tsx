@@ -1,9 +1,12 @@
-import React, { FC, memo, useRef } from "react";
+import React, { FC, memo, useEffect, useRef } from "react";
 
 import "./MiddleMessageList.scss";
 import ChatMessage from "../../message";
 import { ScrollProvider } from "@/shared/context";
 import { useStableCallback } from "@/shared/hooks/base";
+import { useDebouncedFunction } from "@/shared/hooks/shedulers";
+import { debounce } from "@/lib/core";
+import { useComponentDidMount } from "@/shared/hooks/effects/useLifecycle";
 
 interface OwnProps {}
 
@@ -16,15 +19,29 @@ const MiddleMessageList: FC<OwnProps & StateProps> = () => {
   const bottomRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
-  const handleScroll = useStableCallback((e: React.UIEvent) => {
-    const currentTarget = e.currentTarget;
-    const scrollTop = currentTarget.scrollTop;
+  const debouncedHandleScroll = useDebouncedFunction((e: Event) => {
+    const scrollTop = (e.target as HTMLDivElement).scrollTop;
 
     const isActive = Math.abs(scrollTop) > THRESHOLD;
 
     if (bottomRef.current) {
       bottomRef.current.classList.toggle("bottom-active", isActive);
     }
+  }, 250);
+
+  useComponentDidMount(() => {
+    const container = containerRef.current!;
+
+    container.addEventListener(
+      "scroll",
+      debouncedHandleScroll as EventListener,
+    );
+
+    return () =>
+      container.removeEventListener(
+        "scroll",
+        debouncedHandleScroll as EventListener,
+      );
   });
 
   return (
@@ -35,7 +52,6 @@ const MiddleMessageList: FC<OwnProps & StateProps> = () => {
           id="chat-scroll-area"
           data-scrolled="true"
           className={"MiddleMessageList allow-space-right-column-messages"}
-          onScroll={handleScroll}
         >
           {Array.from({ length: 20 }).map((_, index) => (
             <ChatMessage

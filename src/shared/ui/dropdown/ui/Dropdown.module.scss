@@ -33,7 +33,6 @@
   backdrop-filter: blur(10rem);
   user-select: none;
   border: 1px solid var(--awe-palette-primary-main);
-  will-change: transform, opacity;
 
   &[data-position="top-left"] {
     top: var(--menu-inset);
