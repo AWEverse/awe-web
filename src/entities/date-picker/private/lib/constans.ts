@@ -10,7 +10,7 @@ export const LIGHT_SIZE = 180; //px
 export const CELL_SIZE = 46;
 
 export enum ZoomLevel {
-  WEEK = 1,
+  WEEK = 0,
   MONTH,
   YEAR,
 }

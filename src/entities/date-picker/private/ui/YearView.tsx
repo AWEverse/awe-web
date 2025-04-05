@@ -1,41 +1,40 @@
 import buildClassName from "@/shared/lib/buildClassName";
 import { FC, memo, useMemo } from "react";
-import { ZoomLevel } from "../lib/constans";
-import { CalendarViewProps } from "../lib/types";
-import { invoke } from "@/lib/core";
+import { CalendarViewProps, EDatePickerView } from "../lib/types";
 
-const YearView: FC<CalendarViewProps> = ({ date, onSelectDate }) => {
+// Constants for better maintainability
+const YEARS_RANGE = 16;
+const YEARS_OFFSET = 5;
+
+const YearView: FC<CalendarViewProps> = ({ date }) => {
   const { currentSystemDate } = date;
   const currentYear = currentSystemDate.getFullYear();
+  const todayYear = new Date().getFullYear();
 
-  const years = useMemo(
-    () => Array.from({ length: 16 }, (_, i) => currentYear - 5 + i),
-    [currentYear],
-  );
+  const years = useMemo(() => {
+    const startYear = currentYear - YEARS_OFFSET;
+    return Array.from({ length: YEARS_RANGE }, (_, i) => startYear + i);
+  }, [currentYear]);
 
-  const handleClick = (year: number) => () => {
-    invoke(onSelectDate, {
-      day: undefined,
-      month: undefined,
-      year,
-      level: ZoomLevel.MONTH,
-    });
-  };
+  const getIsoDate = (year: number) => new Date(year, 0, 1).toISOString();
 
   return (
     <>
-      {years.map((year) => (
-        <div
-          key={year}
-          className={buildClassName(
-            "dp-calendar-cell",
-            year === new Date().getFullYear() ? "dp-current-day" : undefined,
-          )}
-          onClick={handleClick(year)}
-        >
-          {year}
-        </div>
-      ))}
+      {years.map((year) => {
+        const isCurrentYear = year === todayYear;
+        return (
+          <div
+            data-isodate={getIsoDate(year + 1)}
+            key={year}
+            className={buildClassName(
+              "dp-calendar-cell",
+              isCurrentYear && "dp-current-day",
+            )}
+          >
+            {year}
+          </div>
+        );
+      })}
     </>
   );
 };

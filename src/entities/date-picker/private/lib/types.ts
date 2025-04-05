@@ -2,7 +2,13 @@ import { ZoomLevel } from './constans';
 
 export type CalendarMode = 'future' | 'past' | 'all';
 
-export type CalendarAnimationType = 'LTR' | 'RTL' | 'zoomIn' | 'zoomOut';
+export type CalendarAnimationType = 'LTR' | 'RTL' | 'zoom';
+
+export enum EDatePickerView {
+  WEEK = 'week',
+  MONTH = 'month',
+  YEAR = 'year',
+}
 
 export type ISelectDate = Partial<{
   day: number;
@@ -13,20 +19,16 @@ export type ISelectDate = Partial<{
 
 export type Milliseconds = number;
 
-export type DateRangeData = {
+
+export interface DateState {
   currentSystemDate: Date;
   userSelectedDate: Date;
-  dateRange: DateRange;
-  gridPosition: {
-    columns: number;
-    rows: number;
-  }
-};
+}
 
 export type DateRange = Partial<{ from: Date; to: Date }>;
 
 export type CalendarViewProps = {
-  date: DateRangeData;
+  date: DateState;
   mode?: CalendarMode;
 
   onClick?: (event: React.MouseEvent | React.TouchEvent) => void;
