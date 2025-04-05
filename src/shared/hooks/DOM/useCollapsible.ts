@@ -1,126 +1,103 @@
-import {
-  useEffect,
-  useLayoutEffect,
-  useRef,
-  useState,
-  type RefObject,
-  useCallback,
-} from "react";
-import {
-  requestMutation,
-  requestMeasure,
-  requestNextMutation,
-} from "@/lib/modules/fastdom";
+import { useCallback, useEffect, useRef, useState, type RefObject } from "react";
+import { requestMeasure, requestMutation } from "@/lib/modules/fastdom";
 import { useDebouncedFunction } from "../shedulers";
 import useWindowSize from "@/shared/hooks/DOM/useWindowSize";
 import { useStableCallback } from "../base";
 
-const WINDOW_RESIZE_LINE_RECALC_DEBOUNCE = 200;
+const WINDOW_RESIZE_DEBOUNCE = 200;
 
-//
-// Helper: Calculates the line height and total number of lines in the container.
-//
+function calcTextLines(element: HTMLElement, maxLines: number) {
+  const style = getComputedStyle(element);
+  const lineHeight = parseFloat(style.lineHeight) || parseFloat(style.fontSize) * 1.2; // Fallback to font-size * 1.2
+  const rect = element.getBoundingClientRect();
+  const contentHeight = rect.height;
 
-/*
-* Measure only
-*/
-export function calcTextLineHeightAndCount(textContainer: HTMLElement) {
-  const computedStyle = getComputedStyle(textContainer);
-  // Parse the computed line height (assuming it’s in pixels)
-  const lineHeight = parseInt(computedStyle.lineHeight, 10);
-  // Divide the total scroll height by the line height to estimate the number of lines
-  const totalLines = textContainer.scrollHeight / lineHeight;
-  return { totalLines, lineHeight };
+  const totalLines = Math.ceil(contentHeight / lineHeight);
+  const cutoutHeight = lineHeight * maxLines;
+
+  return { totalLines, cutoutHeight, lineHeight };
 }
 
-//
-// useCollapsibleLines: A React hook that provides the logic for making a text container collapsible
-// if it exceeds a specified number of lines.
-//
-// T – the type of the text container element.
-// C – the optional type for a “cutout” element, if any.
-//
 export default function useCollapsibleLines<T extends HTMLElement>(
   ref: RefObject<T | null>,
   maxLinesBeforeCollapse: number,
-  isDisabled?: boolean,
+  isDisabled?: boolean
 ) {
-  const isFirstRenderRef = useRef(true);
+  const elementRef = useRef<T | null>(null);
   const cutoutHeightRef = useRef<number>(0);
+  const [state, setState] = useState({ isCollapsible: false, isCollapsed: false });
 
-  const [isCollapsible, setIsCollapsible] = useState(!isDisabled);
-  const [isCollapsed, setIsCollapsed] = useState(isCollapsible);
-
-  const getElement = useStableCallback(() => ref?.current);
-
-  useLayoutEffect(() => {
-    const element = getElement();
-    if (isDisabled || !element) return;
-
-    requestMutation(() => {
-      element.style.maxHeight = isCollapsed
-        ? `${cutoutHeightRef.current}px`
-        : "100dvh";
-    });
-  }, [isCollapsed, isDisabled]);
+  const getElement = useStableCallback(() => elementRef.current);
 
   const recalculateTextLines = useCallback(() => {
     const element = getElement();
 
-    if (isDisabled || !element) return;
-    const { lineHeight, totalLines } = calcTextLineHeightAndCount(element);
-
-    if (totalLines > maxLinesBeforeCollapse) {
-      cutoutHeightRef.current = lineHeight * maxLinesBeforeCollapse;
-      setIsCollapsible(true);
-    } else {
-      setIsCollapsible(false);
-      setIsCollapsed(false);
+    if (!element || isDisabled) {
+      setState({ isCollapsible: false, isCollapsed: false });
+      return;
     }
-  }, [isDisabled, maxLinesBeforeCollapse]);
 
-  const debouncedRecalcTextLines = useDebouncedFunction(
+    const { totalLines, cutoutHeight } = calcTextLines(element, maxLinesBeforeCollapse);
+    const shouldCollapse = totalLines > maxLinesBeforeCollapse;
+
+    cutoutHeightRef.current = cutoutHeight;
+
+    setState((prev) => {
+      const newState = { isCollapsible: shouldCollapse, isCollapsed: shouldCollapse && prev.isCollapsed };
+      if (newState.isCollapsible !== prev.isCollapsible || newState.isCollapsed !== prev.isCollapsed) {
+        requestMutation(() => {
+          element.style.maxHeight = newState.isCollapsed ? `${cutoutHeight}px` : "";
+        });
+      }
+      return newState;
+    });
+  }, [maxLinesBeforeCollapse, isDisabled, getElement]);
+
+  const debouncedRecalc = useDebouncedFunction(
     () => requestMeasure(recalculateTextLines),
-    WINDOW_RESIZE_LINE_RECALC_DEBOUNCE,
+    WINDOW_RESIZE_DEBOUNCE,
     false,
     true,
-    [recalculateTextLines],
+    [maxLinesBeforeCollapse, isDisabled]
   );
 
-  useLayoutEffect(() => {
-    if (!isDisabled && isFirstRenderRef.current) {
-      requestNextMutation(() => {
-        recalculateTextLines();
-
-        return () => {
-          isFirstRenderRef.current = false;
-          const element = getElement();
-
-          if (element) {
-            element.style.maxHeight = cutoutHeightRef.current
-              ? `${cutoutHeightRef.current}px`
-              : "";
-          }
-        };
-      });
+  useEffect(() => {
+    elementRef.current = ref.current;
+    if (!isDisabled && ref.current) {
+      requestMeasure(recalculateTextLines);
     }
-  }, [isDisabled, recalculateTextLines]);
+
+    return () => {
+      const element = getElement();
+      if (element) element.style.maxHeight = ""; // Cleanup
+    };
+  }, [ref, isDisabled]);
 
   const { width: windowWidth } = useWindowSize();
 
   useEffect(() => {
-    if (!isDisabled) {
-      if (isFirstRenderRef.current) return;
-      debouncedRecalcTextLines();
-    } else {
-      setIsCollapsible(false);
-      setIsCollapsed(false);
-    }
-  }, [debouncedRecalcTextLines, isDisabled, windowWidth]);
+    if (!isDisabled) debouncedRecalc();
+  }, [windowWidth, isDisabled, debouncedRecalc]);
+
+  const setIsCollapsed = useCallback((isCollapsed: boolean) => {
+    const element = getElement();
+    if (!element || !state.isCollapsible) return;
+
+    setState((prev) => {
+      if (prev.isCollapsed === isCollapsed) return prev;
+      const newState = { ...prev, isCollapsed };
+
+      requestMutation(() => {
+        element.style.maxHeight = isCollapsed ? `${cutoutHeightRef.current}px` : "";
+      });
+
+      return newState;
+    });
+  }, [state.isCollapsible, getElement]);
 
   return {
-    isCollapsed,
-    isCollapsible,
+    isCollapsed: state.isCollapsed,
+    isCollapsible: state.isCollapsible,
     setIsCollapsed,
   };
 }

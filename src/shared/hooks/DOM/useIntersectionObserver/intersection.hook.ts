@@ -17,7 +17,6 @@ interface IntersectionProps {
   throttleMs?: number;
   throttleScheduler?: Scheduler;
   debounceMs?: number;
-  shouldSkipFirst?: boolean;
   margin?: number;
   threshold?: number | number[];
   isDisabled?: boolean;
@@ -39,7 +38,6 @@ export function useIntersectionObserver(
     throttleMs,
     throttleScheduler,
     debounceMs,
-    shouldSkipFirst,
     margin,
     threshold,
     isDisabled,
@@ -63,7 +61,6 @@ export function useIntersectionObserver(
       throttleMs,
       throttleScheduler,
       debounceMs,
-      shouldSkipFirst,
       rootCallback,
     });
 
@@ -78,7 +75,6 @@ export function useIntersectionObserver(
     throttleMs,
     throttleScheduler,
     debounceMs,
-    shouldSkipFirst,
     rootCallback,
     isDisabled,
   ]);
