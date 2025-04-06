@@ -9,7 +9,4 @@ export default defineConfig({
   plugins: pluginsConfig,
   resolve: resolveConfig,
   server: serverOptions,
-  worker: {
-    format: 'es',
-  },
 });

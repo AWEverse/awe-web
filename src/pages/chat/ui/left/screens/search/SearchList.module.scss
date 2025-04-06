@@ -2,16 +2,13 @@
 
 .LeftMainSearchBody {
   width: 100%;
-  height: 100%;
-
-  overflow: auto;
-  scroll-behavior: smooth;
   z-index: 100;
 }
 
 .TabListBorders {
   position: sticky;
   top: 0;
+  padding-top: 0.25rem;
   border-bottom: 2px solid var(--awe-palette-secondary-main);
 }
 
@@ -20,7 +17,7 @@
   top: 0;
   background-color: var(--awe-palette-background-default);
   padding: 0.25rem 0.5rem;
-  
+
 }
 
 .SeacrhResultTitle {

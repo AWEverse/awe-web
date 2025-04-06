@@ -8,3 +8,4 @@ export { default as onIdle } from "./onIdle";
 export { default as onTickEnd } from './onTickEnd';
 export { default as throttle } from './throttle';
 export * from './throttles';
+export { default as SmartDebouncer } from "./SmartDebouncer";

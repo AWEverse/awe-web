@@ -29,7 +29,6 @@ const MiddleHeader: React.FC<{ sender?: any }> = ({ sender }) => {
 
   const isMiddleSearchOpen = useStore.isChatSearching();
   const toggleMiddleSearch = useStore.toggleChatSearching();
-  const openProfileColumn = useStore.openProfileColumn();
   const toggleChatList = useStore.toggleChatList();
 
   useComponentDidMount(() => {

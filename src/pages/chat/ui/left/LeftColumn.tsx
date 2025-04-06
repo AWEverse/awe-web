@@ -51,7 +51,6 @@ const skeletons = {
   default: <GenericSkeleton />,
 };
 
-// Animation variants
 const screenVariants = {
   initial: (direction: number) => ({
     opacity: 0,
@@ -118,6 +117,7 @@ const LeftColumn: FC<OwnProps> = ({ className }) => {
       <AnimatePresence initial={false} mode="wait">
         {ScreenComponent && (
           <motion.div
+            className="scrollable_area"
             aria-label={`Current screen: ${currentScreen}`}
             key={currentScreen}
             variants={screenVariants}

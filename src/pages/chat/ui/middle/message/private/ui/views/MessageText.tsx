@@ -11,6 +11,7 @@ import {
 import { marked, MarkedOptions } from "marked";
 import DOMPurify from "dompurify";
 import buildClassName from "@/shared/lib/buildClassName";
+import "./MessageText.scss";
 
 interface MessageTextProps {
   children: string;
@@ -25,7 +26,7 @@ interface MessageTextProps {
   allowHTML?: boolean;
 }
 
-// Default safe tags to allow in markdown rendering - limited to most essential
+// Default safe tags to allow in markdown rendering - limited to most essential ones
 const safeAllowedTags = [
   "h1",
   "h2",
@@ -48,13 +49,13 @@ const safeAllowedTags = [
   "pre",
 ];
 
-// Default safe attributes - strictly limited
+// Default safe attributes - strictly limited for security
 const safeAllowedAttributes = ["href", "title", "class"];
 
-// Create a global cache for parsed content
+// Create a global cache for parsed content to improve performance
 const contentCache = new Map<string, string>();
 
-// Configure DOMPurify once
+// Configure DOMPurify for a safe environment
 DOMPurify.setConfig({
   FORBID_TAGS: [
     "style",
@@ -104,7 +105,6 @@ const MessageText: FC<MessageTextProps> = ({
 
     r.code = ({ text, lang }: { text: string; lang?: string }) => {
       const sanitizedCode = text.replace(/</g, "&lt;").replace(/>/g, "&gt;");
-
       return `<pre><code class="language-${lang || ""}">${sanitizedCode}</code></pre>`;
     };
 
@@ -119,7 +119,7 @@ const MessageText: FC<MessageTextProps> = ({
       gfm: true,
       pedantic: false,
       headerIds: false,
-      silent: true, // Suppress errors for performance
+      silent: true,
     };
   }, [renderer]);
 
@@ -150,11 +150,9 @@ const MessageText: FC<MessageTextProps> = ({
         if (enableCache) {
           contentCache.set(content, cleanHTML);
         }
-
         return cleanHTML;
       } catch (error) {
         console.error("Parsing error:", error);
-
         return sanitizeHtml(
           content
             .replace(/</g, "&lt;")
@@ -191,10 +189,8 @@ const MessageText: FC<MessageTextProps> = ({
 
         processWithIdleCallback(async () => {
           if (signal.aborted) return;
-
           try {
             const processed = await processContentInWorker(children);
-
             if (isMounted && !signal.aborted) {
               setParsedContent(processed);
               setIsLoading(false);
@@ -216,7 +212,11 @@ const MessageText: FC<MessageTextProps> = ({
       }
     };
 
-    parseContent();
+    parseContent().then(() => {
+      if (isMounted) {
+        setIsLoading(false);
+      }
+    });
 
     return () => {
       isMounted = false;
@@ -234,15 +234,14 @@ const MessageText: FC<MessageTextProps> = ({
     );
   }
 
+  // The final rendered component with styling applied only for the message text.
+  // Tailwind's "prose" classes are used here to style markdown content.
   return (
     <div
       ref={messageRef}
-      className={buildClassName(
-        "prose prose-neutral dark:prose-invert max-w-none break-words",
-        className,
-      )}
+      className={buildClassName("message-text", className)}
       dangerouslySetInnerHTML={{ __html: parsedContent }}
-    />
+    ></div>
   );
 };
 

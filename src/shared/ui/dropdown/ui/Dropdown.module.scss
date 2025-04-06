@@ -10,7 +10,6 @@
   overflow: visible;
 }
 
-/* Backdrop to prevent interaction with background */
 .dropdownBackdrop {
   position: fixed;
   inset: 0;
@@ -20,24 +19,21 @@
   width: 100vw;
 }
 
-/* Dropdown menu styles */
 .dropdownMenu {
   position: absolute;
   overflow-x: hidden;
   overflow-y: auto;
-  border-radius: var(--dropdown-radius); /* Consistent use of defined variable */
-  padding: 0.3125rem 0.25rem; /* Consolidated padding */
-  max-height: calc(100 * var(--vh) - 4.375rem); /* Limits height relative to viewport */
+  border-radius: var(--dropdown-radius);
+  padding: 0.3125rem 0.25rem;
+  max-height: calc(100 * var(--vh) - 4.375rem);
   min-width: 1rem;
   max-width: 19rem;
   z-index: 1001;
-  background-color: var(--dropdown-background); /* Consistent with variable */
+  background-color: var(--dropdown-background);
   backdrop-filter: blur(10rem);
   user-select: none;
-
   border: 1px solid var(--awe-palette-primary-main);
 
-  /* Positioning based on data attributes */
   &[data-position="top-left"] {
     top: var(--menu-inset);
     left: 0;
@@ -59,15 +55,13 @@
     transform-origin: bottom right;
   }
 
-  /* Responsive adjustments for smaller screens */
   @media (max-width: 420px) {
     position: fixed;
-    max-width: calc(100dvw - 0.75rem); /* 0.375rem * 2 simplified */
-    margin: 0 0.375rem; /* Centers horizontally within max-width */
+    max-width: calc(100dvw - 0.75rem);
+    margin: 0 0.375rem;
   }
 }
 
-/* Fallback for browsers without backdrop-filter support */
 @supports not (backdrop-filter: blur(1rem)) {
   .dropdownMenu {
     background: rgba(var(--awe-palette-background-paperChannel), 1);

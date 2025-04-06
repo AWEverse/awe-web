@@ -1,31 +1,64 @@
 .chip {
+  // --size: 32px; /* Default: md */
+  // --font: 14px; /* Default: md */
+  // --gap: 6px; /* Default: md */
+  // --radius: 16px; /* Default: md */
+
   position: relative;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
-  padding: 0px 8px;
+  gap: var(--gap);
+  padding: 0 calc(var(--size) / 4);
   border: 1px solid var(--awe-palette-divider);
-  border-radius: 16px;
+  border-radius: var(--radius);
   cursor: pointer;
-  transition-property: width;
-  transition:
-    background-color 250ms ease,
-    border-color 250ms ease,
-    width 250ms ease;
+  min-height: var(--size);
+  font-size: var(--font);
+  transition: background-color 250ms ease, border-color 250ms ease, width 250ms ease;
+
+  &.xs {
+    --size: 16px;
+    --font: 10px;
+    --gap: 4px;
+    --radius: 12px;
+  }
+
+  &.sm {
+    --size: 24px;
+    --font: 12px;
+    --gap: 4px;
+    --radius: 12px;
+  }
+
+  &.md {
+    --size: 32px;
+    --font: 14px;
+    --gap: 6px;
+    --radius: 16px;
+  }
+
+  &.lg {
+    --size: 40px;
+    --font: 16px;
+    --gap: 8px;
+    --radius: 20px;
+  }
 
   &.checked {
-    border-color: var(--awe-palette-primary-500);
-    background-color: var(--awe-palette-primary-500);
+    border-color: var(--awe-palette-primary-main);
+    background: var(--awe-palette-primary-main);
   }
 
-  &:hover {
-    border-color: var(--awe-palette-primary-500);
-  }
+  &:hover { border-color: var(--awe-palette-primary-main); }
 
   &.icon {
     padding: 0;
     border: 0;
-    background-color: transparent;
+    background: transparent;
   }
+}
+
+.icon {
+  font-size: calc(var(--size) * 0.6);
 }

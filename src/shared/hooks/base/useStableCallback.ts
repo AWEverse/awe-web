@@ -20,7 +20,7 @@ const NO_DEPS = [] as const;
  * });
  *
  */
-export default function useStableCallback<T extends AnyFunction>(
+export default function <T extends AnyFunction>(
   callback?: T
 ): T {
   const callbackRef = useStateRef(callback);

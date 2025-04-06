@@ -1,11 +1,20 @@
 .trackNavigationBorder {
+  --mask-height: 20px;
+  --segment-width: 10px;
+  --segment-height: 5px;
+  --gap-size: 2px;
+  --border-radius: 1px;
+  --primary-color: var(--awe-palette-primary-main);
+  --bg-color: var(--awe-palette-background-paper);
+  --transition-duration: 0.2s;
+
   position: relative;
   height: var(--mask-height);
-  margin: 0.125rem 0;
-  width: fit-content;
-  min-width: 0.125rem;
-  overflow-y: hidden;
-
+  width: var(--segment-width);
+  overflow: hidden;
+  contain: strict;
+  will-change: transform;
+  backface-visibility: hidden;
 }
 
 .small {
@@ -20,29 +29,30 @@
   transform: scaleX(3);
 }
 
-.trackNavigationBorderWrapper1 {
+.trackNavigationSingle {
   height: 100%;
   width: 100%;
-  border-radius: 0.0625rem;
-  background: var(--awe-palette-primary-main);
+  border-radius: var(--border-radius);
+  background: var(--primary-color);
 }
 
 .trackNavigationBorderWrapper {
-  background-color: var(--awe-palette-background-paper);
   position: relative;
+  width: 100%;
+  background-color: var(--bg-color);
   will-change: transform;
-  transition: transform var(--slide-transition);
+  transition: transform var(--transition-duration) ease-out;
 }
 
 .trackNavigationBorderMark {
   position: absolute;
-  left: 0;
-  right: 0;
   top: 0;
-  background: var(--awe-palette-primary-main);
-  border-radius: 0.0625rem;
+  left: 0;
+  width: 100%;
+  height: var(--segment-height);
+  background: var(--primary-color);
+  border-radius: var(--border-radius);
   will-change: transform;
-  transition: transform var(--slide-transition);
-  transform: translateY(var(--translate-y));
-  height: var(--height);
+  transition: transform var(--transition-duration) ease-out;
+  pointer-events: none;
 }

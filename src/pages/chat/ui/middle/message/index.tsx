@@ -81,26 +81,27 @@ type OwnProps = {
 interface StateProps {}
 
 const markdownContent = `
-To create a table in markdown that includes the sanitization settings based on your code, you can structure it like this:
+**Наступ на Запоріжжя, підрив дамби, Гуляйполе і знання з географії**
 
-\`\`\`markdown
-# Custom Sanitization
+![World Icon](https://example.com/world-icon.png)
 
-This markdown contains an image and a link.
+Мережею ширяться повідомлення різного характеру, які помилково поєднують між собою, вводячи суспільство в оману та деструктив. Тож по порядку:
 
-| **Sanitized Tags** | **Attributes**        |
-|--------------------|-----------------------|
-| h1                 |                       |
-| p                  |                       |
-| a                  | href                  |
-| img                | src, alt, title       |
+![Yellow Dot](https://example.com/yellow-dot.png)
 
-Lorem ipsum dolor sit, amet consectetur adipisicing elit. Harum quia doloremque ipsa perspiciatis hic, voluptatibus ut laudantium fugiat saepe minus sunt rerum alias quis corporis ducimus unde cupiditate perferendis impedit.
+**Наступ на Запоріжжя.** Вже близько місяця суспільство чує про "великий" наступ на Запоріжжя, який може початися в районі Василівки, а саме в Кам'янському. Абсолютно невідомо, на чому грунтується дана заява, адже такого великого накопичення в районі Василівки, як про це говорять — не спостерігається. Там певний час перебувають дві десантно-штурмові дивізії, одна з яких частково була перекинута в інший район, а також засвітився новий полк, зібраний зі зброду. На сьогодні великої активності в районі Кам'янська не прослідковується, а якщо там щось і почнеться, то до цього варто готуватися фізично, а не лякати щоденними заявами населення міста Запоріжжя. Так само незмінною є ситуація в Роботиному, де не прослідковується ніяких загострень.
 
-[Example Link](https://example.com)
-\`\`\`
+![Yellow Dot](https://example.com/yellow-dot.png)
 
-In the table, I've listed the HTML tags and their associated attributes based on your \`mTags\` and \`mAttr\` arrays.
+**Підрив дамби у Василівці.** Вчора мережею активно почала ширитися заява, що московити хочуть підірвати дамбу у н.п. Василівка. Однак, ми так і не зрозуміли, як можна це зробити з дамбою, яка вже до цього була підірвана у 2022 році і де майже немає води.
+
+![Yellow Dot](https://example.com/yellow-dot.png)
+
+**Окремо про "наступ на Запоріжжя" в контексті області і згадки активностей в районі Гуляйполя.** Ці події пов'язують через незнання географії та з просуванням кацапів в районі Рівнополя-Новодарівки та спроб прорватися зі Старомайорська в Макарівку. По-перше, Рівнопіль, Новодарівка та Макарівка — це Донецька область і географічно далеко не південь. По-друге, ці два населені пункти аж ніяк не в районі Гуляйполя і навіщо згадувати цей населений пункт — невідомо. По-третє, взагалі не зрозуміло, навіщо в цьому контексті згадувати Запорізьку область, яка дійсно проходить прям біля Рівнополя, але не є підставою для заяв про "наступ на Запоріжжя". Про обстановку в даному районі ми [писали окремо](https://t.me/DeepStateUA/20699) вчора.
+
+![Exclamation](https://example.com/exclamation.png)
+
+Інформаційне поле — це дуже важлива складова впливу на суспільство. У кожного своя мета, але варто пам'ятати про відповідальність, яку кожен бере, роблячи якісь заяви. Приєднуйтесь до збору, допомагаємо нашим бійцям — це буде корисно і набагато краще для всіх: [https://send.monobank.ua/jar/2y2T1i5wph](https://send.monobank.ua/jar/2y2T1i5wph)
 `;
 
 const ChatMessage: FC<OwnProps & StateProps> = ({ isOwn, message }) => {
@@ -116,29 +117,6 @@ const ChatMessage: FC<OwnProps & StateProps> = ({ isOwn, message }) => {
   } = useScrollProvider();
 
   const renderContent = (): ReactNode => {
-    const {
-      text,
-      photo,
-      video,
-      altVideo,
-      document,
-      sticker,
-      contact,
-      poll,
-      action,
-      webPage,
-      audio,
-      voice,
-      invoice,
-      location,
-      game,
-      giveaway,
-      giveawayResults,
-      isExpiredVoice,
-      isExpiredRoundVideo,
-      ttlSeconds,
-    } = content;
-
     return <MessageText children={markdownContent} />;
   };
 
@@ -163,30 +141,11 @@ const ChatMessage: FC<OwnProps & StateProps> = ({ isOwn, message }) => {
     observeIntersectionForReading,
   );
 
-  const {
-    isContextMenuOpen,
-    contextMenuAnchor,
-    handleBeforeContextMenu,
-    handleContextMenu,
-    handleContextMenuClose,
-  } = useContextMenuHandlers({ elementRef: messageRef });
-
-  const { handleClick, handleMouseDown } = useFastClick(
-    (e: React.MouseEvent<HTMLDivElement>) => {
-      if (e.button === EMouseButton.Secondary) {
-        handleBeforeContextMenu(e);
-      }
-    },
-  );
-
   return (
     <>
       <div
         ref={messageRef}
-        className={buildClassName("Message", isOwn && "own")}
-        onClick={handleClick}
-        onMouseDown={handleMouseDown}
-        onContextMenu={handleContextMenu}
+        className={buildClassName("Message", isOwn ? "own" : "other")}
       >
         {renderContent()}
         <div
@@ -195,21 +154,16 @@ const ChatMessage: FC<OwnProps & StateProps> = ({ isOwn, message }) => {
           date-purpose={Purposes.READING}
           data-meta={NBSP}
         />
+        <svg
+          viewBox="0 0 11 20"
+          width="11"
+          height="20"
+          className={buildClassName("MessageTail", isOwn ? "own" : "other")}
+          data-purpose="message-tail"
+        >
+          <use href="#message-tail-filled"></use>
+        </svg>
       </div>
-
-      <ContextMenu
-        isOpen={isContextMenuOpen}
-        position={contextMenuAnchor!}
-        onClose={handleContextMenuClose}
-        withPortal
-        menuClassName="p-2"
-      >
-        <p>Reply</p>
-        <p>Copy</p>
-        <p>Copy link</p>
-        <p>Forward</p>
-        <p>Reporst</p>
-      </ContextMenu>
     </>
   );
 };

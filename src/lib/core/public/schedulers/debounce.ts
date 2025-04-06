@@ -1,73 +1,27 @@
-interface DebouncedFunction<F extends (...args: any[]) => any> {
-  (...args: Parameters<F>): void;
-  cancel: () => void;
-  flush: () => void;
-}
 
-export default function debounce<F extends (...args: any[]) => any>(
+export default function debounce<F extends AnyToVoidFunction>(
   fn: F,
-  wait: number,
-  leading = false,
-  trailing = true,
-): DebouncedFunction<F> {
-  if (typeof fn !== 'function') {
-    throw new TypeError('fn must be a function');
-  }
+  ms: number,
+  shouldRunFirst = true,
+  shouldRunLast = true,
+) {
+  let waitingTimeout: number | undefined;
 
-  if (typeof wait !== 'number' || isNaN(wait) || wait < 0) {
-    throw new TypeError('wait must be a non-negative number');
-  }
-
-
-  let timeout: NodeJS.Timeout | undefined;
-  let lastArgs: Parameters<F> | undefined;
-  let lastThis: any;
-
-  const debouncedFunction = function (this: any, ...args: Parameters<F>) {
-    lastArgs = args;
-    lastThis = this;
-
-    const callNow = leading && timeout === undefined;
-
-    if (timeout !== undefined) {
-      clearTimeout(timeout);
+  return (...args: Parameters<F>) => {
+    if (waitingTimeout) {
+      clearTimeout(waitingTimeout);
+      waitingTimeout = undefined;
+    } else if (shouldRunFirst) {
+      fn(...args);
     }
 
-    timeout = setTimeout(() => {
-      timeout = undefined;
-      if (trailing) {
-        if (lastArgs !== undefined) {
-          fn.apply(lastThis, lastArgs);
-        }
+    // eslint-disable-next-line no-restricted-globals
+    waitingTimeout = self.setTimeout(() => {
+      if (shouldRunLast) {
+        fn(...args);
       }
-    }, wait);
 
-    if (callNow) {
-      fn.apply(lastThis, lastArgs);
-    }
+      waitingTimeout = undefined;
+    }, ms);
   };
-
-  const cancel = () => {
-    if (timeout !== undefined) {
-      clearTimeout(timeout);
-      timeout = undefined;
-    }
-  };
-
-  const flush = () => {
-    if (timeout !== undefined) {
-      clearTimeout(timeout);
-      timeout = undefined;
-      if (lastArgs !== undefined) {
-        fn.apply(lastThis, lastArgs);
-      }
-    }
-  };
-
-  const debounced: DebouncedFunction<F> = Object.assign(debouncedFunction, {
-    cancel,
-    flush,
-  });
-
-  return debounced;
 }

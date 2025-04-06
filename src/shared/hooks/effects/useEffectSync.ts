@@ -15,14 +15,14 @@ export default function useEffectSync<T extends readonly unknown[]>(
   deps: T
 ) {
   const prevDeps = usePrevious(deps);
-  const cleanupRef = useRef<CleanupFn | undefined>(undefined);
+  const cleanupRef = useRef<CleanupFn | null>(null);
 
   const runEffect = useCallback(() => {
     const hasChanged = !prevDeps || deps.some((dep, i) => dep !== prevDeps[i]);
 
     if (hasChanged) {
       cleanupRef.current?.();
-      cleanupRef.current = effect(prevDeps || NO_DEPS) || undefined;
+      cleanupRef.current = effect(prevDeps || NO_DEPS) || null;
     }
   }, [effect, deps, prevDeps]);
 
@@ -30,5 +30,6 @@ export default function useEffectSync<T extends readonly unknown[]>(
 
   useComponentWillUnmount(() => {
     cleanupRef.current?.();
+    cleanupRef.current = null;
   });
 }

@@ -1,82 +1,34 @@
-
-type ThrottledFunction<F extends (...args: any[]) => void> = F & {
-  cancel: () => void;
-  flush: () => void;
-};
-
-export default function throttle<F extends (...args: any[]) => void>(
+export default function throttle<F extends AnyToVoidFunction>(
   fn: F,
   ms: number,
-  leading = true,
-  trailing = true,
-  thisArg?: any,
-): ThrottledFunction<F> {
+  shouldRunFirst = true,
+) {
+  let interval: number | undefined;
+  let isPending: boolean;
+  let args: Parameters<F>;
 
-  if (typeof fn !== 'function') {
-    throw new TypeError('fn must be a function');
-  }
+  return (..._args: Parameters<F>) => {
+    isPending = true;
+    args = _args;
 
-  if (typeof ms !== 'number' || isNaN(ms) || ms < 0) {
-    throw new TypeError('ms must be a non-negative number');
-  }
-
-  let lastRunTime: number | undefined;
-  let timeout: NodeJS.Timeout | undefined;
-  let pendingArgs: Parameters<F> | undefined;
-
-  const throttled = Object.assign(
-    function (...args: Parameters<F>) {
-      const now = Date.now();
-
-      const runNow = leading && lastRunTime === undefined;
-
-      if (runNow) {
-        lastRunTime = now;
-        fn.apply(thisArg, args);
-        return;
+    if (!interval) {
+      if (shouldRunFirst) {
+        isPending = false;
+        fn(...args);
       }
 
-      if (timeout !== undefined) {
-        pendingArgs = args;
-        return;
-      }
+      // eslint-disable-next-line no-restricted-globals
+      interval = self.setInterval(() => {
+        if (!isPending) {
+          // eslint-disable-next-line no-restricted-globals
+          self.clearInterval(interval!);
+          interval = undefined;
+          return;
+        }
 
-      const timeSinceLastRun = lastRunTime ? now - lastRunTime : ms;
-
-      if (timeSinceLastRun >= ms) {
-        lastRunTime = now;
-        fn.apply(thisArg, args);
-      } else if (trailing) {
-        pendingArgs = args;
-        timeout = setTimeout(() => {
-          lastRunTime = Date.now();
-          fn.apply(thisArg, pendingArgs!);
-          pendingArgs = undefined;
-          timeout = undefined;
-        }, ms - timeSinceLastRun);
-      }
-    },
-    {
-      cancel: () => {
-        if (timeout !== undefined) {
-          clearTimeout(timeout);
-          timeout = undefined;
-        }
-        pendingArgs = undefined;
-      },
-      flush: () => {
-        if (timeout !== undefined) {
-          clearTimeout(timeout);
-          timeout = undefined;
-        }
-        if (pendingArgs !== undefined) {
-          lastRunTime = Date.now();
-          fn.apply(thisArg, pendingArgs);
-          pendingArgs = undefined;
-        }
-      },
+        isPending = false;
+        fn(...args);
+      }, ms);
     }
-  ) as ThrottledFunction<F>;
-
-  return throttled;
+  };
 }

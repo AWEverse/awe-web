@@ -1,0 +1,40 @@
+:root {
+  /* Global CSS Variables */
+  --vh: 1vh;
+  --z-below: -1;
+  --reflect: 1;
+
+  --font-family: "Roboto", -apple-system, BlinkMacSystemFont, "Apple Color Emoji", "Segoe UI", Oxygen, Ubuntu,
+    Cantarell, "Fira Sans", "Droid Sans", "Helvetica Neue", sans-serif;
+  --font-family-monospace: "Cascadia Mono", "Roboto Mono", "Droid Sans Mono", 'SF Mono', "Menlo", "Ubuntu Mono",
+    "Consolas", monospace;
+  --font-family-rounded: -ui-rounded, "Numbers Rounded", "Roboto", "Helvetica Neue", sans-serif;
+  --font-family-condensed: "Roboto Condensed", "Roboto", "Helvetica Neue", sans-serif;
+
+  --animation-level-0: 0;
+  --animation-level-1: 1;
+  --animation-level-2: 2;
+  --animation-level-3: 3;
+
+  --transition-standard-easing: cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-standard-in-time: 0.3s;
+  --transition-standard-out-time: 0.25s;
+  --transition-standard-in: var(--transition-standard-in-time) var(--transition-standard-easing);
+  --transition-standard-out: var(--transition-standard-out-time) var(--transition-standard-easing);
+
+  --transform-origin-inline-start: left;
+  --transform-origin-inline-end: right;
+  --transform-origin-left-center: left center;
+  --transform-origin-right-center: right center;
+
+  --miller-duration: 1250ms;
+  --layer-transition: 400ms cubic-bezier(0.22, 1, 0.36, 1);
+  --slide-transition: 300ms cubic-bezier(0.25, 1, 0.5, 1);
+  --select-transition: 200ms ease-out;
+  --picker-title-shift: 1rem;
+
+  --awe-radius-sm: 0.25rem;
+  --awe-radius-md: 0.5rem;
+  --awe-radius-lg: 1rem;
+  --awe-radius-xl: 1.5rem;
+}

@@ -55,5 +55,5 @@ const IconButton: FC<OwnProps & OwnSharedProps> = ({
 };
 
 export const IconButtonMemo = memo(IconButton);
-export default IconButton;
+export default memo(IconButton);
 export type { OwnSharedProps as IconButtonSharedProps };

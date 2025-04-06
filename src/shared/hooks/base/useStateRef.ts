@@ -17,7 +17,7 @@ import { RefObject, useRef } from "react";
  * @returns {Readonly<RefObject<T>>} The ref object that holds the current value.
  * - `current`: The stored value, which will be updated when `value` changes.
  */
-export default function useStateRef<T>(value: T): Readonly<RefObject<T>> {
+export default function <T>(value: T): Readonly<RefObject<T>> {
   const ref = useRef<T>(value);
   ref.current = value;
   return ref;

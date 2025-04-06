@@ -20,16 +20,23 @@ const screens = {
   chat: LeftChatList,
 };
 
-const fadeVariants = {
-  initial: { opacity: 0 },
-  animate: { opacity: 1 },
-  exit: { opacity: 0 },
+const variants = {
+  initial: {
+    opacity: 0,
+    y: -15,
+  },
+  animate: {
+    y: 0,
+    opacity: 1,
+  },
+  exit: {
+    y: -15,
+    opacity: 0,
+  },
 };
 
 const MainScreen: FC<OwnProps> = ({}) => {
   const [content, setContent] = useState<ScreenType>("chat");
-  // const { isButtonVisible, handleMouseEnter, handleMouseLeave } =
-  //   useFloatingButton(false);
 
   const switchToChat = useCallback(() => setContent("chat"), []);
   const switchToSearch = useStableCallback(() => setContent("search"));
@@ -47,21 +54,17 @@ const MainScreen: FC<OwnProps> = ({}) => {
   const CurrentScreen = screens[content];
 
   return (
-    <div
-      className={s.LeftMainBody}
-      // onMouseEnter={handleMouseEnter}
-      // onMouseLeave={handleMouseLeave}
-    >
+    <div className={s.LeftMainBody}>
       <section className={s.LeftMainHeader}>
         {renderBackButton}
         <LeftMainHeader onFocus={switchToSearch} />
       </section>
 
-      <AnimatePresence mode="wait" initial={false}>
+      <AnimatePresence mode="popLayout" initial={false}>
         <motion.div
           key={content}
           className={s.LeftMainContent}
-          variants={fadeVariants}
+          variants={variants}
           initial="initial"
           animate="animate"
           exit="exit"

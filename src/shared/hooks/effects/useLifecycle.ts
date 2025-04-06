@@ -1,6 +1,11 @@
 import { EffectCallback, useEffect } from "react";
 
-const NO_DEPS = [] as const;
+/**
+ * A constant representing an empty dependency array.
+ * This is used to ensure that the effect runs only once on mount.
+ * @private
+ */
+const EMPTY_DEPS = [] as const;
 
 /**
  * Runs a one-time effect when the component mounts (similar to componentDidMount).
@@ -10,8 +15,7 @@ const NO_DEPS = [] as const;
 export function useComponentDidMount(effect: EffectCallback) {
   useEffect(() => {
     effect();
-    // No cleanup needed for mount-only effect
-  }, NO_DEPS); // eslint-disable-line react-hooks/exhaustive-deps
+  }, EMPTY_DEPS);
 }
 
 /**
@@ -21,6 +25,8 @@ export function useComponentDidMount(effect: EffectCallback) {
  */
 export function useComponentWillUnmount(cleanupEffect: () => void) {
   useEffect(() => {
-    return cleanupEffect; // Return cleanup function directly
-  }, NO_DEPS); // eslint-disable-line react-hooks/exhaustive-deps
+    return () => {
+      cleanupEffect();
+    };
+  }, EMPTY_DEPS);
 }

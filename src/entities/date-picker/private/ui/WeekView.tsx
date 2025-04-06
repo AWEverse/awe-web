@@ -1,149 +1,83 @@
-import React, { memo, useCallback, useMemo } from "react";
+import React, { memo, useMemo } from "react";
 import buildClassName from "@/shared/lib/buildClassName";
-import { CalendarViewProps } from "../lib/types";
+import { CalendarViewProps, EDatePickerView } from "../lib/types";
 import { buildCalendarGrid } from "../lib/utils";
-import DayCell from "./DayCell";
-import useLongPress from "@/lib/hooks/events/useLongPress";
 
-type TimeLapse = "prev" | "current" | "next";
-
-const WeekView: React.FC<CalendarViewProps> = ({
-  date,
-  mode,
-  onSelectDate,
-  onLongPressEnd,
-  onClick,
-  onLongPressStart,
-  onRightClick,
-}) => {
+const WeekView: React.FC<CalendarViewProps> = ({ date }) => {
   const { currentSystemDate, userSelectedDate } = date;
 
-  // Memoize system date details
-  const [currentDay, currentYear, currentMonth] = useMemo(
-    () => [
-      currentSystemDate.getDate(),
-      currentSystemDate.getFullYear(),
-      currentSystemDate.getMonth(),
-    ],
-    [currentSystemDate],
-  );
+  const {
+    grids,
+    currentYear,
+    currentMonth,
+    currentDay,
+    selectedDay,
+    isCurrentMonthNow,
+    isSelectedMonth,
+    todayISO,
+  } = useMemo(() => {
+    const now = new Date();
+    const todayISO = now.toISOString().slice(0, 10); // yyyy-mm-dd
 
-  // Memoize user selected date details
-  const [selectedDay, selectedMonth] = useMemo(
-    () => [userSelectedDate.getDate(), userSelectedDate.getMonth()],
-    [userSelectedDate],
-  );
+    const currentYear = currentSystemDate.getFullYear();
+    const currentMonth = currentSystemDate.getMonth();
 
-  // Memoize calendar grids
-  const { prevMonthGrid, currentMonthGrid, nextMonthGrid } = useMemo(
-    () => buildCalendarGrid(currentSystemDate),
-    [currentSystemDate],
-  );
+    return {
+      grids: buildCalendarGrid(currentSystemDate),
+      currentYear,
+      currentMonth,
+      currentDay: currentSystemDate.getDate(),
+      selectedDay: userSelectedDate.getDate(),
+      isCurrentMonthNow:
+        currentMonth === now.getMonth() && currentYear === now.getFullYear(),
+      isSelectedMonth: currentMonth === userSelectedDate.getMonth(),
+      todayISO,
+    };
+  }, [currentSystemDate, userSelectedDate]);
 
-  // Precompute date metadata for class names
-  const dateMetadata = useMemo(
-    () => ({
-      isCurrentMonth: currentMonth === new Date().getMonth(),
-      isSelectedMonth: currentMonth === selectedMonth,
-    }),
-    [currentMonth, selectedMonth],
-  );
+  const getIsoDate = (day: number, monthOffset: -1 | 0 | 1) =>
+    new Date(currentYear, currentMonth + monthOffset, day)
+      .toISOString()
+      .slice(0, 10); // yyyy-mm-dd
 
-  // Stable event handlers using data attributes
-  const handleSelectDate = useCallback(
-    (e: React.MouseEvent) => {
-      const target = e.currentTarget as HTMLElement;
-      const day = parseInt(target.dataset.day || "0", 10);
-      const type = (target.dataset.type || "current") as TimeLapse;
+  const renderDays = (days: number[], type: "prev" | "current" | "next") => {
+    const isCurrentMonth = type === "current";
+    const monthOffset = type === "prev" ? -1 : type === "next" ? 1 : 0;
 
-      let newMonth = currentMonth;
-      let newYear = currentYear;
+    return days.map((day) => {
+      const isoDate = getIsoDate(day, monthOffset);
+      const isCurrentDay =
+        isCurrentMonth && day === currentDay && isCurrentMonthNow;
 
-      if (type === "prev") {
-        newMonth = currentMonth - 1;
-        if (newMonth < 0) {
-          newMonth = 11;
-          newYear = currentYear - 1;
-        }
-      } else if (type === "next") {
-        newMonth = currentMonth + 1;
-        if (newMonth > 11) {
-          newMonth = 0;
-          newYear = currentYear + 1;
-        }
-      }
+      const isSelectedDay =
+        isCurrentMonth && day === selectedDay && isSelectedMonth;
 
-      onSelectDate?.({ day, month: newMonth, year: newYear });
-    },
-    [currentMonth, currentYear, onSelectDate],
-  );
+      const isToday = isoDate === todayISO;
 
-  const handleRightClick = useCallback(
-    (e: React.MouseEvent | React.TouchEvent) => {
-      e.preventDefault();
-      const target = e.currentTarget as HTMLElement;
-      const day = parseInt(target.dataset.day || "0", 10);
-      const type = (target.dataset.type || "current") as TimeLapse;
-
-      let month = currentMonth;
-      let year = currentYear;
-
-      if (type === "prev") {
-        month = currentMonth - 1;
-        if (month < 0) {
-          month = 11;
-          year = currentYear - 1;
-        }
-      } else if (type === "next") {
-        month = currentMonth + 1;
-        if (month > 11) {
-          month = 0;
-          year = currentYear + 1;
-        }
-      }
-
-      onRightClick?.({ day, month, year });
-    },
-    [currentMonth, currentYear, onRightClick],
-  );
-
-  // Memoized grid renderer
-  const renderDays = useCallback(
-    (days: number[], type: TimeLapse = "current") => {
-      return days.map((day) => {
-        const isCurrentMonth = type === "current";
-        const isCurrentDay =
-          isCurrentMonth && day === currentDay && dateMetadata.isCurrentMonth;
-        const isSelectedDay =
-          isCurrentMonth && day === selectedDay && dateMetadata.isSelectedMonth;
-
-        return (
-          <DayCell
-            key={`${type}-${day}`}
-            className={buildClassName(
-              "dp-calendar-cell",
-              "dp-day-cell",
-              !isCurrentMonth && "dp-day--another",
-              isSelectedDay && "dp-day--selected",
-              isCurrentDay && "dp-current-day",
-            )}
-            data-day={day}
-            data-type={type}
-            onClick={handleSelectDate}
-          >
-            {day}
-          </DayCell>
-        );
-      });
-    },
-    [currentDay, selectedDay, dateMetadata, handleSelectDate, handleRightClick],
-  );
+      return (
+        <div
+          key={isoDate}
+          data-isodate={isoDate}
+          className={buildClassName(
+            "dp-calendar-cell",
+            "dp-day-cell",
+            isToday && "dp-day--current",
+            !isCurrentMonth && "dp-day--another",
+            isSelectedDay && "dp-day--selected",
+            isCurrentDay && "dp-current-day",
+          )}
+        >
+          {day}
+        </div>
+      );
+    });
+  };
 
   return (
     <>
-      {renderDays(prevMonthGrid, "prev")}
-      {renderDays(currentMonthGrid)}
-      {renderDays(nextMonthGrid, "next")}
+      {renderDays(grids.prevMonthGrid, "prev")}
+      {renderDays(grids.currentMonthGrid, "current")}
+      {renderDays(grids.nextMonthGrid, "next")}
     </>
   );
 };

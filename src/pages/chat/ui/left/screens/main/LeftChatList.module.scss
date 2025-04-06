@@ -2,9 +2,15 @@
   height: 100%;
 }
 
+.LeftChatListContainer {
+  will-change: transform, opacity;
+  overflow: hidden; /* Prevent overflow during animations */
+}
+
 .LeftTabListBorders {
   position: sticky;
   top: 0;
+  padding-top: 0.25rem;
   margin-bottom: 12px;
   box-shadow: 0px 10px 0px 0px var(--awe-palette-secondary-main);
   z-index: 5;
@@ -16,4 +22,56 @@
   background-color: var(--awe-palette-divider);
   border-color: var(--awe-palette-divider);
   margin-inline-start: 4.1rem;
+}
+
+.SkeletonContainer {
+  width: 100%;
+}
+
+.SkeletonChatItem {
+  display: flex;
+  align-items: center;
+  padding: 10px;
+  gap: 10px;
+}
+
+.SkeletonAvatar {
+  width: 40px;
+  height: 40px;
+  background: #e0e0e0;
+  border-radius: 50%;
+  animation: pulse 1.5s infinite;
+}
+
+.SkeletonText {
+  flex: 1;
+}
+
+.SkeletonLine {
+  width: 80%;
+  height: 10px;
+  background: #e0e0e0;
+  border-radius: 4px;
+  margin-bottom: 8px;
+  animation: pulse 1.5s infinite;
+}
+
+.SkeletonLineShort {
+  width: 50%;
+  height: 10px;
+  background: #e0e0e0;
+  border-radius: 4px;
+  animation: pulse 1.5s infinite;
+}
+
+@keyframes pulse {
+  0% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+  100% {
+    opacity: 1;
+  }
 }

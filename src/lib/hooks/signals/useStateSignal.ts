@@ -14,12 +14,22 @@ export default function useStateSignal<T = undefined>(
 ): SignalReturn<T> {
   const _signal = useRef(signal(initialValue));
   const _isMounted = useRef(true);
+  const _isUpdating = useRef(false); // Flag to prevent re-entrant updates
+  const _lastValue = useRef<T | undefined>(initialValue); // Track last processed value
 
   useComponentWillUnmount(() => {
     _isMounted.current = false;
   });
 
   const setSignal: SignalSetter<T> = useStableCallback((value) => {
+    // Prevent re-entrant updates (cycle guard)
+    if (_isUpdating.current) {
+      if (DEBUG && logMessage) {
+        console.warn(`useSignal: Cycle detected in ${logMessage}, skipping update`);
+      }
+      return;
+    }
+
     const currentValue = _signal.current.value;
 
     const newValue =
@@ -27,11 +37,16 @@ export default function useStateSignal<T = undefined>(
         ? (value as (prevValue: T | undefined) => T)(currentValue)
         : value;
 
+    if (areDeepEqual(newValue, _lastValue.current)) {
+      return;
+    }
+
     if (newValue instanceof Promise) {
+      _isUpdating.current = true;
       newValue
         .then((resolvedValue) => {
           if (!_isMounted.current) return;
-          if (!areDeepEqual(resolvedValue, _signal.current.value)) {
+          if (!areDeepEqual(resolvedValue, _lastValue.current)) {
             updateSignal(resolvedValue);
           }
         })
@@ -39,9 +54,14 @@ export default function useStateSignal<T = undefined>(
           if (_isMounted.current) {
             handleSignalError(error, currentValue);
           }
+        })
+        .finally(() => {
+          _isUpdating.current = false;
         });
-    } else if (!areDeepEqual(newValue, currentValue)) {
+    } else {
+      _isUpdating.current = true;
       updateSignal(newValue);
+      _isUpdating.current = false;
     }
   });
 
@@ -50,6 +70,7 @@ export default function useStateSignal<T = undefined>(
       console.log(`useSignal: ${logMessage}`, newValue);
     }
     _signal.current.value = newValue;
+    _lastValue.current = newValue; // Update last processed value
   };
 
   const handleSignalError = (error: unknown, previousValue: T | undefined) => {
@@ -57,6 +78,7 @@ export default function useStateSignal<T = undefined>(
       console.error(`useSignal error: ${logMessage}`, error);
     }
     _signal.current.value = previousValue;
+    _lastValue.current = previousValue; // Restore last stable value
   };
 
   return [_signal.current as ReadonlySignal<T>, setSignal];

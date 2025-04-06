@@ -1,23 +1,71 @@
-import { round, EMediaReadyState, clamp, BTimeRanges } from "@/lib/core";
+import { round, EMediaReadyState, clamp } from "@/lib/core";
 import useStateSignal from "@/lib/hooks/signals/useStateSignal";
 import { useStableCallback } from "@/shared/hooks/base";
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 
-export const useTimeLine = (
-  videoRef: React.RefObject<HTMLVideoElement | null>,
-) => {
+type TimeRange = [number, number];
+
+export const useTimeLine = (videoRef: React.RefObject<HTMLVideoElement | null>) => {
   const [currentTime, setCurrentTime] = useStateSignal(0);
   const [duration, setDuration] = useState(0);
+
+  const [buffered, setBuffered] = useState<TimeRange[]>([]);
+  const [playbackRate, setPlaybackRate] = useState(1);
 
   useEffect(() => {
     const video = videoRef.current;
     if (!video) return;
 
     const updateDuration = () => setDuration(round(video.duration));
-
     video.addEventListener("loadedmetadata", updateDuration);
     return () => video.removeEventListener("loadedmetadata", updateDuration);
   }, [videoRef]);
+
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video) return;
+
+    const handleTimeUpdate = () => {
+      if (video.readyState < EMediaReadyState.HAVE_METADATA) return;
+
+      const newTime = round(video.currentTime);
+      const newDuration = round(video.duration);
+
+      if (duration !== newDuration) {
+        setDuration(newDuration);
+      }
+
+      if (currentTime.value !== newTime) {
+        setCurrentTime(newTime);
+      }
+    };
+
+    video.addEventListener("timeupdate", handleTimeUpdate);
+    return () => video.removeEventListener("timeupdate", handleTimeUpdate);
+  }, [videoRef, currentTime, duration, setCurrentTime, setDuration]);
+
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video) return;
+
+    const updateBuffered = () => {
+      const ranges: TimeRange[] = [];
+      for (let i = 0; i < video.buffered.length; i++) {
+        ranges.push([video.buffered.start(i), video.buffered.end(i)]);
+      }
+      setBuffered(ranges);
+    };
+
+    video.addEventListener("progress", updateBuffered);
+    return () => video.removeEventListener("progress", updateBuffered);
+  }, [videoRef]);
+
+  useEffect(() => {
+    const video = videoRef.current;
+    if (video) {
+      video.playbackRate = playbackRate;
+    }
+  }, [playbackRate, videoRef]);
 
   const handleSeek = useStableCallback((position: number) => {
     const video = videoRef.current;
@@ -32,45 +80,13 @@ export const useTimeLine = (
     }
   });
 
-  const handleTimeUpdate = useCallback(
-    (e: React.SyntheticEvent<HTMLVideoElement>) => {
-      const video = e.currentTarget;
-      if (!video || video.readyState < EMediaReadyState.HAVE_METADATA) return;
-
-      console.log("timeupdate")
-
-      const newTime = round(video.currentTime);
-      const newDuration = round(video.duration);
-
-      if (duration !== newDuration) {
-        setDuration(newDuration);
-      }
-
-      if (currentTime.value !== newTime) {
-        setCurrentTime(newTime);
-      }
-
-      if (Math.abs(newTime - newDuration) < 0.1) {
-        setCurrentTime(0);
-        video.currentTime = 0;
-      }
-    },
-    [currentTime.value, duration],
-  );
-
-  useEffect(() => {
-    const video = videoRef.current;
-    if (video && Number.isFinite(video.currentTime)) {
-      setCurrentTime(round(video.currentTime));
-      setDuration(round(video.duration));
-    }
-  }, [videoRef]);
-
   return {
-    currentTime: currentTime,
-    duration: duration,
-    handleSeek,
-    handleTimeUpdate,
-    setCurrentTime,
+    currentTime,          // Signal object with .value property
+    duration,             // Total video duration (number)
+    buffered,             // Array of [start, end] buffered ranges
+    playbackRate,         // Current playback speed (e.g., 1, 1.5, 2)
+    setPlaybackRate,      // Function to set playback speed
+    handleSeek,           // Function to seek to a position
+    setCurrentTime,       // Setter for currentTime signal
   };
 };

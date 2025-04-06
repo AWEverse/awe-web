@@ -31,26 +31,17 @@ const classNames = {
   badgeActive: "Tab-badge-active",
 };
 
-// Optimized animation settings
 const TRANSITION_SETTINGS = {
   type: "spring",
   stiffness: 500,
   damping: 30,
-  restDelta: 0.001, // Helps determine when animation is "done" - smaller values are more precise but may take longer
+  restDelta: 0.001,
 };
 
-// Animation variants for better performance
 const platformVariants = {
   initial: { opacity: 0, scale: 0.9 },
   animate: { opacity: 1, scale: 1 },
   exit: { opacity: 0, scale: 0.9 },
-};
-
-// Badge animation variants
-const badgeVariants = {
-  initial: { scale: 0.8, opacity: 0 },
-  animate: { scale: 1, opacity: 1 },
-  exit: { scale: 0.8, opacity: 0 },
 };
 
 const Tab: FC<OwnProps> = ({
@@ -74,23 +65,16 @@ const Tab: FC<OwnProps> = ({
   const renderBadge = useMemo(() => {
     if (badgeCount) {
       return (
-        <motion.span
+        <span
           aria-label={`Notifications: ${badgeCount}`}
           className={buildClassName(
             "badge",
             isBadgeActive && classNames.badgeActive,
           )}
           role="alert"
-          variants={badgeVariants}
-          initial="initial"
-          animate="animate"
-          exit="exit"
-          transition={{ type: "spring", stiffness: 400, damping: 20 }}
-          // Using layoutId for consistent animation when badge count changes
-          layoutId={`badge-${layoutId}`}
         >
           {badgeCount}
-        </motion.span>
+        </span>
       );
     }
     return null;
@@ -150,13 +134,7 @@ const Tab: FC<OwnProps> = ({
           <span className="Tab-title">{title}</span>
           {renderBadge}
           {isBlocked && (
-            <motion.i
-              aria-hidden="true"
-              className="icon icon-lock-badge blocked"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ duration: 0.2 }}
-            />
+            <i aria-hidden="true" className="icon icon-lock-badge blocked" />
           )}
 
           <AnimatePresence>

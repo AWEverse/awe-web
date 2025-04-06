@@ -14,7 +14,6 @@ import useBufferedCanvas from "../hooks/useBufferedCanvas";
 
 interface VideoPlayerMetterProps {
   currentTimeSignal: ReadonlySignal<number>;
-  bufferedRangesSignal: ReadonlySignal<BufferedRange[]>;
   url?: string;
   duration: number;
   playbackRate: number;
@@ -33,7 +32,6 @@ const SEEK_DEBOUNCE_MS = 200;
 
 const VideoPlayerMetter: FC<VideoPlayerMetterProps> = ({
   currentTimeSignal,
-  bufferedRangesSignal,
   url,
   duration,
   playbackRate,
@@ -55,8 +53,6 @@ const VideoPlayerMetter: FC<VideoPlayerMetterProps> = ({
   const previewTimeDisplay = useRef<HTMLDivElement | null>(null);
 
   const [isSeeking, _setIsSeeking] = useState(false);
-
-  const canvasRef = useBufferedCanvas(bufferedRangesSignal.value, duration);
 
   const setIsSeeking = useDebouncedFunction(
     _setIsSeeking,
@@ -143,11 +139,7 @@ const VideoPlayerMetter: FC<VideoPlayerMetterProps> = ({
         aria-valuemax={duration}
         itemProp="duration"
       >
-        <canvas
-          ref={canvasRef}
-          height={10}
-          style={{ width: "100%", height: "100%" }}
-        />
+        <canvas height={10} style={{ width: "100%", height: "100%" }} />
         <div
           ref={progressBar}
           className={buildClassName(

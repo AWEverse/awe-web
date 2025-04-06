@@ -1,7 +1,7 @@
-import React from 'react';
-import { Avatar, Box, Divider } from '@mui/material';
-import s from './MemberCard.module.scss';
-import buildClassName from '@/shared/lib/buildClassName';
+import React from "react";
+import { Avatar, Box, Divider } from "@mui/material";
+import s from "./MemberCard.module.scss";
+import buildClassName from "@/shared/lib/buildClassName";
 
 interface MemberCardProps {
   avatar: string;
@@ -10,8 +10,8 @@ interface MemberCardProps {
   joinDate?: string;
   startDecorator?: React.ReactNode;
   endDecorator?: React.ReactNode;
-  layout?: 'vertical' | 'horizontal';
-  avatarSize?: 'small' | 'medium' | 'large';
+  layout?: "vertical" | "horizontal";
+  avatarSize?: "small" | "medium" | "large";
   className?: string;
 }
 
@@ -28,19 +28,24 @@ const MemberCard: React.FC<MemberCardProps> = ({
   joinDate,
   startDecorator,
   endDecorator,
-  avatarSize = 'medium',
+  avatarSize = "medium",
   className,
 }) => (
-  <Box className={buildClassName(s.memberCard, className)}>
+  <li className={buildClassName(s.memberCard, className)}>
     {startDecorator && (
-      <div className={buildClassName(s.memberCard__decorator)}>{startDecorator}</div>
+      <div className={buildClassName(s.memberCard__decorator)}>
+        {startDecorator}
+      </div>
     )}
 
     <div className={s.memberCard__content}>
       <Avatar
         alt={username}
         src={avatar}
-        sx={{ width: avatarSizeMap[avatarSize], height: avatarSizeMap[avatarSize] }}
+        sx={{
+          width: avatarSizeMap[avatarSize],
+          height: avatarSizeMap[avatarSize],
+        }}
       />
       <div className={s.memberCard__info}>
         <p className="awe-title">{username}</p>
@@ -48,14 +53,18 @@ const MemberCard: React.FC<MemberCardProps> = ({
       </div>
     </div>
 
-    {endDecorator && <div className={buildClassName(s.memberCard__decorator)}>{endDecorator}</div>}
+    {endDecorator && (
+      <div className={buildClassName(s.memberCard__decorator)}>
+        {endDecorator}
+      </div>
+    )}
 
     {joinDate && (
       <Divider textAlign="right" className={s.memberCard__divider}>
         {joinDate}
       </Divider>
     )}
-  </Box>
+  </li>
 );
 
 export default MemberCard;
