@@ -1,93 +1,121 @@
-// Utility to convert input to Date if not already a Date
-const toDate = (date: Date | number): Date => (date instanceof Date ? date : new Date(date));
-
-// Utility to compare two dates (ignores time)
-const isSameDay = (date1: Date, date2: Date): boolean =>
-  date1.getFullYear() === date2.getFullYear() &&
-  date1.getMonth() === date2.getMonth() &&
-  date1.getDate() === date2.getDate();
-
-// Utility to compare if two months and years are the same (ignores the day)
-const isSameMonth = (date1: Date, date2: Date): boolean =>
-  date1.getFullYear() === date2.getFullYear() && date1.getMonth() === date2.getMonth();
-
-// Utility to get the previous month (handles year overflow)
-const getPreviousMonth = (month: number, year: number): { month: number; year: number } => {
-  return month === 0 ? { month: 11, year: year - 1 } : { month: month - 1, year };
+// Optimized utility to convert input to Date
+const toDate = (date: Date | number | string): Date => {
+  if (date instanceof Date) return new Date(date); // Always return new instance
+  return new Date(date);
 };
 
-// Utility to get the next month (handles year overflow)
-const getNextMonth = (month: number, year: number): { month: number; year: number } => {
-  return month === 11 ? { month: 0, year: year + 1 } : { month: month + 1, year };
-};
-
-// Check if the given date is today
-export const isCurrentDay = (date: Date | number): boolean => {
-  const today = new Date();
-  return isSameDay(toDate(date), today);
-};
-
-// Check if the given date is in the current month
-export const isCurrentMonth = (date: Date | number): boolean => {
-  const today = new Date();
-  return isSameMonth(toDate(date), today);
-};
-
-// Main function to check if the date is in the previous month
-export const isPreviousMonth = (date: Date | number): boolean => {
-  const today = new Date();
-  const { month: prevMonth, year: prevYear } = getPreviousMonth(
-    today.getMonth(),
-    today.getFullYear(),
+// Optimized comparison of two dates (ignores time)
+const isSameDay = (date1: Date, date2: Date): boolean => {
+  return (
+    date1.getFullYear() === date2.getFullYear() &&
+    date1.getMonth() === date2.getMonth() &&
+    date1.getDate() === date2.getDate()
   );
-
-  const inputDate = typeof date === 'number' ? new Date(date) : date;
-
-  return inputDate.getMonth() === prevMonth && inputDate.getFullYear() === prevYear;
 };
 
-// Check if the given date is in the current year
-export const isCurrentYear = (date: Date | number): boolean => {
-  const today = new Date();
-  return toDate(date).getFullYear() === today.getFullYear();
+// Optimized month comparison
+const isSameMonth = (date1: Date, date2: Date): boolean => {
+  return (
+    date1.getFullYear() === date2.getFullYear() &&
+    date1.getMonth() === date2.getMonth()
+  );
 };
 
-// Check if the given date is in a specific range
+// Single cached today instance for current checks
+const getToday = (() => {
+  let today: Date;
+  return () => {
+    const now = new Date();
+    if (!today || !isSameDay(today, now)) {
+      today = now;
+    }
+    return today;
+  };
+})();
+
+// Optimized month navigation with bit manipulation
+const getPreviousMonth = (month: number, year: number): number => {
+  return (month - 1 + 12) % 12 | ((year - (month === 0 ? 1 : 0)) << 4);
+};
+
+const getNextMonth = (month: number, year: number): number => {
+  return (month + 1) % 12 | ((year + (month === 11 ? 1 : 0)) << 4);
+};
+
+// Extract month and year from packed value
+const unpackMonthYear = (packed: number) => ({
+  month: packed & 0xF,
+  year: packed >> 4
+});
+
+// Check if date is today
+export const isCurrentDay = (date: Date | number | string): boolean => {
+  return isSameDay(toDate(date), getToday());
+};
+
+// Check if date is in current month
+export const isCurrentMonth = (date: Date | number | string): boolean => {
+  return isSameMonth(toDate(date), getToday());
+};
+
+// Optimized check for previous month relative to current date
+export const isPreviousMonth = (date: Date | number | string): boolean => {
+  const inputDate = toDate(date);
+  const today = getToday();
+  const packedPrev = getPreviousMonth(today.getMonth(), today.getFullYear());
+  const { month: prevMonth, year: prevYear } = unpackMonthYear(packedPrev);
+  return (
+    inputDate.getMonth() === prevMonth &&
+    inputDate.getFullYear() === prevYear
+  );
+};
+
+// Check if date is in current year
+export const isCurrentYear = (date: Date | number | string): boolean => {
+  return toDate(date).getFullYear() === getToday().getFullYear();
+};
+
+// Optimized date range check
 export const isDateInRange = (
-  date: Date | number,
-  startDate: Date | number,
-  endDate: Date | number,
+  date: Date | number | string,
+  startDate: Date | number | string,
+  endDate: Date | number | string
 ): boolean => {
-  const inputDate = toDate(date);
-  const start = toDate(startDate);
-  const end = toDate(endDate);
-  return inputDate >= start && inputDate <= end;
+  const d = toDate(date).getTime();
+  return d >= toDate(startDate).getTime() && d <= toDate(endDate).getTime();
 };
 
-// Check if the selected day is in the previous month
+// Check if selected day is in previous month relative to given month/year
 export const isSelectedDayInPreviousMonth = (
-  date: Date | number,
+  date: Date | number | string,
   month: number,
-  year: number,
+  year: number
 ): boolean => {
   const inputDate = toDate(date);
-  const { month: prevMonth, year: prevYear } = getPreviousMonth(month, year);
-  return inputDate.getMonth() === prevMonth && inputDate.getFullYear() === prevYear;
+  const packedPrev = getPreviousMonth(month, year);
+  const { month: prevMonth, year: prevYear } = unpackMonthYear(packedPrev);
+  return (
+    inputDate.getMonth() === prevMonth &&
+    inputDate.getFullYear() === prevYear
+  );
 };
 
-// Check if the selected day is in the next month
+// Check if selected day is in next month relative to given month/year
 export const isSelectedDayInNextMonth = (
-  date: Date | number,
+  date: Date | number | string,
   month: number,
-  year: number,
+  year: number
 ): boolean => {
   const inputDate = toDate(date);
-  const { month: nextMonth, year: nextYear } = getNextMonth(month, year);
-  return inputDate.getMonth() === nextMonth && inputDate.getFullYear() === nextYear;
+  const packedNext = getNextMonth(month, year);
+  const { month: nextMonth, year: nextYear } = unpackMonthYear(packedNext);
+  return (
+    inputDate.getMonth() === nextMonth &&
+    inputDate.getFullYear() === nextYear
+  );
 };
 
+// Optimized date validation
 export const isValidDate = (date: Date | string | number): boolean => {
-  const parsedDate = date instanceof Date ? date : new Date(date);
-
-  return !isNaN(parsedDate.getTime());
+  return !isNaN(toDate(date).getTime());
 };

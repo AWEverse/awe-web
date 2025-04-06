@@ -81,26 +81,28 @@ type OwnProps = {
 interface StateProps {}
 
 const markdownContent = `
-To create a table in markdown that includes the sanitization settings based on your code, you can structure it like this:
+# Hello there!
 
-\`\`\`markdown
-# Custom Sanitization
+Welcome to the world of **Markdown**! 🌟 Here you can easily format text and add cool elements.
 
-This markdown contains an image and a link.
+## Here's what you can do:
+- **Bold text** for emphasis
+- *Italic text* for subtle highlights
+- [Click here](https://example.com) to visit our website
+- Here's a list:
+  - First item
+  - Second item
+  - Third item
 
-| **Sanitized Tags** | **Attributes**        |
-|--------------------|-----------------------|
-| h1                 |                       |
-| p                  |                       |
-| a                  | href                  |
-| img                | src, alt, title       |
+> _“Markdown makes writing fun and easy!”_
 
-Lorem ipsum dolor sit, amet consectetur adipisicing elit. Harum quia doloremque ipsa perspiciatis hic, voluptatibus ut laudantium fugiat saepe minus sunt rerum alias quis corporis ducimus unde cupiditate perferendis impedit.
-
-[Example Link](https://example.com)
+## Code Example:
+\`\`\`js
+const message = "Hello, world!";
+console.log(message);
 \`\`\`
 
-In the table, I've listed the HTML tags and their associated attributes based on your \`mTags\` and \`mAttr\` arrays.
+Stay awesome! ✨
 `;
 
 const ChatMessage: FC<OwnProps & StateProps> = ({ isOwn, message }) => {
@@ -163,30 +165,11 @@ const ChatMessage: FC<OwnProps & StateProps> = ({ isOwn, message }) => {
     observeIntersectionForReading,
   );
 
-  const {
-    isContextMenuOpen,
-    contextMenuAnchor,
-    handleBeforeContextMenu,
-    handleContextMenu,
-    handleContextMenuClose,
-  } = useContextMenuHandlers({ elementRef: messageRef });
-
-  const { handleClick, handleMouseDown } = useFastClick(
-    (e: React.MouseEvent<HTMLDivElement>) => {
-      if (e.button === EMouseButton.Secondary) {
-        handleBeforeContextMenu(e);
-      }
-    },
-  );
-
   return (
     <>
       <div
         ref={messageRef}
         className={buildClassName("Message", isOwn && "own")}
-        onClick={handleClick}
-        onMouseDown={handleMouseDown}
-        onContextMenu={handleContextMenu}
       >
         {renderContent()}
         <div
@@ -196,20 +179,6 @@ const ChatMessage: FC<OwnProps & StateProps> = ({ isOwn, message }) => {
           data-meta={NBSP}
         />
       </div>
-
-      <ContextMenu
-        isOpen={isContextMenuOpen}
-        position={contextMenuAnchor!}
-        onClose={handleContextMenuClose}
-        withPortal
-        menuClassName="p-2"
-      >
-        <p>Reply</p>
-        <p>Copy</p>
-        <p>Copy link</p>
-        <p>Forward</p>
-        <p>Reporst</p>
-      </ContextMenu>
     </>
   );
 };

@@ -3,12 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useStableCallback } from "@/shared/hooks/base";
 import { throttle } from "@/lib/core";
 
-import {
-  CalendarAnimationType,
-  CalendarMode,
-  DateState,
-  EDatePickerView,
-} from "../../private/lib/types";
+import { CalendarAnimationType, CalendarMode } from "../../private/lib/types";
 import {
   CELL_SIZE,
   ZoomLevel,
@@ -22,16 +17,16 @@ import {
   DatePickerNavigation,
   WeekdayLabels,
 } from "../../private/ui";
-import useSelectedOrCurrentDate from "../../private/lib/hooks/useSelectedOrCurrentDate";
 import useCalendarStyles from "../../private/lib/hooks/useCalendarStyles";
 
 import "./DatePicker.scss";
 import useCalendar from "../../private/lib/hooks/useCalendar";
+import { useGridSelection } from "../../private/lib/hooks/useGridSelection";
 
 const animationVariants = {
   slide: {
-    initial: (direction: CalendarAnimationType) => ({
-      x: direction === "RTL" ? "100%" : direction === "LTR" ? "-100%" : 0,
+    initial: (animated: CalendarAnimationType) => ({
+      x: animated === "RTL" ? "100%" : animated === "LTR" ? "-100%" : 0,
       opacity: 1,
       scale: 0.95,
     }),
@@ -41,8 +36,8 @@ const animationVariants = {
       scale: 1,
       transition: { duration: 0.2, ease: "easeInOut" },
     },
-    exit: (direction: CalendarAnimationType) =>
-      direction === "zoom"
+    exit: (animated: CalendarAnimationType) =>
+      animated === "zoom"
         ? {
             scale: 0.8,
             opacity: 0,
@@ -50,7 +45,7 @@ const animationVariants = {
             transition: { duration: 0.25, ease: "easeInOut" },
           }
         : {
-            x: direction === "RTL" ? "-100%" : "100%",
+            x: animated === "RTL" ? "-100%" : "100%",
             opacity: 0,
             scale: 0.95,
             transition: { duration: 0.2, ease: "easeInOut" },
@@ -64,8 +59,8 @@ const animationVariants = {
       y: 0,
       transition: { duration: 0.25, ease: "easeInOut" },
     },
-    exit: (direction: CalendarAnimationType) =>
-      direction === "zoom"
+    exit: (animated: CalendarAnimationType) =>
+      animated === "zoom"
         ? {
             scale: 0.8,
             opacity: 0,
@@ -73,7 +68,7 @@ const animationVariants = {
             transition: { duration: 0.25, ease: "easeInOut" },
           }
         : {
-            x: direction === "RTL" ? "-100%" : "100%",
+            x: animated === "RTL" ? "-100%" : "100%",
             opacity: 0,
             scale: 0.95,
             transition: { duration: 0.2, ease: "easeInOut" },
@@ -81,8 +76,8 @@ const animationVariants = {
   },
 };
 
-const getActiveVariants = (direction: CalendarAnimationType) =>
-  direction === "zoom" ? animationVariants.zoom : animationVariants.slide;
+const getActiveVariants = (animated: CalendarAnimationType) =>
+  animated === "zoom" ? animationVariants.zoom : animationVariants.slide;
 
 const ZOOM_LEVELS = [ZoomLevel.WEEK, ZoomLevel.MONTH, ZoomLevel.YEAR] as const;
 
@@ -119,12 +114,18 @@ const DatePicker: FC<DatePickerProps> = ({
 }) => {
   const gridRef = useRef<HTMLDivElement>(null);
   const [zoomLevel, setZoomLevel] = useState<ZoomLevel>(ZoomLevel.WEEK);
+
   const initialDate = selectedAt ? new Date(selectedAt) : new Date();
 
-  const { dateState, changeMonth, handleDateSelect, handleUndo, handleRedo } =
-    useCalendar(initialDate, minAt, maxAt);
-
-  const [direction, setDirection] = useState<CalendarAnimationType>("LTR");
+  const {
+    animated,
+    setAnimated,
+    dateState,
+    changeMonth,
+    handleDateSelect,
+    handleUndo,
+    handleRedo,
+  } = useCalendar(initialDate, minAt, maxAt);
 
   const { classNames, style } = useCalendarStyles(
     className,
@@ -148,10 +149,6 @@ const DatePicker: FC<DatePickerProps> = ({
       const selectedDate = new Date(dateAttr);
       if (!isDateValid(selectedDate)) return;
 
-      if (direction) {
-        setDirection(direction);
-      }
-
       const adjustedDay = selectedDate.getDate() + 1;
       handleDateSelect(
         adjustedDay,
@@ -164,7 +161,7 @@ const DatePicker: FC<DatePickerProps> = ({
   const handlePrevMonth = useStableCallback(() => changeMonth(PREVIOUS_MONTH));
   const handleNextMonth = useStableCallback(() => changeMonth(NEXT_MONTH));
   const handleZoomToggle = useStableCallback(() => {
-    setDirection("zoom");
+    setAnimated("zoom");
     setZoomLevel(
       ZOOM_LEVELS[(ZOOM_LEVELS.indexOf(zoomLevel) + 1) % ZOOM_LEVELS.length],
     );
@@ -185,6 +182,16 @@ const DatePicker: FC<DatePickerProps> = ({
       grid.style.setProperty("--mouse-x", `${x}px`);
       grid.style.setProperty("--mouse-y", `${y}px`);
     }, 16),
+  );
+
+  const { path, labelPath, count } = useGridSelection(
+    { start: 10, end: 23 },
+    {
+      cellSize: 46,
+      columns: 7,
+      rows: 6,
+      orientation: "horizontal",
+    },
   );
 
   return (
@@ -215,12 +222,12 @@ const DatePicker: FC<DatePickerProps> = ({
         onMouseMove={handleMouseMove}
         className={`dp-grid-wrapper dp-spotlight ${classNames}`}
       >
-        <AnimatePresence initial={false} custom={direction} mode="popLayout">
+        <AnimatePresence initial={false} custom={animated} mode="popLayout">
           <motion.div
             key={transitionKey}
             className={classNames}
-            variants={getActiveVariants(direction)}
-            custom={direction}
+            variants={getActiveVariants(animated)}
+            custom={animated}
             initial="initial"
             animate="animate"
             exit="exit"
@@ -229,7 +236,31 @@ const DatePicker: FC<DatePickerProps> = ({
             <CalendarView date={dateState} mode={mode} />
           </motion.div>
         </AnimatePresence>
+
+        <svg width="100%" height="100%" className="dp-selector-mask">
+          <defs>
+            <path id="label-path" d={labelPath} />
+          </defs>
+
+          <path
+            d={path}
+            fill="rgba(0, 128, 255, 0.1)"
+            stroke="#007aff"
+            strokeWidth={2}
+            strokeDasharray="4"
+            strokeDashoffset="8"
+          >
+            <animate
+              attributeName="stroke-dashoffset"
+              from="8"
+              to="0"
+              dur="1s"
+              repeatCount="indefinite"
+            />
+          </path>
+        </svg>
       </section>
+
       {placeholder && (
         <section className="dp-placeholder">{placeholder}</section>
       )}

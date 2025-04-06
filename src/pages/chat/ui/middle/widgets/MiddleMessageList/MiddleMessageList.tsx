@@ -5,8 +5,10 @@ import ChatMessage from "../../message";
 import { ScrollProvider } from "@/shared/context";
 import { useStableCallback } from "@/shared/hooks/base";
 import { useDebouncedFunction } from "@/shared/hooks/shedulers";
-import { debounce } from "@/lib/core";
+import { debounce, EMouseButton } from "@/lib/core";
 import { useComponentDidMount } from "@/shared/hooks/effects/useLifecycle";
+import ContextMenu, { useContextMenuHandlers } from "@/entities/context-menu";
+import { useFastClick } from "@/shared/hooks/mouse/useFastClick";
 
 interface OwnProps {}
 
@@ -44,6 +46,25 @@ const MiddleMessageList: FC<OwnProps & StateProps> = () => {
       );
   });
 
+  const {
+    isContextMenuOpen,
+    contextMenuAnchor,
+    contextMenuTarget,
+    handleBeforeContextMenu,
+    handleContextMenu,
+    handleContextMenuClose,
+  } = useContextMenuHandlers({ elementRef: containerRef });
+
+  console.log("contextMenuTarget", contextMenuTarget);
+
+  const { handleClick, handleMouseDown } = useFastClick(
+    (e: React.MouseEvent<HTMLDivElement>) => {
+      if (e.button === EMouseButton.Secondary) {
+        handleBeforeContextMenu(e);
+      }
+    },
+  );
+
   return (
     <>
       <ScrollProvider containerRef={containerRef}>
@@ -52,6 +73,9 @@ const MiddleMessageList: FC<OwnProps & StateProps> = () => {
           id="chat-scroll-area"
           data-scrolled="true"
           className={"MiddleMessageList allow-space-right-column-messages"}
+          onClick={handleClick}
+          onMouseDown={handleMouseDown}
+          onContextMenu={handleContextMenu}
         >
           {Array.from({ length: 20 }).map((_, index) => (
             <ChatMessage
@@ -81,6 +105,19 @@ const MiddleMessageList: FC<OwnProps & StateProps> = () => {
       </ScrollProvider>
 
       <div ref={bottomRef} className="bottom-marker" />
+
+      <ContextMenu
+        isOpen={isContextMenuOpen}
+        position={contextMenuAnchor!}
+        onClose={handleContextMenuClose}
+        withPortal
+      >
+        <p>Reply</p>
+        <p>Copy</p>
+        <p>Copy link</p>
+        <p>Forward</p>
+        <p>Reporst</p>
+      </ContextMenu>
     </>
   );
 };

@@ -112,11 +112,6 @@
   inset: 0px;
   pointer-events: none;
 
-  will-change: clip-path, background-color;
-  transition: clip-path 0.25s ease, background-color 0.25s ease;
-
-  background-color: rgba(var(--awe-palette-primary-mainChannel) / 0.375);
-
 }
 
 .dp-day--selected {

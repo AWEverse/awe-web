@@ -21,3 +21,4 @@ export const NEXT_MONTH = 1;
 
 export const JANUARY = 0;
 export const DECEMBER = 11;
+export const HISTORY_LIMIT = 50;

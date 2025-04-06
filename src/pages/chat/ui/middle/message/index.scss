@@ -9,7 +9,7 @@
   --text-color-reaction-chosen: #fff;
   --hover-color-reaction-chosen: var(--color-message-reaction-chosen-hover);
   --active-color: var(--color-reply-active);
-  --max-width: 29rem;
+  --message-max-width: 29rem;
   --accent-color: var(--color-primary);
   --accent-shade-color: var(--color-primary-shade);
   --secondary-color: var(--color-text-secondary);
@@ -25,12 +25,11 @@
   position: relative;
   margin-bottom: 0.375rem;
   border-radius: var(--border-radius);
-  max-width: var(--max-width);
+  max-width: var(--message-max-width);
   background-color: var(--background-color);
-  padding: 4px 8px 5px;
 
   @media (min-width: 1921px) {
-    --max-width: calc(30vw - 1rem);
+    --message-max-width: calc(30vw - 1rem);
   }
 
   @media (max-width: 600px) {
@@ -78,7 +77,7 @@
     }
 
     @media (min-width: 1921px) {
-      --max-width: 30vw;
+      --message-max-width: 30vw;
     }
 
     @media (max-width: 600px) {

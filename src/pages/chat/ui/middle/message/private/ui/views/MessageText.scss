@@ -1,0 +1,128 @@
+/* Base styling for the markdown message container */
+.message-text {
+  max-width: var(--message-max-width);
+  word-break: break-word;
+  padding: 4px 8px 5px;
+  overflow-wrap: break-word; /* Ensures words wrap within the container */
+
+
+  & > :last-of-type {
+    margin-bottom: 0 !important;
+    padding-bottom: 0 !important;
+  }
+
+
+  /* Ensure it is responsive */
+  box-sizing: border-box;
+  width: 100%; /* Makes sure it never exceeds the container width */
+}
+
+/* Headings styling */
+.message-text h1,
+.message-text h2,
+.message-text h3,
+.message-text h4,
+.message-text h5,
+.message-text h6 {
+  margin-bottom: 0.25rem;
+  font-weight: bold;
+}
+
+/* Paragraph styling */
+.message-text p {
+  line-height: 1.6;
+  font-size: 1rem;
+  word-break: break-word;
+  margin-bottom: 0.25rem;
+}
+
+/* Links styling */
+.message-text a {
+  text-decoration: underline;
+  transition: color 0.2s ease;
+}
+
+.message-text a:hover {
+  text-decoration: none;
+}
+
+/* Code and Preformatted blocks styling */
+.message-text code.language-markdown,
+.message-text pre {
+  display: block;
+  font-family: Menlo, Monaco, Consolas, "Courier New", monospace;
+  border-radius: 4px;
+  width: 100%;
+  word-break: break-word;
+  white-space: pre-wrap;
+  overflow-wrap: break-word;
+}
+
+.message-text pre {
+  padding: 1rem;
+  overflow-x: auto; /* Allows horizontal scrolling in code blocks */
+  margin-bottom: 0.25rem;
+  border: 1px solid #ddd; /* Optional: Add a border for separation */
+}
+
+/* Blockquote styling */
+.message-text blockquote {
+  padding-left: 1rem;
+  margin-left: 0;
+  font-style: italic;
+  border-left: 3px solid var(--awe-palette-primary-main); /* Optional: Add a left border for blockquote separation */
+}
+
+/* List styling */
+.message-text ul,
+.message-text ol {
+  padding-left: 1.5rem;
+  margin-bottom: 0.25rem;
+}
+
+.message-text li {
+  margin-bottom: 0.5rem;
+}
+
+/* Table styling */
+.message-text table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 0.25rem;
+}
+
+.message-text th,
+.message-text td {
+  padding: 0.75rem;
+  border: 1px solid #ddd;
+  text-align: left;
+}
+
+.message-text th {
+  font-weight: bold;
+}
+
+.message-text tr:nth-child(even) {
+}
+
+.message-text tr:hover {
+}
+
+/* Responsive table handling (overflow for smaller screens) */
+.message-text .table-container {
+  overflow-x: auto; /* Enables horizontal scrolling on small screens */
+  -webkit-overflow-scrolling: touch;
+  margin-bottom: 0.25rem; /* Optional: Add margin to separate from other content */
+}
+
+/* Media query for handling smaller screen sizes */
+@media (max-width: 768px) {
+  .message-text .table-container {
+    margin: 0 -8px; /* Optional: Adjust margin for small screens */
+    padding: 0 8px; /* Optional: Add padding for better touch support */
+  }
+
+  .message-text {
+    padding: 4px; /* Optional: Reduce padding on smaller screens */
+  }
+}
