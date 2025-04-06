@@ -28,6 +28,7 @@ type ContextMenuAction =
   | { type: "CLOSE" }
   | { type: "HIDE" };
 
+
 const initialState: ContextMenuState = {
   isOpen: false,
   anchor: undefined,
@@ -45,7 +46,7 @@ const contextMenuReducer = (
     case "CLOSE":
       return { ...state, isOpen: false };
     case "HIDE":
-      return { ...state, anchor: undefined, target: undefined };
+      return initialState;
     default:
       return state;
   }
@@ -73,11 +74,19 @@ const useContextMenuHandlers = ({
   const [state, dispatch] = useReducer(contextMenuReducer, initialState);
   const timerRef = useRef<number | null>(null);
   const isMenuDisabledRef = useRef(isMenuDisabled);
-  const isTouchInitiatedRef = useRef(false); // Track touch-initiated events
+  const isTouchInitiatedRef = useRef(false);
 
   useEffectSync(() => {
     isMenuDisabledRef.current = isMenuDisabled;
   }, [isMenuDisabled]);
+
+  const stopEventHandler = useCallback((e: Event) => {
+    if (shouldDisablePropagation) {
+      e.stopImmediatePropagation();
+      e.preventDefault();
+      e.stopPropagation();
+    }
+  }, [shouldDisablePropagation]);
 
   const debouncedAddExtraClass = useStableCallback(
     debounce((target: HTMLElement) => {
@@ -90,14 +99,6 @@ const useContextMenuHandlers = ({
       requestMutation(() => removeExtraClass(target, "no-selection"));
     }, 16)
   );
-
-  const stopEvent = useCallback((e: Event) => {
-    if (shouldDisablePropagation) {
-      e.stopImmediatePropagation();
-      e.preventDefault();
-      e.stopPropagation();
-    }
-  }, [shouldDisablePropagation]);
 
   const openContextMenu = useCallback(
     (anchor: IVector2, target: HTMLElement) => {
@@ -120,6 +121,7 @@ const useContextMenuHandlers = ({
   const handleContextMenu = useCallback(
     (e: React.MouseEvent<HTMLElement>) => {
       debouncedRemoveExtraClass(e.target as HTMLElement);
+
       if (
         isMenuDisabledRef.current ||
         isTouchInitiatedRef.current || // Ignore if touch-initiated
@@ -127,12 +129,13 @@ const useContextMenuHandlers = ({
       ) {
         return;
       }
+
       e.preventDefault();
       e.stopPropagation();
 
       openContextMenu({ x: e.clientX, y: e.clientY }, e.target as HTMLElement);
     },
-    [shouldDisableOnLink, debouncedRemoveExtraClass, stopEvent, openContextMenu]
+    [shouldDisableOnLink, debouncedRemoveExtraClass, openContextMenu]
   );
 
   const handleKeyDown = useCallback(
@@ -143,11 +146,12 @@ const useContextMenuHandlers = ({
 
         const element = elementRef.current;
         if (!element) return;
+
         const rect = element.getBoundingClientRect();
         openContextMenu({ x: rect.left, y: rect.top }, element);
       }
     },
-    [elementRef, stopEvent, openContextMenu]
+    [elementRef, openContextMenu]
   );
 
   useEffect(() => {
@@ -164,53 +168,60 @@ const useContextMenuHandlers = ({
     if (!element) return;
 
     const clearTimer = () => {
-      if (timerRef.current) {
+      if (timerRef.current !== null) {
         clearTimeout(timerRef.current);
         timerRef.current = null;
       }
     };
 
-    const setupTemporaryListeners = (): Array<NoneToVoidFunction> => {
-      const cleanupListeners: Array<NoneToVoidFunction> = [];
-      const preventDefault = (ev: Event) => stopEvent(ev);
+    const setupTemporaryListeners = (): NoneToVoidFunction[] => {
+      const cleanupListeners: NoneToVoidFunction[] = [];
 
-      document.addEventListener("touchend", preventDefault, true);
+      document.addEventListener("touchend", stopEventHandler, true);
       cleanupListeners.push(() =>
-        document.removeEventListener("touchend", preventDefault, true)
+        document.removeEventListener("touchend", stopEventHandler, true)
       );
 
+      // Add iOS PWA specific handlers
       if (IS_PWA && IS_IOS) {
-        const preventInteraction = (ev: Event) => stopEvent(ev);
-        document.addEventListener("mousedown", preventInteraction, true);
-        document.addEventListener("click", preventInteraction, true);
+        document.addEventListener("mousedown", stopEventHandler, true);
+        document.addEventListener("click", stopEventHandler, true);
+
         cleanupListeners.push(() =>
-          document.removeEventListener("mousedown", preventInteraction, true)
+          document.removeEventListener("mousedown", stopEventHandler, true)
         );
         cleanupListeners.push(() =>
-          document.removeEventListener("click", preventInteraction, true)
+          document.removeEventListener("click", stopEventHandler, true)
         );
       }
+
       return cleanupListeners;
     };
 
     const handleLongTap = (touch: Touch) => {
       isTouchInitiatedRef.current = true;
+      clearTimer();
+
       const cleanupListeners = setupTemporaryListeners();
+
       openContextMenu(
         { x: touch.clientX, y: touch.clientY },
         touch.target as HTMLElement
       );
+
       setTimeout(() => {
         cleanupListeners.forEach((cleanup) => cleanup());
-        isTouchInitiatedRef.current = false; // Reset after cleanup
+        setTimeout(() => {
+          isTouchInitiatedRef.current = false;
+        }, 0);
       }, IS_PWA && IS_IOS ? iosPWADelay : 0);
     };
 
     const handleTouchStart = (e: TouchEvent) => {
       if (shouldDisablePropagation) e.stopPropagation();
       clearTimer();
-      const touch = e.touches[0];
 
+      const touch = e.touches[0];
       if (
         !touch ||
         (shouldDisableOnLink && (touch.target as HTMLElement).matches("a[href]"))
@@ -240,13 +251,16 @@ const useContextMenuHandlers = ({
     isMenuDisabled,
     shouldDisableOnLongTap,
     shouldDisableOnLink,
-    readySignal,
     shouldDisablePropagation,
     iosPWADelay,
     elementRef,
-    stopEvent,
+    stopEventHandler,
     openContextMenu,
+    readySignal?.value,
   ]);
+
+  const handleContextMenuClose = useStableCallback(() => dispatch({ type: "CLOSE" }));
+  const handleContextMenuHide = useStableCallback(() => dispatch({ type: "HIDE" }));
 
   return {
     isContextMenuOpen: state.isOpen,
@@ -254,8 +268,8 @@ const useContextMenuHandlers = ({
     contextMenuTarget: state.target,
     handleBeforeContextMenu,
     handleContextMenu,
-    handleContextMenuClose: () => dispatch({ type: "CLOSE" }),
-    handleContextMenuHide: () => dispatch({ type: "HIDE" }),
+    handleContextMenuClose,
+    handleContextMenuHide,
     handleKeyDown,
   };
 };

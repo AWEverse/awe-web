@@ -51,7 +51,6 @@ const skeletons = {
   default: <GenericSkeleton />,
 };
 
-// Animation variants
 const screenVariants = {
   initial: (direction: number) => ({
     opacity: 0,

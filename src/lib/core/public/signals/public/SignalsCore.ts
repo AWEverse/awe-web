@@ -14,16 +14,16 @@ function incrementVersion(version: number): number {
 }
 
 // Flags for Computed and Effect.
-const RUNNING = 1 << 0;    // 1
-const NOTIFIED = 1 << 1;   // 2
-const OUTDATED = 1 << 2;   // 4
-const DISPOSED = 1 << 3;   // 8
-const HAS_ERROR = 1 << 4;  // 16
-const TRACKING = 1 << 5;   // 32
+const RUNNING = 1 << 0; // 1
+const NOTIFIED = 1 << 1; // 2
+const OUTDATED = 1 << 2; // 4
+const DISPOSED = 1 << 3; // 8
+const HAS_ERROR = 1 << 4; // 16
+const TRACKING = 1 << 5; // 32
 
 enum EVersion {
   NotUsed = -1, // Node is not reused
-  Current = 0,  // Current active version
+  Current = 0, // Current active version
 }
 
 /**
@@ -55,7 +55,16 @@ function getNode(): Node {
   if (NODE_POOL.length > 0) {
     return NODE_POOL.pop()!;
   }
-  return {} as Node;
+  return {
+    _source: undefined!,
+    _prevSource: undefined,
+    _nextSource: undefined,
+    _target: undefined!,
+    _prevTarget: undefined,
+    _nextTarget: undefined,
+    _version: EVersion.Current,
+    _rollbackNode: undefined,
+  } as Node;
 }
 
 /**
@@ -99,7 +108,7 @@ function endBatch() {
     return;
   }
 
-  const errors: Array<{ effect: Effect, error: unknown, stack?: string }> = [];
+  const errors: Array<{ effect: Effect; error: unknown; stack?: string }> = [];
 
   try {
     while (batchedEffect !== undefined) {
@@ -110,7 +119,9 @@ function endBatch() {
 
       // Safety check to prevent infinite loops
       if (batchIteration > MAX_BATCH_ITERATIONS) {
-        throw new Error(`Maximum batch iteration limit reached (${MAX_BATCH_ITERATIONS}). Possible infinite loop detected.`);
+        throw new Error(
+          `Maximum batch iteration limit reached (${MAX_BATCH_ITERATIONS}). Possible infinite loop detected.`,
+        );
       }
 
       while (effect !== undefined) {
@@ -124,12 +135,11 @@ function endBatch() {
             recursionDepth = 0; // Reset recursion depth for each effect
             effect._callback();
           } catch (err) {
-            const errorInfo = {
+            errors.push({
               effect,
               error: err,
-              stack: err instanceof Error ? err.stack : undefined
-            };
-            errors.push(errorInfo);
+              stack: err instanceof Error ? err.stack : undefined,
+            });
           }
         }
 
@@ -147,8 +157,8 @@ function endBatch() {
     throw errors[0].error;
   } else if (errors.length > 0) {
     throw new AggregateError(
-      errors.map(e => e.error),
-      `${errors.length} errors occurred during batch processing`
+      errors.map((e) => e.error),
+      `${errors.length} errors occurred during batch processing`,
     );
   }
 }
@@ -199,7 +209,9 @@ function untracked<T>(fn: () => T): T {
  */
 function checkRecursionDepth(): void {
   if (++recursionDepth > MAX_RECURSION_DEPTH) {
-    throw new Error(`Maximum recursion depth exceeded (${MAX_RECURSION_DEPTH}). Possible infinite recursion detected.`);
+    throw new Error(
+      `Maximum recursion depth exceeded (${MAX_RECURSION_DEPTH}). Possible infinite recursion detected.`,
+    );
   }
 }
 
@@ -606,7 +618,7 @@ declare class Computed<T = any> extends Signal<T> {
   _sources?: Node;
   _globalVersion: number;
   _flags: number;
-  _lastGlobalVersion: number;  // Track the last seen global version for optimizations
+  _lastGlobalVersion: number; // Track the last seen global version for optimizations
 
   constructor(fn: () => T);
 
@@ -636,8 +648,10 @@ Computed.prototype._refresh = function () {
 
   // Fast path: if tracking and not outdated and global version hasn't changed,
   // we can skip the update entirely
-  if ((this._flags & (OUTDATED | TRACKING)) === TRACKING &&
-    this._lastGlobalVersion === globalVersion) {
+  if (
+    (this._flags & (OUTDATED | TRACKING)) === TRACKING &&
+    this._lastGlobalVersion === globalVersion
+  ) {
     return true;
   }
 
@@ -818,10 +832,7 @@ function cleanupEffect(effect: Effect) {
  * Completely dispose of an effect and all its resources.
  */
 function disposeEffect(effect: Effect) {
-  for (
-    let node = effect._sources;
-    node !== undefined;
-  ) {
+  for (let node = effect._sources; node !== undefined;) {
     const nextNode = node._nextSource; // Store next before unsubscribing
     node._source._unsubscribe(node);
     // Return nodes to the pool
@@ -855,7 +866,7 @@ function endEffect(this: Effect, prevContext?: Computed | Effect) {
   endBatch();
 }
 
-type EffectFn = NoneToVoidFunction | (NoneToVoidFunction);
+type EffectFn = NoneToVoidFunction | NoneToVoidFunction;
 type CleanupEffectFn = NoneToVoidFunction;
 
 /**
@@ -970,23 +981,96 @@ function effect(fn: EffectFn): NoneToVoidFunction {
   return effect._dispose.bind(effect);
 }
 
-/**
- * Interface for a signal object where each property is a signal
- */
-type ISignalObject<T> = { [K in keyof T]: Signal<T[K]> };
+type Signalify<T> = {
+  [K in keyof T]: T[K] extends object
+  ? Signal<T[K] extends Array<infer U> ? Signalify<U>[] : Signalify<T[K]>>
+  : Signal<T[K]>;
+};
 
-/**
- * Create a reactive object where each property is a signal
- *
- * @param obj The object to make reactive
- * @returns An object with the same keys but values wrapped in signals
- */
-export function reactiveObject<T extends object>(obj: T): ISignalObject<T> {
-  const reactive = {} as ISignalObject<T>;
+type CursorCallback = (path: (string | number)[], value: any) => void;
+
+function isPlainObject(value: any): value is object {
+  return value !== null && typeof value === "object" && !Array.isArray(value);
+}
+
+export function makeReactiveArray<T>(
+  arr: T[],
+  callback: CursorCallback,
+  path: (string | number)[],
+): Signal<Signalify<T>[]> {
+  const reactiveItems = arr.map((item, index) =>
+    isPlainObject(item)
+      ? reactiveObject(item as any, callback, [...path, index])
+      : item,
+  );
+
+  const sig = signal(reactiveItems as Signalify<T>[]);
+
+  effect(() => {
+    const current = sig.value;
+    callback(path, current);
+  });
+
+  const proxy = new Proxy(sig.value, {
+    set(target, prop, value) {
+      const index = Number(prop);
+      if (!isNaN(index)) {
+        if (isPlainObject(value)) {
+          value = reactiveObject(value, callback, [...path, index]);
+        }
+      }
+
+      (target as any)[prop] = value;
+
+      sig.value = structuredClone(target)
+      return true;
+    },
+    deleteProperty(target, prop) {
+      const index = Number(prop);
+      if (!isNaN(index)) {
+        target.splice(index, 1);
+        sig.value = [...target];
+        return true;
+      }
+      return false;
+    },
+  });
+
+  sig.value = proxy as any;
+
+  return sig;
+}
+
+export function reactiveObject<T extends object>(
+  obj: T,
+  callback?: CursorCallback,
+  path: (string | number)[] = [],
+): Signalify<T> {
+  const reactive = {} as Signalify<T>;
 
   for (const key in obj) {
-    if (Object.prototype.hasOwnProperty.call(obj, key)) {
-      reactive[key] = signal(obj[key]);
+    if (!Object.prototype.hasOwnProperty.call(obj, key)) continue;
+
+    const currentPath = [...path, key];
+    const value = obj[key];
+
+    const wrapAndTrack = (v: any, p: (string | number)[]) => {
+      const sig = signal(v);
+      if (callback) {
+        effect(() => {
+          callback(p, sig.peek());
+        });
+      }
+      return sig;
+    };
+
+    if (Array.isArray(value)) {
+      reactive[key] = makeReactiveArray(value, callback!, currentPath) as any;
+    } else if (isPlainObject(value)) {
+      const nested = reactiveObject(value, callback, currentPath);
+      reactive[key] = wrapAndTrack(nested, currentPath) as any;
+    } else {
+      reactive[key] = wrapAndTrack(value, currentPath) as any;
     }
   }
 
@@ -1003,7 +1087,7 @@ export function reactiveObject<T extends object>(obj: T): ISignalObject<T> {
  */
 export function safeExecute<T>(
   fn: () => T,
-  errorHandler?: (error: unknown) => void
+  errorHandler?: (error: unknown) => void,
 ): T | undefined {
   try {
     return fn();
@@ -1025,7 +1109,10 @@ export function safeExecute<T>(
  * @param callback The callback to run when the value changes
  * @returns A function to stop watching
  */
-export function watch<T>(sig: Signal<T> | ReadonlySignal<T>, callback: (value: T, prev: T | undefined) => void): NoneToVoidFunction {
+export function watch<T>(
+  sig: Signal<T> | ReadonlySignal<T>,
+  callback: (value: T, prev: T | undefined) => void,
+): NoneToVoidFunction {
   let prev = sig.peek();
 
   return effect(() => {
@@ -1051,7 +1138,10 @@ export function monitorSignals(enable: boolean): void {
   }
 
   // Store original methods
-  const originalSignalSet = Object.getOwnPropertyDescriptor(Signal.prototype, "value")!.set!;
+  const originalSignalSet = Object.getOwnPropertyDescriptor(
+    Signal.prototype,
+    "value",
+  )!.set!;
   const originalComputedRefresh = Computed.prototype._refresh;
 
   // Override signal setter to track updates
@@ -1060,7 +1150,7 @@ export function monitorSignals(enable: boolean): void {
       console.log(`Signal updated: ${String(value)}`);
       originalSignalSet.call(this, value);
     },
-    get: Object.getOwnPropertyDescriptor(Signal.prototype, "value")!.get
+    get: Object.getOwnPropertyDescriptor(Signal.prototype, "value")!.get,
   });
 
   // Override computed refresh to track recomputation
@@ -1080,5 +1170,5 @@ export {
   Effect,
   SIGNAL_SYMBOL,
   type ReadonlySignal,
-  type ISignalObject,
+  type Signalify,
 };
