@@ -24,7 +24,7 @@ type ContextMenuState = {
 };
 
 type ContextMenuAction =
-  | { type: "OPEN"; anchor: IVector2; target: HTMLElement }
+  | { type: "OPEN"; anchor: IVector2; target?: HTMLElement }
   | { type: "CLOSE" }
   | { type: "HIDE" };
 
@@ -60,6 +60,7 @@ type UseContextMenuHandlersParams = {
   readySignal?: ReadonlySignal<boolean>;
   shouldDisablePropagation?: boolean;
   iosPWADelay?: number;
+  targets?: string[];
 };
 
 const useContextMenuHandlers = ({
@@ -70,6 +71,7 @@ const useContextMenuHandlers = ({
   readySignal,
   shouldDisablePropagation = true,
   iosPWADelay = DEFAULT_IOS_PWA_CONTEXT_MENU_DELAY_MS,
+  targets = [],
 }: UseContextMenuHandlersParams) => {
   const [state, dispatch] = useReducer(contextMenuReducer, initialState);
   const timerRef = useRef<number | null>(null);
@@ -102,8 +104,12 @@ const useContextMenuHandlers = ({
 
   const openContextMenu = useCallback(
     (anchor: IVector2, target: HTMLElement) => {
+      const filteredTarget = targets.length > 0
+        ? (target.closest(targets.join(", ")) as HTMLElement | undefined)
+        : target;
+
       if (!isMenuDisabledRef.current && !state.isOpen) {
-        dispatch({ type: "OPEN", anchor, target });
+        dispatch({ type: "OPEN", anchor, target: filteredTarget });
       }
     },
     [state.isOpen]
@@ -211,6 +217,7 @@ const useContextMenuHandlers = ({
 
       setTimeout(() => {
         cleanupListeners.forEach((cleanup) => cleanup());
+
         setTimeout(() => {
           isTouchInitiatedRef.current = false;
         }, 0);

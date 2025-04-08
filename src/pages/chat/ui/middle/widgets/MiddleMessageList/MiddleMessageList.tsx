@@ -9,6 +9,7 @@ import { debounce, EMouseButton } from "@/lib/core";
 import { useComponentDidMount } from "@/shared/hooks/effects/useLifecycle";
 import ContextMenu, { useContextMenuHandlers } from "@/entities/context-menu";
 import { useFastClick } from "@/shared/hooks/mouse/useFastClick";
+import useStateSignal from "@/lib/hooks/signals/useStateSignal";
 
 interface OwnProps {}
 
@@ -20,6 +21,7 @@ const THRESHOLD = 15;
 const MiddleMessageList: FC<OwnProps & StateProps> = () => {
   const bottomRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+  const [readySignal, setReadySignal] = useStateSignal(true);
 
   const debouncedHandleScroll = useDebouncedFunction((e: Event) => {
     const scrollTop = (e.target as HTMLDivElement).scrollTop;
@@ -53,7 +55,11 @@ const MiddleMessageList: FC<OwnProps & StateProps> = () => {
     handleBeforeContextMenu,
     handleContextMenu,
     handleContextMenuClose,
-  } = useContextMenuHandlers({ elementRef: containerRef });
+  } = useContextMenuHandlers({
+    elementRef: containerRef,
+    readySignal,
+    targets: ['[data-ctx="true"]'],
+  });
 
   console.log("contextMenuTarget", contextMenuTarget);
 
