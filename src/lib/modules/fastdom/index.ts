@@ -118,7 +118,7 @@ export function requestMutation(
 }
 
 // TODO: rename to something like reflow
-export function requestNextMutatuion(
+export function requestNextMutation(
   fn: () => NoneToVoidFunction,
   options: Partial<DOMTask> = {},
 ) {

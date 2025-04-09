@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import nacl from "tweetnacl";
 import { Buffer } from "buffer";
+import useModalContext from "@/composers/modals/ui/utils/hooks/useModalComposer";
 
 const styles = {
   container: {
@@ -136,9 +137,15 @@ const AdvancedEncryptionPage: React.FC = () => {
   const secretKeyToString = (key: Uint8Array) =>
     Buffer.from(key).toString("hex");
 
+  const { openModal, closeModal } = useModalContext();
+
   return (
     <div style={styles.container}>
       <h2 style={styles.title}>Advanced Encryption Demo</h2>
+
+      <button onClick={() => openModal("link-preview", {}, 0)}>
+        Open Calendar
+      </button>
 
       <textarea
         value={message}
