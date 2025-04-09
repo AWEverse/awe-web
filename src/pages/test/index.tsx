@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import nacl from "tweetnacl";
 import { Buffer } from "buffer";
-import useModalContext from "@/composers/modals/ui/utils/hooks/useModalComposer";
+import useModalContext from "@/composers/modals/utils/hooks/useModalComposer";
 
 const styles = {
   container: {
@@ -143,7 +143,7 @@ const AdvancedEncryptionPage: React.FC = () => {
     <div style={styles.container}>
       <h2 style={styles.title}>Advanced Encryption Demo</h2>
 
-      <button onClick={() => openModal("link-preview", {}, 0)}>
+      <button onClick={() => openModal("calendar", {}, 0)}>
         Open Calendar
       </button>
 

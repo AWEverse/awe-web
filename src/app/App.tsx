@@ -13,7 +13,7 @@ import { usePageVisibility } from "@/lib/hooks/ui/usePageVisibility";
 
 import "@/lib/core/public/templates/linq";
 import useGlobalDragEventPrevention from "./lib/hooks/useGlobalDragEventPrevention";
-import { ModalComposerProvider } from "@/composers/modals/ui/modal-composer";
+import ModalComposerProvider from "@/composers/modals/ModalComposer";
 
 interface StateProps {
   themeKey?: ThemeKey;

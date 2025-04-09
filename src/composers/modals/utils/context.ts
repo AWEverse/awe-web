@@ -1,12 +1,8 @@
 import { createContext } from "react";
-import { ModalType, ModalMap } from "../registry";
+import { OpenModalFunction } from "../registered";
 
 interface ModalContextType {
-  openModal: (
-    type: ModalType,
-    props: ModalMap,
-    zIndex?: number,
-  ) => void;
+  openModal: OpenModalFunction;
   closeModal: () => void;
 }
 

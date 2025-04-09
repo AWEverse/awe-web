@@ -20,9 +20,9 @@ type ModalMap = {
   [K in ModalType]: React.ComponentProps<(typeof modalRegistry)[K]>;
 } & ModalCommonProps;
 
-type OpenModalFunction = (
-  type: ModalType,
-  props: ModalMap[ModalType],
+type OpenModalFunction = <T extends ModalType>(
+  type: T,
+  props: ModalMap[T],
   zIndex?: number,
 ) => void;
 

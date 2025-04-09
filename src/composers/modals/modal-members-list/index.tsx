@@ -1,17 +1,17 @@
 import React from "react";
-import { ModalCommonProps } from "../registry";
+import { ModalCommonProps } from "../registered";
 
 interface ModalMembersProps {
-  date?: string;
+  member?: string[];
 }
 
 const ModalMembersList: React.FC<ModalMembersProps & ModalCommonProps> = ({
   onClose,
-  date,
+  member,
 }) => (
   <div>
     <h2>Calendar Modal</h2>
-    <p>Selected Date: {date || "None"}</p>
+    <p>Selected Date: {member?.toString() || "None"}</p>
     <button onClick={onClose}>Close</button>
   </div>
 );
