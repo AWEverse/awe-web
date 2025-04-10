@@ -14,12 +14,6 @@ interface ModalComposerState {
   zIndex?: number;
 }
 
-const ModalRenderer = ({ modalState, modalRegistry, onClose }) => {
-  if (!modalState?.type) return null;
-  const ModalComponent = modalRegistry[modalState.type];
-  return <ModalComponent {...modalState.props} onClose={onClose} />;
-};
-
 const ModalComposerProvider: React.FC<{ children?: ReactNode }> = ({
   children,
 }) => {
@@ -43,7 +37,7 @@ const ModalComposerProvider: React.FC<{ children?: ReactNode }> = ({
     <ModalContext.Provider value={{ openModal, closeModal }}>
       {children}
 
-      <Modal isOpen={!!modalState} onClose={closeModal}>
+      <Modal isOpen={Boolean(modalState)} onClose={closeModal}>
         <Suspense fallback={<div>Loading modal...</div>}>
           {modalState?.type &&
             ((ModalComponent) => (
