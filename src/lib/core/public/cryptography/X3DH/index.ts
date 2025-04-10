@@ -23,257 +23,274 @@ export interface SignedPreKey {
   signature: Uint8Array;
 }
 
-export interface Bundle {
-  ik: KeyPair; // Ed25519 for identity
-  spk: SignedPreKey; // X25519 signed by identity key
-  opk?: KeyPair; // Optional one-time X25519 key
-  pq_ik: KeyPair; // PQ identity key
-  pq_spk: KeyPair; // PQ signed pre-key
-  pq_opk?: KeyPair; // Optional PQ one-time key
+export interface KeyBundle {
+  identityKey: KeyPair; // Ed25519 for identity
+  signedPreKey: SignedPreKey; // X25519 signed by identity key
+  oneTimePreKey?: KeyPair; // Optional one-time X25519 key
+  pqIdentityKey: KeyPair; // Post-quantum identity key
+  pqSignedPreKey: KeyPair; // Post-quantum signed pre-key
+  pqOneTimePreKey?: KeyPair; // Optional post-quantum one-time key
 }
 
 export interface InitialMessage {
   version: string;
-  ekA_ec: PublicKey; // Ephemeral X25519 key
-  ekA_pq: PublicKey; // Ephemeral PQ key
-  encaps_pq: {
-    ik: Uint8Array; // PQ ciphertext for identity key
-    spk: Uint8Array; // PQ ciphertext for signed pre-key
-    opk?: Uint8Array; // PQ ciphertext for one-time key
+  ephemeralKeyEC: PublicKey; // Ephemeral X25519 key
+  ephemeralKeyPQ: PublicKey; // Ephemeral post-quantum key
+  pqEncapsulations: {
+    identity: Uint8Array; // PQ ciphertext for identity key
+    signedPreKey: Uint8Array; // PQ ciphertext for signed pre-key
+    oneTimePreKey?: Uint8Array; // PQ ciphertext for one-time key
   };
-  // Include Alice's identity key in the initial message
-  ikA: PublicKey; // Alice's identity key (Ed25519)
+  senderIdentityKey: PublicKey; // Alice's identity key (Ed25519)
 }
 
-// Step 2: Generate Key Bundle - FIXED
-export async function generateBundle(): Promise<Bundle> {
-  // Generate Ed25519 key pair for identity key (ik)
-  const ik_privateKey = ed25519.utils.randomPrivateKey();
-  const ik_publicKey = ed25519.getPublicKey(ik_privateKey);
-  const ik: KeyPair = { publicKey: ik_publicKey, privateKey: ik_privateKey };
-
-  // Generate X25519 key pair for signed pre-key (spk)
-  const spk_privateKey = x25519.utils.randomPrivateKey();
-  const spk_publicKey = x25519.getPublicKey(spk_privateKey);
-  const spkKeyPair: KeyPair = {
-    publicKey: spk_publicKey,
-    privateKey: spk_privateKey,
+// Step 2: Generate Key Bundle
+export async function generateKeyBundle(): Promise<KeyBundle> {
+  // Generate identity key pair (Ed25519)
+  const identityPrivateKey = ed25519.utils.randomPrivateKey();
+  const identityPublicKey = ed25519.getPublicKey(identityPrivateKey);
+  const identityKeyPair: KeyPair = {
+    publicKey: identityPublicKey,
+    privateKey: identityPrivateKey
   };
 
-  // Sign spk with ik (using identity key for signing)
-  const spkSignature = ed25519.sign(spk_publicKey, ik_privateKey);
+  // Generate signed pre-key pair (X25519)
+  const signedPrePrivateKey = x25519.utils.randomPrivateKey();
+  const signedPrePublicKey = x25519.getPublicKey(signedPrePrivateKey);
+  const signedPreKeyPair: KeyPair = {
+    publicKey: signedPrePublicKey,
+    privateKey: signedPrePrivateKey,
+  };
+
+  // Sign the signed pre-key with identity key
+  const signature = ed25519.sign(signedPrePublicKey, identityPrivateKey);
 
   // Generate one-time pre-key (optional)
-  const opk_privateKey = x25519.utils.randomPrivateKey();
-  const opk_publicKey = x25519.getPublicKey(opk_privateKey);
-  const opk: KeyPair = { publicKey: opk_publicKey, privateKey: opk_privateKey };
-
-  // Generate post-quantum keys
-  const pq_ik_keys = mlkem512.keygen();
-  const pq_ik: KeyPair = {
-    publicKey: pq_ik_keys.publicKey,
-    privateKey: pq_ik_keys.secretKey,
+  const oneTimePrivateKey = x25519.utils.randomPrivateKey();
+  const oneTimePublicKey = x25519.getPublicKey(oneTimePrivateKey);
+  const oneTimeKeyPair: KeyPair = {
+    publicKey: oneTimePublicKey,
+    privateKey: oneTimePrivateKey
   };
 
-  const pq_spk_keys = mlkem512.keygen();
-  const pq_spk: KeyPair = {
-    publicKey: pq_spk_keys.publicKey,
-    privateKey: pq_spk_keys.secretKey,
+  // Generate post-quantum key pairs
+  const pqIdentityKeys = mlkem512.keygen();
+  const pqIdentityKeyPair: KeyPair = {
+    publicKey: pqIdentityKeys.publicKey,
+    privateKey: pqIdentityKeys.secretKey,
   };
 
-  const pq_opk_keys = mlkem512.keygen();
-  const pq_opk: KeyPair = {
-    publicKey: pq_opk_keys.publicKey,
-    privateKey: pq_opk_keys.secretKey,
+  const pqSignedPreKeys = mlkem512.keygen();
+  const pqSignedPreKeyPair: KeyPair = {
+    publicKey: pqSignedPreKeys.publicKey,
+    privateKey: pqSignedPreKeys.secretKey,
+  };
+
+  const pqOneTimeKeys = mlkem512.keygen();
+  const pqOneTimeKeyPair: KeyPair = {
+    publicKey: pqOneTimeKeys.publicKey,
+    privateKey: pqOneTimeKeys.secretKey,
   };
 
   return {
-    ik,
-    spk: { keyPair: spkKeyPair, signature: spkSignature },
-    opk,
-    pq_ik,
-    pq_spk,
-    pq_opk,
+    identityKey: identityKeyPair,
+    signedPreKey: { keyPair: signedPreKeyPair, signature },
+    oneTimePreKey: oneTimeKeyPair,
+    pqIdentityKey: pqIdentityKeyPair,
+    pqSignedPreKey: pqSignedPreKeyPair,
+    pqOneTimePreKey: pqOneTimeKeyPair,
   };
 }
 
-// Step 3: Alice computes X3DH+ shared secret - FIXED
-export async function computeSharedSecretAlice(
-  bundle: Bundle, // Alice's bundle
-  recipient: Bundle, // Bob's bundle
+// Step 3: Alice computes shared secret
+export async function computeSenderSharedSecret(
+  senderBundle: KeyBundle,
+  recipientBundle: KeyBundle,
 ): Promise<{ sharedSecret: Uint8Array; initialMessage: InitialMessage }> {
-  // Generate ephemeral X25519 key pair for Alice
-  const ekA_privateKey = x25519.utils.randomPrivateKey();
-  const ekA_publicKey = x25519.getPublicKey(ekA_privateKey);
-  const ekA: KeyPair = { publicKey: ekA_publicKey, privateKey: ekA_privateKey };
-
-  // Generate ephemeral ML-KEM-768 key pair for Alice
-  const ekA_pq_keys = mlkem512.keygen();
-  const ekA_pq: KeyPair = {
-    publicKey: ekA_pq_keys.publicKey,
-    privateKey: ekA_pq_keys.secretKey,
+  // Generate ephemeral key pair for sender (X25519)
+  const ephemeralPrivateKey = x25519.utils.randomPrivateKey();
+  const ephemeralPublicKey = x25519.getPublicKey(ephemeralPrivateKey);
+  const ephemeralKeyPair: KeyPair = {
+    publicKey: ephemeralPublicKey,
+    privateKey: ephemeralPrivateKey
   };
 
-  // Verify recipient's SPK signature
-  const isValid = ed25519.verify(
-    recipient.spk.signature,
-    recipient.spk.keyPair.publicKey,
-    recipient.ik.publicKey,
-  );
-  if (!isValid) throw new Error("Invalid SPK signature");
+  // Generate ephemeral post-quantum key pair
+  const ephemeralPQKeys = mlkem512.keygen();
+  const ephemeralPQKeyPair: KeyPair = {
+    publicKey: ephemeralPQKeys.publicKey,
+    privateKey: ephemeralPQKeys.secretKey,
+  };
 
-  // Classical DH parts (X25519)
-  // Convert Ed25519 identity key to X25519 for DH
-  const alice_ik_x25519_privateKey = convertEd25519PrivateKeyToX25519(
-    bundle.ik.privateKey,
+  // Verify recipient's signed pre-key signature
+  const isSignatureValid = ed25519.verify(
+    recipientBundle.signedPreKey.signature,
+    recipientBundle.signedPreKey.keyPair.publicKey,
+    recipientBundle.identityKey.publicKey,
   );
-  const bob_ik_x25519_publicKey = convertEd25519PublicKeyToX25519(
-    recipient.ik.publicKey,
+  if (!isSignatureValid) throw new Error("Invalid signed pre-key signature");
+
+  // Compute classical DH components (X25519)
+  const senderIdentityX25519Private = convertEd25519PrivateKeyToX25519(
+    senderBundle.identityKey.privateKey,
+  );
+  const recipientIdentityX25519Public = convertEd25519PublicKeyToX25519(
+    recipientBundle.identityKey.publicKey,
   );
 
-  const dh1 = x25519.getSharedSecret(
-    alice_ik_x25519_privateKey,
-    recipient.spk.keyPair.publicKey,
+  const dhComponent1 = x25519.getSharedSecret(
+    senderIdentityX25519Private,
+    recipientBundle.signedPreKey.keyPair.publicKey,
   );
-  const dh2 = x25519.getSharedSecret(ekA.privateKey, bob_ik_x25519_publicKey);
-  const dh3 = x25519.getSharedSecret(
-    ekA.privateKey,
-    recipient.spk.keyPair.publicKey,
+  const dhComponent2 = x25519.getSharedSecret(
+    ephemeralKeyPair.privateKey,
+    recipientIdentityX25519Public,
   );
-  const dh4 = recipient.opk
-    ? x25519.getSharedSecret(ekA.privateKey, recipient.opk.publicKey)
+  const dhComponent3 = x25519.getSharedSecret(
+    ephemeralKeyPair.privateKey,
+    recipientBundle.signedPreKey.keyPair.publicKey,
+  );
+  const dhComponent4 = recipientBundle.oneTimePreKey
+    ? x25519.getSharedSecret(
+      ephemeralKeyPair.privateKey,
+      recipientBundle.oneTimePreKey.publicKey,
+    )
     : new Uint8Array(0);
 
-  // Post-Quantum parts (ML-KEM-768)
-  const pq1 = mlkem512.encapsulate(recipient.pq_ik.publicKey);
-  const pq2 = mlkem512.encapsulate(recipient.pq_spk.publicKey);
-  const pq3 = recipient.pq_opk
-    ? mlkem512.encapsulate(recipient.pq_opk.publicKey)
+  // Compute post-quantum components
+  const pqComponent1 = mlkem512.encapsulate(recipientBundle.pqIdentityKey.publicKey);
+  const pqComponent2 = mlkem512.encapsulate(recipientBundle.pqSignedPreKey.publicKey);
+  const pqComponent3 = recipientBundle.pqOneTimePreKey
+    ? mlkem512.encapsulate(recipientBundle.pqOneTimePreKey.publicKey)
     : { sharedSecret: new Uint8Array(0), cipherText: new Uint8Array(0) };
 
-  // Combine key material
-  const keySizes = [
-    dh1.length,
-    dh2.length,
-    dh3.length,
-    dh4.length,
-    pq1.sharedSecret.length,
-    pq2.sharedSecret.length,
-    pq3.sharedSecret.length,
+  // Combine all components into shared secret
+  const componentSizes = [
+    dhComponent1.length,
+    dhComponent2.length,
+    dhComponent3.length,
+    dhComponent4.length,
+    pqComponent1.sharedSecret.length,
+    pqComponent2.sharedSecret.length,
+    pqComponent3.sharedSecret.length,
   ];
-  const totalSize = keySizes.reduce((sum, size) => sum + size, 0);
+  const totalSize = componentSizes.reduce((sum, size) => sum + size, 0);
 
-  const inputKeyMaterial = new Uint8Array(totalSize);
+  const combinedKeyMaterial = new Uint8Array(totalSize);
   let offset = 0;
 
-  inputKeyMaterial.set(dh1, offset);
-  offset += dh1.length;
-  inputKeyMaterial.set(dh2, offset);
-  offset += dh2.length;
-  inputKeyMaterial.set(dh3, offset);
-  offset += dh3.length;
-  inputKeyMaterial.set(dh4, offset);
-  offset += dh4.length;
-  inputKeyMaterial.set(pq1.sharedSecret, offset);
-  offset += pq1.sharedSecret.length;
-  inputKeyMaterial.set(pq2.sharedSecret, offset);
-  offset += pq2.sharedSecret.length;
-  inputKeyMaterial.set(pq3.sharedSecret, offset);
+  combinedKeyMaterial.set(dhComponent1, offset);
+  offset += dhComponent1.length;
+  combinedKeyMaterial.set(dhComponent2, offset);
+  offset += dhComponent2.length;
+  combinedKeyMaterial.set(dhComponent3, offset);
+  offset += dhComponent3.length;
+  combinedKeyMaterial.set(dhComponent4, offset);
+  offset += dhComponent4.length;
+  combinedKeyMaterial.set(pqComponent1.sharedSecret, offset);
+  offset += pqComponent1.sharedSecret.length;
+  combinedKeyMaterial.set(pqComponent2.sharedSecret, offset);
+  offset += pqComponent2.sharedSecret.length;
+  combinedKeyMaterial.set(pqComponent3.sharedSecret, offset);
 
-  const sharedSecret = hkdf(sha256, inputKeyMaterial, undefined, "X3DH+v1", 32);
+  const sharedSecret = hkdf(sha256, combinedKeyMaterial, undefined, "X3DH+v1", 32);
 
   const initialMessage: InitialMessage = {
     version: "X3DH+ v1.0",
-    ekA_ec: ekA.publicKey,
-    ekA_pq: ekA_pq.publicKey,
-    ikA: bundle.ik.publicKey, // Include Alice's identity key
-    encaps_pq: {
-      ik: pq1.cipherText,
-      spk: pq2.cipherText,
-      opk: recipient.pq_opk ? pq3.cipherText : undefined,
+    ephemeralKeyEC: ephemeralKeyPair.publicKey,
+    ephemeralKeyPQ: ephemeralPQKeyPair.publicKey,
+    senderIdentityKey: senderBundle.identityKey.publicKey,
+    pqEncapsulations: {
+      identity: pqComponent1.cipherText,
+      signedPreKey: pqComponent2.cipherText,
+      oneTimePreKey: recipientBundle.pqOneTimePreKey ? pqComponent3.cipherText : undefined,
     },
   };
 
   return { sharedSecret, initialMessage };
 }
 
-// Step 4: Bob computes shared secret from initialMessage - FIXED
-export async function computeSharedSecretBob(
-  bundle: Bundle, // Bob's bundle
+// Step 4: Bob computes shared secret from initial message
+export async function computeReceiverSharedSecret(
+  receiverBundle: KeyBundle,
   message: InitialMessage,
-  alice_ik: PublicKey, // Alice's identity key (Ed25519 public key) - Can use message.ikA instead
+  senderIdentityKeyProvided: PublicKey,
 ): Promise<Uint8Array> {
-  // Verify the message has Alice's identity key
-  const alice_identity_key = message.ikA || alice_ik;
+  const senderIdentityKey = message.senderIdentityKey || senderIdentityKeyProvided;
 
-  // Classical DH parts (X25519)
-  // Convert Ed25519 identity key to X25519 for DH
-  const bob_ik_x25519_privateKey = convertEd25519PrivateKeyToX25519(
-    bundle.ik.privateKey,
+  // Compute classical DH components (X25519)
+  const receiverIdentityX25519Private = convertEd25519PrivateKeyToX25519(
+    receiverBundle.identityKey.privateKey,
   );
-  const alice_ik_x25519_publicKey =
-    convertEd25519PublicKeyToX25519(alice_identity_key);
+  const senderIdentityX25519Public = convertEd25519PublicKeyToX25519(senderIdentityKey);
 
-  const dh1 = x25519.getSharedSecret(
-    bundle.spk.keyPair.privateKey,
-    alice_ik_x25519_publicKey,
+  const dhComponent1 = x25519.getSharedSecret(
+    receiverBundle.signedPreKey.keyPair.privateKey,
+    senderIdentityX25519Public,
   );
-  const dh2 = x25519.getSharedSecret(bob_ik_x25519_privateKey, message.ekA_ec);
-  const dh3 = x25519.getSharedSecret(
-    bundle.spk.keyPair.privateKey,
-    message.ekA_ec,
+  const dhComponent2 = x25519.getSharedSecret(
+    receiverIdentityX25519Private,
+    message.ephemeralKeyEC,
   );
-  const dh4 = bundle.opk
-    ? x25519.getSharedSecret(bundle.opk.privateKey, message.ekA_ec)
+  const dhComponent3 = x25519.getSharedSecret(
+    receiverBundle.signedPreKey.keyPair.privateKey,
+    message.ephemeralKeyEC,
+  );
+  const dhComponent4 = receiverBundle.oneTimePreKey
+    ? x25519.getSharedSecret(receiverBundle.oneTimePreKey.privateKey, message.ephemeralKeyEC)
     : new Uint8Array(0);
 
-  // Post-Quantum parts (ML-KEM-768)
-  const pq1 = mlkem512.decapsulate(
-    message.encaps_pq.ik,
-    bundle.pq_ik.privateKey,
+  // Compute post-quantum components
+  const pqComponent1 = mlkem512.decapsulate(
+    message.pqEncapsulations.identity,
+    receiverBundle.pqIdentityKey.privateKey,
   );
-  const pq2 = mlkem512.decapsulate(
-    message.encaps_pq.spk,
-    bundle.pq_spk.privateKey,
+  const pqComponent2 = mlkem512.decapsulate(
+    message.pqEncapsulations.signedPreKey,
+    receiverBundle.pqSignedPreKey.privateKey,
   );
-  const pq3 =
-    message.encaps_pq.opk && bundle.pq_opk
-      ? mlkem512.decapsulate(message.encaps_pq.opk, bundle.pq_opk.privateKey)
+  const pqComponent3 =
+    message.pqEncapsulations.oneTimePreKey && receiverBundle.pqOneTimePreKey
+      ? mlkem512.decapsulate(
+        message.pqEncapsulations.oneTimePreKey,
+        receiverBundle.pqOneTimePreKey.privateKey,
+      )
       : new Uint8Array(0);
 
-  // Combine key material
-  const keySizes = [
-    dh1.length,
-    dh2.length,
-    dh3.length,
-    dh4.length,
-    pq1.length,
-    pq2.length,
-    pq3.length,
+  // Combine all components into shared secret
+  const componentSizes = [
+    dhComponent1.length,
+    dhComponent2.length,
+    dhComponent3.length,
+    dhComponent4.length,
+    pqComponent1.length,
+    pqComponent2.length,
+    pqComponent3.length,
   ];
-  const totalSize = keySizes.reduce((sum, size) => sum + size, 0);
+  const totalSize = componentSizes.reduce((sum, size) => sum + size, 0);
 
-  const inputKeyMaterial = new Uint8Array(totalSize);
+  const combinedKeyMaterial = new Uint8Array(totalSize);
   let offset = 0;
 
-  inputKeyMaterial.set(dh1, offset);
-  offset += dh1.length;
-  inputKeyMaterial.set(dh2, offset);
-  offset += dh2.length;
-  inputKeyMaterial.set(dh3, offset);
-  offset += dh3.length;
-  inputKeyMaterial.set(dh4, offset);
-  offset += dh4.length;
-  inputKeyMaterial.set(pq1, offset);
-  offset += pq1.length;
-  inputKeyMaterial.set(pq2, offset);
-  offset += pq2.length;
-  inputKeyMaterial.set(pq3, offset);
+  combinedKeyMaterial.set(dhComponent1, offset);
+  offset += dhComponent1.length;
+  combinedKeyMaterial.set(dhComponent2, offset);
+  offset += dhComponent2.length;
+  combinedKeyMaterial.set(dhComponent3, offset);
+  offset += dhComponent3.length;
+  combinedKeyMaterial.set(dhComponent4, offset);
+  offset += dhComponent4.length;
+  combinedKeyMaterial.set(pqComponent1, offset);
+  offset += pqComponent1.length;
+  combinedKeyMaterial.set(pqComponent2, offset);
+  offset += pqComponent2.length;
+  combinedKeyMaterial.set(pqComponent3, offset);
 
-  const sharedSecret = hkdf(sha256, inputKeyMaterial, undefined, "X3DH+v1", 32);
+  const sharedSecret = hkdf(sha256, combinedKeyMaterial, undefined, "X3DH+v1", 32);
   return sharedSecret;
 }
 
+// Helper functions
 function convertEd25519PublicKeyToX25519(publicKey: Uint8Array): Uint8Array {
   return edwardsToMontgomeryPub(publicKey);
 }

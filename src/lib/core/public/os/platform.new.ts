@@ -1,104 +1,116 @@
-/**
- * Low-level platform utilities module for cross-platform detection with backward compatibility.
- * Uses feature detection whenever possible and falls back to userAgent parsing for legacy devices.
- */
-
 import {
   getIsDesktop,
   getIsMobile,
   getIsTablet,
 } from "@/lib/hooks/ui/useAppLayout";
 
-/** Flag indicating if running in a browser environment */
 export const IS_BROWSER =
   typeof window !== "undefined" && typeof navigator !== "undefined";
 
-/** Cached user agent string to avoid repeated calls to navigator.userAgent */
-const cachedUserAgent = IS_BROWSER ? navigator.userAgent.toLowerCase() : "";
+let _userAgent: string | null = null;
+const getUA = (): string => {
+  if (_userAgent === null && IS_BROWSER) {
+    _userAgent = navigator.userAgent.toLowerCase();
+  }
+  return _userAgent ?? "";
+};
 
-/** Low-level function to detect if a device supports touch inputs */
-const hasTouchSupport = (): boolean =>
-  IS_BROWSER && ("ontouchstart" in window || navigator.maxTouchPoints > 0);
-
-/** Low-level function to retrieve screen width */
 const getScreenWidth = (): number =>
   IS_BROWSER ? window.innerWidth || document.documentElement.clientWidth : 0;
 
-/** Low-level function to detect coarse pointer capability using media queries */
+const hasTouchSupport = (): boolean =>
+  IS_BROWSER &&
+  ("ontouchstart" in window || navigator.maxTouchPoints > 0);
+
 const supportsCoarsePointer = (): boolean =>
-  IS_BROWSER && typeof window.matchMedia === "function"
-    ? window.matchMedia("(pointer:coarse)").matches
-    : false;
+  IS_BROWSER &&
+  typeof window.matchMedia === "function" &&
+  window.matchMedia("(pointer:coarse)").matches;
 
-/**
- * Detect basic device types based on touch support, screen width, and media queries.
- * Returns "mobile", "tablet", or "desktop".
- */
-export function detectDeviceType(): "mobile" | "tablet" | "desktop" {
-  if (!IS_BROWSER) return "desktop";
+type DeviceType = "mobile" | "tablet" | "desktop";
 
+let _deviceType: DeviceType = "desktop";
+let initialized = false;
+let updateTimeout: number | null = null;
+
+function evaluateDeviceType(): DeviceType {
   const width = getScreenWidth();
-  const hasTouch = hasTouchSupport();
-  const isCoarse = supportsCoarsePointer();
-
-  if (hasTouch && (width <= 768 || isCoarse)) return "mobile";
-  if (hasTouch && width <= 1024) return "tablet";
+  if (hasTouchSupport()) {
+    if (width <= 768 || supportsCoarsePointer()) return "mobile";
+    if (width <= 1024) return "tablet";
+  }
   return "desktop";
 }
 
-/** Detect specific browser environments via userAgent parsing */
-export const BrowserInfo = (() => {
-  const ua = cachedUserAgent;
-  const isChrome = /chrome/.test(ua) && !/edge|opr/.test(ua);
-  const isFirefox = /firefox/.test(ua);
-  const isSafari =
-    /safari/.test(ua) && !/chrome|android|crios|opr|edge/.test(ua);
-  const isEdge = /edg/.test(ua);
-  const isIE = /msie|trident/.test(ua);
-  const isOpera = /opr/.test(ua);
+function setupDeviceTypeWatcher() {
+  if (!IS_BROWSER || initialized) return;
+  initialized = true;
 
-  return { isChrome, isFirefox, isSafari, isEdge, isIE, isOpera };
-})();
+  const update = () => {
+    const newType = evaluateDeviceType();
+    if (_deviceType !== newType) {
+      _deviceType = newType;
+    }
+  };
+
+  const debouncedUpdate = () => {
+    if (updateTimeout !== null) clearTimeout(updateTimeout);
+    updateTimeout = window.setTimeout(update, 200);
+  };
+
+  window.addEventListener("resize", debouncedUpdate, { passive: true });
+  _deviceType = evaluateDeviceType();
+}
 
 /**
- * Retrieve the Chromium version if available.
- * Returns the version as a number or undefined.
+ * Safe, cached, lazy-evaluated device type.
  */
-export const getChromiumVersion = (): number | undefined => {
-  const match = cachedUserAgent.match(/Chrom(?:e|ium)\/([0-9.]+)/);
+const getDeviceType = (): DeviceType => {
+  setupDeviceTypeWatcher();
+  return _deviceType;
+};
+
+const getBrowserInfo = () => {
+  const ua = getUA();
+  return {
+    isChrome: /chrome/.test(ua) && !/edg|opr/.test(ua),
+    isFirefox: /firefox/.test(ua),
+    isSafari: /safari/.test(ua) && !/chrome|android|crios|opr|edg/.test(ua),
+    isEdge: /edg/.test(ua),
+    isIE: /msie|trident/.test(ua),
+    isOpera: /opr/.test(ua),
+  };
+};
+
+const getChromiumVersion = (): number | undefined => {
+  const match = getUA().match(/chrom(?:e|ium)\/([0-9.]+)/);
   return match ? parseFloat(match[1]) : undefined;
 };
 
-/**
- * Normalize platform names detected via feature detection and userAgent parsing.
- */
-export const getNormalizedPlatform = (): string | undefined => {
-  const ua = cachedUserAgent;
+const getNormalizedPlatform = (): string | undefined => {
+  const ua = getUA();
   if (/iphone|ipad|ipod/.test(ua)) return "ios";
-  if (/macintosh|macintel|macppc|mac68k/.test(ua)) return "macos";
-  if (/win32|win64|windows|wince/.test(ua)) return "windows";
+  if (/mac/.test(ua)) return "macos";
+  if (/win/.test(ua)) return "windows";
   if (/android/.test(ua)) return "android";
   if (/linux/.test(ua)) return "linux";
   return undefined;
 };
 
-/**
- * Detects the operating system version from the user agent string.
- * This is a basic implementation and may require refinement for accuracy.
- */
-export const getOSVersion = (): string | undefined => {
-  const ua = cachedUserAgent;
-  const osVersionMatch = ua.match(/(?:windows nt|mac os x|android) ([0-9.]+)/);
-  return osVersionMatch ? osVersionMatch[1] : undefined;
+const getOSVersion = (): string | undefined => {
+  const match = getUA().match(/(?:windows nt|mac os x|android) ([0-9._]+)/);
+  return match ? match[1].replace(/_/g, ".") : undefined;
 };
 
-/** Combined export of detected environment flags with lazy evaluation */
-export const ENV = {
+
+export default {
   IS_BROWSER,
   get deviceType() {
-    return detectDeviceType();
+    return getDeviceType();
   },
-  BrowserInfo,
+  get BrowserInfo() {
+    return getBrowserInfo();
+  },
   get CHROMIUM_VERSION() {
     return getChromiumVersion();
   },
@@ -117,4 +129,4 @@ export const ENV = {
   get IS_DESKTOP() {
     return getIsDesktop();
   },
-};
+} as const;

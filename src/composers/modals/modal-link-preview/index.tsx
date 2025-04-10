@@ -1,14 +1,3 @@
-import React from "react";
-
-export interface ModalCalendarProps {
-  date?: string;
-}
-
-const ModalLinkPreview: React.FC<ModalCalendarProps> = ({ date }) => (
-  <div>
-    <h2>Calendar Modal</h2>
-    <p>Selected Date: {date || "None"}</p>
-  </div>
-);
+import ModalLinkPreview from "./public/ModalLinkPreview";
 
 export default ModalLinkPreview;
