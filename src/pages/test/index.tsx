@@ -3,9 +3,9 @@ import nacl from "tweetnacl";
 import { Buffer } from "buffer";
 import useModalContext from "@/composers/modals/utils/hooks/useModalComposer";
 import {
-  generateBundle,
-  computeSharedSecretAlice,
-  computeSharedSecretBob,
+  computeReceiverSharedSecret,
+  computeSenderSharedSecret,
+  generateKeyBundle,
 } from "@/lib/core/public/cryptography/X3DH";
 
 const styles = {
@@ -228,19 +228,18 @@ const AdvancedEncryptionPage: React.FC = () => {
 // Тестовая функция
 async function testProtocol() {
   try {
-    const aliceBundle = await generateBundle();
-    const bobBundle = await generateBundle();
+    const aliceBundle = await generateKeyBundle();
+    const bobBundle = await generateKeyBundle();
 
     console.log(aliceBundle);
     console.log(bobBundle);
 
     const { sharedSecret: aliceSecret, initialMessage } =
-      await computeSharedSecretAlice(aliceBundle, bobBundle);
+      await computeSenderSharedSecret(aliceBundle, bobBundle);
 
-    const bobSecret = await computeSharedSecretBob(
+    const bobSecret = await computeReceiverSharedSecret(
       bobBundle,
       initialMessage,
-      aliceBundle.ik.publicKey,
     );
 
     console.log("Alice Secret:", Buffer.from(aliceSecret).toString("hex"));

@@ -1,9 +1,11 @@
-# X3DH+ (Post-quantum enhance) Protocol Documentation (Hybrid Key Exchange)
+# X3DH+ (Post-Quantum Enhanced) Protocol Documentation (Hybrid Key Exchange)
 
 ## Overview
-The X3DH+ protocol is an extension of the Extended Triple Diffie-Hellman (X3DH) protocol, widely used in messaging applications like Signal, enhanced with post-quantum cryptography to protect against future quantum attacks. It combines classical elliptic curve cryptography (Ed25519 and X25519) with post-quantum lattice-based cryptography (ML-KEM-768). The protocol enables two parties (Alice and Bob) to establish a shared secret key in an asynchronous environment.
+
+The **X3DH+** protocol is an extension of the **Extended Triple Diffie-Hellman (X3DH)** protocol, widely used in messaging applications like Signal, enhanced with post-quantum cryptography to protect against future quantum attacks. It combines classical elliptic curve cryptography (**Ed25519** and **X25519**) with post-quantum lattice-based cryptography (**ML-KEM-768**). The protocol enables two parties (Alice and Bob) to establish a shared secret key in an asynchronous environment.
 
 ### Key Features
+
 - **Hybrid Security**: Combines X25519 (128-bit security against classical attacks) with ML-KEM-768 (~192-bit classical and ~170-bit quantum security).
 - **Forward Secrecy**: Use of one-time keys (`opk`, `pq_opk`) protects past sessions.
 - **Authentication**: Signature of the signed pre-key (`spk`) and transmission of the identity key (`ikA`) ensure authenticity verification.
@@ -11,8 +13,9 @@ The X3DH+ protocol is an extension of the Extended Triple Diffie-Hellman (X3DH) 
 ---
 
 ## Dependencies
+
 - **`@noble/curves/ed25519`**: Key generation for Ed25519 and X25519, signatures, and conversions.
-- **`@noble/hashes/hkdf` and `@noble/hashes/sha256`**: Key derivation and expansion using HKDF with SHA-256.
+- **`@noble/hashes/hkdf`** and **`@noble/hashes/sha256`**: Key derivation and expansion using HKDF with SHA-256.
 - **`@noble/post-quantum/ml-kem`**: Implementation of ML-KEM-768 (Kyber) for post-quantum cryptography.
 
 ---
@@ -60,7 +63,7 @@ The X3DH+ protocol is an extension of the Extended Triple Diffie-Hellman (X3DH) 
     pq_opk?: KeyPair;   // One-time ML-KEM-768 key (optional)
   }
   ```
-- **Example Data** (based on your output):
+- **Example Data**:
   ```json
   {
     "ik": {
@@ -198,7 +201,7 @@ async function runExample() {
 runExample();
 ```
 
-### Output (Based on Your Data)
+### Output
 ```
 Alice Secret: f2d7d5fb9b45b02bf03c499461d38c6fa343b0ca2957344abb6068f4db7018aa
 Bob Secret: f2d7d5fb9b45b02bf03c499461d38c6fa343b0ca2957344abb6068f4db7018aa
@@ -207,13 +210,4 @@ Secrets match: true
 
 ### Explanation
 1. **Key Generation**: Alice and Bob generate their `Bundle` using `generateBundle`.
-2. **Alice**: Uses her keys and Bob’s keys to compute the secret and create `initialMessage`.
-3. **Bob**: Uses his keys and the received message to compute the same secret.
-4. **Result**: Both obtain an identical 32-byte secret, confirming the protocol’s correctness.
-
----
-
-## Notes
-- **Data Size**: `Bundle` takes ~11 KB, `InitialMessage` takes 2.3–3.4 KB due to ML-KEM-768.
-- **Performance**: Computations take ~3–5 ms on modern CPUs.
-- **Security**: Resistant to classical and quantum attacks thanks to the hybrid approach.
+2. **Alice**: Uses her keys and Bob’s keys to compute the secret and create `initial
