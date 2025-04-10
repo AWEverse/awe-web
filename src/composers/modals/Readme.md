@@ -60,31 +60,26 @@ openModal("calendar", { date: "2025-04-10" });
 ---
 
 ## 🧪 Adding a Modal
-1. Create a folder under `src/composers/modals/` with prefix `modal-` (e.g., `modal-new-feature/`).
-2. Add an `index.tsx` exporting a default `React.ComponentType` with `onClose` prop.
-3. Done! `import.meta.glob` auto-registers it.
 
-## 📃Note:
-> In the new modal component, you can add only **the content** you want, as it is globally defined as a single modal component.
+In `registry.ts`:
 
-Example:
 ```tsx
-// src/composers/modals/modal-new-feature/index.tsx
-import React from "react";
+import { lazy } from "react";
 
-interface Props {
-  onClose: () => void;
-  data: string;
-}
+const CalendarModal = lazy(() => import("./modal-calendar"));
+const LinkPreviewModal = lazy(() => import("./modal-link-preview"));
+const MembersViewModal = lazy(() => import("./modal-members-list"));
 
-const NewFeatureModal: React.FC<Props> = ({ data, onClose }) => (
-  <div>
-    <h2>{data}</h2>
-    <button onClick={onClose}>Close</button>
-  </div>
-);
+// NEW
+const SettignsModal = lazy(() => import("./modal-settigns"));
 
-export default NewFeatureModal;
+const modalRegistry = {
+  calendar: CalendarModal,
+  "link-preview": LinkPreviewModal,
+  "members-view": MembersViewModal,
+  "settings": SettignsModal
+} as const;
+
 ```
 
 ---
