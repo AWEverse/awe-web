@@ -98,6 +98,14 @@ const modalRegistry = {
 
 ---
 
+
+---
+
+## ✅ Future Improvements
+- Modal stacking
+- Escape key support
+- Per-modal animations
+
 ## 📃 Registry (`registered.ts`)
 Auto-generated via `import.meta.glob("./modal-*/index.tsx")`. Example output:
 ```typescript
@@ -107,13 +115,7 @@ Auto-generated via `import.meta.glob("./modal-*/index.tsx")`. Example output:
   "members-list": LazyComponent
 }
 ```
-
----
-
-## ✅ Future Improvements
-- Modal stacking
-- Escape key support
-- Per-modal animations
+## 🧪 But there is a temporary problem that occurs with such an import, it is not possible to extract props, for now :)
 
 ---
 
