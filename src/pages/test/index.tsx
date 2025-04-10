@@ -2,6 +2,11 @@ import React, { useState } from "react";
 import nacl from "tweetnacl";
 import { Buffer } from "buffer";
 import useModalContext from "@/composers/modals/utils/hooks/useModalComposer";
+import {
+  generateBundle,
+  computeSharedSecretAlice,
+  computeSharedSecretBob,
+} from "@/lib/core/public/cryptography/X3DH";
 
 const styles = {
   container: {
@@ -143,7 +148,7 @@ const AdvancedEncryptionPage: React.FC = () => {
     <div style={styles.container}>
       <h2 style={styles.title}>Advanced Encryption Demo</h2>
 
-      <button onClick={() => openModal("calendar", { date: 100 }, 0)}>
+      <button onClick={() => openModal("calendar", {}, 0)}>
         Open Calendar
       </button>
 
@@ -219,5 +224,37 @@ const AdvancedEncryptionPage: React.FC = () => {
     </div>
   );
 };
+
+// Тестовая функция
+async function testProtocol() {
+  try {
+    const aliceBundle = await generateBundle();
+    const bobBundle = await generateBundle();
+
+    console.log(aliceBundle);
+    console.log(bobBundle);
+
+    const { sharedSecret: aliceSecret, initialMessage } =
+      await computeSharedSecretAlice(aliceBundle, bobBundle);
+
+    const bobSecret = await computeSharedSecretBob(
+      bobBundle,
+      initialMessage,
+      aliceBundle.ik.publicKey,
+    );
+
+    console.log("Alice Secret:", Buffer.from(aliceSecret).toString("hex"));
+    console.log("Bob Secret:", Buffer.from(bobSecret).toString("hex"));
+    console.log(
+      "Secrets match:",
+      Buffer.from(aliceSecret).toString("hex") ===
+        Buffer.from(bobSecret).toString("hex"),
+    );
+  } catch (error) {
+    console.error("Test failed:", error);
+  }
+}
+
+testProtocol();
 
 export default AdvancedEncryptionPage;
