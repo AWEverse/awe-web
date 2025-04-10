@@ -5,11 +5,10 @@ A **type-safe, lazy-loaded modal manager** built with `React.lazy`, `Suspense`, 
 ---
 
 ## 📦 Features
-- Centralized modal registry
-- Lazy-loaded modal components
-- Strict TypeScript prop typing
-- Reusable modal API
-- Custom `zIndex` support
+- Centralized, dynamically generated modal registry
+- Lazy-loaded modal components for performance
+- Strict TypeScript typing with prop inference
+- Simple, reusable modal API
 
 ---
 
@@ -21,7 +20,7 @@ src/composers/
     ├── index.ts              # Modal exports
     ├── ModalComposer.tsx     # Modal provider
     ├── Readme.md             # This doc
-    ├── registered.ts         # Modal registry
+    ├── registered.ts         # Dynamic modal registry
     ├── utils/                # Modal utilities
     ├── modal-calendar/       # Calendar modal
     ├── modal-link-preview/   # Link preview modal
@@ -33,36 +32,52 @@ src/composers/
 ## 📘 Usage
 
 ### 1. Setup Provider
-In `App.tsx`:
+Wrap your app with the `ModalComposerProvider` in `App.tsx`:
 ```tsx
 import { ModalComposerProvider } from "@/composers/modals/ModalComposer";
 
 export default function App() {
   return (
     <ModalComposerProvider>
-      {/* App content */}
+      {/* Your app content */}
     </ModalComposerProvider>
   );
 }
 ```
 
 ### 2. Open Modals
-Using the hook:
+Use the `useModalComposerAPI` hook to open modals with type-safe props:
 ```tsx
 import { useModalComposerAPI } from "@/composers/modals/ModalComposer";
 
 const { openModal, closeModal } = useModalComposerAPI();
 
-// Open calendar modal and the props automaticaly load by TypeScript
-openModal("calendar", { date: "2025-04-10" });
+// Open a modal with auto-typed props
+openModal("calendar", { date: "2025-04-10", onClose: () => {} });
+openModal("link-preview", { url: "https://example.com", onClose: () => {} });
 ```
 
 ---
 
 ## 🧪 Adding a Modal
 
-In `registry.ts`:
+1. Create a new modal component (e.g., `modal-settings/index.tsx`):
+```tsx
+import React from "react";
 
+type Props = { settingId: string } & ModalCommonProps;
+
+const SettingsModal: React.FC<Props> = ({ settingId, onClose }) => (
+  <div>
+    <h1>Settings: {settingId}</h1>
+    <button onClick={onClose}>Close</button>
+  </div>
+);
+
+export default SettingsModal;
+```
+
+2. Add it to `registered.ts`:
 ```tsx
 import { lazy } from "react";
 
@@ -81,50 +96,51 @@ const modalRegistry = {
 } as const;
 
 ```
-
 ---
 
 ## 🧼 Modal Requirements
-- Must accept `onClose: () => void`.
-- Must be default export.
-- Use `React.FC<Props>` for type inference.
+- Must accept `onClose: () => void` as a prop.
+- Must be the default export of its module.
+- Use `React.FC<Props>` for automatic prop type inference.
 
 ---
 
 ## 📌 Tips
-- Modals are auto-wrapped in a UI shell—avoid redundant styling.
-- `onClose` is injected; don’t pass it manually in `openModal`.
-- Check `registered.ts` for the generated registry.
-
----
-
+- Modals are wrapped in a UI shell—avoid redundant styling.
+- `onClose` is automatically provided; don’t pass it manually in `openModal`.
+- Check `registered.ts` for the current modal registry.
 
 ---
 
 ## ✅ Future Improvements
-- Modal stacking
-- Escape key support
-- Per-modal animations
+- Modal stacking with dynamic `zIndex`
+- Escape key support for closing modals
+- Custom animations per modal type
+- Dynamic prop extraction from lazy imports (WIP)
+
+---
 
 ## 📃 Registry (`registered.ts`)
-Auto-generated via `import.meta.glob("./modal-*/index.tsx")`. Example output:
+The registry is dynamically generated from `modalDefinitions`. Example output:
 ```typescript
 {
   "calendar": LazyComponent,
   "link-preview": LazyComponent,
-  "members-list": LazyComponent
+  "members-view": LazyComponent,
+  "settings": LazyComponent
 }
 ```
-## 🧪 But there is a temporary problem that occurs with such an import, it is not possible to extract props, for now :)
+**Note**: Prop extraction from lazy imports is a known limitation and being explored.
 
 ---
 
 ## 👨‍💻 Contributing
-- Follow type-safe patterns.
-- Maintain `modal-` prefix naming.
-- Test with `useModalComposerAPI`.
+- Follow type-safe patterns and conventions.
+- Use the `modal-` prefix for modal directories.
+- Test with `useModalComposerAPI` in a dev environment.
 
 ---
 
 ## 📄 License
 MIT
+
