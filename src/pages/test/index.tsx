@@ -143,7 +143,7 @@ const AdvancedEncryptionPage: React.FC = () => {
     <div style={styles.container}>
       <h2 style={styles.title}>Advanced Encryption Demo</h2>
 
-      <button onClick={() => openModal("calendar", {}, 0)}>
+      <button onClick={() => openModal("calendar", { date: 100 }, 0)}>
         Open Calendar
       </button>
 

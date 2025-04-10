@@ -1,1 +1,1 @@
-export default {}
+export { default as ModalComposer } from "./ModalComposer"

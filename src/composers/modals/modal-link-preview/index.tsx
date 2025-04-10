@@ -1,6 +1,6 @@
 import React from "react";
 
-interface ModalCalendarProps {
+export interface ModalCalendarProps {
   date?: string;
 }
 

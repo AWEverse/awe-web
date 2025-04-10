@@ -24,10 +24,14 @@ const ModalComposerProvider: React.FC<{ children?: ReactNode }> = ({
   });
 
   const openModal: OpenModalFunction = useStableCallback(
-    <T extends ModalType>(type: T, props: ModalMap[T], zIndex?: number) => {
+    <T extends ModalType>(
+      type: T,
+      props: Omit<ModalMap[T], "onClose">,
+      zIndex?: number,
+    ) => {
       setModalState({
         type,
-        props,
+        props: props as ModalMap[T],
         zIndex,
       });
     },
