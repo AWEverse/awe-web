@@ -254,6 +254,77 @@ async function testProtocol() {
   }
 }
 
+// --- Detailed Performance and Speed Tests ---
+async function runAllTests(iterations = 10) {
+  console.log("🚀 Starting performance & integrity tests...");
+
+  const time = async <T,>(
+    label: string,
+    fn: () => Promise<T>,
+    statsArray?: number[],
+  ): Promise<T> => {
+    const start = performance.now();
+    const result = await fn();
+    const end = performance.now();
+    const duration = end - start;
+    console.log(`${label}: ${duration.toFixed(2)} ms`);
+    if (statsArray) statsArray.push(duration);
+    return result;
+  };
+
+  const stats = {
+    keyGen: [] as number[],
+    sender: [] as number[],
+    receiver: [] as number[],
+  };
+
+  for (let i = 0; i < iterations; i++) {
+    console.log(`\n--- Iteration ${i + 1} ---`);
+
+    const keyBundleA = await time(
+      "KeyBundle generation (Alice)",
+      () => generateKeyBundle(),
+      stats.keyGen,
+    );
+    const keyBundleB = await time(
+      "KeyBundle generation (Bob)",
+      () => generateKeyBundle(),
+      stats.keyGen,
+    );
+
+    const { sharedSecret: secretA, initialMessage } = await time(
+      "Sender shared secret (Alice)",
+      () => computeSenderSharedSecret(keyBundleA, keyBundleB),
+      stats.sender,
+    );
+
+    const secretB = await time(
+      "Receiver shared secret (Bob)",
+      () => computeReceiverSharedSecret(keyBundleB, initialMessage),
+      stats.receiver,
+    );
+
+    if (!Buffer.from(secretA).equals(Buffer.from(secretB))) {
+      throw new Error(`❌ Shared secret mismatch at iteration ${i + 1}`);
+    }
+  }
+
+  console.log(`\n✅ All ${iterations} iterations passed successfully`);
+
+  const average = (arr: number[]) =>
+    (arr.reduce((a, b) => a + b, 0) / arr.length).toFixed(2);
+
+  console.log("\n📊 --- Average Timing Summary ---");
+  console.log(
+    `KeyBundle generation (avg per bundle): ${average(stats.keyGen)} ms`,
+  );
+  console.log(`Sender shared secret computation: ${average(stats.sender)} ms`);
+  console.log(
+    `Receiver shared secret computation: ${average(stats.receiver)} ms`,
+  );
+}
+
+runAllTests();
 testProtocol();
 
 export default AdvancedEncryptionPage;
