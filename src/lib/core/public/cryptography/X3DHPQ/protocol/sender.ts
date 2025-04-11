@@ -70,7 +70,6 @@ export async function computeSenderSharedSecret(
       pqResults[2].sharedSecret,
     ]);
 
-
     const salt = concatUint8Arrays([
       senderBundle.identityKey.publicKey, // IK_A
       recipientBundle.identityKey.publicKey, // IK_B
