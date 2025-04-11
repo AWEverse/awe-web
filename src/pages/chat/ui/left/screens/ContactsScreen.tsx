@@ -17,6 +17,7 @@ import {
 import IconButton from "@/shared/ui/IconButton";
 import ContactsSortDropdown from "./contacts/ContactsSortDropdown";
 import { CSSTransition } from "react-transition-group";
+import { useLeftScreenNavigation } from "../lib/ScreenContext";
 
 interface OwnProps {
   className?: string;
@@ -36,8 +37,10 @@ const ContactsScreen = forwardRef<HTMLDivElement, OwnProps & StateProps>(
 
     const isChanged = prevSortType !== sortType;
 
+    const { goBack } = useLeftScreenNavigation();
+
     const handlePrevClick = useStableCallback(() => {
-      setScreen(LeftColumnScreenType.Main);
+      goBack();
     });
 
     const handleSortTypeChange = useStableCallback((type: string) => {

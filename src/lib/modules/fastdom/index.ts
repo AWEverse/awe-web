@@ -1,130 +1,111 @@
 import safeExecDOM from "./safeExecDOM";
-import { setDOMPhase, type DOMPhase } from "./stricterdom";
+import { setDOMPhase } from "./stricterdom";
 import throttleWithRafFallback from "./throttleWithRafFallback";
 
-export enum TaskPriority {
-  High = 0,
-  Normal = 1,
-  Low = 2,
-}
+type TaskFunction = () => void;
+type ReflowTaskFunction = () => TaskFunction | void;
 
-interface DOMTask {
-  phase: DOMPhase;
-  fn: NoneToVoidFunction | NoneToVoidFunction; // для reflow
-  priority?: TaskPriority;
-  target?: Element;
-  signal?: AbortSignal;
-}
+type ErrorHandler = (error: Error) => void;
+let handleError: ErrorHandler = (error) =>
+  console.error("DOM task error:", error);
 
-type TaskBucket = Map<Element | null, DOMTask[]>;
+const measureTasks = new Set<TaskFunction>();
+const mutationTasks = new Set<TaskFunction>();
+const reflowTasks = new Set<ReflowTaskFunction>();
 
-const tasks: Record<DOMPhase, TaskBucket> = {
-  measure: new Map(),
-  mutate: new Map(),
-  reflow: new Map(),
-};
+const processTasks = <T>(tasks: Set<T>, handler: (task: T) => void) => {
+  if (tasks.size === 0) return;
 
-let scheduled = false;
-let errorHandler = (error: Error) => console.error("DOM task error:", error);
+  const queue = Array.from(tasks);
+  tasks.clear();
 
-function queueTask(task: DOMTask) {
-  if (task.signal?.aborted) return;
-
-  const bucket = tasks[task.phase];
-  const key = task.target || null;
-
-  if (!bucket.has(key)) {
-    bucket.set(key, []);
-  }
-
-  bucket.get(key)!.push(task);
-
-  if (!scheduled) {
-    scheduled = true;
-    runBatchedUpdate();
-  }
-}
-
-function runPhaseTasks(
-  phase: DOMPhase,
-  exec: (fn: NoneToVoidFunction) => void,
-  allowResult = false,
-): NoneToVoidFunction[] {
-  setDOMPhase(phase);
-  const followUps: NoneToVoidFunction[] = [];
-
-  for (const [_, taskList] of tasks[phase]) {
-    for (const task of taskList) {
-      if (task.signal?.aborted) continue;
-      try {
-        const result = exec(task.fn);
-        if (allowResult && typeof result === "function") {
-          followUps.push(result);
-        }
-      } catch (error) {
-        errorHandler(error as Error);
-      }
+  for (let j = 0, len = queue.length; j < len; j++) {
+    try {
+      handler(queue[j]);
+    } catch (error) {
+      handleError(error as Error);
     }
   }
+};
 
-  tasks[phase].clear();
-  return followUps;
-}
-
-const runBatchedUpdate = throttleWithRafFallback(async () => {
+const runUpdatePass = throttleWithRafFallback(async () => {
   try {
-    const run = (fn: NoneToVoidFunction) => safeExecDOM(fn);
+    if (measureTasks.size) {
+      setDOMPhase("measure");
+      processTasks(measureTasks, (task) => safeExecDOM(task));
+    }
 
-    runPhaseTasks("measure", run);
-    await Promise.resolve();
-    runPhaseTasks("mutate", run);
+    // Ждем завершения микротасков
+    await Promise.resolve(); // Позволяем выполниться микротаскам
 
-    const followUps = runPhaseTasks("reflow", run, true);
-    if (followUps.length) {
+    // Фаза мутации
+    if (mutationTasks.size) {
       setDOMPhase("mutate");
-      for (const fn of followUps) {
-        try {
-          run(fn);
-        } catch (e) {
-          errorHandler(e as Error);
-        }
+      processTasks(mutationTasks, (task) => safeExecDOM(task));
+    }
+
+    if (reflowTasks.size) {
+      setDOMPhase("measure");
+      const followUp: TaskFunction[] = [];
+
+      processTasks(reflowTasks, (task) =>
+        safeExecDOM(() => {
+          const result = task();
+          if (result) followUp.push(result);
+        }),
+      );
+
+      if (followUp.length) {
+        setDOMPhase("mutate");
+        processTasks(new Set(followUp), (task) => safeExecDOM(task));
       }
     }
   } finally {
-    scheduled = false;
     setDOMPhase("measure");
   }
 });
 
-export function requestDOMTask(task: DOMTask) {
-  queueTask({
-    ...task,
-    priority: task.priority ?? TaskPriority.Normal,
-  });
+/**
+ * Queue DOM read operations (measure phase).
+ * @example
+ * requestMeasure(() => console.log("Element width:", element.offsetWidth));
+ */
+export function requestMeasure(fn: TaskFunction) {
+  if (fn && !measureTasks.has(fn)) {
+    measureTasks.add(fn);
+    runUpdatePass();
+  }
 }
 
-export function requestMeasure(
-  fn: NoneToVoidFunction,
-  options: Partial<DOMTask> = {},
-) {
-  requestDOMTask({ ...options, phase: "measure", fn });
+/**
+ * Queue DOM write operations (mutate phase).
+ * @example
+ * requestMutation(() => element.style.color = "red");
+ */
+export function requestMutation(fn: TaskFunction) {
+  if (fn && !mutationTasks.has(fn)) {
+    mutationTasks.add(fn);
+    runUpdatePass();
+  }
 }
 
-export function requestMutation(
-  fn: NoneToVoidFunction,
-  options: Partial<DOMTask> = {},
-) {
-  requestDOMTask({ ...options, phase: "mutate", fn });
+/**
+ * Queue measure-then-mutate operations.
+ * @example
+ * requestNextMutation(() => {
+ *   const height = element.offsetHeight;
+ *   return () => element.style.height = `${height}px`;
+ * });
+ */
+export function requestNextMutation(fn: ReflowTaskFunction) {
+  if (fn && !reflowTasks.has(fn)) {
+    reflowTasks.add(fn);
+    runUpdatePass();
+  }
 }
 
-// TODO: rename to something like reflow
-export function requestNextMutation(
-  fn: () => NoneToVoidFunction,
-  options: Partial<DOMTask> = {},
-) {
-  requestDOMTask({ ...options, phase: "reflow", fn });
+export function setTaskErrorHandler(handler: ErrorHandler) {
+  handleError = handler;
 }
 
-export function setTaskErrorHandler(handler: (error: Error) => void) {
-  errorHandler = handler;
-}
+export * from "./stricterdom";

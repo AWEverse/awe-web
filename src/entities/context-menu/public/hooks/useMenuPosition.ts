@@ -82,6 +82,7 @@ export default function useMenuPosition(
           currentOptions as StaticPositionOptions,
         );
       })
+      console.log(currentOptions);
 
     }
     else {

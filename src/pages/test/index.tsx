@@ -6,7 +6,7 @@ import {
   computeReceiverSharedSecret,
   computeSenderSharedSecret,
   generateKeyBundle,
-} from "@/lib/core/public/cryptography/X3DH";
+} from "@/lib/core/public/cryptography/X3DHPQ";
 
 const styles = {
   container: {

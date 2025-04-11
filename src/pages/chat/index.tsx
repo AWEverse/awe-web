@@ -5,11 +5,15 @@ import LeftColumn from "./ui/left/LeftColumn";
 import MiddleColumn from "./ui/middle/MiddleColumn";
 
 import "./index.css";
+import ScreenProvider from "./ui/left/lib/ScreenContext";
 
 const ChatPage: FC = () => {
   return (
     <ChatLayout.Root>
-      <LeftColumn />
+      <ScreenProvider>
+        <LeftColumn />
+      </ScreenProvider>
+
       <MiddleColumn />
       <RightColumn />
     </ChatLayout.Root>

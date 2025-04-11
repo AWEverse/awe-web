@@ -1,7 +1,6 @@
 import { requestMutation } from "@/lib/modules/fastdom";
-import { FC, useEffect, ReactNode } from "react";
+import { FC, useEffect, ReactNode, useMemo } from "react";
 import { createPortal } from "react-dom";
-import { useRemoteRef } from "../hooks/base/useRemoteRef";
 
 type OwnProps = {
   containerId?: string;
@@ -14,29 +13,28 @@ const Portal: FC<OwnProps> = ({
   className,
   children,
 }) => {
-  const containerRef = useRemoteRef({
-    id: containerId,
-    observeDomChanges: true,
-  });
+  const container = useMemo(
+    () => document.getElementById(containerId),
+    [containerId],
+  );
 
   useEffect(() => {
-    const container = containerRef.current;
-    if (!container || !className) return;
-
-    requestMutation(() => {
-      container.classList.add(className);
-    });
-
-    return () => {
+    if (container && className) {
       requestMutation(() => {
-        container.classList.remove(className);
+        container.classList.add(className);
       });
-    };
-  }, [containerRef.current, className]);
 
-  if (!containerRef.current) return null;
+      return () => {
+        requestMutation(() => {
+          container.classList.remove(className);
+        });
+      };
+    }
+  }, [container, className]);
 
-  return createPortal(children, containerRef.current);
+  if (!container) return null;
+
+  return createPortal(children, container);
 };
 
 export default Portal;
