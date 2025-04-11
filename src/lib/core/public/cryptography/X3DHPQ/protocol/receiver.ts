@@ -6,6 +6,7 @@ import { concatUint8Arrays } from "../utils/arrays";
 import { HKDF_INFO, MLKEM_VERSION } from "../config";
 import { KeyBundle, InitialMessage } from "../types";
 import { X3DHError } from "./errors";
+import { validateInitialMessage } from "../utils/validation";
 
 /** Computes the receiver's shared secret */
 export async function computeReceiverSharedSecret(
@@ -13,6 +14,8 @@ export async function computeReceiverSharedSecret(
   message: InitialMessage
 ): Promise<Uint8Array> {
   try {
+    validateInitialMessage(message);
+
     const dhResults = await Promise.all([
       X25519.computeSharedSecret(
         receiverBundle.signedPreKey.keyPair.privateKey,
@@ -46,7 +49,13 @@ export async function computeReceiverSharedSecret(
 
     const combined = concatUint8Arrays([...dhResults, ...pqResults]);
 
-    return hkdf(sha256, combined, undefined, HKDF_INFO, 32);
+    const salt = concatUint8Arrays([
+      message.senderIdentityKey, // IK_A
+      receiverBundle.identityKey.publicKey, // IK_B
+      message.ephemeralKeyEC, // EK_A
+    ]);
+
+    return hkdf(sha256, combined, salt, HKDF_INFO, 32);
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
 

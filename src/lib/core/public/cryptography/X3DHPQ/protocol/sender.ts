@@ -7,6 +7,7 @@ import { concatUint8Arrays } from "../utils/arrays";
 import { PROTOCOL_VERSION, HKDF_INFO, MLKEM_VERSION } from "../config";
 import { KeyBundle, InitialMessage } from "../types";
 import { X3DHError } from "./errors";
+import { validateInitialMessage } from "../utils/validation";
 
 /** Computes the sender's shared secret and initial message */
 export async function computeSenderSharedSecret(
@@ -69,24 +70,35 @@ export async function computeSenderSharedSecret(
       pqResults[2].sharedSecret,
     ]);
 
-    const sharedSecret = hkdf(sha256, combined, undefined, HKDF_INFO, 32);
+
+    const salt = concatUint8Arrays([
+      senderBundle.identityKey.publicKey, // IK_A
+      recipientBundle.identityKey.publicKey, // IK_B
+      ephemeralKeyEC.publicKey, // EK_A
+    ]);
+
+    const sharedSecret = hkdf(sha256, combined, salt, HKDF_INFO, 32);
+
+    const message = {
+      version: PROTOCOL_VERSION,
+      ephemeralKeyEC: ephemeralKeyEC.publicKey,
+      ephemeralKeyPQ: ephemeralKeyPQ.publicKey,
+      senderIdentityKey: senderBundle.identityKey.publicKey,
+      senderIdentityKeyX25519: senderBundle.identityKeyX25519.publicKey,
+      pqEncapsulations: {
+        identity: pqResults[0].cipherText,
+        signedPreKey: pqResults[1].cipherText,
+        oneTimePreKey: recipientBundle.pqOneTimePreKey
+          ? pqResults[2].cipherText
+          : undefined,
+      },
+    };
+
+    validateInitialMessage(message);
 
     return {
       sharedSecret,
-      initialMessage: {
-        version: PROTOCOL_VERSION,
-        ephemeralKeyEC: ephemeralKeyEC.publicKey,
-        ephemeralKeyPQ: ephemeralKeyPQ.publicKey,
-        senderIdentityKey: senderBundle.identityKey.publicKey,
-        senderIdentityKeyX25519: senderBundle.identityKeyX25519.publicKey,
-        pqEncapsulations: {
-          identity: pqResults[0].cipherText,
-          signedPreKey: pqResults[1].cipherText,
-          oneTimePreKey: recipientBundle.pqOneTimePreKey
-            ? pqResults[2].cipherText
-            : undefined,
-        },
-      },
+      initialMessage: message,
     };
   } catch (error) {
     const errorMessage =
