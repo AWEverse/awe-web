@@ -1,8 +1,8 @@
 import { SafeLocalStorage } from "@/lib/core";
-import { collectClientFingerprint, FINGERPRINT_CACHE_KEY } from "@/lib/utils/fingerprint";
+import { getFingerprint, FP_CACHE_KEY } from "@/lib/utils/fingerprint";
 
 export default async function (): Promise<void> {
-  const cachedFingerprint = SafeLocalStorage.getItem<string | null>(FINGERPRINT_CACHE_KEY);
+  const cachedFingerprint = SafeLocalStorage.getItem<string | null>(FP_CACHE_KEY);
 
   if (cachedFingerprint) {
     try {
@@ -13,7 +13,7 @@ export default async function (): Promise<void> {
     }
   }
 
-  const fingerprint = await collectClientFingerprint();
+  const fingerprint = await getFingerprint();
 
-  SafeLocalStorage.setItem(FINGERPRINT_CACHE_KEY, JSON.stringify(fingerprint));
+  SafeLocalStorage.setItem(FP_CACHE_KEY, JSON.stringify(fingerprint));
 }

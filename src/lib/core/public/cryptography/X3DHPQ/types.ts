@@ -1,30 +1,4 @@
-/**
- * A branded type to prevent misuse of values by associating a unique identifier.
- * Used to distinguish specific Uint8Array instances (e.g., PublicKey, PrivateKey) from generic ones.
- * @template T The base type to brand (e.g., Uint8Array).
- * @template B The unique brand identifier as a string literal.
- *
- * @todo move to CoreGlobals.d.ts
- */
-type Brand<T, B extends string> = T & { __brand: B };
-
-/**
- * A public key represented as a branded Uint8Array.
- * Used in cryptographic operations like key exchange (X25519, ML-KEM) or signature verification (Ed25519).
- * @remarks
- * - Must be validated for correct length and format by the specific algorithm (e.g., 32 bytes for X25519).
- * - Should be shared publicly but never stored insecurely.
- */
-export type PublicKey = Brand<Uint8Array, "PublicKey">;
-
-/**
- * A private key represented as a branded Uint8Array.
- * Used in cryptographic operations like signing (Ed25519), key exchange (X25519), or decapsulation (ML-KEM).
- * @remarks
- * - Must be kept secret and erased securely after use (e.g., using `secureErase`).
- * - Typically larger than public keys for ML-KEM (e.g., ~1632 bytes for ML-KEM-512).
- */
-export type PrivateKey = Brand<Uint8Array, "PrivateKey">;
+import { PublicKey, PrivateKey } from "../types";
 
 /**
  * A key pair containing a public and private key for cryptographic operations.
@@ -83,10 +57,14 @@ export interface KeyBundle {
   identityKey: KeyPair;
   identityKeyX25519: KeyPair;
   signedPreKey: SignedPreKey;
-  oneTimePreKey?: KeyPair;
   pqIdentityKey: KeyPair;
+
   pqSignedPreKey: KeyPair;
+  oneTimePreKey?: KeyPair;
+  oneTimePreKeys?: KeyPair[];
   pqOneTimePreKey?: KeyPair;
+  pqOneTimePreKeys?: KeyPair[];
+
 }
 
 /**
@@ -119,4 +97,5 @@ export interface InitialMessage {
     signedPreKey: Uint8Array;
     oneTimePreKey?: Uint8Array;
   };
+
 }

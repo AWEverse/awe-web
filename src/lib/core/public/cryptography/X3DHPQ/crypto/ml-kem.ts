@@ -1,7 +1,7 @@
 import { ml_kem512, ml_kem768, ml_kem1024 } from "@noble/post-quantum/ml-kem";
-import { KeyPair, PublicKey, PrivateKey, EncapsulatePair } from "../types";
+import { CryptoKeyPair, PublicKey, PrivateKey, EncapsulatePair } from "../../types";
 import { SHARED_SECRET_LENGTH } from "../config";
-import { secureErase } from "../utils/secure";
+import { secureErase } from "../../secure";
 import { X3DHError } from "../protocol/errors";
 
 // Define ML-KEM variant configurations
@@ -71,7 +71,7 @@ export class MLKEM {
    * @param variant The ML-KEM variant ("512", "768", or "1024"). Defaults to "768".
    * @returns A key pair with public and private keys.
    */
-  static generateKeyPair(variant: MLKEMVariant = "768"): KeyPair {
+  static generateKeyPair(variant: MLKEMVariant = "768"): CryptoKeyPair {
     const config = MLKEM_VARIANTS[variant];
     const { publicKey, secretKey } = config.kem.keygen();
     return {
