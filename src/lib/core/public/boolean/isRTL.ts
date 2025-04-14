@@ -1,78 +1,64 @@
 /**
- * Robustly detects text direction using multiple strategies:
- * 1. Unicode RTL character detection
- * 2. Layout engine verification
- * 3. Fallback to computed CSS direction
+ * Asynchronously detects if the script direction of a given text is RTL (right-to-left).
+ * Uses multiple strategies:
+ * 1. Unicode strong RTL characters
+ * 2. Layout engine comparison
+ * 3. Fallback to CSS computed style
  *
  * @param text - Text to analyze
- * @param callback - Returns true for RTL, false for LTR
+ * @returns Promise resolving to `true` if RTL, else `false`
  */
-export function isScriptRtl(
-  text: string,
-  callback: (result: boolean) => void,
-): void {
-  if (!text) {
-    callback(false);
-    return;
-  }
+export async function isScriptRtl(text: string): Promise<boolean> {
+  if (!text) return false;
 
-  const hasStrongRtl =
-    /[\u0590-\u05FF\u0600-\u06FF\u0700-\u074F\u0780-\u07BF\u0860-\u086F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF]/.test(
-      text,
-    );
-  const hasWeakRtl = /[\u200F\u202B\u202E\u2067]/.test(text);
+  const strongRtlPattern =
+    /[\u0590-\u05FF\u0600-\u06FF\u0700-\u074F\u0780-\u07BF\u0860-\u086F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF]/;
+  const weakRtlPattern = /[\u200F\u202B\u202E\u2067]/;
 
-  if (hasStrongRtl) {
-    callback(true);
-    return;
-  }
-
+  if (strongRtlPattern.test(text)) return true;
   if (typeof document === "undefined" || !document.body) {
-    callback(hasWeakRtl);
-    return;
+    return weakRtlPattern.test(text);
   }
 
-  const fragment = document.createDocumentFragment();
-
-  const testDiv = document.createElement("div");
-  testDiv.style.cssText = `
+  return new Promise<boolean>((resolve) => {
+    // Create hidden container for layout testing
+    const container = document.createElement("div");
+    container.style.cssText = `
       position: absolute;
       visibility: hidden;
-      width: max-content;
+      font-family: Arial, sans-serif;
       font-size: 16px;
-      font-family: 'Arial', sans-serif;
       direction: ltr;
       white-space: nowrap;
+      width: max-content;
     `;
 
-  const controlSpan = document.createElement("span");
-  const testSpan = document.createElement("span");
+    const control = document.createElement("span");
+    control.textContent = "\u202A|\u202C"; // LTR markers
 
-  controlSpan.textContent = "\u202A|\u202C";
-  testSpan.textContent = `${text}\u200E`;
+    const test = document.createElement("span");
+    test.textContent = text + "\u200E"; // LTR mark to stabilize layout
 
-  testDiv.append(controlSpan, testSpan);
-  fragment.appendChild(testDiv);
-  document.body.appendChild(fragment);
+    container.append(control, test);
+    document.body.appendChild(container);
 
-  try {
-    const controlRect = controlSpan.getBoundingClientRect();
-    const testRect = testSpan.getBoundingClientRect();
+    try {
+      const controlRect = control.getBoundingClientRect();
+      const testRect = test.getBoundingClientRect();
 
-    const isLogicalRtl = testRect.left < controlRect.left;
-    const isVisualRtl = testRect.right < controlRect.right;
+      const isLogicalRtl = testRect.left < controlRect.left;
+      const isVisualRtl = testRect.right < controlRect.right;
 
-    const layoutDetection = isLogicalRtl || isVisualRtl;
+      const layoutRtl = isLogicalRtl || isVisualRtl;
 
-    const computedDirection = window.getComputedStyle(
-      testSpan as Element,
-    ).direction;
-    const styleDetection = computedDirection === "rtl";
+      const computedDir = getComputedStyle(test).direction;
+      const cssRtl = computedDir === "rtl";
 
-    callback(layoutDetection || styleDetection);
-  } catch (error) {
-    callback(hasWeakRtl);
-  } finally {
-    document.body.removeChild(testDiv);
-  }
+      resolve(layoutRtl || cssRtl);
+    } catch {
+      resolve(weakRtlPattern.test(text));
+    } finally {
+      container.remove();
+    }
+  });
 }

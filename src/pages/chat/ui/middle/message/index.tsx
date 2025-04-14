@@ -19,6 +19,7 @@ import ContextMenu, { useContextMenuHandlers } from "@/entities/context-menu";
 import { EMouseButton } from "@/lib/core";
 import { useFastClick } from "@/shared/hooks/mouse/useFastClick";
 import buildClassName from "@/shared/lib/buildClassName";
+import useStateSignal from "@/lib/hooks/signals/useStateSignal";
 
 type PositionEntity = "Group" | "Document" | "List";
 type Position = "IsFirst" | "IsLast";
@@ -117,7 +118,7 @@ const ChatMessage: FC<OwnProps & StateProps> = ({ isOwn, message }) => {
   } = useScrollProvider();
 
   const renderContent = (): ReactNode => {
-    return <MessageText children={markdownContent} />;
+    return <MessageText>{markdownContent}</MessageText>;
   };
 
   const renderAvatar = () => {
@@ -129,7 +130,7 @@ const ChatMessage: FC<OwnProps & StateProps> = ({ isOwn, message }) => {
   };
 
   const renderMessageText = () => {
-    return <div>Text</div>;
+    return <MessageText>{markdownContent}</MessageText>;
   };
 
   const isLoading = useIsIntersecting(
@@ -144,6 +145,7 @@ const ChatMessage: FC<OwnProps & StateProps> = ({ isOwn, message }) => {
   return (
     <>
       <div
+        data-ctx
         ref={messageRef}
         className={buildClassName("Message", isOwn ? "own" : "other")}
       >

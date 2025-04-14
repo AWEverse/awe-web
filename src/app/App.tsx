@@ -13,6 +13,7 @@ import { usePageVisibility } from "@/lib/hooks/ui/usePageVisibility";
 
 import "@/lib/core/public/templates/linq";
 import useGlobalDragEventPrevention from "./lib/hooks/useGlobalDragEventPrevention";
+import ModalComposerProvider from "@/composers/modals/ModalComposer";
 
 interface StateProps {
   themeKey?: ThemeKey;
@@ -36,7 +37,10 @@ const App: FC<StateProps> = ({ themeKey = "dark" }) => {
   return (
     <ThemeProvider defaultMode={themeKey} theme={theme}>
       <CssBaseline />
-      <AWERoutesBrowserRouter />
+
+      <ModalComposerProvider>
+        <AWERoutesBrowserRouter />
+      </ModalComposerProvider>
     </ThemeProvider>
   );
 };

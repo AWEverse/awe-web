@@ -9,6 +9,7 @@ import ContactsScreen from "./screens/ContactsScreen";
 import MainScreen from "./screens/MainScreen";
 import useAppLayout from "@/lib/hooks/ui/useAppLayout";
 import useChatStore from "../../store/useChatSelector";
+import ScreenProvider, { useLeftScreenNavigation } from "./lib/ScreenContext"; // Використовуємо ScreenContext
 
 const SettingsNavigation = lazy(
   () => import("./screens/settings/SettingsNavigation"),
@@ -34,20 +35,20 @@ const SettingsSkeleton = () => (
 const GenericSkeleton = () => <div className={s.skeleton}>Loading...</div>;
 
 const screens = {
-  [LeftColumnScreenType.Main]: MainScreen,
-  [LeftColumnScreenType.Archived]: ArchivedScreen,
-  [LeftColumnScreenType.Contacts]: ContactsScreen,
-  [LeftColumnScreenType.SettingsNavigation]: SettingsNavigation,
-  [LeftColumnScreenType.AccountSetting]: AccountSetting,
-  [LeftColumnScreenType.ConfidenceSetting]: ConfidenceSetting,
-  [LeftColumnScreenType.InteractionSetting]: InteractionSetting,
-  [LeftColumnScreenType.NotificationsSetting]: NotificationsSetting,
-  [LeftColumnScreenType.PersonalizationSetting]: PersonalizationSetting,
+  ["Main"]: MainScreen,
+  ["Archived"]: ArchivedScreen,
+  ["Contacts"]: ContactsScreen,
+  ["SettingsNavigation"]: SettingsNavigation,
+  ["AccountSetting"]: AccountSetting,
+  ["ConfidenceSetting"]: ConfidenceSetting,
+  ["InteractionSetting"]: InteractionSetting,
+  ["NotificationsSetting"]: NotificationsSetting,
+  ["PersonalizationSetting"]: PersonalizationSetting,
 };
 
 const skeletons = {
-  [LeftColumnScreenType.Main]: <MainSkeleton />,
-  [LeftColumnScreenType.SettingsNavigation]: <SettingsSkeleton />,
+  ["Main"]: <MainSkeleton />,
+  ["SettingsNavigation"]: <SettingsSkeleton />,
   default: <GenericSkeleton />,
 };
 
@@ -72,41 +73,17 @@ interface OwnProps {
 
 const LeftColumn: FC<OwnProps> = ({ className }) => {
   const isMobile = useAppLayout((state) => state.isMobile);
-
   const isLeftPanelOpen = useChatStore((s) => s.isChatList);
 
-  const currentScreen = LeftColumnScreenType.Main;
-  const prevScreen = usePrevious(currentScreen);
+  const { currentScreen } = useLeftScreenNavigation();
   const shouldReduceMotion = useReducedMotion();
 
-  const direction = useMemo(() => {
-    const screenOrder = [
-      LeftColumnScreenType.Main,
-      LeftColumnScreenType.Archived,
-      LeftColumnScreenType.Contacts,
-      LeftColumnScreenType.SettingsNavigation,
-      LeftColumnScreenType.AccountSetting,
-      LeftColumnScreenType.ConfidenceSetting,
-      LeftColumnScreenType.InteractionSetting,
-      LeftColumnScreenType.NotificationsSetting,
-      LeftColumnScreenType.PersonalizationSetting,
-    ];
-
-    const prevIndex = screenOrder.indexOf(
-      prevScreen || LeftColumnScreenType.Main,
-    );
-
-    const currentIndex = screenOrder.indexOf(currentScreen);
-    return currentIndex > prevIndex ? 1 : -1;
-  }, [currentScreen, prevScreen]);
-
   const transition = {
-    duration: shouldReduceMotion ? 0 : 0.3,
-    ease: "easeInOut",
+    duration: shouldReduceMotion ? 0 : 0.2,
   };
 
   const ScreenComponent = screens[currentScreen];
-  const Fallback = skeletons[currentScreen] || skeletons.default;
+  const Fallback = skeletons.default;
 
   return (
     <section
@@ -114,7 +91,7 @@ const LeftColumn: FC<OwnProps> = ({ className }) => {
       className={buildClassName(s.LeftColumn, className)}
       data-shown={isLeftPanelOpen}
     >
-      <AnimatePresence initial={false} mode="wait">
+      <AnimatePresence initial={false} mode="popLayout">
         {ScreenComponent && (
           <motion.div
             className="scrollable_area"
@@ -124,7 +101,7 @@ const LeftColumn: FC<OwnProps> = ({ className }) => {
             initial="initial"
             animate="animate"
             exit="exit"
-            custom={direction}
+            custom={-1}
             transition={transition}
           >
             <Suspense fallback={Fallback}>

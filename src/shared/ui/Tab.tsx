@@ -23,7 +23,6 @@ type OwnProps = {
   variant: "folders" | "pannels" | "fill";
   tabIndex?: number;
   onClick?: (arg: number) => void;
-  contextMenuOptions?: ContextMenuOptionType<number>[];
 };
 
 const classNames = {
@@ -53,14 +52,11 @@ const Tab: FC<OwnProps> = ({
   badgeCount,
   isBadgeActive,
   onClick,
-  clickArg,
+  clickArg = 0,
   variant = "pannels",
   tabIndex = 0,
-  contextMenuOptions,
 }) => {
   const tabRef = useRef<HTMLButtonElement>(null);
-  const shouldRenderContextMenu =
-    contextMenuOptions && contextMenuOptions.length > 0;
 
   const renderBadge = useMemo(() => {
     if (badgeCount) {
@@ -80,31 +76,9 @@ const Tab: FC<OwnProps> = ({
     return null;
   }, [badgeCount, isBadgeActive, layoutId]);
 
-  const {
-    isContextMenuOpen,
-    contextMenuAnchor,
-    handleBeforeContextMenu,
-    handleContextMenu,
-    handleContextMenuHide,
-    handleContextMenuClose,
-  } = useContextMenuHandlers({
-    elementRef: tabRef,
-    isMenuDisabled: !shouldRenderContextMenu,
-  });
-
-  const { handleClick, handleMouseDown } = useFastClick(
-    (e: React.MouseEvent<HTMLButtonElement>) => {
-      if (!shouldRenderContextMenu && e.button === EMouseButton.Secondary) {
-        handleBeforeContextMenu(e);
-      }
-
-      if (e.type === "mousedown" && e.button !== EMouseButton.Main) {
-        return;
-      }
-
-      onClick?.(clickArg!);
-    },
-  );
+  const handleClick = () => {
+    onClick?.(clickArg);
+  };
 
   return (
     <>
@@ -121,8 +95,6 @@ const Tab: FC<OwnProps> = ({
         role="tab"
         tabIndex={tabIndex}
         onClick={handleClick}
-        onMouseDown={handleMouseDown}
-        onContextMenu={handleContextMenu}
       >
         <motion.span
           className={buildClassName("TabInner", capitalize(variant))}
@@ -156,24 +128,6 @@ const Tab: FC<OwnProps> = ({
           </AnimatePresence>
         </motion.span>
       </button>
-
-      {contextMenuOptions && contextMenuOptions.length > 0 && (
-        <ContextMenu
-          isOpen={isContextMenuOpen}
-          position={contextMenuAnchor!}
-          onClose={handleContextMenuClose}
-          onCloseAnimationEnd={handleContextMenuHide}
-          withPortal
-        >
-          <ActionButton size="sm" fullWidth>
-            Edit folder
-          </ActionButton>
-
-          <ActionButton color="error" variant="text" size="sm" fullWidth>
-            Remove folder
-          </ActionButton>
-        </ContextMenu>
-      )}
     </>
   );
 };

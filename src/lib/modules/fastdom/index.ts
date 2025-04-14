@@ -1,5 +1,5 @@
 import safeExecDOM from "./safeExecDOM";
-import { setPhase } from "./stricterdom";
+import { setDOMPhase } from "./stricterdom";
 import throttleWithRafFallback from "./throttleWithRafFallback";
 
 type TaskFunction = () => void;
@@ -31,7 +31,7 @@ const processTasks = <T>(tasks: Set<T>, handler: (task: T) => void) => {
 const runUpdatePass = throttleWithRafFallback(async () => {
   try {
     if (measureTasks.size) {
-      setPhase("measure");
+      setDOMPhase("measure");
       processTasks(measureTasks, (task) => safeExecDOM(task));
     }
 
@@ -40,12 +40,12 @@ const runUpdatePass = throttleWithRafFallback(async () => {
 
     // Фаза мутации
     if (mutationTasks.size) {
-      setPhase("mutate");
+      setDOMPhase("mutate");
       processTasks(mutationTasks, (task) => safeExecDOM(task));
     }
 
     if (reflowTasks.size) {
-      setPhase("measure");
+      setDOMPhase("measure");
       const followUp: TaskFunction[] = [];
 
       processTasks(reflowTasks, (task) =>
@@ -56,12 +56,12 @@ const runUpdatePass = throttleWithRafFallback(async () => {
       );
 
       if (followUp.length) {
-        setPhase("mutate");
+        setDOMPhase("mutate");
         processTasks(new Set(followUp), (task) => safeExecDOM(task));
       }
     }
   } finally {
-    setPhase("measure");
+    setDOMPhase("measure");
   }
 });
 

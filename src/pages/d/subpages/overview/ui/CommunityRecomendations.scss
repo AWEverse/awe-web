@@ -1,0 +1,45 @@
+// CommunityRecommendations.scss
+.community-recommendations {
+
+  &__container {
+    display: flex;
+    gap: 0.25rem;
+    overflow-x: auto;
+    padding: 0.5rem 0;
+
+    // Hide scrollbar for Webkit browsers
+    &::-webkit-scrollbar {
+      height: 6px;
+    }
+
+    &::-webkit-scrollbar-thumb {
+      background-color: #cbd5e1;
+      border-radius: 3px;
+    }
+
+    &::-webkit-scrollbar-track {
+      background-color: #f1f5f9;
+    }
+  }
+
+  &__card {
+    flex: 0 0 auto;
+    scroll-snap-align: start;
+    width: 260px; // Fixed width for consistency
+    transition: transform 0.2s ease;
+
+    &:hover {
+      transform: translateY(-4px);
+    }
+
+    @media (min-width: 640px) {
+      width: 300px;
+    }
+  }
+
+  // Accessibility focus styles
+  &:focus-within {
+    outline: 2px solid #2563eb;
+    outline-offset: 2px;
+  }
+}

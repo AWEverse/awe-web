@@ -46,6 +46,10 @@ type Node = {
 
   // Used to remember and rollback previous value of ._node
   _rollbackNode?: Node;
+
+  // Used to store the hash of the node for debugging purposes or comparison
+  // to check if the node has changed
+  _hash?: string;
 };
 
 /**
@@ -568,32 +572,35 @@ Object.defineProperty(Signal.prototype, "value", {
     return this._value;
   },
   set(this: Signal, value) {
-    // Skip all the work if the value hasn't changed
-    if (Object.is(value, this._value)) {
-      return;
-    }
 
-    // Quick path: if no one is listening, just update the value
-    if (this._targets === undefined) {
+    if (this._value !== value) {
+      // Skip all the work if the value hasn't changed
+      if (Object.is(value, this._value)) {
+        return;
+      }
+
+      // Quick path: if no one is listening, just update the value
+      if (this._targets === undefined) {
+        this._value = value;
+        this._version = incrementVersion(this._version);
+        globalVersion = incrementVersion(globalVersion);
+        return;
+      }
+
+      if (batchIteration > MAX_BATCH_ITERATIONS / 2) {
+        throw new Error("Cycle detected in signal updates");
+      }
+
       this._value = value;
       this._version = incrementVersion(this._version);
       globalVersion = incrementVersion(globalVersion);
-      return;
-    }
 
-    if (batchIteration > MAX_BATCH_ITERATIONS / 2) {
-      throw new Error("Cycle detected in signal updates");
-    }
-
-    this._value = value;
-    this._version = incrementVersion(this._version);
-    globalVersion = incrementVersion(globalVersion);
-
-    startBatch();
-    try {
-      this._notifyDependencies();
-    } finally {
-      endBatch();
+      startBatch();
+      try {
+        this._notifyDependencies();
+      } finally {
+        endBatch();
+      }
     }
   },
 });
@@ -982,15 +989,40 @@ function effect(fn: EffectFn): NoneToVoidFunction {
 }
 
 type Signalify<T> = {
-  [K in keyof T]: T[K] extends object
-  ? Signal<T[K] extends Array<infer U> ? Signalify<U>[] : Signalify<T[K]>>
+  [K in keyof T]: T[K] extends Array<infer U>
+  ? Signal<Signalify<U>[]>
+  : T[K] extends object
+  ? Signal<Signalify<T[K]>>
   : Signal<T[K]>;
 };
 
-type CursorCallback = (path: (string | number)[], value: any) => void;
+type DeepReadonly<T> = {
+  readonly [K in keyof T]: T[K] extends object ? DeepReadonly<T[K]> : T[K];
+};
 
-function isPlainObject(value: any): value is object {
-  return value !== null && typeof value === "object" && !Array.isArray(value);
+type CursorCallback = (path: (string | number)[], value: unknown) => void;
+
+function isPlainObject(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+const disposers = new WeakMap<object, () => void>();
+
+function trackEffect<T>(
+  sig: Signal<T>,
+  path: (string | number)[],
+  callback: CursorCallback,
+) {
+  const stop = effect(() => {
+    callback(path, sig.peek());
+  });
+  disposers.set(sig, stop);
+}
+
+function disposeAt(value: unknown) {
+  if (typeof value === "object" && value !== null) {
+    const disposer = disposers.get(value as object);
+    if (disposer) disposer();
+  }
 }
 
 export function makeReactiveArray<T>(
@@ -998,50 +1030,52 @@ export function makeReactiveArray<T>(
   callback: CursorCallback,
   path: (string | number)[],
 ): Signal<Signalify<T>[]> {
-  const reactiveItems = arr.map((item, index) =>
-    isPlainObject(item)
-      ? reactiveObject(item as any, callback, [...path, index])
-      : item,
-  );
-
-  const sig = signal(reactiveItems as Signalify<T>[]);
-
-  effect(() => {
-    const current = sig.value;
-    callback(path, current);
+  const reactiveItems = arr.map((item, index) => {
+    if (isPlainObject(item)) {
+      return reactiveObject(item, callback, [...path, index]);
+    }
+    return item as Signalify<T>;
   });
 
-  const proxy = new Proxy(sig.value, {
-    set(target, prop, value) {
+  const sig = signal(reactiveItems);
+
+  trackEffect(sig, path, callback);
+
+  const proxy = new Proxy(reactiveItems, {
+    set(target, prop: string | symbol, value: unknown): boolean {
       const index = Number(prop);
       if (!isNaN(index)) {
-        if (isPlainObject(value)) {
-          value = reactiveObject(value, callback, [...path, index]);
-        }
+        disposeAt(target[index]); // очистка предыдущего
+
+        const newValue = isPlainObject(value)
+          ? reactiveObject(value, callback, [...path, index])
+          : (value as Signalify<T>);
+
+        target[index] = newValue as Signalify<T>;
+        sig.value = structuredClone(target);
+        return true;
       }
-
-      (target as any)[prop] = value;
-
-      sig.value = structuredClone(target)
-      return true;
+      return false;
     },
-    deleteProperty(target, prop) {
+
+    deleteProperty(target, prop: string | symbol): boolean {
       const index = Number(prop);
       if (!isNaN(index)) {
+        disposeAt(target[index]);
         target.splice(index, 1);
-        sig.value = [...target];
+        sig.value = structuredClone(target);
         return true;
       }
       return false;
     },
   });
 
-  sig.value = proxy as any;
+  sig.value = proxy as unknown as Signalify<T>[]; // проксированный массив
 
   return sig;
 }
 
-export function reactiveObject<T extends object>(
+export function reactiveObject<T extends Record<string, unknown>>(
   obj: T,
   callback?: CursorCallback,
   path: (string | number)[] = [],
@@ -1051,26 +1085,39 @@ export function reactiveObject<T extends object>(
   for (const key in obj) {
     if (!Object.prototype.hasOwnProperty.call(obj, key)) continue;
 
-    const currentPath = [...path, key];
+    const currentPath = structuredClone(path);
+    currentPath.push(key);
+
     const value = obj[key];
 
-    const wrapAndTrack = (v: any, p: (string | number)[]) => {
+    const wrapAndTrack = <V>(v: V, p: (string | number)[]): Signal<V> => {
       const sig = signal(v);
       if (callback) {
-        effect(() => {
-          callback(p, sig.peek());
-        });
+        trackEffect(sig, p, callback);
       }
       return sig;
     };
 
     if (Array.isArray(value)) {
-      reactive[key] = makeReactiveArray(value, callback!, currentPath) as any;
+      reactive[key] = makeReactiveArray(
+        value,
+        callback!,
+        currentPath,
+      ) as Signalify<T>[typeof key];
     } else if (isPlainObject(value)) {
-      const nested = reactiveObject(value, callback, currentPath);
-      reactive[key] = wrapAndTrack(nested, currentPath) as any;
+      reactive[key] = wrapAndTrack(
+        reactiveObject(
+          value as Record<string, unknown>,
+          callback,
+          currentPath,
+        ),
+        currentPath,
+      ) as Signalify<T>[typeof key];
     } else {
-      reactive[key] = wrapAndTrack(value, currentPath) as any;
+      reactive[key] = wrapAndTrack(
+        value,
+        currentPath,
+      ) as Signalify<T>[typeof key];
     }
   }
 
@@ -1171,4 +1218,6 @@ export {
   SIGNAL_SYMBOL,
   type ReadonlySignal,
   type Signalify,
+  type DeepReadonly,
 };
+

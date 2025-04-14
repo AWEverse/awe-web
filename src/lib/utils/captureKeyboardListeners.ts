@@ -28,7 +28,6 @@ const keyToHandlerName: Record<string, HandlerName> = {
   Enter: "onEnter",
   Backspace: "onBackspace",
   Delete: "onDelete",
-  Esc: "onEsc",
   Escape: "onEsc",
   ArrowUp: "onUp",
   ArrowDown: "onDown",
@@ -62,6 +61,7 @@ export class KeyboardListenerManager {
 
   private handleKeyDown = (e: KeyboardEvent): void => {
     const handlerName = keyToHandlerName[e.key];
+
     if (!handlerName) return;
 
     const bindingList = this.handlers[handlerName];

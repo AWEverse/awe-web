@@ -1,8 +1,5 @@
-import { IS_BROWSER } from "../../os";
-import { ORIENTATION_LOCK_SUPPORTED, ORIENTATION_UNLOCK_SUPPORTED } from "../../os/support/browser";
-
-type OrientationType = "portrait-primary" | "landscape-primary" | "portrait-secondary" | "landscape-secondary";
-
+// Type definitions based on the standard Screen Orientation API
+type POrientationType = "portrait-primary" | "landscape-primary" | "portrait-secondary" | "landscape-secondary";
 type OrientationLockType =
   | "any"
   | "natural"
@@ -13,241 +10,343 @@ type OrientationLockType =
   | "landscape-primary"
   | "landscape-secondary";
 
-interface PartialDocumentSupport extends Document {
-  webkitFullscreenElement?: Element | null;
-}
-
-// Extend the ScreenOrientation interface for our polyfill.
 interface ScreenOrientationPolyfill extends Omit<ScreenOrientation, "type" | "lock" | "unlock"> {
-  type: OrientationType;
+  type: POrientationType;
   lock(orientation: OrientationLockType): Promise<void>;
   unlock(): void;
-  addEventListener(
-    type: "change",
-    listener: (this: ScreenOrientationPolyfill, ev: Event) => any,
-    options?: boolean | AddEventListenerOptions
-  ): void;
-  removeEventListener(
-    type: "change",
-    listener: (this: ScreenOrientationPolyfill, ev: Event) => any,
-    options?: boolean | EventListenerOptions
-  ): void;
 }
 
-const createScreenOrientationPolyfill = (): ScreenOrientationPolyfill => {
-  let lockedOrientation: OrientationLockType | null = null;
-  let isFullscreen = false;
-  const listeners = new Set<EventListener>();
+// Helper interface for partial document support
+interface PartialDocumentSupport extends Document {
+  webkitFullscreenElement?: Element | null;
+  mozFullScreenElement?: Element | null;
+  msFullscreenElement?: Element | null;
+  webkitExitFullscreen?: () => Promise<void>;
+  mozCancelFullScreen?: () => Promise<void>;
+  msExitFullscreen?: () => Promise<void>;
+}
 
-  // Map each native orientation type to its corresponding angle.
-  const angleMap: Record<OrientationType, number> = {
+// CSS to override the user agent stylesheet for fullscreen transform
+const injectCSS = () => {
+  const styleId = 'orientation-polyfill-styles';
+  if (document.getElementById(styleId)) return;
+
+  const style = document.createElement('style');
+  style.id = styleId;
+  style.textContent = `
+    /* Container for the rotated content */
+    .orientation-container {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      z-index: 2147483647; /* Highest possible z-index */
+    }
+
+    /* Element that gets rotated */
+    .orientation-wrapper {
+      transform-origin: center center;
+      transition: transform 0.3s ease-in-out;
+      width: 100%;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    /* Override user agent styles for fullscreen elements */
+    :fullscreen .orientation-wrapper,
+    :-webkit-full-screen .orientation-wrapper,
+    :-moz-full-screen .orientation-wrapper,
+    :-ms-fullscreen .orientation-wrapper {
+      transform: var(--orientation-transform, none) !important;
+    }
+
+    /* Swap dimensions for landscape orientations */
+    .orientation-wrapper.landscape-primary,
+    .orientation-wrapper.landscape-secondary {
+      width: 100vh;
+      height: 100vw;
+    }
+
+    /* Style for content inside the wrapper */
+    .orientation-content {
+      width: 100%;
+      height: 100%;
+      overflow: auto;
+    }
+  `;
+  document.head.appendChild(style);
+};
+
+// Create DOM structure for orientation handling
+const setupDOMStructure = () => {
+  // Check if structure already exists
+  if (document.querySelector('.orientation-container')) return;
+
+  // Create container and wrapper
+  const container = document.createElement('div');
+  container.className = 'orientation-container';
+
+  const wrapper = document.createElement('div');
+  wrapper.className = 'orientation-wrapper';
+
+  const content = document.createElement('div');
+  content.className = 'orientation-content';
+
+  // Move all body children to content
+  while (document.body.firstChild) {
+    content.appendChild(document.body.firstChild);
+  }
+
+  // Build structure
+  wrapper.appendChild(content);
+  container.appendChild(wrapper);
+  document.body.appendChild(container);
+
+  return { container, wrapper, content };
+};
+
+// Helper function to detect the current orientation
+const detectOrientation = (): POrientationType => {
+  const portrait = matchMedia("(orientation: portrait)").matches;
+  const isPrimary = window.innerHeight >= window.innerWidth;
+  if (portrait) return isPrimary ? "portrait-primary" : "portrait-secondary";
+  return isPrimary ? "landscape-secondary" : "landscape-primary";
+};
+
+// Function to apply visual rotation based on orientation
+const applyVisualRotation = (orientation: POrientationType): void => {
+  const wrapper = document.querySelector('.orientation-wrapper');
+  if (!wrapper) return;
+
+  // Remove previous orientation classes
+  wrapper.classList.remove('portrait-primary', 'landscape-primary', 'portrait-secondary', 'landscape-secondary');
+
+  // Add current orientation class
+  wrapper.classList.add(orientation);
+
+  // Apply rotation transform based on orientation
+  const angleMap: Record<POrientationType, number> = {
     "portrait-primary": 0,
     "landscape-primary": 90,
     "portrait-secondary": 180,
     "landscape-secondary": -90,
   };
 
-  // Determine the current orientation from the native API, window.orientation, or media query.
-  const getNativeOrientation = (): OrientationType => {
-    if (screen.orientation?.type) return screen.orientation.type as OrientationType;
+  const angle = angleMap[orientation];
+  wrapper.style.setProperty('--orientation-transform', `rotate(${angle}deg)`);
+};
 
-    const angle =
-      (typeof window.orientation === "number" ? window.orientation : undefined) ||
-      ((screen.orientation as any)?.angle !== undefined ? (screen.orientation as any).angle : undefined) ||
-      (matchMedia("(orientation: portrait)").matches ? 0 : 90);
+// Main function to create the polyfill
+export const createScreenOrientationPolyfill = (): ScreenOrientationPolyfill => {
+  // Inject required CSS
+  injectCSS();
 
-    switch (Math.abs(Number(angle))) {
-      case 90:
-        return "landscape-primary";
-      case 180:
-        return "portrait-secondary";
-      default:
+  let lockedOrientation: OrientationLockType | null = null;
+  let currentOrientation: POrientationType = detectOrientation();
+  const listeners = new Set<(event: Event) => void>();
+
+  // Create the DOM structure if in fullscreen mode or before locking
+  let domStructure: ReturnType<typeof setupDOMStructure> | undefined;
+
+  const angleMap: Record<POrientationType, number> = {
+    "portrait-primary": 0,
+    "landscape-primary": 90,
+    "portrait-secondary": 180,
+    "landscape-secondary": -90,
+  };
+
+  const matchPOrientationType = (lock: OrientationLockType): POrientationType => {
+    switch (lock) {
+      case "portrait":
         return "portrait-primary";
+      case "landscape":
+        return "landscape-primary";
+      case "natural":
+        return window.innerHeight >= window.innerWidth ? "portrait-primary" : "landscape-primary";
+      case "any":
+        return detectOrientation();
+      default:
+        return lock as POrientationType;
     }
   };
 
-  // Dispatch a synthetic 'change' event.
-  const updateOrientation = (): void => {
-    const event = new Event("change");
-    listeners.forEach((listener) => listener(event));
-    if (polyfill.onchange) polyfill.onchange(event);
+  const updateOrientation = (newOrientation: POrientationType) => {
+    if (currentOrientation !== newOrientation) {
+      currentOrientation = newOrientation;
+      const event = new Event("change");
+      listeners.forEach((l) => l(event));
+      if (polyfill.onchange) polyfill.onchange(event);
+    }
   };
 
-  // Apply CSS rotation to the target element (fullscreen element or the document root).
-  const applyVisualRotation = (degrees?: number): void => {
-    const targetElement = (document.fullscreenElement || document.documentElement) as HTMLElement;
+  const handleOrientationChange = () => {
+    const newOrientation = detectOrientation();
 
-    if (degrees !== undefined) {
-      targetElement.style.transform = `rotate(${degrees}deg)`;
-      targetElement.style.transformOrigin = "center center";
-      targetElement.style.transition = "transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)";
+    if (lockedOrientation) {
+      const target = matchPOrientationType(lockedOrientation);
+      updateOrientation(target);
+      applyVisualRotation(target);
     } else {
-      targetElement.style.transform = "";
-      targetElement.style.transition = "";
+      updateOrientation(newOrientation);
+      applyVisualRotation(newOrientation);
     }
   };
 
-  // Calculate the rotation needed based on the current native orientation and the desired locked orientation.
-  const getRotation = (): number => {
-    if (!lockedOrientation) return 0;
-    const currentType = getNativeOrientation();
-    const currentAngle = angleMap[currentType];
+  // Helper function to request fullscreen with cross-browser support
+  const requestFullscreen = async (element: HTMLElement): Promise<void> => {
+    if (element.requestFullscreen) {
+      return element.requestFullscreen();
+    } else if ((element as any).webkitRequestFullscreen) {
+      return (element as any).webkitRequestFullscreen();
+    } else if ((element as any).mozRequestFullScreen) {
+      return (element as any).mozRequestFullScreen();
+    } else if ((element as any).msRequestFullscreen) {
+      return (element as any).msRequestFullscreen();
+    }
+    throw new Error("Fullscreen API not supported");
+  };
 
-    switch (lockedOrientation) {
-      case "landscape": {
-        if (currentType.startsWith("portrait")) {
-          const targetAngle = angleMap["landscape-primary"];
-          return targetAngle - currentAngle;
-        }
-        return 0;
-      }
-      case "portrait": {
-        if (currentType.startsWith("landscape")) {
-          const targetAngle = angleMap["portrait-primary"];
-          return targetAngle - currentAngle;
-        }
-        return 0;
-      }
-      default: {
-        const targetAngle = angleMap[lockedOrientation as OrientationType];
-        return targetAngle - currentAngle;
-      }
+  // Helper function to exit fullscreen with cross-browser support
+  const exitFullscreen = async (): Promise<void> => {
+    const doc = document as PartialDocumentSupport;
+
+    if (document.exitFullscreen) {
+      return document.exitFullscreen();
+    } else if (doc.webkitExitFullscreen) {
+      return doc.webkitExitFullscreen();
+    } else if (doc.mozCancelFullScreen) {
+      return doc.mozCancelFullScreen();
+    } else if (doc.msExitFullscreen) {
+      return doc.msExitFullscreen();
     }
   };
 
-  // Apply the calculated rotation visually.
-  const applyRotation = (): void => {
-    const rotation = getRotation();
-    applyVisualRotation(rotation);
+  // Function to check if currently in fullscreen mode
+  const isInFullscreen = (): boolean => {
+    const doc = document as PartialDocumentSupport;
+    return !!(
+      document.fullscreenElement ||
+      doc.webkitFullscreenElement ||
+      doc.mozFullScreenElement ||
+      doc.msFullscreenElement
+    );
   };
 
-  // Our polyfill object implements the ScreenOrientationPolyfill interface.
   const polyfill: ScreenOrientationPolyfill = {
-    get type(): OrientationType {
-      return getNativeOrientation();
+    get type() {
+      return currentOrientation;
     },
 
-    get angle(): number {
-      return angleMap[this.type];
+    get angle() {
+      return angleMap[currentOrientation];
     },
 
     async lock(orientation: OrientationLockType): Promise<void> {
-      if (lockedOrientation) {
-        throw new DOMException("Orientation already locked", "InvalidStateError");
-      }
-
-      const _document = document as PartialDocumentSupport;
-      const _orientation = screen.orientation as ScreenOrientationPolyfill;
-
-      // Require fullscreen mode.
-      if (!document.fullscreenElement && !_document.webkitFullscreenElement) {
-        throw new DOMException("Requires fullscreen mode", "SecurityError");
-      }
-
-      // // Attempt to use the native lock if supported.
-      // if (ORIENTATION_LOCK_SUPPORTED) {
-      //   try {
-      //     await _orientation.lock(orientation);
-      //     lockedOrientation = orientation;
-      //     return;
-      //   } catch (err) {
-      //     console.warn("Native orientation lock failed:", err);
-      //   }
-      // }
-
-      // For orientation "any", simply unlock.
+      // If orientation is "any", just unlock
       if (orientation === "any") {
         this.unlock();
         return;
       }
 
-      // Otherwise, set our locked orientation and apply rotation.
-      lockedOrientation = orientation;
-      applyRotation();
-    },
-
-    unlock(): void {
-      if (!lockedOrientation) return;
-      const _orientation = screen.orientation as ScreenOrientationPolyfill;
-
-      if (ORIENTATION_UNLOCK_SUPPORTED) {
-        _orientation.unlock();
-      } else {
-        applyVisualRotation();
+      // Setup DOM structure if not already done
+      if (!domStructure) {
+        domStructure = setupDOMStructure();
       }
 
+      // Request fullscreen if not already in fullscreen mode
+      if (!isInFullscreen()) {
+        try {
+          await requestFullscreen(document.documentElement);
+        } catch (error) {
+          throw new DOMException("Fullscreen request failed", "SecurityError");
+        }
+      }
+
+      lockedOrientation = orientation;
+      const target = matchPOrientationType(orientation);
+      updateOrientation(target);
+      applyVisualRotation(target);
+    },
+
+    unlock() {
+      if (!lockedOrientation) return;
+
       lockedOrientation = null;
+      const newOrientation = detectOrientation();
+      updateOrientation(newOrientation);
+      applyVisualRotation(newOrientation);
+
+      // Exit fullscreen if we're in it
+      if (isInFullscreen()) {
+        exitFullscreen().catch(console.error);
+      }
     },
 
-    get onchange(): EventListener | null {
-      return null;
+    onchange: null,
+
+    addEventListener(type: string, listener: EventListener): void {
+      if (type === "change") listeners.add(listener as (event: Event) => void);
     },
 
-    set onchange(listener: EventListener | null) {
-      if (listener) this.addEventListener("change", listener);
-    },
-
-    addEventListener(
-      type: "change",
-      listener: (this: ScreenOrientationPolyfill, ev: Event) => any,
-      options?: boolean | AddEventListenerOptions
-    ): void {
-      if (type === "change") listeners.add(listener as EventListener);
-    },
-
-    removeEventListener(
-      type: "change",
-      listener: (this: ScreenOrientationPolyfill, ev: Event) => any,
-      options?: boolean | EventListenerOptions
-    ): void {
-      if (type === "change") listeners.delete(listener as EventListener);
+    removeEventListener(type: string, listener: EventListener): void {
+      if (type === "change") listeners.delete(listener as (event: Event) => void);
     },
 
     dispatchEvent(event: Event): boolean {
       if (event.type === "change") {
-        listeners.forEach((listener) => listener(event));
+        listeners.forEach((l) => l(event));
+        return true;
       }
-      return true;
+      return false;
     },
   };
 
-  // When fullscreen status changes, unlock the orientation if leaving fullscreen.
-  const handleFullscreenChange = (): void => {
-    isFullscreen = !!document.fullscreenElement;
-    if (!isFullscreen && lockedOrientation) {
-      polyfill.unlock();
-    }
-  };
-
-  // Handle orientation changes by updating orientation state and reapplying any necessary rotation.
-  const handleOrientationChange = (): void => {
-    updateOrientation();
-    if (lockedOrientation) {
-      applyRotation();
-    } else {
-      applyVisualRotation();
-    }
-  };
-
-  // Wire up event listeners.
-  if (typeof window.addEventListener === "function") {
-    window.addEventListener("orientationchange", handleOrientationChange);
-    window.addEventListener("resize", handleOrientationChange);
-    document.addEventListener("fullscreenchange", handleFullscreenChange);
-    document.addEventListener("webkitfullscreenchange", handleFullscreenChange);
-  }
+  // Set up event listeners
+  window.addEventListener("orientationchange", handleOrientationChange);
+  window.addEventListener("resize", handleOrientationChange);
+  document.addEventListener("fullscreenchange", handleOrientationChange);
+  document.addEventListener("webkitfullscreenchange", handleOrientationChange);
+  document.addEventListener("mozfullscreenchange", handleOrientationChange);
+  document.addEventListener("MSFullscreenChange", handleOrientationChange);
 
   return polyfill;
 };
 
-// If we are in a browser and the orientation lock/unlock APIs are supported, install the polyfill.
-if (IS_BROWSER && ORIENTATION_LOCK_SUPPORTED && ORIENTATION_UNLOCK_SUPPORTED) {
-  const polyfill = createScreenOrientationPolyfill();
+// Install the polyfill if screen orientation API is not available
+export const installOrientationPolyfill = () => {
+  if (typeof window !== "undefined" &&
+    typeof screen !== "undefined" &&
+    (!screen.orientation || !screen.orientation.lock)) {
 
-  Object.defineProperty(screen, "_orientation", {
-    value: polyfill,
-    writable: true,
-    configurable: true,
-    enumerable: true,
-  });
+    const polyfill = createScreenOrientationPolyfill();
+
+    Object.defineProperty(screen, "orientation", {
+      configurable: true,
+      enumerable: true,
+      get: () => polyfill,
+    });
+
+    console.log("Screen Orientation API polyfill installed");
+  }
+};
+
+// Auto-install if in browser environment
+if (typeof window !== "undefined" && typeof screen !== "undefined") {
+  if (!screen.orientation || !screen.orientation.lock) {
+    installOrientationPolyfill();
+  }
 }
+
+// Export a function to manually check for orientation support
+export const isOrientationSupported = (): boolean => {
+  return typeof screen !== "undefined" &&
+    !!screen.orientation &&
+    typeof screen.orientation.lock === "function";
+};

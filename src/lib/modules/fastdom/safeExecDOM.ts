@@ -2,7 +2,7 @@
 // @ts-ignore
 import { DEBUG } from "@/lib/config/dev";
 // #v-endif
-import { getIsStrict, getPhase, setPhase } from "./stricterdom";
+import { getIsStrict, getDOMPhase, setDOMPhase } from "./stricterdom";
 
 type DOMOperation<T = any> = () => T;
 type ErrorHandler = (error: Error) => void;
@@ -24,7 +24,7 @@ const safeExecDOM = <T = any>(
   config: ExecutionConfig = {},
 ): T | undefined => {
   const { rescue, always, strict = false, rollback, throwOnError = false } = config;
-  const phase = getPhase();
+  const phase = getDOMPhase();
   const isStrictMode = strict || getIsStrict();
   let result: T | undefined;
   let error: Error | undefined;
@@ -63,7 +63,7 @@ const safeExecDOM = <T = any>(
       // #v-ifdef DEBUG
       console.warn("Resetting to safe measure phase");
       // #v-endif
-      setPhase("measure");
+      setDOMPhase("measure");
     }
   }
 

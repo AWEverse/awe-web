@@ -1,29 +1,62 @@
+import { Button } from "@mui/material";
 import AtSignIcon from "@/shared/common/icons/AtSignIcon";
 import FavouriteIcon from "@/shared/common/icons/FavouriteIcon";
 import UserMultipleIcon from "@/shared/common/icons/UserMultipleIcon";
 import IconExpand from "@/shared/ui/IconExpand";
-import { Button } from "@mui/material";
 
-const CommunityActions: React.FC = () => (
-  <div className="flex flex-row max-sm:flex-col items-center justify-between gap-2 md:gap-0">
-    <section className="flex flex-row items-center gap-2">
-      <Button className="rounded-full" size="small">
-        Follow
-      </Button>
-      <Button className="rounded-full" size="small">
-        Share
-      </Button>
-    </section>
-    <section className="text-sm self-end">
-      <div className="flex items-center gap-1 rounded-lg">
-        <IconExpand icon={<AtSignIcon size={28} />} label="@TechInnovators" />
-        <IconExpand icon={<FavouriteIcon size={24} />} label="Favourite" />
+import "./CommunityActions.scss";
+
+interface CommunityActionsProps {
+  communityHandle?: string;
+  memberCount?: string;
+}
+
+const CommunityActions: React.FC<CommunityActionsProps> = ({
+  communityHandle = "@TechInnovators",
+  memberCount = "3.5k Members",
+}) => (
+  <div
+    className="community-actions"
+    role="region"
+    aria-label="Community actions"
+  >
+    <div className="community-actions__container">
+      <div className="community-actions__buttons">
+        <Button
+          variant="contained"
+          size="small"
+          className="community-actions__button"
+          aria-label="Follow community"
+        >
+          Follow
+        </Button>
+        <Button
+          variant="outlined"
+          size="small"
+          className="community-actions__button"
+          aria-label="Share community"
+        >
+          Share
+        </Button>
+      </div>
+      <div className="community-actions__info">
+        <IconExpand
+          icon={<AtSignIcon size={24} />}
+          label={communityHandle}
+          aria-label={`Community handle: ${communityHandle}`}
+        />
+        <IconExpand
+          icon={<FavouriteIcon size={24} />}
+          label="Favourite"
+          aria-label="Add to favourites"
+        />
         <IconExpand
           icon={<UserMultipleIcon size={24} />}
-          label="3.5k Members"
+          label={memberCount}
+          aria-label={`Community members: ${memberCount}`}
         />
       </div>
-    </section>
+    </div>
   </div>
 );
 

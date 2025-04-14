@@ -6,6 +6,13 @@ import Tab, { TabProps } from "./Tab";
 import { capitalize } from "@/lib/utils/helpers/string/stringFormaters";
 import "./TabList.scss";
 import useUniqueId from "@/lib/hooks/utilities/useUniqueId";
+import ContextMenu, {
+  ContextMenuOptionType,
+  useContextMenuHandlers,
+} from "@/entities/context-menu";
+import { EMouseButton } from "@/lib/core";
+import { useFastClick } from "../hooks/mouse/useFastClick";
+import ActionButton from "./ActionButton";
 
 type TabProperty = "title" | "badgeCount" | "isBlocked" | "isBadgeActive";
 type TabWithProperties = { id: number | string } & Pick<TabProps, TabProperty>;
@@ -19,6 +26,7 @@ interface OwnProps {
   startDecorator?: ReactNode;
   endDecorator?: ReactNode;
   disableScroll?: boolean;
+  contextMenuOptions?: ContextMenuOptionType<number>[];
 }
 
 const TabList: FC<OwnProps> = (props) => {
@@ -31,10 +39,13 @@ const TabList: FC<OwnProps> = (props) => {
     startDecorator,
     endDecorator,
     disableScroll = false,
+    contextMenuOptions,
   } = props;
 
   const uuid = useUniqueId("tab");
   const containerRef = useRef<HTMLDivElement>(null);
+  const shouldRenderContextMenu =
+    contextMenuOptions && contextMenuOptions.length > 0;
 
   const isFolderVariant = variant === "folders";
   const tabListClassName = buildClassName(
@@ -52,40 +63,87 @@ const TabList: FC<OwnProps> = (props) => {
 
   useHorizontalScrollToContanier(containerRef, activeTab);
 
-  return (
-    <nav aria-label="Tab navigation" className={tabListClassName}>
-      {startDecorator}
-      <div
-        ref={containerRef}
-        aria-orientation="horizontal"
-        className="TabList-Section"
-        role="tablist"
-      >
-        {tabs.map(({ id, title, ...tabProps }, index) => {
-          const key = `${id}_${title}`;
-          const isActive = index === activeTab;
-          const currentTitle =
-            !isFolderVariant && title === "All" ? "All folders" : title;
-          const tabIndex = isActive ? 0 : -1;
+  const {
+    isContextMenuOpen,
+    contextMenuAnchor,
+    handleBeforeContextMenu,
+    handleContextMenu,
+    handleContextMenuHide,
+    handleContextMenuClose,
+  } = useContextMenuHandlers({
+    elementRef: containerRef,
+    isMenuDisabled: !shouldRenderContextMenu,
+    targets: ['[role="tab"]'],
+  });
 
-          return (
-            <Tab
-              layoutId={uuid}
-              key={key}
-              aria-selected={isActive}
-              clickArg={index}
-              isActive={isActive}
-              tabIndex={tabIndex}
-              title={currentTitle}
-              variant={variant}
-              onClick={onSwitchTab}
-              {...tabProps}
-            />
-          );
-        })}
-      </div>
-      {endDecorator}
-    </nav>
+  const { handleClick, handleMouseDown } = useFastClick(
+    (e: React.MouseEvent<HTMLDivElement>) => {
+      if (!shouldRenderContextMenu && e.button === EMouseButton.Secondary) {
+        handleBeforeContextMenu(e);
+      }
+
+      if (e.type === "mousedown" && e.button !== EMouseButton.Main) {
+        return;
+      }
+    },
+  );
+
+  return (
+    <>
+      <nav aria-label="Tab navigation" className={tabListClassName}>
+        {startDecorator}
+        <div
+          ref={containerRef}
+          aria-orientation="horizontal"
+          className="TabList-Section"
+          role="tablist"
+          onClick={handleClick}
+          onMouseDown={handleMouseDown}
+          onContextMenu={handleContextMenu}
+        >
+          {tabs.map(({ id, title, ...tabProps }, index) => {
+            const key = `${id}_${title}`;
+            const isActive = index === activeTab;
+            const currentTitle =
+              !isFolderVariant && title === "All" ? "All folders" : title;
+            const tabIndex = isActive ? 0 : -1;
+
+            return (
+              <Tab
+                layoutId={uuid}
+                key={key}
+                aria-selected={isActive}
+                clickArg={index}
+                isActive={isActive}
+                tabIndex={tabIndex}
+                title={currentTitle}
+                variant={variant}
+                onClick={onSwitchTab}
+                {...tabProps}
+              />
+            );
+          })}
+        </div>
+        {endDecorator}
+      </nav>
+      {contextMenuOptions && contextMenuOptions.length > 0 && (
+        <ContextMenu
+          isOpen={isContextMenuOpen}
+          position={contextMenuAnchor!}
+          onClose={handleContextMenuClose}
+          onCloseAnimationEnd={handleContextMenuHide}
+          withPortal
+        >
+          <ActionButton size="sm" fullWidth>
+            Edit folder
+          </ActionButton>
+
+          <ActionButton color="error" variant="text" size="sm" fullWidth>
+            Remove folder
+          </ActionButton>
+        </ContextMenu>
+      )}
+    </>
   );
 };
 

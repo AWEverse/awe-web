@@ -1,9 +1,25 @@
+import { useRef } from "react";
 import CommRecCard from "@/entities/CommRecCard";
 import FlatList from "@/entities/FlatList";
 import useHorizontalScroll from "@/shared/hooks/DOM/useHorizontalScroll";
-import { useRef } from "react";
 
-const CommunityRecomendations = () => {
+import "./CommunityRecomendations.scss";
+
+interface Community {
+  id: string;
+  title: string;
+  description: string;
+  value: string;
+  avatarSrc?: string;
+}
+
+interface CommunityRecommendationsProps {
+  communities?: Community[];
+}
+
+const CommunityRecommendations: React.FC<CommunityRecommendationsProps> = ({
+  communities = defaultCommunities,
+}) => {
   const containerRef = useRef<HTMLDivElement>(null);
 
   useHorizontalScroll(containerRef, {
@@ -13,26 +29,32 @@ const CommunityRecomendations = () => {
   });
 
   return (
-    <div ref={containerRef} className="flex gap-2 overflow-x-auto">
-      <FlatList
-        disableWrapper
-        horizontal
-        data={communities}
-        keyExtractor={(item) => item.title}
-        renderItem={({ title, value, description }) => (
-          <CommRecCard
-            avatarSrc="https://i.pravatar.cc/300"
-            desc={description}
-            title={title}
-            value={value}
-          />
-        )}
-      />
-    </div>
+    <section
+      className="community-recommendations"
+      aria-label="Recommended communities"
+    >
+      <div ref={containerRef} className="community-recommendations__container">
+        <FlatList
+          disableWrapper
+          horizontal
+          data={communities}
+          keyExtractor={(item) => item.title}
+          renderItem={({ title, description, value }) => (
+            <CommRecCard
+              avatarSrc={"https://i.pravatar.cc/300"}
+              desc={description}
+              title={title}
+              value={value}
+              className="community-recommendations__card"
+            />
+          )}
+        />
+      </div>
+    </section>
   );
 };
 
-const communities = [
+const defaultCommunities = [
   {
     title: "TechInnovators",
     description: "Technology innovation hub",
@@ -110,4 +132,6 @@ const communities = [
   },
 ];
 
-export default CommunityRecomendations;
+// Export default communities for reusability
+export { defaultCommunities };
+export default CommunityRecommendations;

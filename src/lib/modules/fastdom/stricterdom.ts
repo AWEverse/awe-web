@@ -3,7 +3,7 @@ import LAYOUT_CAUSES from "./layoutCauses";
 
 // Type Definitions
 type AnyFunction = (...args: any[]) => any;
-type Phase = "measure" | "mutate";
+export type DOMPhase = "measure" | "mutate" | "reflow";
 type ErrorHandler = (error: Error) => void;
 
 // Default Error Handler with improved formatting
@@ -20,7 +20,7 @@ const defaultErrorHandler: ErrorHandler = (error) => {
 };
 
 // State Variables
-let currentPhase: Phase = "measure";
+let currentDOMPhase: DOMPhase = "measure";
 let isStrictModeEnabled = false;
 let errorHandler: ErrorHandler = defaultErrorHandler;
 const nativeMethods = new Map<string, AnyFunction>();
@@ -50,9 +50,9 @@ function extractLocationFromStack(stack: string | undefined): string {
   return "unknown location";
 }
 
-// Phase Control
-export const setPhase = (newPhase: Phase) => { currentPhase = newPhase; };
-export const getPhase = () => currentPhase;
+// DOMPhase Control
+export const setDOMPhase = (newDOMPhase: DOMPhase) => { currentDOMPhase = newDOMPhase; };
+export const getDOMPhase = () => currentDOMPhase;
 export const getIsStrict = () => isStrictModeEnabled;
 
 // Strict Mode Toggle
@@ -76,30 +76,30 @@ export const disableStrict = () => {
 
 // Force Methods
 export const forceMeasure = <T>(callback: () => T): T => {
-  if (currentPhase !== "mutate") {
-    const current = JSON.stringify(currentPhase);
+  if (currentDOMPhase !== "mutate") {
+    const current = JSON.stringify(currentDOMPhase);
     throw new Error(
-      `forceMeasure: Expected 'mutate' phase to allow measurements, ` +
-      `but current phase is '${current}'. ` +
-      "Wrap measurements in forceMeasure() only during 'mutate' phase."
+      `forceMeasure: Expected 'mutate' DOMPhase to allow measurements, ` +
+      `but current DOMPhase is '${current}'. ` +
+      "Wrap measurements in forceMeasure() only during 'mutate' DOMPhase."
     );
   }
-  const original = currentPhase;
-  currentPhase = "measure";
+  const original = currentDOMPhase;
+  currentDOMPhase = "measure";
   try {
     return callback();
   } finally {
-    currentPhase = original;
+    currentDOMPhase = original;
   }
 };
 
 export const forceMutation = <T>(callback: () => T, nodes: Node | Node[]): T => {
-  if (currentPhase !== "measure") {
-    const current = JSON.stringify(currentPhase);
+  if (currentDOMPhase !== "measure") {
+    const current = JSON.stringify(currentDOMPhase);
     throw new Error(
-      `forceMutation: Expected 'measure' phase to allow mutations, ` +
-      `but current phase is '${current}'. ` +
-      "Wrap mutations in forceMutation() only during 'measure' phase."
+      `forceMutation: Expected 'measure' DOMPhase to allow mutations, ` +
+      `but current DOMPhase is '${current}'. ` +
+      "Wrap mutations in forceMutation() only during 'measure' DOMPhase."
     );
   }
   if (isStrictModeEnabled) {
@@ -204,7 +204,7 @@ const clearLayoutDetectors = () => {
 // Mutation Observer Setup
 const setupMutationObserver = () => {
   mutationObserver = new MutationObserver(mutations => {
-    if (currentPhase === "mutate") return;
+    if (currentDOMPhase === "mutate") return;
     mutations.forEach(handleMutation);
   });
   mutationObserver.observe(document.body, {
@@ -222,12 +222,12 @@ const clearMutationObserver = () => {
 
 // Error Handling Functions
 const onLayoutError = (property: string, element: Node) => {
-  if (currentPhase === "measure") return;
+  if (currentDOMPhase === "measure") return;
   const location = extractLocationFromStack(new Error().stack);
   const elementInfo = getElementInfo(element);
   const errorMessage = `Unexpected layout measurement: "${property}" on ${elementInfo} ` +
-    `during '${currentPhase}' phase at ${location}. ` +
-    "Use forceMeasure() for intentional measurements outside 'measure' phase.";
+    `during '${currentDOMPhase}' DOMPhase at ${location}. ` +
+    "Use forceMeasure() for intentional measurements outside 'measure' DOMPhase.";
   reportError(errorMessage);
 };
 
@@ -243,8 +243,8 @@ const handleMutation = (mutation: MutationRecord) => {
   const elementInfo = getElementInfo(mutation.target);
   const location = extractLocationFromStack(new Error().stack);
   const errorMessage = `Unexpected DOM mutation: ${detail} on ${elementInfo} ` +
-    `during '${currentPhase}' phase at ${location}. ` +
-    "Use forceMutation() for intentional mutations during 'measure' phase.";
+    `during '${currentDOMPhase}' DOMPhase at ${location}. ` +
+    "Use forceMutation() for intentional mutations during 'measure' DOMPhase.";
   reportError(errorMessage);
 };
 

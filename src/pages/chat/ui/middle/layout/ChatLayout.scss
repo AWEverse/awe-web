@@ -2,39 +2,30 @@
   --left-column-width: 380px;
   --right-column-width: 420px;
   --middle-utils-width: 456px;
-
   --chat-input-size: 3.375rem;
   --chat-input-padding: 0.8125rem;
   --chat-input-inner-padding: 0.5rem;
 
   position: relative;
   display: flex;
+  width: 100%;
+  height: 100%;
   max-width: 100dvw;
   max-height: 100dvh;
-  height: 100%;
-  width: 100%;
-
   overflow: hidden;
 
   @media (min-width: 1276px) {
-    --chat-padding-x: calc(var(--right-column-width) / 2 + var(--chat-input-padding) * 2);
+    --chat-padding-x: calc(var(--right-column-width) / 2 + 2 * var(--chat-input-padding));
   }
 
   @media (min-width: 1025px) and (max-width: 1275px) {
-    --chat-padding-x: calc(var(--right-column-width) / 6 + var(--chat-input-padding) * 2);
+    --chat-padding-x: calc(var(--right-column-width) / 6 + 2 * var(--chat-input-padding));
   }
 
-  @media (max-width: 1024px) {
-    --chat-padding-x: calc(var(--right-column-width) / 8 + var(--chat-input-padding) * 2);
+  @media (min-width: 768px) and (max-width: 1024px) {
+    --chat-padding-x: var(--chat-input-padding);
   }
 
-  @media (min-width: 768px) and (max-width: 1023px) {
-    --chat-padding-x: calc(var(--chat-input-padding));
-  }
-
-  @media (max-width: 640px) {
-    flex-direction: column;
-  }
 
   @media (min-width: 1276px) {
     // The !important here is ensuring that the transform value is applied,

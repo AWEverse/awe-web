@@ -120,7 +120,7 @@ const SlideButton: FC<SlideButtonProps & ActionButtonProps> = ({
         <TrackNavigation count={totalSlides} index={slideIndex} />
       </div>
 
-      <AnimatePresence mode="popLayout">
+      <AnimatePresence initial={false} mode="popLayout">
         <motion.div
           key={slideIndex}
           variants={animationVariants}

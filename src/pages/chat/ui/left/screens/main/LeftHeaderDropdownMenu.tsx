@@ -1,12 +1,8 @@
-import { FC } from "react";
-import FavoriteIcon from "@mui/icons-material/Favorite";
+import React, { FC, useState } from "react";
 import ContactsIcon from "@mui/icons-material/Contacts";
 import SettingsIcon from "@mui/icons-material/Settings";
 import AnimationIcon from "@mui/icons-material/Animation";
-import BugReportIcon from "@mui/icons-material/BugReport";
-import AppsIcon from "@mui/icons-material/Apps";
 import DownloadIcon from "@mui/icons-material/Download";
-import DropdownMenu, { TriggerProps } from "@/shared/ui/dropdown";
 import {
   ArrowForwardIosRounded,
   DarkModeRounded,
@@ -17,33 +13,27 @@ import {
   ManageAccountsRounded,
   MenuRounded,
 } from "@mui/icons-material";
+import DropdownMenu, { TriggerProps } from "@/shared/ui/dropdown";
 import ActionButton from "@/shared/ui/ActionButton";
-
-import s from "./LeftHeaderDropdownMenu.module.scss";
-import { useStableCallback } from "@/shared/hooks/base";
-import useChatStore from "@/pages/chat/store/useChatSelector";
-import { LeftColumnScreenType } from "@/pages/chat/types/LeftColumn";
-import { useColorScheme } from "@mui/material/styles";
 import IconButton from "@/shared/ui/IconButton";
-import Modal from "@/shared/ui/Modal";
-import { useBooleanState } from "@/shared/hooks/state";
 import { Avatar } from "@mui/material";
 import buildClassName from "@/shared/lib/buildClassName";
 import MenuSeparator from "@/shared/ui/MenuSeparator";
 import SlideButton from "@/entities/SlideButton";
+import { useLeftScreenNavigation } from "../../lib//ScreenContext";
+import { useColorScheme } from "@mui/material/styles";
+import { useStableCallback } from "@/shared/hooks/base";
+import s from "./LeftHeaderDropdownMenu.module.scss";
 
-interface OwnProps {}
-
-interface StateProps {}
-
-const LeftHeaderDropdownMenu: FC<OwnProps & StateProps> = () => {
+const LeftHeaderDropdownMenu: FC = () => {
   const { mode, setMode } = useColorScheme();
-  const [downloadModal, setDownloadModal, resetDownloadModal] =
-    useBooleanState(false);
+  const { goTo } = useLeftScreenNavigation();
+
+  const [animationLevel, setAnimationLevel] = useState<
+    "none" | "basic" | "advanced"
+  >("basic");
 
   const themeLabel = `${mode === "dark" ? "Светлая" : "Темная"} тема`;
-
-  const setScreen = useChatStore((store) => store.setScreen);
 
   const TriggerButton: FC<TriggerProps> = ({ isOpen, onTrigger }) => (
     <IconButton active={isOpen} size="medium" onClick={onTrigger}>
@@ -52,150 +42,143 @@ const LeftHeaderDropdownMenu: FC<OwnProps & StateProps> = () => {
   );
 
   const handleArchiveClick = useStableCallback(() => {
-    setScreen(LeftColumnScreenType.Archived);
+    goTo("Archived");
   });
 
-  const handleSettingClick = useStableCallback(() => {
-    setScreen(LeftColumnScreenType.SettingsNavigation);
+  const handleSettingsClick = useStableCallback(() => {
+    goTo("SettingsNavigation");
   });
 
   const handleContactsClick = useStableCallback(() => {
-    setScreen(LeftColumnScreenType.Contacts);
+    goTo("Contacts");
   });
 
   const handleThemeClick = useStableCallback(() => {
     setMode(mode === "light" ? "dark" : "light");
   });
 
+  const handleAnimationChange = useStableCallback(() => {
+    setAnimationLevel((prev) =>
+      prev === "none" ? "basic" : prev === "basic" ? "advanced" : "none",
+    );
+  });
+
   return (
-    <>
-      <DropdownMenu
-        className={s.LeftDropdown}
-        position="top-left"
-        shouldClose={downloadModal}
-        triggerButton={TriggerButton}
+    <DropdownMenu
+      className={s.LeftDropdown}
+      position="top-left"
+      triggerButton={TriggerButton}
+    >
+      <div className={buildClassName(s.User)}>
+        <Avatar
+          className={s.Avatar}
+          src="https://picsum.photos/200"
+          alt="User avatar"
+        />
+
+        <div className="flex flex-col">
+          <p className={buildClassName("awe-title", "awe-overflow-ellipsis")}>
+            Andrii Volynets
+          </p>
+          <small
+            className={buildClassName(
+              s.badge,
+              "awe-subtitle",
+              "awe-overflow-ellipsis",
+            )}
+          >
+            @volynetstyle
+          </small>
+        </div>
+
+        <IconButton
+          title={themeLabel}
+          className={s.SettingsButton}
+          size="medium"
+          onClick={handleThemeClick}
+        >
+          {mode === "light" ? <DarkModeRounded /> : <LightModeRounded />}
+        </IconButton>
+      </div>
+
+      <p className={buildClassName("awe-title", s.UserDescription)}>
+        Lorem ipsum dolor sit amet, consectetur adipisicing elit.
+      </p>
+
+      <div className={s.UserManageSection}>
+        <ActionButton
+          icon={<ManageAccountsRounded />}
+          title="Manage accounts"
+          disabled
+        >
+          My accounts (2)
+        </ActionButton>
+
+        <div className={s.Divider} />
+
+        <IconButton
+          className={s.SettingsButton}
+          size="medium"
+          title="Settings"
+          onClick={handleSettingsClick}
+        >
+          <SettingsIcon className={s.SettingIcon} />
+          <ArrowForwardIosRounded className={s.ArrowIcon} fontSize="small" />
+        </IconButton>
+      </div>
+      <MenuSeparator size="thick" />
+
+      <small className={s.ActionsTitle}>Collection</small>
+      <ActionButton
+        className="btn-menu-item"
+        icon={<FolderCopyRounded />}
+        label="Архив"
+        title="Go to Archived"
+        onClick={handleArchiveClick}
+      />
+      <ActionButton
+        className="btn-menu-item"
+        icon={<ContactsIcon />}
+        label="Контакты"
+        title="Go to Contacts"
+        onClick={handleContactsClick}
+      />
+      <ActionButton
+        className="btn-menu-item"
+        icon={<GroupAddRounded />}
+        label="Create group"
+        title="Create a new group"
+        disabled
+      />
+
+      <SlideButton
+        classNames={{ child: "flex gap-2 items-center" }}
+        onClick={handleAnimationChange}
       >
-        <div className={buildClassName("awe-user", s.User)}>
-          <Avatar className={s.Avatar} src="https://picsum.photos/200" />
+        <>
+          <AnimationIcon />
+          <span data-level="disabled">No Animations</span>
+        </>
+        <>
+          <AnimationIcon />
+          <span data-level="basic">Fast Animations</span>
+        </>
+        <>
+          <AnimationIcon />
+          <span data-level="advanced">Full Animations</span>
+        </>
+      </SlideButton>
 
-          <div className="flex flex-col">
-            <p className={buildClassName("awe-title", "awe-overflow-ellipsis")}>
-              Andrii Volynets
-            </p>
-            <small
-              className={buildClassName(
-                s.badge,
-                "awe-subtitle",
-                "awe-overflow-ellipsis",
-              )}
-            >
-              @volynetstyle
-            </small>
-          </div>
-
-          <IconButton
-            title={themeLabel}
-            className={s.SettingsButton}
-            size="medium"
-            onClick={handleThemeClick}
-          >
-            {mode === "light" ? <DarkModeRounded /> : <LightModeRounded />}
-          </IconButton>
-        </div>
-
-        <p className={buildClassName("awe-title", s.UserDescription)}>
-          Lorem ipsum dolor sit amet, consectetur adipisicing elit.
-        </p>
-
-        <div className={s.UserManageSection}>
-          <ActionButton
-            icon={<ManageAccountsRounded />}
-            title="Manage accounts (2)"
-          >
-            My accounts (2)
-          </ActionButton>
-
-          <div className={s.Divider} />
-
-          <IconButton
-            className={s.SettingsButton}
-            size="medium"
-            onClick={handleSettingClick}
-          >
-            <SettingsIcon className={s.SettingIcon} />
-            <ArrowForwardIosRounded className={s.ArrowIcon} fontSize="small" />
-          </IconButton>
-        </div>
-        <MenuSeparator size="thick" />
-
-        <small className={s.ActionsTitle}>Collection</small>
-        <ActionButton
-          className="btn-menu-item"
-          icon={<FolderCopyRounded />}
-          label="Архив"
-          onClick={handleArchiveClick}
-        />
-        <ActionButton
-          className="btn-menu-item"
-          icon={<FavoriteIcon />}
-          label="Избранное"
-        />
-        <ActionButton
-          className="btn-menu-item"
-          icon={<ContactsIcon />}
-          label="Контакты"
-          onClick={handleContactsClick}
-        />
-        <ActionButton
-          className="btn-menu-item"
-          icon={<GroupAddRounded />}
-          label="Create group"
-        />
-
-        <SlideButton classNames={{ child: "flex gap-2 items-center" }}>
-          <>
-            <AnimationIcon />
-            <span data-level="disabled">No Animations</span>
-          </>
-          <>
-            <AnimationIcon />
-            <span data-level="basic">Fast Animations</span>
-          </>
-          <>
-            <AnimationIcon />
-            <span data-level="advanced">Full Animations</span>
-          </>
-        </SlideButton>
-
-        <ActionButton
-          className="btn-menu-item"
-          icon={<DownloadIcon />}
-          label="Скачать"
-          onClick={setDownloadModal}
-        />
-        <ActionButton
-          className="btn-menu-item"
-          icon={<AppsIcon />}
-          label="Приложения"
-        />
-        <MenuSeparator size="thick" />
-        <ActionButton
-          className="btn-menu-item"
-          icon={<BugReportIcon />}
-          label="Ошибки"
-        />
-        <ActionButton
-          className="btn-menu-item"
-          icon={<HelpRounded />}
-          label="Помощь"
-        />
-      </DropdownMenu>
-
-      <Modal isOpen={downloadModal} onClose={resetDownloadModal}>
-        lablflasf
-      </Modal>
-    </>
+      <MenuSeparator size="thick" />
+      <ActionButton
+        className="btn-menu-item"
+        icon={<HelpRounded />}
+        label="Помощь"
+        title="Get help"
+        disabled
+      />
+    </DropdownMenu>
   );
 };
 
-export default LeftHeaderDropdownMenu;
+export default React.memo(LeftHeaderDropdownMenu);

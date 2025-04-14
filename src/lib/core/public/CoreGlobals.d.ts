@@ -1,4 +1,13 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
+/**
+ * A branded type to prevent misuse of values by associating a unique identifier.
+ * Used to distinguish specific Uint8Array instances (e.g., PublicKey, PrivateKey) from generic ones.
+ * @template T The base type to brand (e.g., Uint8Array).
+ * @template B The unique brand identifier as a string literal.
+ *
+ * @todo move to CoreGlobals.d.ts
+ */
+type Brand<T, B extends string> = T & { __brand: B };
 
 /**
  * Creates a partial version of a given type where all properties are optional.
