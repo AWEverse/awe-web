@@ -15,7 +15,7 @@ export class Ed25519 {
    * Generates a new Ed25519 key pair.
    * @returns {Promise<CryptoKeyPair>} An object with publicKey and privateKey (both 32 bytes).
    */
-  static async generateKeyPair(): Promise<CryptoKeyPair> {
+  static generateKeyPair(): CryptoKeyPair {
 
     const { publicKey, privateKey } = sodium.crypto_sign_keypair();
 
@@ -31,7 +31,7 @@ export class Ed25519 {
    * @param privateKey Ed25519 private key (32-byte seed).
    * @returns {Promise<PublicKey>} Corresponding public key (32 bytes).
    */
-  static async getPublicKey(privateKey: PrivateKey): Promise<PublicKey> {
+  static getPublicKey(privateKey: PrivateKey): PublicKey {
 
     if (!(privateKey instanceof Uint8Array) || privateKey.length !== 32) {
       throw new Error('Invalid private key');
@@ -45,9 +45,9 @@ export class Ed25519 {
    * Signs a message with the given Ed25519 private key.
    * @param message Message to be signed.
    * @param privateKey 32-byte seed private key.
-   * @returns {Promise<Uint8Array>} Signature (64 bytes).
+   * @returns {Uint8Array} Signature (64 bytes).
    */
-  static async sign(message: Uint8Array, privateKey: PrivateKey): Promise<Uint8Array> {
+  static sign(message: Uint8Array, privateKey: PrivateKey): Uint8Array {
 
     if (!(message instanceof Uint8Array)) {
       throw new TypeError('Message must be Uint8Array');
@@ -68,9 +68,9 @@ export class Ed25519 {
    * @param signature 64-byte Ed25519 signature.
    * @param message Message that was signed.
    * @param publicKey 32-byte public key.
-   * @returns {Promise<boolean>} true if signature is valid, false otherwise.
+   * @returns {Uint8Array} true if signature is valid, false otherwise.
    */
-  static async verify(signature: Uint8Array, message: Uint8Array, publicKey: PublicKey): Promise<boolean> {
+  static verify(signature: Uint8Array, message: Uint8Array, publicKey: PublicKey): boolean {
 
     if (
       !(signature instanceof Uint8Array) || signature.length !== 64 ||

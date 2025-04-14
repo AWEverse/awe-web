@@ -1,11 +1,11 @@
 import initAnimationsStore from "@/store/animations/initAnimationsStore";
 import initI18n from "../providers/i18n-provider";
 import initializeSecurityAsync from "./initializeDOMSecurity";
-import { ready } from 'libsodium-wrappers';
 import initClientFingerprint from "./initClientFingerprint";
+import { ready as initLibsodium } from 'libsodium-wrappers';
 
 export default async function () {
-  await (async () => ready)();
+  await (async () => { await initLibsodium })();
 
   await initAnimationsStore();
   await initI18n();

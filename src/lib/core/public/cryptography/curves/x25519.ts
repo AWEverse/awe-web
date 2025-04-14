@@ -17,7 +17,7 @@ export class X25519 {
    *
    * @returns {Promise<CryptoKeyPair>} - A secure random CryptoKeyPair { privateKey, publicKey }
    */
-  static async generateKeyPair(): Promise<CryptoKeyPair> {
+  static generateKeyPair(): CryptoKeyPair {
 
     const { privateKey, publicKey } = sodium.crypto_kx_keypair(); // 32 + 32 bytes
 
@@ -37,7 +37,7 @@ export class X25519 {
    * @param publicKey {PublicKey} - Recipient's public key (32 bytes).
    * @returns {Promise<Uint8Array>} A promise resolving to the shared secret (32 bytes).
    */
-  static async computeSharedSecret(privateKey: PrivateKey, publicKey: PublicKey): Promise<Uint8Array> {
+  static computeSharedSecret(privateKey: PrivateKey, publicKey: PublicKey): Uint8Array {
 
     const priv = new Uint8Array(privateKey); // Copy to isolate
     const pub = new Uint8Array(publicKey);

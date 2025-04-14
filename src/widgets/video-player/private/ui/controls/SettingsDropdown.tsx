@@ -1,5 +1,5 @@
 import DropdownMenu, { TriggerProps } from "@/shared/ui/dropdown";
-import { FC, JSX, memo, useState } from "react";
+import { FC, memo, useState } from "react";
 import { useStableCallback } from "@/shared/hooks/base";
 import { AnimatePresence, motion } from "framer-motion";
 import SettingSleep from "./screens/SettingSleep";

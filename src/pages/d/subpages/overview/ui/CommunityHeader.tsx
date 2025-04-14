@@ -1,26 +1,33 @@
 import { Avatar } from "@mui/material";
+import "./CommunityHeader.scss";
 
-const CommunityHeader: React.FC = () => (
-  <div className="flex items-center gap-4">
-    <img
-      src="https://i.pravatar.cc/300"
-      className="rounded-full w-[120px] h-[120px]"
-    />
-    <div className="flex flex-col">
-      {/* Community type: Mobile = 16px, Desktop = 24px */}
-      <p className="font-normal text-base sm:text-2xl">Community</p>
-      {/* Community title: Mobile = 24px, Desktop = 36px with a line-height of 1.2 */}
-      <p className="font-bold text-4xl sm:text-xl leading-[1.2]">
-        TechInnovators
-      </p>
-      {/* Community description: Mobile = 12px, Desktop = 14px with a line-height of 1.5 */}
-      <p className="font-normal text-md sm:text-sm leading-[1.5]">
-        A community for discussing anything related to the React UI framework
-        and its ecosystem. Join the Reactiflux Discord (reactiflux.com) for
-        additional React discussion and help.
-      </p>
+interface CommunityHeaderProps {
+  avatarUrl?: string;
+  communityType?: string;
+  communityName?: string;
+  description?: string;
+}
+
+const CommunityHeader: React.FC<CommunityHeaderProps> = ({
+  avatarUrl = "https://i.pravatar.cc/300",
+  communityType = "Community",
+  communityName = "TechInnovators",
+  description = "A community for discussing anything related to the React UI framework and its ecosystem. Join the Reactiflux Discord (reactiflux.com) for additional React discussion and help.",
+}) => (
+  <header className="community-header community__background" role="banner">
+    <div className="community-header__container">
+      <Avatar
+        src={avatarUrl}
+        alt={`${communityName} avatar`}
+        className="community-header__avatar"
+      />
+      <div className="community-header__content">
+        <span className="community-header__type">{communityType}</span>
+        <h1 className="community-header__title">{communityName}</h1>
+        <p className="community-header__description">{description}</p>
+      </div>
     </div>
-  </div>
+  </header>
 );
 
 export default CommunityHeader;

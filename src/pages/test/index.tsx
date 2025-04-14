@@ -7,6 +7,15 @@ import {
   computeSenderSharedSecret,
   generateKeyBundle,
 } from "@/lib/core/public/cryptography/X3DHPQ";
+import {
+  Crypto,
+  State,
+  ratchetDecrypt,
+  ratchetEncrypt,
+  ratchetInitSender,
+  ratchetInitReceiver,
+} from "@/lib/core/public/cryptography/DoubleRatchet";
+import sodium from "libsodium-wrappers";
 
 const styles = {
   container: {
@@ -82,7 +91,7 @@ const AdvancedEncryptionPage: React.FC = () => {
   const [decryptedMessage, setDecryptedMessage] = useState("");
   const [showKeys, setShowKeys] = useState(false);
 
-  // Generate key pairs for Alice and Bob
+  // Generate key pairs for Sender and Receiver
   const [aliceKeys] = useState(() => nacl.box.keyPair());
   const [bobKeys] = useState(() => nacl.box.keyPair());
 
@@ -198,11 +207,11 @@ const AdvancedEncryptionPage: React.FC = () => {
       {showKeys && (
         <div style={styles.keyDisplay}>
           <p>
-            <strong>Alice's Public Key:</strong>{" "}
+            <strong>Sender's Public Key:</strong>{" "}
             {publicKeyToString(aliceKeys.publicKey)}
           </p>
           <p>
-            <strong>Bob's Public Key:</strong>{" "}
+            <strong>Receiver's Public Key:</strong>{" "}
             {publicKeyToString(bobKeys.publicKey)}
           </p>
         </div>
@@ -242,8 +251,8 @@ async function testProtocol() {
       initialMessage,
     );
 
-    console.log("Alice Secret:", Buffer.from(aliceSecret).toString("hex"));
-    console.log("Bob Secret:", Buffer.from(bobSecret).toString("hex"));
+    console.log("Sender Secret:", Buffer.from(aliceSecret).toString("hex"));
+    console.log("Receiver Secret:", Buffer.from(bobSecret).toString("hex"));
     console.log(
       "Secrets match:",
       Buffer.from(aliceSecret).toString("hex") ===
@@ -282,24 +291,24 @@ async function runAllTests(iterations = 10) {
     console.log(`\n--- Iteration ${i + 1} ---`);
 
     const keyBundleA = await time(
-      "KeyBundle generation (Alice)",
+      "KeyBundle generation (Sender)",
       () => generateKeyBundle(),
       stats.keyGen,
     );
     const keyBundleB = await time(
-      "KeyBundle generation (Bob)",
+      "KeyBundle generation (Receiver)",
       () => generateKeyBundle(),
       stats.keyGen,
     );
 
     const { sharedSecret: secretA, initialMessage } = await time(
-      "Sender shared secret (Alice)",
+      "Sender shared secret (Sender)",
       () => computeSenderSharedSecret(keyBundleA, keyBundleB),
       stats.sender,
     );
 
     const secretB = await time(
-      "Receiver shared secret (Bob)",
+      "Receiver shared secret (Receiver)",
       () => computeReceiverSharedSecret(keyBundleB, initialMessage),
       stats.receiver,
     );
@@ -324,7 +333,238 @@ async function runAllTests(iterations = 10) {
   );
 }
 
-runAllTests();
-testProtocol();
+// runAllTests();
+// testProtocol();
+
+export async function main() {
+  // Инициализация
+  const stateSender: State = {} as State;
+  const stateReceiver: State = {} as State;
+  const SK = sodium.randombytes_buf(32); // Общий секрет (например, от X3DH)
+  const bobKeyPair = Crypto.generateDH();
+
+  console.log("Sender Initialization:");
+  console.log("Sender Secret Key:", sodium.to_base64(SK));
+  console.log("Receiver Public Key:", sodium.to_base64(bobKeyPair.publicKey));
+
+  // Initialize the ratchet states
+  ratchetInitSender(stateSender, SK, bobKeyPair.publicKey);
+  ratchetInitReceiver(stateReceiver, SK, bobKeyPair);
+
+  const AD = Buffer.from("AssociatedData");
+
+  // A1 → B
+  const { header: h1, ciphertext: c1 } = ratchetEncrypt(
+    stateSender,
+    "Привет, Боб!",
+    AD,
+  );
+  const m1 = ratchetDecrypt(stateReceiver, h1, c1, AD);
+  console.log("\n--- A1 → B ---");
+  console.log(
+    "Encrypted (h1, c1):",
+    sodium.to_base64(h1),
+    sodium.to_base64(c1),
+  );
+  console.log("Decrypted (B ← A1):", m1);
+
+  // B1 → A
+  const { header: h2, ciphertext: c2 } = ratchetEncrypt(
+    stateReceiver,
+    "Привет, Алиса!",
+    AD,
+  );
+  const m2 = ratchetDecrypt(stateSender, h2, c2, AD);
+  console.log("\n--- B1 → A ---");
+  console.log(
+    "Encrypted (h2, c2):",
+    sodium.to_base64(h2),
+    sodium.to_base64(c2),
+  );
+  console.log("Decrypted (A ← B1):", m2);
+
+  // A2 → B
+  const { header: h3, ciphertext: c3 } = ratchetEncrypt(
+    stateSender,
+    "Как дела?",
+    AD,
+  );
+  const m3 = ratchetDecrypt(stateReceiver, h3, c3, AD);
+  console.log("\n--- A2 → B ---");
+  console.log(
+    "Encrypted (h3, c3):",
+    sodium.to_base64(h3),
+    sodium.to_base64(c3),
+  );
+  console.log("Decrypted (B ← A2):", m3);
+
+  // B2 → A
+  const { header: h4, ciphertext: c4 } = ratchetEncrypt(
+    stateReceiver,
+    "Всё хорошо, ты как?",
+    AD,
+  );
+  const m4 = ratchetDecrypt(stateSender, h4, c4, AD);
+  console.log("\n--- B2 → A ---");
+  console.log(
+    "Encrypted (h4, c4):",
+    sodium.to_base64(h4),
+    sodium.to_base64(c4),
+  );
+  console.log("Decrypted (A ← B2):", m4);
+
+  // A3 → B
+  const { header: h5, ciphertext: c5 } = ratchetEncrypt(
+    stateSender,
+    "Тоже отлично. Пишу Double Ratchet",
+    AD,
+  );
+  const m5 = ratchetDecrypt(stateReceiver, h5, c5, AD);
+  console.log("\n--- A3 → B ---");
+  console.log(
+    "Encrypted (h5, c5):",
+    sodium.to_base64(h5),
+    sodium.to_base64(c5),
+  );
+  console.log("Decrypted (B ← A3):", m5);
+
+  // --- эмуляция отложенного сообщения ---
+  // B3 → A, B4 → A, но B3 задерживается
+
+  const { header: h6b4, ciphertext: c6b4 } = ratchetEncrypt(
+    stateReceiver,
+    "B4: Это впечатляет!",
+    AD,
+  ); // отправляется первым
+  const { header: h6b3, ciphertext: c6b3 } = ratchetEncrypt(
+    stateReceiver,
+    "B3: Отличная работа!",
+    AD,
+  ); // но будет доставлено позже
+
+  // A ← B4 (прежде, чем получен B3)
+  const m6b4 = ratchetDecrypt(stateSender, h6b4, c6b4, AD);
+  console.log("\n--- A ← B4 ---");
+  console.log(
+    "Encrypted (h6b4, c6b4):",
+    sodium.to_base64(h6b4),
+    sodium.to_base64(c6b4),
+  );
+  console.log("Decrypted (A ← B4):", m6b4);
+
+  // A ← B3 (позже, out-of-order)
+  const m6b3 = ratchetDecrypt(stateSender, h6b3, c6b3, AD);
+  console.log("\n--- A ← B3 (задержка) ---");
+  console.log(
+    "Encrypted (h6b3, c6b3):",
+    sodium.to_base64(h6b3),
+    sodium.to_base64(c6b3),
+  );
+  console.log("Decrypted (A ← B3):", m6b3);
+}
+
+export async function benchmark() {
+  await sodium.ready;
+  console.log("Running Double Ratchet benchmarks...");
+
+  const iterations = 1000;
+  const messageSize = 1024; // 1KB
+  const message = "A".repeat(messageSize);
+  const AD = Buffer.from("AssociatedData");
+
+  // Setup
+  const aliceState: State = {} as State;
+  const bobState: State = {} as State;
+  const SK = sodium.randombytes_buf(32);
+  const bobKeyPair = Crypto.generateDH();
+
+  ratchetInitSender(aliceState, SK, bobKeyPair.publicKey);
+  ratchetInitReceiver(bobState, SK, bobKeyPair);
+
+  // Benchmark encryption
+  console.log(`\nEncryption Benchmark (${iterations} iterations):`);
+  const encryptStart = performance.now();
+  for (let i = 0; i < iterations; i++) {
+    ratchetEncrypt(aliceState, message, AD);
+  }
+  const encryptEnd = performance.now();
+  const encryptTime = encryptEnd - encryptStart;
+  console.log(`Total time: ${encryptTime.toFixed(2)}ms`);
+  console.log(
+    `Average per operation: ${(encryptTime / iterations).toFixed(2)}ms`,
+  );
+  console.log(
+    `Operations per second: ${((1000 * iterations) / encryptTime).toFixed(2)}`,
+  );
+
+  // Reset states
+  ratchetInitSender(aliceState, SK, bobKeyPair.publicKey);
+  ratchetInitReceiver(bobState, SK, bobKeyPair);
+
+  // Pre-generate messages for decryption benchmark
+  const headers: Uint8Array[] = [];
+  const ciphertexts: Uint8Array[] = [];
+  for (let i = 0; i < iterations; i++) {
+    const { header, ciphertext } = ratchetEncrypt(aliceState, message, AD);
+    headers.push(header);
+    ciphertexts.push(ciphertext);
+  }
+
+  // Reset Receiver's state
+  ratchetInitReceiver(bobState, SK, bobKeyPair);
+
+  // Benchmark decryption
+  console.log(`\nDecryption Benchmark (${iterations} iterations):`);
+  const decryptStart = performance.now();
+  for (let i = 0; i < iterations; i++) {
+    ratchetDecrypt(bobState, headers[i], ciphertexts[i], AD);
+  }
+  const decryptEnd = performance.now();
+  const decryptTime = decryptEnd - decryptStart;
+  console.log(`Total time: ${decryptTime.toFixed(2)}ms`);
+  console.log(
+    `Average per operation: ${(decryptTime / iterations).toFixed(2)}ms`,
+  );
+  console.log(
+    `Operations per second: ${((1000 * iterations) / decryptTime).toFixed(2)}`,
+  );
+
+  // Benchmark DH ratchet steps
+  console.log("\nDH Ratchet Step Benchmark (100 iterations):");
+  const dhIterations = 100;
+
+  const aliceStateDH: State = {} as State;
+  const bobStateDH: State = {} as State;
+  ratchetInitSender(aliceStateDH, SK, bobKeyPair.publicKey);
+  ratchetInitReceiver(bobStateDH, SK, bobKeyPair);
+
+  const dhStart = performance.now();
+  for (let i = 0; i < dhIterations; i++) {
+    // Sender sends to Receiver
+    const { header: h1, ciphertext: c1 } = ratchetEncrypt(
+      aliceStateDH,
+      "A→B",
+      AD,
+    );
+    ratchetDecrypt(bobStateDH, h1, c1, AD);
+
+    // Receiver sends to Sender (triggers DH ratchet)
+    const { header: h2, ciphertext: c2 } = ratchetEncrypt(
+      bobStateDH,
+      "B→A",
+      AD,
+    );
+    ratchetDecrypt(aliceStateDH, h2, c2, AD);
+  }
+  const dhEnd = performance.now();
+  const dhTime = dhEnd - dhStart;
+  console.log(`Total time: ${dhTime.toFixed(2)}ms`);
+  console.log(
+    `Average per DH ratchet: ${(dhTime / dhIterations).toFixed(2)}ms`,
+  );
+}
+
+main();
+benchmark();
 
 export default AdvancedEncryptionPage;

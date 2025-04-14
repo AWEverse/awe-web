@@ -104,6 +104,8 @@ const useContextMenuHandlers = ({
 
   const openContextMenu = useCallback(
     (anchor: IVector2, target: HTMLElement) => {
+      console.log(Object.getOwnPropertyNames(target));
+
       const filteredTarget = targets.length > 0
         ? (target.closest(targets.join(", ")) as HTMLElement | undefined)
         : target;

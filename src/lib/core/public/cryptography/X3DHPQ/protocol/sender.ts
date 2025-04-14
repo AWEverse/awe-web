@@ -32,13 +32,11 @@ export async function computeSenderSharedSecret(
       );
     }
 
-    // Generate ephemeral key pairs concurrently
     const [ephemeralKeyEC, ephemeralKeyPQ] = await Promise.all([
       X25519.generateKeyPair(),
       MLKEM.generateKeyPair(MLKEM_VERSION),
     ]);
 
-    // Pre-allocate buffer for DH and ML-KEM results
     const hasOneTimePrekey = !!recipientBundle.oneTimePreKey;
     const hasPQOneTimePrekey = !!recipientBundle.pqOneTimePreKey;
     const combinedLength =
@@ -52,7 +50,6 @@ export async function computeSenderSharedSecret(
       signedPreKey: new Uint8Array(0),
     };
 
-    // Compute DH and ML-KEM operations in parallel
     const results = await Promise.all([
       // DH1: IK_A (X25519) x SPK_B
       X25519.computeSharedSecret(
