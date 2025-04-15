@@ -1,4 +1,6 @@
 import { MAX_INT32 } from "../../math";
+import { PathSegment, createPathMatcher } from "../private/PathMatcher";
+import { PathSyntaxError } from "../private/PathSyntaxError";
 
 const SIGNAL_SYMBOL = Symbol.for("signals");
 
@@ -1005,81 +1007,6 @@ type CursorCallback = (path: (string | number)[], value: unknown) => void;
 function isPlainObject(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
-const disposers = new WeakMap<object, () => void>();
-
-function trackEffect<T>(
-  sig: Signal<T>,
-  path: (string | number)[],
-  callback: CursorCallback,
-) {
-  const stop = effect(() => {
-    callback(path, sig.peek());
-  });
-  disposers.set(sig, stop);
-}
-
-function disposeAt(value: unknown) {
-  if (typeof value === "object" && value !== null) {
-    const disposer = disposers.get(value as object);
-    if (disposer) disposer();
-  }
-}
-
-export function makeReactiveArray<T>(
-  arr: T[],
-  callback: CursorCallback,
-  path: (string | number)[],
-  shouldTrack?: (path: (string | number)[]) => boolean,
-): Signal<Signalify<T>[]> {
-  const internal = arr.map((item, index) => {
-    const currentPath = [...path, index];
-    if (!shouldTrack || !shouldTrack(currentPath)) {
-      return item as Signalify<T>;
-    }
-    return isPlainObject(item)
-      ? reactiveObject(item as any, { callback, path: currentPath, shouldTrack })
-      : item as Signalify<T>;
-  });
-
-  const sig = signal(internal);
-  trackEffect(sig, path, callback);
-
-  const proxy = new Proxy(internal, {
-    set(target, prop: string | symbol, value: unknown): boolean {
-      const index = Number(prop);
-      if (!isNaN(index)) {
-        disposeAt(target[index]);
-
-        const currentPath = [...path, index];
-        const newValue =
-          isPlainObject(value) && (!shouldTrack || shouldTrack(currentPath))
-            ? reactiveObject(value as any, { callback, path: currentPath, shouldTrack })
-            : value as Signalify<T>;
-
-        target[index] = newValue;
-        sig.value = [...target];
-        return true;
-      }
-      return false;
-    },
-
-    deleteProperty(target, prop: string | symbol): boolean {
-      const index = Number(prop);
-      if (!isNaN(index)) {
-        disposeAt(target[index]);
-        target.splice(index, 1);
-        sig.value = [...target];
-        return true;
-      }
-      return false;
-    },
-  });
-
-  sig.value = proxy as unknown as Signalify<T>[];
-
-  return sig;
-}
-
 
 // {
 //   root: {
@@ -1096,21 +1023,28 @@ export function makeReactiveArray<T>(
 // }
 
 export interface ReactiveOptions {
+  /** Callback for tracking changes at specific paths */
   callback?: CursorCallback;
+  /** Current path in the object tree (default: []) */
   path?: (string | number)[];
-  shouldTrack?: (path: (string | number)[]) => boolean;
+  /** Glob patterns for selective tracking (default: ["**"]) */
+  trackPatterns?: string[];
 }
 
+/**
+ * Creates a reactive object with signals for tracked properties, using path patterns for selective reactivity.
+ * @param obj - Input object to make reactive.
+ * @param options - Configuration for reactivity.
+ * @returns A reactive object with signals for properties.
+ * @throws Error if trackPatterns are invalid.
+ */
 export function reactiveObject<T extends Record<string, unknown>>(
   obj: T,
   options: ReactiveOptions = {},
 ): Signalify<T> {
-  const {
-    callback,
-    path = [],
-    shouldTrack = () => true, // по умолчанию трекаем всё
-  } = options;
+  const { callback, path = [], trackPatterns = ["**"] } = options;
 
+  const matcher = createMatcher(trackPatterns);
   const reactive = {} as Signalify<T>;
 
   for (const key in obj) {
@@ -1119,40 +1053,97 @@ export function reactiveObject<T extends Record<string, unknown>>(
     const currentPath = [...path, key];
     const value = obj[key];
 
-    const wrapSignal = <V>(v: V, p: (string | number)[]): Signal<V> => {
-      const sig = signal(v);
-      if (callback) trackEffect(sig, p, callback);
+    const createSignal = <V>(val: V): Signal<V> => {
+      const sig = signal(val);
+      if (callback && matcher(currentPath)) {
+        effect(() => callback(currentPath, sig.peek()));
+      }
       return sig;
     };
-
-    if (!shouldTrack(currentPath)) {
-      // не отслеживаем — просто передаём как есть
-      reactive[key] = value as Signalify<T>[typeof key];
-      continue;
-    }
 
     if (Array.isArray(value)) {
       reactive[key] = makeReactiveArray(
         value,
-        callback!,
+        callback,
         currentPath,
-        shouldTrack,
+        matcher,
       ) as Signalify<T>[typeof key];
     } else if (isPlainObject(value)) {
       const nested = reactiveObject(value as Record<string, unknown>, {
         callback,
         path: currentPath,
-        shouldTrack,
+        trackPatterns,
       });
-      reactive[key] = wrapSignal(nested, currentPath);
+      reactive[key] = createSignal(nested) as Signalify<T>[typeof key];
     } else {
-      reactive[key] = wrapSignal(value, currentPath);
+      reactive[key] = createSignal(value) as Signalify<T>[typeof key];
     }
   }
 
   return reactive;
 }
 
+/**
+ * Creates a path matcher from patterns, with error handling.
+ * @param patterns - Array of glob patterns.
+ * @returns Matcher function for paths.
+ * @throws Error for invalid patterns with fix tips.
+ */
+function createMatcher(patterns: string[]): (path: PathSegment[]) => boolean {
+  try {
+    return createPathMatcher(patterns);
+  } catch (e) {
+    if (e instanceof PathSyntaxError) {
+      throw new Error(
+        `Invalid track pattern: ${e.message}\nFix tips:\n${e.formatTips()}`,
+      );
+    }
+    throw e;
+  }
+}
+
+/**
+ * Creates a reactive array with selective tracking.
+ * @param arr - Input array to make reactive.
+ * @param callback - Optional callback for tracking changes.
+ * @param path - Current path in the object tree.
+ * @param matcher - Path matcher for selective tracking.
+ * @returns Signal wrapping a reactive array.
+ */
+function makeReactiveArray<T>(
+  arr: T[],
+  callback: CursorCallback | undefined,
+  path: (string | number)[],
+  matcher: (path: PathSegment[]) => boolean,
+): Signal<Signalify<T>[]> {
+  const reactiveItems = arr.map((item, index) => {
+    const itemPath = [...path, index];
+
+    const createSignal = <V>(val: V): Signal<V> => {
+      const sig = signal(val);
+      if (callback && matcher(itemPath)) {
+        effect(() => callback(itemPath, sig.peek()));
+      }
+      return sig;
+    };
+
+    if (isPlainObject(item)) {
+      return reactiveObject(item as Record<string, unknown>, {
+        callback,
+        path: itemPath,
+        trackPatterns: ["**"],
+      }) as Signalify<T>;
+    }
+    return createSignal(item) as Signalify<T>;
+  });
+
+  const arraySignal = signal(reactiveItems as Signalify<T>[]);
+  if (callback && matcher(path)) {
+    effect(() => callback(path, arraySignal.peek()));
+  }
+
+  return arraySignal;
+}
 
 /**
  * Execute a callback function in a try-catch block and handle errors

@@ -1,4 +1,3 @@
-
 import { PathSyntaxError } from "./PathSyntaxError";
 import { isValidIdentifier, isTemplate } from "./PathSyntaxValidators";
 
@@ -10,85 +9,140 @@ export type MatchTrace = {
   params?: Record<string, string>;
 };
 
-// Cache with size limit to prevent uncontrolled growth
 const MAX_CACHE_SIZE = 1000;
+const TOKEN_STAR = "*";
+const TOKEN_DEEP = "**";
+const TOKEN_ARRAY = "[]";
+
+// Low-level cache with bounded size
 const parseCache = new Map<string, PathToken[]>();
 
+/**
+ * Parses a path pattern into tokens with minimal allocations.
+ * @param input - Pattern string (e.g., "user.*.name").
+ * @returns Array of tokens.
+ * @throws PathSyntaxError for invalid patterns.
+ */
 function parsePathPattern(input: string): PathToken[] {
   if (!input) throw new PathSyntaxError("<empty>", 0);
 
   const cached = parseCache.get(input);
   if (cached) return cached;
 
-  const segments = input.split(".");
-  const tokens = segments.map((seg, i) => {
-    if (seg === "*" || seg === "**" || seg === "[]") return seg;
-    if (isValidIdentifier(seg) || isTemplate(seg)) return seg;
-    throw new PathSyntaxError(seg, i);
-  });
+  const tokens: PathToken[] = [];
+  let start = 0;
+  let i = 0;
 
-  // Evict oldest entry if cache is full
-  if (parseCache.size >= MAX_CACHE_SIZE) {
-    const firstKey = parseCache.keys().next().value;
-    if (firstKey !== undefined) {
-      parseCache.delete(firstKey);
+  // Manual splitting to avoid array allocation
+  while (i <= input.length) {
+    if (i === input.length || input[i] === ".") {
+      const seg = input.slice(start, i);
+      if (!seg) throw new PathSyntaxError("<empty>", tokens.length);
+
+      if (seg === TOKEN_STAR || seg === TOKEN_DEEP || seg === TOKEN_ARRAY) {
+        tokens.push(seg);
+      } else if (isValidIdentifier(seg) || isTemplate(seg)) {
+        tokens.push(seg);
+      } else {
+        throw new PathSyntaxError(seg, tokens.length);
+      }
+
+      start = i + 1;
     }
+    i++;
+  }
+
+  // Cache with eviction
+  if (parseCache.size >= MAX_CACHE_SIZE) {
+    const firstKey = parseCache.keys().next().value as string | undefined;
+    if (firstKey) parseCache.delete(firstKey);
   }
   parseCache.set(input, tokens);
   return tokens;
 }
 
+/**
+ * Matches a single token against a path segment.
+ * @param pattern - Token to match.
+ * @param actual - Path segment.
+ * @param params - Object to store parameters.
+ * @returns True if matched, false otherwise.
+ */
 function matchSegment(
   pattern: PathToken,
   actual: PathSegment,
   params: Record<string, string>,
 ): boolean {
-  if (pattern === "*") return typeof actual === "string";
-  if (pattern === "[]") return typeof actual === "number";
-  if (pattern[0] === ":") {
+  if (pattern === TOKEN_STAR) return typeof actual === "string";
+  if (pattern === TOKEN_ARRAY) return typeof actual === "number";
+  if ((pattern as string)[0] === ":") {
     params[pattern.slice(1)] = String(actual);
     return true;
   }
-  return pattern === String(actual);
+  return pattern === (typeof actual === "string" ? actual : String(actual));
 }
 
+/**
+ * Compiled pattern for efficient matching.
+ */
 interface CompiledPattern {
-  raw: PathToken[];
+  tokens: PathToken[];
   prefixLen: number;
   suffixLen: number;
   hasDeep: boolean;
 }
 
-function compilePattern(pattern: PathToken[]): CompiledPattern {
-  const firstDeep = pattern.indexOf("**");
+/**
+ * Compiles tokens into a pattern with precomputed metadata.
+ * @param tokens - Array of tokens.
+ * @returns Compiled pattern.
+ */
+function compilePattern(tokens: PathToken[]): CompiledPattern {
+  let firstDeep = -1;
+
+  for (let i = 0; i < tokens.length; i++) {
+    if (tokens[i] === TOKEN_DEEP) {
+      firstDeep = i;
+      break;
+    }
+  }
+
   return {
-    raw: pattern,
-    prefixLen: firstDeep === -1 ? pattern.length : firstDeep,
-    suffixLen: firstDeep === -1 ? 0 : pattern.length - firstDeep - 1,
+    tokens,
+    prefixLen: firstDeep === -1 ? tokens.length : firstDeep,
+    suffixLen: firstDeep === -1 ? 0 : tokens.length - firstDeep - 1,
     hasDeep: firstDeep !== -1,
   };
 }
 
+/**
+ * Matches a path against a compiled pattern with minimal allocations.
+ * @param path - Path segments to match.
+ * @param compiled - Compiled pattern.
+ * @param params - Object to store parameters.
+ * @returns True if matched, false otherwise.
+ */
 function matchCompiledPath(
   path: PathSegment[],
   compiled: CompiledPattern,
   params: Record<string, string>,
 ): boolean {
-  const { raw, prefixLen, suffixLen, hasDeep } = compiled;
+  const { tokens, prefixLen, suffixLen, hasDeep } = compiled;
+  const pathLen = path.length;
 
-  if (!hasDeep && path.length !== raw.length) return false;
-  if (hasDeep && path.length < prefixLen + suffixLen) return false;
+  if (!hasDeep && pathLen !== tokens.length) return false;
+  if (hasDeep && pathLen < prefixLen + suffixLen) return false;
 
   for (let i = 0; i < prefixLen; i++) {
-    if (!matchSegment(raw[i], path[i], params)) return false;
+    if (!matchSegment(tokens[i], path[i], params)) return false;
   }
 
   if (hasDeep) {
     for (let i = 0; i < suffixLen; i++) {
       if (
         !matchSegment(
-          raw[raw.length - suffixLen + i],
-          path[path.length - suffixLen + i],
+          tokens[tokens.length - suffixLen + i],
+          path[pathLen - suffixLen + i],
           params,
         )
       )
@@ -99,6 +153,11 @@ function matchCompiledPath(
   return true;
 }
 
+/**
+ * Creates a matcher with trace output for debugging.
+ * @param patterns - Array of pattern strings.
+ * @returns Function returning trace results for a path.
+ */
 export function createPathMatcherWithTrace(
   patterns: string[],
 ): (path: PathSegment[]) => MatchTrace[] {
@@ -107,22 +166,35 @@ export function createPathMatcherWithTrace(
     original: p,
   }));
 
-  return (path: PathSegment[]) =>
-    compiled.map(({ pattern, original }) => {
-      const params: Record<string, string> = {};
-      const matched = matchCompiledPath(path, pattern, params);
+  const paramsPool: Record<string, string> = {}; // Reuse params object to reduce allocations
+
+  return (path: PathSegment[]) => {
+    for (const key in paramsPool) delete paramsPool[key]; // Clear params pool
+
+    return compiled.map(({ pattern, original }) => {
+      const matched = matchCompiledPath(path, pattern, paramsPool);
       return {
         pattern: original,
         matched,
-        params: matched ? params : undefined,
+        params: matched ? { ...paramsPool } : undefined,
       };
     });
+  };
 }
 
+/**
+ * Creates a lightweight boolean matcher.
+ * @param patterns - Array of pattern strings.
+ * @returns Function returning true if any pattern matches.
+ */
 export function createPathMatcher(
   patterns: string[],
 ): (path: PathSegment[]) => boolean {
   const compiled = patterns.map((p) => compilePattern(parsePathPattern(p)));
-  return (path: PathSegment[]) =>
-    compiled.some((cp) => matchCompiledPath(path, cp, {}));
+  const params: Record<string, string> = {};
+
+  return (path: PathSegment[]) => {
+    for (const key in params) delete params[key]; // Clear params
+    return compiled.some((cp) => matchCompiledPath(path, cp, params));
+  };
 }
