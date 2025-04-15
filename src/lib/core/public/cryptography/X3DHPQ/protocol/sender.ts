@@ -3,7 +3,14 @@ import { sha256 } from "@noble/hashes/sha256";
 
 import { MLKEM } from "../crypto/ml-kem";
 import { concatUint8Arrays } from "../utils/arrays";
-import { PROTOCOL_VERSION, HKDF_INFO, MLKEM_VERSION, DH_OUTPUT_SIZE, KEY_LENGTH, MLKEM_SS_SIZE } from "../config";
+import {
+  PROTOCOL_VERSION,
+  HKDF_INFO,
+  MLKEM_VERSION,
+  DH_OUTPUT_SIZE,
+  KEY_LENGTH,
+  MLKEM_SS_SIZE,
+} from "../config";
 import { KeyBundle, InitialMessage } from "../types";
 import { X3DHError } from "./errors";
 import { validateInitialMessage } from "../utils/validation";
@@ -11,11 +18,10 @@ import { wipeBytes } from "../../secure";
 import { Ed25519 } from "../../curves/ed25519";
 import { X25519 } from "../../curves/x25519";
 
-
 /** Computes the sender's shared secret and initial message */
 export async function computeSenderSharedSecret(
   senderBundle: KeyBundle,
-  recipientBundle: KeyBundle
+  recipientBundle: KeyBundle,
 ): Promise<{ sharedSecret: Uint8Array; initialMessage: InitialMessage }> {
   try {
     // Inline signature verification for speed
@@ -23,12 +29,12 @@ export async function computeSenderSharedSecret(
       !Ed25519.verify(
         recipientBundle.signedPreKey.signature,
         recipientBundle.signedPreKey.keyPair.publicKey,
-        recipientBundle.identityKey.publicKey
+        recipientBundle.identityKey.publicKey,
       )
     ) {
       throw new X3DHError(
         "Invalid signed pre-key signature",
-        "SIGNATURE_VERIFICATION_FAILED"
+        "SIGNATURE_VERIFICATION_FAILED",
       );
     }
 
@@ -54,32 +60,38 @@ export async function computeSenderSharedSecret(
       // DH1: IK_A (X25519) x SPK_B
       X25519.computeSharedSecret(
         senderBundle.identityKeyX25519.privateKey,
-        recipientBundle.signedPreKey.keyPair.publicKey
+        recipientBundle.signedPreKey.keyPair.publicKey,
       ),
       // DH2: EK_A x IK_B (X25519)
       X25519.computeSharedSecret(
         ephemeralKeyEC.privateKey,
-        recipientBundle.identityKeyX25519.publicKey
+        recipientBundle.identityKeyX25519.publicKey,
       ),
       // DH3: EK_A x SPK_B
       X25519.computeSharedSecret(
         ephemeralKeyEC.privateKey,
-        recipientBundle.signedPreKey.keyPair.publicKey
+        recipientBundle.signedPreKey.keyPair.publicKey,
       ),
       // DH4: EK_A x OPK_B (if available)
       hasOneTimePrekey
         ? X25519.computeSharedSecret(
           ephemeralKeyEC.privateKey,
-          recipientBundle.oneTimePreKey!.publicKey
+          recipientBundle.oneTimePreKey!.publicKey,
         )
         : new Uint8Array(0),
       // PQ1: Encapsulate to PQ IK_B
       MLKEM.encapsulate(recipientBundle.pqIdentityKey.publicKey, MLKEM_VERSION),
       // PQ2: Encapsulate to PQ SPK_B
-      MLKEM.encapsulate(recipientBundle.pqSignedPreKey.publicKey, MLKEM_VERSION),
+      MLKEM.encapsulate(
+        recipientBundle.pqSignedPreKey.publicKey,
+        MLKEM_VERSION,
+      ),
       // PQ3: Encapsulate to PQ OPK_B (if available)
       hasPQOneTimePrekey
-        ? MLKEM.encapsulate(recipientBundle.pqOneTimePreKey!.publicKey, MLKEM_VERSION)
+        ? MLKEM.encapsulate(
+          recipientBundle.pqOneTimePreKey!.publicKey,
+          MLKEM_VERSION,
+        )
         : { sharedSecret: new Uint8Array(0), cipherText: new Uint8Array(0) },
     ]);
 
@@ -125,14 +137,15 @@ export async function computeSenderSharedSecret(
 
     validateInitialMessage(initialMessage);
 
-    wipeBytes(ephemeralKeyEC.privateKey, ephemeralKeyPQ.privateKey, combined)
+    wipeBytes(ephemeralKeyEC.privateKey, ephemeralKeyPQ.privateKey, combined);
 
     return { sharedSecret, initialMessage };
   } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : "Unknown error";
+    const errorMessage =
+      error instanceof Error ? error.message : "Unknown error";
     throw new X3DHError(
       `Sender shared secret computation failed: ${errorMessage}`,
-      "SENDER_SHARED_SECRET_FAILED"
+      "SENDER_SHARED_SECRET_FAILED",
     );
   }
 }

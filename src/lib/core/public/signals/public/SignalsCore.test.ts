@@ -1,252 +1,109 @@
-import { signal, computed, effect, batch, untracked, addDependency, cleanupSources } from './SignalsCore';
+import {
+  signal,
+  computed,
+  effect,
+  batch,
+  untracked,
+  reactiveObject,
+  watch,
+  safeExecute,
+} from './SignalsCore';
 
 describe('SignalsCore', () => {
   describe('signal', () => {
-    it('should create a signal with an initial value', () => {
-      const mySignal = signal(10);
-      expect(mySignal.value).toBe(10);
+    it('creates signal with initial value', () => {
+      const sig = signal(10);
+      expect(sig.value).toBe(10);
     });
 
-    it('should update the signal value', () => {
-      const mySignal = signal(10);
-      mySignal.value = 20;
-      expect(mySignal.value).toBe(20);
+    it('updates signal value', () => {
+      const sig = signal(10);
+      sig.value = 20;
+      expect(sig.value).toBe(20);
     });
 
-    it('should notify subscribers when the value changes', () => {
-      const mySignal = signal(10);
-      const subscriber = jest.fn();
-      const unsubscribe = mySignal.subscribe(subscriber);
-
-      mySignal.value = 20;
-
-      expect(subscriber).toHaveBeenCalledWith(20);
+    it('notifies subscribers on value change', () => {
+      const sig = signal(10);
+      const fn = jest.fn();
+      const unsubscribe = sig.subscribe(fn);
+      sig.value = 20;
+      expect(fn).toHaveBeenCalledWith(20);
       unsubscribe();
     });
 
-    it('should not notify subscribers if the value does not change', () => {
-      const mySignal = signal(10);
-      const subscriber = jest.fn();
-      const unsubscribe = mySignal.subscribe(subscriber);
-
-      mySignal.value = 10;
-
-      expect(subscriber).not.toHaveBeenCalled();
-      unsubscribe();
+    it('skips notification for same value', () => {
+      const sig = signal(10);
+      const fn = jest.fn();
+      sig.subscribe(fn);
+      sig.value = 10;
+      expect(fn).not.toHaveBeenCalled();
     });
 
-    it('should handle multiple subscribers', () => {
-      const mySignal = signal(10);
-      const subscriber1 = jest.fn();
-      const subscriber2 = jest.fn();
-      const unsubscribe1 = mySignal.subscribe(subscriber1);
-      const unsubscribe2 = mySignal.subscribe(subscriber2);
-
-      mySignal.value = 20;
-
-      expect(subscriber1).toHaveBeenCalledWith(20);
-      expect(subscriber2).toHaveBeenCalledWith(20);
-      unsubscribe1();
-      unsubscribe2();
+    it('handles multiple subscribers', () => {
+      const sig = signal(10);
+      const fn1 = jest.fn();
+      const fn2 = jest.fn();
+      const u1 = sig.subscribe(fn1);
+      const u2 = sig.subscribe(fn2);
+      sig.value = 20;
+      expect(fn1).toHaveBeenCalledWith(20);
+      expect(fn2).toHaveBeenCalledWith(20);
+      u1();
+      u2();
     });
 
-    it('should allow peeking at the value without creating a dependency', () => {
-      const mySignal = signal(10);
-      expect(mySignal.peek()).toBe(10);
+    it('peeks value without dependency', () => {
+      const sig = signal(10);
+      expect(sig.peek()).toBe(10);
     });
 
-    it('should not trigger subscriber notifications when peeking', () => {
-      const mySignal = signal(10);
-      const subscriber = jest.fn();
-      const unsubscribe = mySignal.subscribe(subscriber);
-
-      mySignal.peek();
-
-      expect(subscriber).not.toHaveBeenCalled();
-      unsubscribe();
+    it('does not notify subscribers on peek', () => {
+      const sig = signal(10);
+      const fn = jest.fn();
+      sig.subscribe(fn);
+      sig.peek();
+      expect(fn).not.toHaveBeenCalled();
     });
 
-    it('should convert the signal to a string', () => {
-      const mySignal = signal(10);
-      expect(mySignal.toString()).toBe('10');
+    it('converts to string', () => {
+      const sig = signal(10);
+      expect(sig.toString()).toBe('10');
     });
 
-    it('should convert the signal to JSON', () => {
-      const mySignal = signal({ key: 'value' });
-      expect(mySignal.toJSON()).toEqual({ key: 'value' });
+    it('converts to JSON', () => {
+      const sig = signal({ key: 'value' });
+      expect(sig.toJSON()).toEqual({ key: 'value' });
     });
 
-    it('should create a dependency when accessing the value in an effect', () => {
-      const mySignal = signal(10);
-      let dependencyNode;
-      const dispose = effect(() => {
-        mySignal.value;
-        dependencyNode = addDependency(mySignal);
-      });
-      expect(dependencyNode).toBeDefined();
-      dispose();
-    });
-  });
-
-  describe('batch', () => {
-    it('should batch updates and commit them at the end', () => {
-      const mySignal = signal(10);
-      const subscriber = jest.fn();
-      mySignal.subscribe(subscriber);
-
-      batch(() => {
-        mySignal.value = 20;
-        mySignal.value = 30;
-      });
-
-      expect(subscriber).toHaveBeenCalledTimes(2); // Once per unique value
-      expect(mySignal.value).toBe(30);
-    });
-
-    it('should handle nested batches', () => {
-      const mySignal = signal(10);
-      const subscriber = jest.fn();
-      mySignal.subscribe(subscriber);
-
-      batch(() => {
-        mySignal.value = 20;
-        batch(() => {
-          mySignal.value = 30;
-        });
-        mySignal.value = 40;
-      });
-
-      expect(subscriber).toHaveBeenCalledTimes(3);
-      expect(mySignal.value).toBe(40);
-    });
-
-    it('should reflect updated values immediately within a batch', () => {
-      const mySignal = signal(10);
-      let valueInBatch;
-      batch(() => {
-        mySignal.value = 20;
-        valueInBatch = mySignal.value;
-      });
-      expect(valueInBatch).toBe(20);
-    });
-  });
-
-  describe('untracked', () => {
-    it('should run a callback without subscribing to signal updates', () => {
-      const mySignal = signal(10);
-      const result = untracked(() => mySignal.value + 10);
-      expect(result).toBe(20);
-    });
-
-    it('should not create dependencies within the untracked callback', () => {
-      const mySignal = signal(10);
-      let dependencyNode;
-      const dispose = effect(() => {
-        untracked(() => {
-          mySignal.value;
-          dependencyNode = addDependency(mySignal);
-        });
-      });
-      expect(dependencyNode).toBeUndefined();
-      dispose();
-    });
-  });
-
-  describe('addDependency', () => {
-    it('should add a dependency between the current context and a signal', () => {
-      const mySignal = signal(10);
+    it('creates dependency in effect', () => {
+      const sig = signal(10);
       let node;
       const dispose = effect(() => {
-        mySignal.value;
-        node = addDependency(mySignal);
+        sig.value;
+        node = addDependency(sig);
       });
       expect(node).toBeDefined();
+      expect(node._version).toBe(0);
       dispose();
     });
 
-    it('should reuse the same node if the dependency already exists', () => {
-      const mySignal = signal(10);
-      let node1, node2;
-      const dispose = effect(() => {
-        mySignal.value;
-        node1 = addDependency(mySignal);
-        node2 = addDependency(mySignal);
-      });
-      expect(node1).toBe(node2);
-      dispose();
-    });
-
-    it('should not add a dependency if there is no current context', () => {
-      const mySignal = signal(10);
-      const node = addDependency(mySignal);
-      expect(node).toBeUndefined();
-    });
-  });
-
-  describe('cleanupSources', () => {
-    it('should clean up unused dependencies', () => {
-      const mySignal = signal(10);
-      const effectFn = jest.fn(() => mySignal.value);
-      const effectInstance = {
-        _fn: effectFn,
-        _compute: effectFn,
-        _sources: null,
-        _globalVersion: 0,
-        _flags: 0,
-        _lastGlobalVersion: 0
-      };
-      effectInstance._compute();
-      cleanupSources(effectInstance as any);
-      expect(effectFn).toHaveBeenCalled();
-    });
-
-    it('should not clean up used dependencies', () => {
-      const mySignal = signal(10);
-      const effectFn = jest.fn(() => mySignal.value);
-      const effectInstance = {
-        _fn: effectFn,
-        _compute: effectFn,
-        _sources: null,
-        _globalVersion: 0,
-        _flags: 0,
-        _lastGlobalVersion: 0
-      };
-      effectInstance._compute();
-      effectInstance._sources = { _source: mySignal, _version: mySignal._version };
-      cleanupSources(effectInstance as any);
-      expect(effectInstance._sources).not.toBeNull();
-    });
-
-    it('should handle multiple sources correctly', () => {
-      const signal1 = signal(10);
-      const signal2 = signal(20);
-      const effectFn = jest.fn(() => {
-        signal1.value;
-        signal2.value;
-      });
-      const effectInstance = {
-        _fn: effectFn,
-        _compute: effectFn,
-        _sources: null,
-        _globalVersion: 0,
-        _flags: 0,
-        _lastGlobalVersion: 0
-      };
-      effectInstance._compute();
-      cleanupSources(effectInstance as any);
-      expect(effectInstance._sources).toBeDefined();
+    it('handles MAX_INT32 version rollover', () => {
+      const sig = signal(10);
+      sig._version = 2 ** 31 - 1; // MAX_INT32
+      sig.value = 20;
+      expect(sig._version).toBe(1);
     });
   });
 
   describe('computed', () => {
-    it('should compute initial value', () => {
+    it('computes initial value', () => {
       const a = signal(2);
       const b = signal(3);
       const c = computed(() => a.value * b.value);
       expect(c.value).toBe(6);
     });
 
-    it('should recompute when dependencies change', () => {
+    it('recomputes on dependency change', () => {
       const a = signal(2);
       const b = signal(3);
       const c = computed(() => a.value * b.value);
@@ -254,42 +111,24 @@ describe('SignalsCore', () => {
       expect(c.value).toBe(12);
     });
 
-    it('should lazily subscribe to dependencies', () => {
+    it('lazily subscribes to dependencies', () => {
       const a = signal(2);
-      const b = signal(3);
-      const c = computed(() => a.value * b.value);
-      expect(c._targets).toBeUndefined(); // No subscribers yet
-      c.value; // Accessing value subscribes
+      const c = computed(() => a.value * 2);
+      expect(c._targets).toBeUndefined();
+      c.value;
       expect(c._targets).toBeDefined();
     });
-  });
 
-  describe('effect', () => {
-    it('should run the effect when dependencies change', () => {
-      const a = signal(1);
-      const effectFn = jest.fn(() => a.value);
-      const dispose = effect(effectFn);
-      a.value = 2;
-      expect(effectFn).toHaveBeenCalledTimes(2); // Initial + update
-      dispose();
+    it('avoids recomputation if dependencies unchanged', () => {
+      const a = signal(2);
+      const fn = jest.fn(() => a.value * 2);
+      const c = computed(fn);
+      c.value;
+      c.value;
+      expect(fn).toHaveBeenCalledTimes(1);
     });
 
-    it('should cleanup previous effect', () => {
-      const a = signal(1);
-      const cleanupFn = jest.fn();
-      const effectFn = jest.fn(() => {
-        a.value;
-        return cleanupFn;
-      });
-      const dispose = effect(effectFn);
-      a.value = 2;
-      expect(cleanupFn).toHaveBeenCalledTimes(1);
-      dispose();
-    });
-  });
-
-  describe('Error Handling', () => {
-    it('should handle errors in computed signals', () => {
+    it('handles errors', () => {
       const a = signal(2);
       const c = computed(() => {
         if (a.value > 1) throw new Error('Test error');
@@ -298,38 +137,219 @@ describe('SignalsCore', () => {
       expect(() => c.value).toThrow('Test error');
     });
 
-    it('should handle errors in effects', () => {
+    it('detects cycles', () => {
       const a = signal(1);
-      const effectFn = jest.fn(() => {
-        if (a.value > 1) throw new Error('Test error');
-      });
-      const dispose = effect(effectFn);
+      const b = computed(() => a.value + c.value);
+      const c = computed(() => b.value + 1);
+      expect(() => c.value).toThrow('Cycle detected');
+    });
+  });
+
+  describe('effect', () => {
+    it('runs on dependency change', () => {
+      const a = signal(1);
+      const fn = jest.fn(() => a.value);
+      const dispose = effect(fn);
       a.value = 2;
-      expect(effectFn).toHaveBeenCalledTimes(2);
+      expect(fn).toHaveBeenCalledTimes(2);
+      dispose();
+    });
+
+    it('executes cleanup before re-run', () => {
+      const a = signal(1);
+      const cleanup = jest.fn();
+      const fn = jest.fn(() => {
+        a.value;
+        return cleanup;
+      });
+      const dispose = effect(fn);
+      a.value = 2;
+      expect(cleanup).toHaveBeenCalledTimes(1);
+      dispose();
+    });
+
+    it('disposes correctly', () => {
+      const a = signal(1);
+      const fn = jest.fn(() => a.value);
+      const dispose = effect(fn);
+      dispose();
+      a.value = 2;
+      expect(fn).toHaveBeenCalledTimes(1);
+    });
+
+    it('handles errors without breaking', () => {
+      const a = signal(1);
+      const fn = jest.fn(() => {
+        if (a.value > 1) throw new Error('Test error');
+        return a.value;
+      });
+      const dispose = effect(fn);
+      expect(() => {
+        a.value = 2;
+      }).not.toThrow();
+      expect(fn).toHaveBeenCalledTimes(2);
       dispose();
     });
   });
 
-  describe('Performance and Limits', () => {
-    it('should handle a large number of signals and dependencies', () => {
-      const signals = Array.from({ length: 1000 }, () => signal(0));
-      const computedSignals = signals.map((sig) => computed(() => sig.value * 2));
-      computedSignals.forEach((comp) => comp.value); // Trigger computation
-      signals.forEach((sig) => {
-        sig.value = 1;
+  describe('batch', () => {
+    it('batches updates', () => {
+      const sig = signal(10);
+      const fn = jest.fn();
+      sig.subscribe(fn);
+      batch(() => {
+        sig.value = 20;
+        sig.value = 30;
       });
-      computedSignals.forEach((comp) => {
-        expect(comp.value).toBe(2);
-      });
+      expect(fn).toHaveBeenCalledTimes(2);
+      expect(sig.value).toBe(30);
     });
 
-    it('should prevent infinite loops', () => {
+    it('handles nested batches', () => {
+      const sig = signal(10);
+      const fn = jest.fn();
+      sig.subscribe(fn);
+      batch(() => {
+        sig.value = 20;
+        batch(() => {
+          sig.value = 30;
+        });
+        sig.value = 40;
+      });
+      expect(fn).toHaveBeenCalledTimes(3);
+      expect(sig.value).toBe(40);
+    });
+
+    it('reflects updates immediately in batch', () => {
+      const sig = signal(10);
+      let value;
+      batch(() => {
+        sig.value = 20;
+        value = sig.value;
+      });
+      expect(value).toBe(20);
+    });
+
+    it('throws on excessive iterations', () => {
       const a = signal(0);
       const b = computed(() => a.value + 1);
-      const c = computed(() => b.value + 1);
       expect(() => {
-        a.value = c.value; // Potential infinite loop
+        batch(() => {
+          for (let i = 0; i < 1001; i++) a.value = i;
+        });
       }).toThrow('Maximum batch iteration limit reached');
+    });
+  });
+
+  describe('untracked', () => {
+    it('accesses value without dependency', () => {
+      const sig = signal(10);
+      const result = untracked(() => sig.value + 10);
+      expect(result).toBe(20);
+    });
+
+    it('prevents dependency creation', () => {
+      const sig = signal(10);
+      let node;
+      const dispose = effect(() => {
+        untracked(() => {
+          sig.value;
+          node = addDependency(sig);
+        });
+      });
+      expect(node).toBeUndefined();
+      dispose();
+    });
+  });
+
+  describe('reactiveObject', () => {
+    it('creates signals for object properties', () => {
+      const obj = reactiveObject({ a: 1, b: { c: 2 } });
+      expect(obj.a.value).toBe(1);
+      expect(obj.b.value.c.value).toBe(2);
+    });
+
+    it('tracks changes with callback', () => {
+      const fn = jest.fn();
+      const obj = reactiveObject({ a: 1 }, { callback: fn });
+      obj.a.value = 2;
+      console.log(obj)
+
+      expect(fn).toHaveBeenCalledWith(['a'], 2);
+    });
+
+    it('handles arrays', () => {
+      const arr = reactiveObject({ list: [1, 2] });
+      expect(arr.list.value[0]).toBe(1);
+      expect(arr.list.value[1]).toBe(2);
+    });
+
+    it('respects glob patterns', () => {
+      const fn = jest.fn();
+      const obj = reactiveObject({ a: { b: 1, c: 2 } }, { trackPatterns: ['a.b'], callback: fn });
+      obj.a.value.b.value = 3;
+      obj.a.value.c.value = 4;
+      expect(fn).toHaveBeenCalledWith(['a', 'b'], 3);
+      expect(fn).not.toHaveBeenCalledWith(['a', 'c'], 4);
+    });
+
+    it('throws on invalid patterns', () => {
+      expect(() => reactiveObject({ a: 1 }, { trackPatterns: ['**.*'] }))
+        .toThrow('Invalid track pattern');
+    });
+  });
+
+  describe('watch', () => {
+    it('triggers callback on value change', () => {
+      const sig = signal(10);
+      const fn = jest.fn();
+      const dispose = watch(sig, fn);
+      sig.value = 20;
+      expect(fn).toHaveBeenCalledWith(20, 10);
+      dispose();
+    });
+
+    it('skips same value', () => {
+      const sig = signal(10);
+      const fn = jest.fn();
+      const dispose = watch(sig, fn);
+      sig.value = 10;
+      expect(fn).not.toHaveBeenCalled();
+      dispose();
+    });
+  });
+
+  describe('safeExecute', () => {
+    it('executes function safely', () => {
+      const result = safeExecute(() => 42);
+      expect(result).toBe(42);
+    });
+
+    it('handles errors with custom handler', () => {
+      const fn = jest.fn();
+      const result = safeExecute(() => { throw new Error('Test'); }, fn);
+      expect(fn).toHaveBeenCalledWith(expect.any(Error));
+      expect(result).toBeUndefined();
+    });
+  });
+
+  describe('Performance and Limits', () => {
+    it('handles many signals', () => {
+      const signals = Array(1000).fill(0).map(() => signal(0));
+      const computed = signals.map(s => computed(() => s.value * 2));
+      computed.forEach(c => c.value);
+      signals.forEach(s => s.value = 1);
+      computed.forEach(c => expect(c.value).toBe(2));
+    });
+
+    it('prevents excessive recursion', () => {
+      const a = signal(0);
+      const dispose = effect(() => {
+        a.value;
+        a.value = a.value + 1;
+      });
+      expect(() => a.value = 101).toThrow('Maximum recursion depth exceeded');
+      dispose();
     });
   });
 });
