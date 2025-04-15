@@ -77,6 +77,34 @@ const MainScreen: FC<OwnProps> = ({ nodeRef, className }) => {
             tabs={tabsData}
             variant="folders"
             onSwitchTab={handleTabChange}
+            contextMenuOptions={[
+              {
+                description: "Switch to Previous Tab",
+                label: "Previous",
+                onClick: (value?: number) => {
+                  const newIndex =
+                    currentIndex > 0 ? currentIndex - 1 : tabsData.length - 1;
+                  handleTabChange(newIndex);
+                },
+              },
+              {
+                description: "Switch to Next Tab",
+                label: "Next",
+                onClick: (value?: number) => {
+                  const newIndex =
+                    currentIndex < tabsData.length - 1 ? currentIndex + 1 : 0;
+                  handleTabChange(newIndex);
+                },
+              },
+              {
+                description: "Close Tab",
+                label: "Close",
+                onClick: (value?: number) => {
+                  if (value !== undefined) {
+                  }
+                },
+              },
+            ]}
           />
 
           <Square className={s.Square} currentColumn={columnsCount}>

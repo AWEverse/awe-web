@@ -2,7 +2,7 @@ import { MAX_INT32 } from "../../math";
 
 const SIGNAL_SYMBOL = Symbol.for("signals");
 
-const NODE_POOL: Node[] = [];
+const NODE_POOL: SignalNode[] = [];
 const MAX_POOL_SIZE = 1000;
 
 // Config constants
@@ -22,30 +22,30 @@ const HAS_ERROR = 1 << 4; // 16
 const TRACKING = 1 << 5; // 32
 
 enum EVersion {
-  NotUsed = -1, // Node is not reused
+  NotUsed = -1, // SignalNode is not reused
   Current = 0, // Current active version
 }
 
 /**
- * Node in a linked list, used to track dependencies (sources) and dependents (targets).
+ * SignalNode in a linked list, used to track dependencies (sources) and dependents (targets).
  * Also used to remember the last version number of the source that the target saw.
  */
-type Node = {
+type SignalNode = {
   // Source signal that the target depends on
   _source: Signal;
-  _prevSource?: Node;
-  _nextSource?: Node;
+  _prevSource?: SignalNode;
+  _nextSource?: SignalNode;
 
   // Target that depends on the source and should be notified when the source changes
   _target: Computed | Effect;
-  _prevTarget?: Node;
-  _nextTarget?: Node;
+  _prevTarget?: SignalNode;
+  _nextTarget?: SignalNode;
 
   // Version number of the source that the target last saw
   _version: number;
 
   // Used to remember and rollback previous value of ._node
-  _rollbackNode?: Node;
+  _rollbackSignalNode?: SignalNode;
 
   // Used to store the hash of the node for debugging purposes or comparison
   // to check if the node has changed
@@ -55,10 +55,11 @@ type Node = {
 /**
  * Get a node from the pool or create a new one
  */
-function getNode(): Node {
+function getSignalNode(): SignalNode {
   if (NODE_POOL.length > 0) {
     return NODE_POOL.pop()!;
   }
+
   return {
     _source: undefined!,
     _prevSource: undefined,
@@ -67,14 +68,14 @@ function getNode(): Node {
     _prevTarget: undefined,
     _nextTarget: undefined,
     _version: EVersion.Current,
-    _rollbackNode: undefined,
-  } as Node;
+    _rollbackSignalNode: undefined,
+  } as SignalNode;
 }
 
 /**
  * Return a node to the pool for reuse
  */
-function recycleNode(node: Node): void {
+function recycleSignalNode(node: SignalNode): void {
   // Clear references to help GC
   node._source = undefined!;
   node._prevSource = undefined;
@@ -82,7 +83,7 @@ function recycleNode(node: Node): void {
   node._target = undefined!;
   node._prevTarget = undefined;
   node._nextTarget = undefined;
-  node._rollbackNode = undefined;
+  node._rollbackSignalNode = undefined;
 
   // Add to pool if not full
   if (NODE_POOL.length < MAX_POOL_SIZE) {
@@ -223,7 +224,7 @@ function checkRecursionDepth(): void {
  * Adds a dependency between the current evaluation context and the provided signal.
  * Returns the dependency node or undefined if there's no current context.
  */
-function addDependency(signal: Signal): Node | undefined {
+function addDependency(signal: Signal): SignalNode | undefined {
   if (evalContext === undefined) {
     return undefined;
   }
@@ -235,7 +236,7 @@ function addDependency(signal: Signal): Node | undefined {
   if (node === undefined || node._target !== evalContext) {
     // This is a new dependency. Create a new node and set it as
     // the tail of the current context's dependency list.
-    node = getNode();
+    node = getSignalNode();
     node._version = EVersion.Current;
     node._source = signal;
     node._prevSource = evalContext._sources;
@@ -243,7 +244,7 @@ function addDependency(signal: Signal): Node | undefined {
     node._target = evalContext;
     node._prevTarget = undefined;
     node._nextTarget = undefined;
-    node._rollbackNode = signal._node;
+    node._rollbackSignalNode = signal._node;
 
     if (evalContext._sources !== undefined) {
       evalContext._sources._nextSource = node;
@@ -320,33 +321,33 @@ function needsToRecompute(target: Computed | Effect): boolean {
  * Marks current nodes as reusable and sets up rollbacks.
  */
 function prepareSources(target: Computed | Effect) {
-  let currentNode = target._sources;
+  let currentSignalNode = target._sources;
 
   // Clear sources if there aren't any
-  if (currentNode === undefined) {
+  if (currentSignalNode === undefined) {
     return;
   }
 
-  while (currentNode !== undefined) {
-    const sourceNode = currentNode._source._node;
+  while (currentSignalNode !== undefined) {
+    const sourceSignalNode = currentSignalNode._source._node;
 
-    if (sourceNode !== undefined) {
-      currentNode._rollbackNode = sourceNode;
+    if (sourceSignalNode !== undefined) {
+      currentSignalNode._rollbackSignalNode = sourceSignalNode;
     }
 
     // Mark the source node as the current node
-    currentNode._source._node = currentNode;
+    currentSignalNode._source._node = currentSignalNode;
 
     // Mark the node as reusable
-    currentNode._version = EVersion.NotUsed;
+    currentSignalNode._version = EVersion.NotUsed;
 
     // If this is the end of the list, update target._sources
-    if (currentNode._nextSource === undefined) {
-      target._sources = currentNode;
+    if (currentSignalNode._nextSource === undefined) {
+      target._sources = currentSignalNode;
       break;
     }
 
-    currentNode = currentNode._nextSource;
+    currentSignalNode = currentSignalNode._nextSource;
   }
 }
 
@@ -355,48 +356,48 @@ function prepareSources(target: Computed | Effect) {
  * and restoring node state.
  */
 function cleanupSources(target: Computed | Effect) {
-  let currentNode = target._sources;
+  let currentSignalNode = target._sources;
   let newHead = undefined;
 
-  while (currentNode !== undefined) {
-    const previousNode = currentNode._prevSource;
+  while (currentSignalNode !== undefined) {
+    const previousSignalNode = currentSignalNode._prevSource;
 
-    // Node wasn't reused, unsubscribe and remove it from the list
-    if (currentNode._version === EVersion.NotUsed) {
-      currentNode._source._unsubscribe(currentNode);
+    // SignalNode wasn't reused, unsubscribe and remove it from the list
+    if (currentSignalNode._version === EVersion.NotUsed) {
+      currentSignalNode._source._unsubscribe(currentSignalNode);
 
-      if (previousNode !== undefined) {
-        previousNode._nextSource = currentNode._nextSource;
+      if (previousSignalNode !== undefined) {
+        previousSignalNode._nextSource = currentSignalNode._nextSource;
       }
 
-      if (currentNode._nextSource !== undefined) {
-        currentNode._nextSource._prevSource = previousNode;
+      if (currentSignalNode._nextSource !== undefined) {
+        currentSignalNode._nextSource._prevSource = previousSignalNode;
       }
 
       // Restore original node state before recycling
-      const nodeToRecycle = currentNode;
-      currentNode._source._node = currentNode._rollbackNode;
+      const nodeToRecycle = currentSignalNode;
+      currentSignalNode._source._node = currentSignalNode._rollbackSignalNode;
 
-      if (currentNode._rollbackNode !== undefined) {
-        currentNode._rollbackNode = undefined;
+      if (currentSignalNode._rollbackSignalNode !== undefined) {
+        currentSignalNode._rollbackSignalNode = undefined;
       }
 
       // Only recycle after using its properties
-      recycleNode(nodeToRecycle);
+      recycleSignalNode(nodeToRecycle);
     } else {
       // Keep track of the new head (last non-removed node)
-      newHead = currentNode;
+      newHead = currentSignalNode;
 
       // Restore original node state
-      currentNode._source._node = currentNode._rollbackNode;
+      currentSignalNode._source._node = currentSignalNode._rollbackSignalNode;
 
-      if (currentNode._rollbackNode !== undefined) {
-        currentNode._rollbackNode = undefined;
+      if (currentSignalNode._rollbackSignalNode !== undefined) {
+        currentSignalNode._rollbackSignalNode = undefined;
       }
     }
 
     // Move to the previous node
-    currentNode = previousNode;
+    currentSignalNode = previousSignalNode;
   }
 
   target._sources = newHead;
@@ -417,10 +418,10 @@ declare class Signal<T = any> {
   _version: number;
 
   /** @internal */
-  _node?: Node;
+  _node?: SignalNode;
 
   /** @internal */
-  _targets?: Node;
+  _targets?: SignalNode;
 
   constructor(value?: T);
 
@@ -428,10 +429,10 @@ declare class Signal<T = any> {
   _refresh(): boolean;
 
   /** @internal */
-  _subscribe(node: Node): void;
+  _subscribe(node: SignalNode): void;
 
   /** @internal */
-  _unsubscribe(node: Node): void;
+  _unsubscribe(node: SignalNode): void;
 
   /** @internal */
   _notifyDependencies(): void;
@@ -516,12 +517,12 @@ Signal.prototype._unsubscribe = function (node) {
 };
 
 Signal.prototype._notifyDependencies = function () {
-  let currentNode = this._targets;
+  let currentSignalNode = this._targets;
 
-  while (currentNode !== undefined) {
-    const nextNode = currentNode._nextTarget; // Store next before notifying in case of changes
-    currentNode._target._notify();
-    currentNode = nextNode;
+  while (currentSignalNode !== undefined) {
+    const nextSignalNode = currentSignalNode._nextTarget; // Store next before notifying in case of changes
+    currentSignalNode._target._notify();
+    currentSignalNode = nextSignalNode;
   }
 };
 
@@ -572,7 +573,6 @@ Object.defineProperty(Signal.prototype, "value", {
     return this._value;
   },
   set(this: Signal, value) {
-
     if (this._value !== value) {
       // Skip all the work if the value hasn't changed
       if (Object.is(value, this._value)) {
@@ -622,7 +622,7 @@ export function signal<T>(value?: T): Signal<T> {
  */
 declare class Computed<T = any> extends Signal<T> {
   _fn: () => T;
-  _sources?: Node;
+  _sources?: SignalNode;
   _globalVersion: number;
   _flags: number;
   _lastGlobalVersion: number; // Track the last seen global version for optimizations
@@ -752,11 +752,11 @@ Computed.prototype._notify = function () {
   if (!(this._flags & NOTIFIED)) {
     this._flags |= OUTDATED | NOTIFIED;
 
-    let currentNode = this._targets;
-    while (currentNode !== undefined) {
-      const nextNode = currentNode._nextTarget; // Store next before notifying
-      currentNode._target._notify();
-      currentNode = nextNode;
+    let currentSignalNode = this._targets;
+    while (currentSignalNode !== undefined) {
+      const nextSignalNode = currentSignalNode._nextTarget; // Store next before notifying
+      currentSignalNode._target._notify();
+      currentSignalNode = nextSignalNode;
     }
   }
 };
@@ -840,11 +840,11 @@ function cleanupEffect(effect: Effect) {
  */
 function disposeEffect(effect: Effect) {
   for (let node = effect._sources; node !== undefined;) {
-    const nextNode = node._nextSource; // Store next before unsubscribing
+    const nextSignalNode = node._nextSource; // Store next before unsubscribing
     node._source._unsubscribe(node);
     // Return nodes to the pool
-    recycleNode(node);
-    node = nextNode;
+    recycleSignalNode(node);
+    node = nextSignalNode;
   }
 
   effect._fn = undefined;
@@ -882,7 +882,7 @@ type CleanupEffectFn = NoneToVoidFunction;
 declare class Effect {
   _fn?: EffectFn;
   _cleanup?: NoneToVoidFunction;
-  _sources?: Node;
+  _sources?: SignalNode;
   _nextBatchedEffect?: Effect;
   _flags: number;
 
@@ -1029,30 +1029,35 @@ export function makeReactiveArray<T>(
   arr: T[],
   callback: CursorCallback,
   path: (string | number)[],
+  shouldTrack?: (path: (string | number)[]) => boolean,
 ): Signal<Signalify<T>[]> {
-  const reactiveItems = arr.map((item, index) => {
-    if (isPlainObject(item)) {
-      return reactiveObject(item, callback, [...path, index]);
+  const internal = arr.map((item, index) => {
+    const currentPath = [...path, index];
+    if (!shouldTrack || !shouldTrack(currentPath)) {
+      return item as Signalify<T>;
     }
-    return item as Signalify<T>;
+    return isPlainObject(item)
+      ? reactiveObject(item as any, { callback, path: currentPath, shouldTrack })
+      : item as Signalify<T>;
   });
 
-  const sig = signal(reactiveItems);
-
+  const sig = signal(internal);
   trackEffect(sig, path, callback);
 
-  const proxy = new Proxy(reactiveItems, {
+  const proxy = new Proxy(internal, {
     set(target, prop: string | symbol, value: unknown): boolean {
       const index = Number(prop);
       if (!isNaN(index)) {
-        disposeAt(target[index]); // очистка предыдущего
+        disposeAt(target[index]);
 
-        const newValue = isPlainObject(value)
-          ? reactiveObject(value, callback, [...path, index])
-          : (value as Signalify<T>);
+        const currentPath = [...path, index];
+        const newValue =
+          isPlainObject(value) && (!shouldTrack || shouldTrack(currentPath))
+            ? reactiveObject(value as any, { callback, path: currentPath, shouldTrack })
+            : value as Signalify<T>;
 
-        target[index] = newValue as Signalify<T>;
-        sig.value = structuredClone(target);
+        target[index] = newValue;
+        sig.value = [...target];
         return true;
       }
       return false;
@@ -1063,66 +1068,91 @@ export function makeReactiveArray<T>(
       if (!isNaN(index)) {
         disposeAt(target[index]);
         target.splice(index, 1);
-        sig.value = structuredClone(target);
+        sig.value = [...target];
         return true;
       }
       return false;
     },
   });
 
-  sig.value = proxy as unknown as Signalify<T>[]; // проксированный массив
+  sig.value = proxy as unknown as Signalify<T>[];
 
   return sig;
 }
 
+
+// {
+//   root: {
+//     child {
+//       left: {
+//         ...elements
+//       },
+//       right: {
+//         a: 1
+//         b: [0, 1, 2, 3] < --only that part of three change that why were tracking that and left stay unchanged
+//       }
+//     }
+//   }
+// }
+
+export interface ReactiveOptions {
+  callback?: CursorCallback;
+  path?: (string | number)[];
+  shouldTrack?: (path: (string | number)[]) => boolean;
+}
+
 export function reactiveObject<T extends Record<string, unknown>>(
   obj: T,
-  callback?: CursorCallback,
-  path: (string | number)[] = [],
+  options: ReactiveOptions = {},
 ): Signalify<T> {
+  const {
+    callback,
+    path = [],
+    shouldTrack = () => true, // по умолчанию трекаем всё
+  } = options;
+
   const reactive = {} as Signalify<T>;
 
   for (const key in obj) {
     if (!Object.prototype.hasOwnProperty.call(obj, key)) continue;
 
-    const currentPath = structuredClone(path);
-    currentPath.push(key);
-
+    const currentPath = [...path, key];
     const value = obj[key];
 
-    const wrapAndTrack = <V>(v: V, p: (string | number)[]): Signal<V> => {
+    const wrapSignal = <V>(v: V, p: (string | number)[]): Signal<V> => {
       const sig = signal(v);
-      if (callback) {
-        trackEffect(sig, p, callback);
-      }
+      if (callback) trackEffect(sig, p, callback);
       return sig;
     };
+
+    if (!shouldTrack(currentPath)) {
+      // не отслеживаем — просто передаём как есть
+      reactive[key] = value as Signalify<T>[typeof key];
+      continue;
+    }
 
     if (Array.isArray(value)) {
       reactive[key] = makeReactiveArray(
         value,
         callback!,
         currentPath,
+        shouldTrack,
       ) as Signalify<T>[typeof key];
     } else if (isPlainObject(value)) {
-      reactive[key] = wrapAndTrack(
-        reactiveObject(
-          value as Record<string, unknown>,
-          callback,
-          currentPath,
-        ),
-        currentPath,
-      ) as Signalify<T>[typeof key];
+      const nested = reactiveObject(value as Record<string, unknown>, {
+        callback,
+        path: currentPath,
+        shouldTrack,
+      });
+      reactive[key] = wrapSignal(nested, currentPath);
     } else {
-      reactive[key] = wrapAndTrack(
-        value,
-        currentPath,
-      ) as Signalify<T>[typeof key];
+      reactive[key] = wrapSignal(value, currentPath);
     }
   }
 
   return reactive;
 }
+
 
 /**
  * Execute a callback function in a try-catch block and handle errors
@@ -1220,4 +1250,3 @@ export {
   type Signalify,
   type DeepReadonly,
 };
-
