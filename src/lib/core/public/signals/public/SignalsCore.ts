@@ -1016,7 +1016,7 @@ function isPlainObject(value: unknown): value is Record<string, unknown> {
 //       },
 //       right: {
 //         a: 1
-//         b: [0, 1, 2, 3] < --only that part of three change that why were tracking that and left stay unchanged
+//         b: [0, 1, 2, 3] < --only this part of the tree change triggers and change tracking, the left remains unchanged
 //       }
 //     }
 //   }

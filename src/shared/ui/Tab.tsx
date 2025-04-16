@@ -1,19 +1,13 @@
-import React, { FC, memo, useMemo, useRef } from "react";
+import { createRef, FC, JSX, memo, ReactNode, useMemo, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import buildClassName from "../lib/buildClassName";
 import "./Tab.scss";
-import { useFastClick } from "../hooks/mouse/useFastClick";
 import { capitalize } from "@/lib/utils/helpers/string/stringFormaters";
-import { EMouseButton } from "@/lib/core";
-import ContextMenu, {
-  ContextMenuOptionType,
-  useContextMenuHandlers,
-} from "@/entities/context-menu";
-import ActionButton from "./ActionButton";
 
 type OwnProps = {
   layoutId: string;
   className?: string;
+  href?: string | undefined;
   title: string;
   isActive?: boolean;
   isBlocked?: boolean;
@@ -46,6 +40,7 @@ const platformVariants = {
 const Tab: FC<OwnProps> = ({
   layoutId,
   className,
+  href,
   title,
   isActive,
   isBlocked,
@@ -56,8 +51,6 @@ const Tab: FC<OwnProps> = ({
   variant = "pannels",
   tabIndex = 0,
 }) => {
-  const tabRef = useRef<HTMLButtonElement>(null);
-
   const renderBadge = useMemo(() => {
     if (badgeCount) {
       return (
@@ -80,55 +73,58 @@ const Tab: FC<OwnProps> = ({
     onClick?.(clickArg);
   };
 
-  return (
-    <>
-      <button
-        ref={tabRef}
-        aria-label={title}
-        aria-selected={isActive}
-        className={buildClassName(
-          "Tab",
-          onClick && "Tab-interactive",
-          isActive && classNames.active,
-          className,
-        )}
-        role="tab"
-        tabIndex={tabIndex}
-        onClick={handleClick}
-      >
-        <motion.span
-          className={buildClassName("TabInner", capitalize(variant))}
-          data-active={isActive}
-          whileHover={{ scale: 1.02 }}
-          whileTap={{ scale: 0.98 }}
-          transition={{ duration: 0.1 }}
-        >
-          <span className="Tab-title">{title}</span>
-          {renderBadge}
-          {isBlocked && (
-            <i aria-hidden="true" className="icon icon-lock-badge blocked" />
-          )}
+  const RelativeTag = (href ? "a" : "button") as keyof Pick<
+    JSX.IntrinsicElements,
+    "a" | "button"
+  >;
 
-          <AnimatePresence>
-            {isActive && (
-              <motion.i
-                key={`${title}-active`}
-                layoutId={layoutId}
-                className={buildClassName("platform", `platform-${variant}`)}
-                transition={TRANSITION_SETTINGS}
-                variants={platformVariants}
-                initial="initial"
-                animate="animate"
-                exit="exit"
-                style={{ willChange: "transform, opacity" }}
-              >
-                <span className="platform-inner-pannels" />
-              </motion.i>
-            )}
-          </AnimatePresence>
-        </motion.span>
-      </button>
-    </>
+  return (
+    <RelativeTag
+      {...(href ? { href } : { type: "button" })}
+      aria-label={title}
+      aria-selected={isActive}
+      className={buildClassName(
+        "Tab",
+        onClick && "Tab-interactive",
+        isActive && classNames.active,
+        className,
+      )}
+      role="tab"
+      tabIndex={tabIndex}
+      onClick={handleClick}
+    >
+      <motion.span
+        className={buildClassName("TabInner", capitalize(variant))}
+        data-active={isActive}
+        whileHover={{ scale: 1.02 }}
+        whileTap={{ scale: 0.98 }}
+        transition={{ duration: 0.1 }}
+      >
+        <span className="Tab-title">{title}</span>
+        {renderBadge}
+        {isBlocked && (
+          <i aria-hidden="true" className="icon icon-lock-badge blocked" />
+        )}
+
+        <AnimatePresence>
+          {isActive && (
+            <motion.i
+              key={`${title}-active`}
+              layoutId={layoutId}
+              className={buildClassName("platform", `platform-${variant}`)}
+              transition={TRANSITION_SETTINGS}
+              variants={platformVariants}
+              initial="initial"
+              animate="animate"
+              exit="exit"
+              style={{ willChange: "transform, opacity" }}
+            >
+              <span className="platform-inner-pannels" />
+            </motion.i>
+          )}
+        </AnimatePresence>
+      </motion.span>
+    </RelativeTag>
   );
 };
 

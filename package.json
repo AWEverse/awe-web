@@ -54,6 +54,7 @@
 		"i18next-http-backend": "^3.0.2",
 		"libsodium-wrappers": "^0.7.15",
 		"linkify-it": "^5.0.0",
+		"lru-cache": "^11.1.0",
 		"marked": "^15.0.8",
 		"memoizee": "^0.4.17",
 		"motion": "^12.6.3",

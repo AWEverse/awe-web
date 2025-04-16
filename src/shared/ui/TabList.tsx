@@ -14,8 +14,15 @@ import { EMouseButton } from "@/lib/core";
 import { useFastClick } from "../hooks/mouse/useFastClick";
 import ActionButton from "./ActionButton";
 
-type TabProperty = "title" | "badgeCount" | "isBlocked" | "isBadgeActive";
-type TabWithProperties = { id: number | string } & Pick<TabProps, TabProperty>;
+type TabProperty =
+  | "title"
+  | "badgeCount"
+  | "isBlocked"
+  | "isBadgeActive"
+  | "href";
+type TabWithProperties = {
+  id: number | string;
+} & Pick<TabProps, TabProperty>;
 
 interface OwnProps {
   tabs: readonly TabWithProperties[];
