@@ -4,6 +4,8 @@ import { Box, Link, Stack } from "@mui/material";
 import { memo, useState } from "react";
 import { Outlet } from "react-router";
 
+import "./index.scss";
+
 type RangedInteger = {};
 
 const RedditPage = () => {
@@ -16,6 +18,7 @@ const RedditPage = () => {
   return (
     <>
       <TabList
+        className="community__navigation"
         activeTab={activeTabIndex}
         tabs={[
           { id: 1, title: "Overview", href: "/d/overview" },
