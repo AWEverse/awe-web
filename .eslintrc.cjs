@@ -71,15 +71,15 @@ module.exports = {
             patterns: [
               {
                 group: ["@entities/*/*", "!@entities/*/index"],
-                message: "Імпортуй тільки через public API (index.ts)",
+                message: "Import is only allowed via public API (index.ts)",
               },
               {
                 group: ["@features/*/*", "!@features/*/index"],
-                message: "Імпортуй тільки через public API (index.ts)",
+                message: "Import is only allowed via public API (index.ts)",
               },
               {
                 group: ["@widgets/*/*", "!@widgets/*/index"],
-                message: "Імпортуй тільки через public API (index.ts)",
+                message: "Import is only allowed via public API (index.ts)",
               },
             ],
           },

@@ -1115,7 +1115,7 @@ function makeReactiveArray<T>(
   callback: CursorCallback | undefined,
   path: (string | number)[],
   matcher: (path: PathSegment[]) => boolean,
-): Signal<Signalify<T>[]> {
+): Signal<T[]> {
   const reactiveItems = arr.map((item, index) => {
     const itemPath = [...path, index];
 
@@ -1132,12 +1132,15 @@ function makeReactiveArray<T>(
         callback,
         path: itemPath,
         trackPatterns: ["**"],
-      }) as Signalify<T>;
+      }) as T;
     }
-    return createSignal(item) as Signalify<T>;
+    if (Array.isArray(item)) {
+      return makeReactiveArray(item, callback, itemPath, matcher) as T;
+    }
+    return createSignal(item).value as T; // Unwrap signal for primitive values
   });
 
-  const arraySignal = signal(reactiveItems as Signalify<T>[]);
+  const arraySignal = signal(reactiveItems as T[]);
   if (callback && matcher(path)) {
     effect(() => callback(path, arraySignal.peek()));
   }
@@ -1195,38 +1198,69 @@ export function watch<T>(
   });
 }
 
+interface SharedWidnow extends Window {
+  __originalSignalSet?: AnyFunction
+  __originalComputedRefresh?: AnyFunction
+}
+
+// Ensure global storage for original methods
+declare global {
+  interface Window {
+    __originalSignalSet?: AnyFunction
+    __originalComputedRefresh?: AnyFunction
+  }
+}
 /**
  * Performance monitoring function to track signal updates
  * Use in development only
  */
 export function monitorSignals(enable: boolean): void {
   if (!enable) {
-    // Remove any monitoring hooks
+    // Restore original methods if stored
+    if (window.__originalSignalSet) {
+      Object.defineProperty(Signal.prototype, "value", {
+        set: window.__originalSignalSet,
+        get: Object.getOwnPropertyDescriptor(Signal.prototype, "value")!.get,
+        configurable: true,
+      });
+      delete window.__originalSignalSet;
+    }
+    if (window.__originalComputedRefresh) {
+      Computed.prototype._refresh = window.__originalComputedRefresh;
+      delete window.__originalComputedRefresh;
+    }
     return;
   }
 
-  // Store original methods
-  const originalSignalSet = Object.getOwnPropertyDescriptor(
-    Signal.prototype,
-    "value",
-  )!.set!;
-  const originalComputedRefresh = Computed.prototype._refresh;
+  // Store original methods only if not already stored
+  if (!window.__originalSignalSet) {
+    window.__originalSignalSet = Object.getOwnPropertyDescriptor(
+      Signal.prototype,
+      "value"
+    )!.set!;
+  }
+  if (!window.__originalComputedRefresh) {
+    window.__originalComputedRefresh = Computed.prototype._refresh;
+  }
 
   // Override signal setter to track updates
   Object.defineProperty(Signal.prototype, "value", {
     set(value) {
       console.log(`Signal updated: ${String(value)}`);
-      originalSignalSet.call(this, value);
+      (window as SharedWidnow).__originalSignalSet?.call(this, value);
     },
     get: Object.getOwnPropertyDescriptor(Signal.prototype, "value")!.get,
+    configurable: true,
   });
 
   // Override computed refresh to track recomputation
   Computed.prototype._refresh = function () {
     console.log("Computed refreshing");
-    return originalComputedRefresh.call(this);
+    return (window as SharedWidnow).__originalComputedRefresh?.call(this);
   };
 }
+
+
 
 export {
   computed,
