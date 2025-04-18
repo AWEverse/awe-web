@@ -15,7 +15,7 @@ interface OwnProps {
 }
 
 const EditScreen: FC<OwnProps> = ({ nodeRef, className }) => {
-  const toggleRightEditingPanel = useChatStore((s) => s.toggleProfileColumn);
+  const toggleRightEditingPanel = useChatStore((s) => s.toggleProfileEditing);
 
   const [formData, setFormData] = useState({
     firstName: "",
