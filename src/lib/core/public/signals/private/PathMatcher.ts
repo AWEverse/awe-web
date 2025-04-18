@@ -1,5 +1,3 @@
-// Optimized and structured path matcher with tracing and extensibility
-
 import { PathSyntaxError } from "./PathSyntaxError";
 import { isValidIdentifier, isTemplate } from "./PathSyntaxValidators";
 
@@ -46,13 +44,8 @@ function parsePathPattern(input: string): PathToken[] {
       } else if (seg.startsWith(":")) {
         const [name, valueType] = seg.slice(1).split(":");
         if (!isValidIdentifier(name)) throw new PathSyntaxError(seg, tokens.length);
-        const allowedTypes = ["string", "number", "boolean"] as const;
-        const vt = allowedTypes.includes(valueType as any) ? (valueType as typeof allowedTypes[number]) : undefined;
-        if (vt !== undefined) {
-          tokens.push({ type: "param", name, valueType: vt });
-        } else {
-          tokens.push({ type: "param", name });
-        }
+        const allowedTypes = ["string", "number", "boolean"];
+        tokens.push({ type: "param", name, valueType: allowedTypes.includes(valueType!) ? valueType as any : undefined });
       } else if (seg.startsWith("**:")) {
         const name = seg.slice(3);
         if (!isValidIdentifier(name)) throw new PathSyntaxError(seg, tokens.length);
@@ -66,17 +59,11 @@ function parsePathPattern(input: string): PathToken[] {
       } else {
         throw new PathSyntaxError(seg, tokens.length);
       }
-
       start = i + 1;
     }
   }
 
-  if (parseCache.size >= MAX_CACHE_SIZE) {
-    const firstKey = parseCache.keys().next().value;
-    if (firstKey !== undefined) {
-      parseCache.delete(firstKey);
-    }
-  }
+  if (parseCache.size >= MAX_CACHE_SIZE) parseCache.delete(parseCache.keys().next().value);
   parseCache.set(input, tokens);
   return tokens;
 }
@@ -84,18 +71,17 @@ function parsePathPattern(input: string): PathToken[] {
 function matchSegment(
   pattern: PathToken,
   actual: PathSegment,
-  params: Record<string, string>,
+  params: Record<string, string>
 ): boolean {
+  const value = String(actual);
   if (pattern === Tokens.Star) return typeof actual === "string";
   if (pattern === Tokens.Array) return typeof actual === "number";
-
   if (typeof pattern === "object") {
-    const strValue = String(actual);
     switch (pattern.type) {
       case "param": {
         if (pattern.valueType === "number" && isNaN(+actual)) return false;
-        if (pattern.valueType === "boolean" && strValue !== "true" && strValue !== "false") return false;
-        params[pattern.name] = strValue;
+        if (pattern.valueType === "boolean" && value !== "true" && value !== "false") return false;
+        params[pattern.name] = value;
         return true;
       }
       case "group":
@@ -104,8 +90,7 @@ function matchSegment(
         return true;
     }
   }
-
-  return pattern === (typeof actual === "string" ? actual : String(actual));
+  return pattern === (typeof actual === "string" ? actual : value);
 }
 
 interface CompiledPattern {
@@ -119,7 +104,6 @@ function compilePattern(tokens: PathToken[]): CompiledPattern {
   const firstDeep = tokens.findIndex(
     (t) => t === Tokens.Deep || (typeof t === "object" && t.type === "deep-param")
   );
-
   return {
     tokens,
     prefixLen: firstDeep === -1 ? tokens.length : firstDeep,
@@ -131,7 +115,7 @@ function compilePattern(tokens: PathToken[]): CompiledPattern {
 function matchCompiledPath(
   path: PathSegment[],
   compiled: CompiledPattern,
-  params: Record<string, string>,
+  params: Record<string, string>
 ): boolean {
   const { tokens, prefixLen, suffixLen, hasDeep } = compiled;
   const pathLen = path.length;
@@ -146,11 +130,9 @@ function matchCompiledPath(
   if (hasDeep) {
     const deepToken = tokens[prefixLen];
     const deepLen = pathLen - prefixLen - suffixLen;
-
     if (typeof deepToken === "object" && deepToken.type === "deep-param") {
       params[deepToken.name] = path.slice(prefixLen, prefixLen + deepLen).map(String).join(".");
     }
-
     for (let i = 0; i < suffixLen; i++) {
       const patternToken = tokens[tokens.length - suffixLen + i];
       const actualSegment = path[pathLen - suffixLen + i];
@@ -163,42 +145,36 @@ function matchCompiledPath(
 
 export function createPathMatcherWithTrace(
   patterns: string[]
-): (path: PathSegment[]) => MatchTrace[] {
+): (path: PathSegment[], paramsPool?: Record<string, string>) => MatchTrace[] {
   const compiled = patterns.map((p) => ({
     pattern: compilePattern(parsePathPattern(p)),
     original: p,
   }));
 
-  const paramsPool: Record<string, string> = {};
+  return (path: PathSegment[], externalPool?: Record<string, string>) => {
+    const pool = externalPool ?? {} as Record<string, string>;
+    const traces: MatchTrace[] = [];
 
-  return (path: PathSegment[]) => {
-    return compiled.map(({ pattern, original }) => {
-      for (const key in paramsPool) delete paramsPool[key];
+    for (let i = 0; i < compiled.length; i++) {
+      for (const k in pool) delete pool[k];
+      const { pattern, original } = compiled[i];
+      const matched = matchCompiledPath(path, pattern, pool);
+      traces.push({ pattern: original, matched, params: matched ? { ...pool } : undefined });
+    }
 
-      const matched = matchCompiledPath(path, pattern, paramsPool);
-      return {
-        pattern: original,
-        matched,
-        params: matched ? { ...paramsPool } : undefined,
-      };
-    });
+    return traces;
   };
 }
 
-export function createPathMatcher(
-  patterns: string[]
-): (path: PathSegment[]) => boolean {
+export function createPathMatcher(patterns: string[]): (path: PathSegment[]) => boolean {
   const compiled = patterns.map((p) => compilePattern(parsePathPattern(p)));
   const params: Record<string, string> = {};
 
   return (path: PathSegment[]) => {
-    for (const key in params) delete params[key];
-    return compiled.some((cp) => matchCompiledPath(path, cp, params));
+    for (const k in params) delete params[k];
+    for (let i = 0; i < compiled.length; i++) {
+      if (matchCompiledPath(path, compiled[i], params)) return true;
+    }
+    return false;
   };
 }
-
-// Future extension points:
-// - createAsyncPathMatcherWithTrace / createAsyncPathMatcher with yield* based iterators
-// - Trie-based matching index for O(k) match time
-// - WebAssembly SIMD backend for high-throughput match systems
-// - Type-safe extractors from param tokens for TS inference
