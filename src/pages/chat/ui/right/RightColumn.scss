@@ -5,11 +5,11 @@
   overflow: hidden;
   background-color: var(--awe-palette-background-default);
   z-index: 100;
-    transform: translate3d(0, 0, 0);
-
+  transform: translate3d(0, 0, 0);
 }
 
 .RightColumn {
+
   @media (min-width: 649px) {
     width: 100%;
     max-width: var(--right-column-width);
@@ -22,4 +22,13 @@
 
 .RightHeaderNavigation {
   padding: 0 0.75rem;
+}
+
+.ChatProfileTabs {
+  position: relative;
+  height: calc(var(--vh, 1vh) * 100 - 35.2px);
+
+  .IsFullPage {
+    overflow-y: scroll !important;
+  }
 }

@@ -1,22 +1,37 @@
+// slices/profileColumnSlice.ts
 import { StateCreator } from 'zustand';
 import { SliceStateFactory } from '../types';
 
-type ProfileColumnState = SliceStateFactory<['ProfileColumn', 'ProfileEditing']>;
+export type ProfileColumnState = SliceStateFactory<['ProfileColumn', 'ProfileEditing']> & {
+  toggleProfileColumn: () => void;
+  openProfileColumn: () => void;
+  closeProfileColumn: () => void;
+  getIsProfileColumn: () => boolean;
 
-const createProfileColumnSlice: StateCreator<ProfileColumnState, [], [], ProfileColumnState> = (set, get) => ({
+  toggleProfileEditing: () => void;
+  openProfileEditing: () => void;
+  closeProfileEditing: () => void;
+  getIsProfileEditing: () => boolean;
+};
+
+const createProfileColumnSlice: StateCreator<
+  ProfileColumnState,
+  [],
+  [],
+  ProfileColumnState
+> = (set, get) => ({
   isProfileColumn: false,
   isProfileEditing: false,
 
-  toggleProfileColumn: () => set(state => ({ isProfileColumn: !state.isProfileColumn })),
+  toggleProfileColumn: () => set((state) => ({ isProfileColumn: !state.isProfileColumn })),
   openProfileColumn: () => set({ isProfileColumn: true }),
   closeProfileColumn: () => set({ isProfileColumn: false }),
   getIsProfileColumn: () => get().isProfileColumn,
 
-  toggleProfileEditing: () => set(state => ({ isProfileEditing: !state.isProfileEditing })),
+  toggleProfileEditing: () => set((state) => ({ isProfileEditing: !state.isProfileEditing })),
   openProfileEditing: () => set({ isProfileEditing: true }),
   closeProfileEditing: () => set({ isProfileEditing: false }),
   getIsProfileEditing: () => get().isProfileEditing,
 });
 
 export default createProfileColumnSlice;
-export type { ProfileColumnState };

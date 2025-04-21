@@ -1,75 +1,82 @@
-class Node<T> {
-  public items: T[] = [];
-  public next: Node<T> | null = null;
+export interface CircularQueueNodeOptions {
+  size: number;
 }
 
-export class UnrolledQueue<T> {
-  private head: Node<T> | null = null;
-  private tail: Node<T> | null = null;
-  private _size = 0;
+export class CircularQueueNode<T> {
+  public length = 0;
+  public next: CircularQueueNode<T> | null = null;
 
-  constructor(private readonly chunkSize = 2048) { }
+  private readonly size: number;
+  private readonly buffer: (T | null)[];
+  private readIndex = 0;
+  private writeIndex = 0;
 
-  enqueue(item: T): void {
-    if (!this.tail || this.tail.items.length >= this.chunkSize) {
-      const newNode = new Node<T>();
-      if (this.tail) {
-        this.tail.next = newNode;
-      } else {
-        this.head = newNode;
-      }
-      this.tail = newNode;
-    }
-    this.tail.items.push(item);
-    this._size++;
+  constructor({ size }: CircularQueueNodeOptions) {
+    this.size = size;
+    this.buffer = new Array<T | null>(size);
+  }
+
+  enqueue(item: T): boolean {
+    if (this.length === this.size) return false;
+    this.buffer[this.writeIndex++] = item;
+    if (this.writeIndex === this.size) this.writeIndex = 0;
+    this.length++;
+    return true;
   }
 
   dequeue(): T | null {
-    if (!this.head) return null;
-
-    const item = this.head.items.shift() ?? null;
-    if (item !== null) {
-      this._size--;
-      if (this.head.items.length === 0) {
-        this.head = this.head.next;
-        if (!this.head) this.tail = null;
-      }
-    }
+    if (this.length === 0) return null;
+    const item = this.buffer[this.readIndex];
+    this.buffer[this.readIndex++] = null;
+    if (this.readIndex === this.size) this.readIndex = 0;
+    this.length--;
     return item;
   }
 
-  clear(): void {
-    this.head = null;
-    this.tail = null;
-    this._size = 0;
-  }
-
-  size(): number {
-    return this._size;
-  }
-
   isEmpty(): boolean {
-    return this._size === 0;
-  }
-
-  *[Symbol.iterator](): Iterator<T> {
-    let current = this.head;
-    while (current) {
-      for (const item of current.items) {
-        yield item;
-      }
-      current = current.next;
-    }
-  }
-
-  async *[Symbol.asyncIterator](): AsyncIterator<T> {
-    for (const item of this) {
-      yield await Promise.resolve(item);
-    }
-  }
-
-  toArray(): T[] {
-    return [...this];
+    return this.length === 0;
   }
 }
 
+export interface UnrolledQueueOptions {
+  nodeSize?: number;
+}
+
+export default class UnrolledQueue<T> {
+  #length = 0;
+  #nodeSize: number;
+  #head: CircularQueueNode<T>;
+  #tail: CircularQueueNode<T>;
+
+  constructor(options: UnrolledQueueOptions = {}) {
+    this.#nodeSize = options.nodeSize ?? 2048;
+    const node = new CircularQueueNode<T>({ size: this.#nodeSize });
+    this.#head = node;
+    this.#tail = node;
+  }
+
+  get length(): number {
+    return this.#length;
+  }
+
+  enqueue(item: T): void {
+    if (!this.#head.enqueue(item)) {
+      const newNode = new CircularQueueNode<T>({ size: this.#nodeSize });
+      this.#head.next = newNode;
+      this.#head = newNode;
+      this.#head.enqueue(item);
+    }
+
+    this.#length++;
+  }
+
+  dequeue(): T | null {
+    if (this.#length === 0) return null;
+    const item = this.#tail.dequeue();
+    this.#length--;
+    if (this.#tail.length === 0 && this.#tail.next) {
+      this.#tail = this.#tail.next;
+    }
+    return item;
+  }
+}

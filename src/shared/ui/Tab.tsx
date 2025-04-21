@@ -26,15 +26,16 @@ const classNames = {
 
 const TRANSITION_SETTINGS = {
   type: "spring",
-  stiffness: 500,
-  damping: 30,
+  stiffness: 400,
+  damping: 24,
+  mass: 0.5,
   restDelta: 0.001,
 };
 
 const platformVariants = {
-  initial: { opacity: 0, scale: 0.9 },
-  animate: { opacity: 1, scale: 1 },
-  exit: { opacity: 0, scale: 0.9 },
+  initial: { opacity: 0, scaleX: 0.9, scaleY: 0.9 },
+  animate: { opacity: 1, scaleX: 1, scaleY: 1 },
+  exit: { opacity: 0, scaleX: 0.9, scaleY: 0.95 },
 };
 
 const Tab: FC<OwnProps> = ({
@@ -51,32 +52,28 @@ const Tab: FC<OwnProps> = ({
   variant = "pannels",
   tabIndex = 0,
 }) => {
+  const handleClick = () => onClick?.(clickArg);
+  const RelativeTag = href ? "a" : "button";
+
   const renderBadge = useMemo(() => {
-    if (badgeCount) {
-      return (
-        <span
-          aria-label={`Notifications: ${badgeCount}`}
-          className={buildClassName(
-            "badge",
-            isBadgeActive && classNames.badgeActive,
-          )}
-          role="alert"
-        >
-          {badgeCount}
-        </span>
-      );
-    }
-    return null;
-  }, [badgeCount, isBadgeActive, layoutId]);
+    return badgeCount ? (
+      <span
+        aria-label={`Notifications: ${badgeCount}`}
+        className={buildClassName(
+          "badge",
+          isBadgeActive && classNames.badgeActive,
+        )}
+        role="alert"
+      >
+        {badgeCount}
+      </span>
+    ) : null;
+  }, [badgeCount, isBadgeActive]);
 
-  const handleClick = () => {
-    onClick?.(clickArg);
-  };
-
-  const RelativeTag = (href ? "a" : "button") as keyof Pick<
-    JSX.IntrinsicElements,
-    "a" | "button"
-  >;
+  const platformClass = useMemo(
+    () => buildClassName("platform", `platform-${variant}`),
+    [variant],
+  );
 
   return (
     <RelativeTag
@@ -97,8 +94,8 @@ const Tab: FC<OwnProps> = ({
         className={buildClassName("TabInner", capitalize(variant))}
         data-active={isActive}
         whileHover={{ scale: 1.02 }}
-        whileTap={{ scale: 0.98 }}
-        transition={{ duration: 0.1 }}
+        whileTap={{ scale: 0.975 }}
+        transition={{ type: "spring", stiffness: 250, damping: 20 }}
       >
         <span className="Tab-title">{title}</span>
         {renderBadge}
@@ -106,20 +103,19 @@ const Tab: FC<OwnProps> = ({
           <i aria-hidden="true" className="icon icon-lock-badge blocked" />
         )}
 
-        <AnimatePresence>
+        <AnimatePresence mode="wait">
           {isActive && (
             <motion.i
-              key={`${title}-active`}
+              key={`${layoutId}-${variant}`}
               layoutId={layoutId}
-              className={buildClassName("platform", `platform-${variant}`)}
+              className={platformClass}
               transition={TRANSITION_SETTINGS}
               variants={platformVariants}
               initial="initial"
               animate="animate"
               exit="exit"
-              style={{ willChange: "transform, opacity" }}
             >
-              <span className="platform-inner-pannels" />
+              <span className={`platform-inner-${variant}`} />
             </motion.i>
           )}
         </AnimatePresence>

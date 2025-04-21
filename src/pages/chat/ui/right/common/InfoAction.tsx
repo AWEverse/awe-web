@@ -1,71 +1,46 @@
-import { FC, memo, ReactNode, useState } from "react";
+import { FC, memo, ReactNode } from "react";
 import s from "./InfoAction.module.scss";
 import buildClassName from "@/shared/lib/buildClassName";
-import { useStableCallback } from "@/shared/hooks/base";
-import { Snackbar, SnackbarCloseReason, Alert } from "@mui/material";
 
-interface OwnProps {
+interface InfoActionProps {
   className?: string;
   title?: ReactNode;
   subtitle?: ReactNode;
-  alert?: ReactNode;
   startDecorator?: ReactNode;
   endDecorator?: ReactNode;
+  onClick?: () => void;
+  disabled?: boolean;
 }
 
-const InfoAction: FC<OwnProps> = ({
+const InfoAction: FC<InfoActionProps> = ({
   className,
-  title = "title",
-  subtitle = "subtitle",
-  alert = "Copied to clipboard!",
+  title = "Title",
+  subtitle = "Subtitle",
   startDecorator,
   endDecorator,
+  onClick,
+  disabled = false,
 }) => {
-  const [open, setOpen] = useState(false);
-
-  const handleCopyClick = useStableCallback(() => {
-    setOpen(true);
-  });
-
-  const handleClose = useStableCallback(
-    (_event?: React.SyntheticEvent | Event, reason?: SnackbarCloseReason) => {
-      if (reason === "clickaway") {
-        return;
-      }
-
-      setOpen(false);
-    },
-  );
-
   return (
-    <>
-      <div
-        aria-label="Copy title"
-        className={buildClassName(s.ActionWrapper, className)}
-        role="button"
-        onClick={handleCopyClick}
-      >
-        {startDecorator && (
-          <span className={s.Decorator}>{startDecorator}</span>
-        )}
-        <div className={s.Container}>
-          <h3 className={s.Title}>{title}</h3>
-          <span className={s.Subtitle}>{subtitle}</span>
-        </div>
-        {endDecorator && <span className={s.Decorator}>{endDecorator}</span>}
+    <button
+      aria-label={`Copy ${title}`}
+      className={buildClassName(
+        s.ActionWrapper,
+        className,
+        disabled && s.Disabled,
+      )}
+      role="button"
+      onClick={onClick}
+      disabled={disabled}
+      type="button"
+    >
+      {startDecorator && <span className={s.Decorator}>{startDecorator}</span>}
+      <div className={s.Container}>
+        <h3 className={s.Title}>{title}</h3>
+        {subtitle && <span className={s.Subtitle}>{subtitle}</span>}
       </div>
-      <Snackbar
-        anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
-        autoHideDuration={1000}
-        message="Note archived"
-        open={open}
-        onClose={handleClose}
-      >
-        <Alert sx={{ width: "100%" }} onClose={handleClose}>
-          {alert}
-        </Alert>
-      </Snackbar>
-    </>
+      {endDecorator && <span className={s.Decorator}>{endDecorator}</span>}
+    </button>
   );
 };
 

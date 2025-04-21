@@ -1,7 +1,7 @@
 import { FC, memo, useState } from "react";
 import TextInput from "@/shared/ui/TextInput";
 import s from "./EditScreen.module.scss";
-import HeaderNavigation from "../../common/HeaderNavigation";
+import HeaderNavigation from "../common/HeaderNavigation";
 import buildClassName from "@/shared/lib/buildClassName";
 import TextArea from "@/shared/ui/TextArea";
 import ActionButton from "@/shared/ui/ActionButton";

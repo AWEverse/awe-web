@@ -1,50 +1,49 @@
-import safeExecDOM from "./safeExecDOM";
 import { setDOMPhase } from "./stricterdom";
+import safeExecDOM from "./safeExecDOM";
 import throttleWithRafFallback from "./throttleWithRafFallback";
+import { UnrolledTaskQueue } from "@/lib/core";
 
-type TaskFunction = () => void;
-type ReflowTaskFunction = () => TaskFunction | void;
-
+export type TaskFunction = () => void;
+export type ReflowTaskFunction = () => TaskFunction | void;
 type ErrorHandler = (error: Error) => void;
+
 let handleError: ErrorHandler = (error) =>
   console.error("DOM task error:", error);
 
-const measureTasks = new Set<TaskFunction>();
-const mutationTasks = new Set<TaskFunction>();
-const reflowTasks = new Set<ReflowTaskFunction>();
+const measureTasks = new UnrolledTaskQueue<TaskFunction>();
+const mutationTasks = new UnrolledTaskQueue<TaskFunction>();
+const reflowTasks = new UnrolledTaskQueue<ReflowTaskFunction>();
 
-const processTasks = <T>(tasks: Set<T>, handler: (task: T) => void) => {
-  if (tasks.size === 0) return;
+function processTasks<T>(
+  queue: UnrolledTaskQueue<T>,
+  handler: (task: T) => void
+) {
+  if (queue.length === 0) return;
 
-  const queue = Array.from(tasks);
-  tasks.clear();
-
-  for (let j = 0, len = queue.length; j < len; j++) {
+  queue.drainEach((task) => {
     try {
-      handler(queue[j]);
+      handler(task);
     } catch (error) {
       handleError(error as Error);
     }
-  }
-};
+  });
+}
 
 const runUpdatePass = throttleWithRafFallback(async () => {
   try {
-    if (measureTasks.size) {
+    if (measureTasks.length > 0) {
       setDOMPhase("measure");
       processTasks(measureTasks, (task) => safeExecDOM(task));
     }
 
-    // Ждем завершения микротасков
-    await Promise.resolve(); // Позволяем выполниться микротаскам
+    await Promise.resolve(); // микро-задачи
 
-    // Фаза мутации
-    if (mutationTasks.size) {
+    if (mutationTasks.length > 0) {
       setDOMPhase("mutate");
       processTasks(mutationTasks, (task) => safeExecDOM(task));
     }
 
-    if (reflowTasks.size) {
+    if (reflowTasks.length > 0) {
       setDOMPhase("measure");
       const followUp: TaskFunction[] = [];
 
@@ -52,12 +51,18 @@ const runUpdatePass = throttleWithRafFallback(async () => {
         safeExecDOM(() => {
           const result = task();
           if (result) followUp.push(result);
-        }),
+        })
       );
 
-      if (followUp.length) {
+      if (followUp.length > 0) {
         setDOMPhase("mutate");
-        processTasks(new Set(followUp), (task) => safeExecDOM(task));
+        for (const task of followUp) {
+          try {
+            safeExecDOM(task);
+          } catch (err) {
+            handleError(err as Error);
+          }
+        }
       }
     }
   } finally {
@@ -67,11 +72,9 @@ const runUpdatePass = throttleWithRafFallback(async () => {
 
 /**
  * Queue DOM read operations (measure phase).
- * @example
- * requestMeasure(() => console.log("Element width:", element.offsetWidth));
  */
 export function requestMeasure(fn: TaskFunction) {
-  if (fn && !measureTasks.has(fn)) {
+  if (fn) {
     measureTasks.add(fn);
     runUpdatePass();
   }
@@ -79,11 +82,9 @@ export function requestMeasure(fn: TaskFunction) {
 
 /**
  * Queue DOM write operations (mutate phase).
- * @example
- * requestMutation(() => element.style.color = "red");
  */
 export function requestMutation(fn: TaskFunction) {
-  if (fn && !mutationTasks.has(fn)) {
+  if (fn) {
     mutationTasks.add(fn);
     runUpdatePass();
   }
@@ -91,19 +92,17 @@ export function requestMutation(fn: TaskFunction) {
 
 /**
  * Queue measure-then-mutate operations.
- * @example
- * requestNextMutation(() => {
- *   const height = element.offsetHeight;
- *   return () => element.style.height = `${height}px`;
- * });
  */
 export function requestNextMutation(fn: ReflowTaskFunction) {
-  if (fn && !reflowTasks.has(fn)) {
+  if (fn) {
     reflowTasks.add(fn);
     runUpdatePass();
   }
 }
 
+/**
+ * Set a global error handler for task failures.
+ */
 export function setTaskErrorHandler(handler: ErrorHandler) {
   handleError = handler;
 }

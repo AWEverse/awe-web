@@ -1,9 +1,13 @@
 import { FC, memo } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import EditScreen from "./drawer-screens/EditScreen";
-import MainScreen from "./drawer-screens/MainScreen";
+import EditScreen from "./EditScreen";
+import MainScreen from "./MainScreen";
 import "./RightColumn.scss";
 import useChatStore from "../../store/useChatSelector";
+import slideInVariant, {
+  RTL_SLIDE,
+  LTL_SLIDE,
+} from "@/shared/animations/slideInVariant";
 
 const TRANSITION_DURATION = 0.3; // seconds
 const PANEL_WIDTH = 420; // Assuming 420px is the panel width
@@ -27,15 +31,12 @@ const RightColumn: FC = () => {
         >
           <AnimatePresence initial={false} mode="popLayout">
             <motion.div
-              className={"RightColumn"}
               key={isRightPanelEditing ? "edit" : "main"}
-              initial={{ x: isRightPanelEditing ? PANEL_WIDTH : -PANEL_WIDTH }}
-              animate={{ x: 0 }}
-              exit={{ x: isRightPanelEditing ? PANEL_WIDTH : -PANEL_WIDTH }}
-              transition={{
-                duration: TRANSITION_DURATION,
-                ease: [0.4, 0, 0.2, 1],
-              }}
+              className={"RightColumn"}
+              initial="hidden"
+              animate="visible"
+              exit="exit"
+              variants={isRightPanelEditing ? RTL_SLIDE : LTL_SLIDE}
             >
               {isRightPanelEditing ? <EditScreen /> : <MainScreen />}
             </motion.div>
