@@ -1,0 +1,98 @@
+.container {
+  --time-font-size: 14px;
+  --time-color: #fff;
+  --item-font-size: 16px;
+  --item-color: #666;
+  --item-hover-bg: rgba(255, 255, 255, 0.1);
+  --selected-scale: 1.1;
+  --pulse-scale: 1.15;
+
+  background-color: #000;
+  color: var(--time-color);
+  width: 72px;
+  border-radius: 8px;
+  overflow: hidden;
+  position: relative;
+  padding-top: 24px;
+
+  &::before {
+    content: "Time";
+    position: absolute;
+    top: 4px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: var(--time-font-size);
+    font-weight: bold;
+    color: var(--time-color);
+    animation: fadeIn 0.125s ease-in;
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+}
+
+.timeList {
+  height: 100%;
+  scroll-snap-type: y mandatory;
+
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+.timeItem {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: var(--item-font-size);
+  color: var(--item-color);
+  transition: all 0.125s ease;
+  cursor: pointer;
+  scroll-snap-align: start;
+
+  & > span {
+    padding-inline: 0.25rem;
+    border-radius: 1rem;
+  }
+
+  &:hover:not(.selected) {
+    color: var(--time-color);
+    background-color: var(--item-hover-bg);
+  }
+}
+
+.selected {
+  font-size: var(--item-font-size);
+  font-weight: bold;
+  transform: scale(var(--selected-scale));
+  transition: all 0.3s ease;
+  animation: pulse 0.5s ease-in-out;
+
+  & > span {
+    color: var(--awe-palette-primary-main);
+    background-color: rgba(var(--awe-palette-primary-mainChannel) / 0.375);
+  }
+}
+
+@keyframes pulse {
+  0% {
+    transform: scale(1);
+    opacity: 0.7;
+  }
+  50% {
+    transform: scale(var(--pulse-scale));
+    opacity: 1;
+  }
+  100% {
+    transform: scale(var(--selected-scale));
+    opacity: 1;
+  }
+}

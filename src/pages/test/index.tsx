@@ -15,6 +15,7 @@ import {
   ratchetInitReceiver,
 } from "@/lib/core/public/cryptography/DoubleRatchet";
 import sodium from "libsodium-wrappers";
+import TimePicker from "@/entities/date-picker/public/ui/additional/TimePicker";
 
 const styles = {
   container: {
@@ -88,7 +89,12 @@ const AdvancedEncryptionPage: React.FC = () => {
   const { openModal, closeModal } = useModalContext();
 
   return (
-    <button onClick={() => openModal("calendar", {}, 0)}>Open Calendar</button>
+    <>
+      <button onClick={() => openModal("calendar", {}, 0)}>
+        Open Calendar
+      </button>
+      <TimePicker />
+    </>
   );
 };
 
