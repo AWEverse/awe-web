@@ -1,34 +1,27 @@
-const iconCache = new Map();
+import React, { Suspense, ComponentType } from "react";
 
-const loadIcon = (name: string) => {
-  if (!iconCache.has(name)) {
-    const promise = import(`./icons/${name}.js`)
-      .then((module) => {
-        iconCache.set(name, { status: "fulfilled", component: module.default });
-      })
-      .catch(() => {
-        iconCache.set(name, { status: "rejected" });
-      });
-
-    iconCache.set(name, { status: "pending", promise });
-  }
-  return iconCache.get(name);
-};
-
-interface IconProps {
-  name: string;
+// Props: iconName (string), any other SVGIcon props
+interface LazyIconProps {
+  iconName: string;
+  // e.g. color, fontSize, etc.
   [key: string]: any;
 }
 
-export const Icon = ({ name, ...props }: IconProps) => {
-  const iconStatus = loadIcon(name);
+/**
+ * Dynamically loads a MUI icon component by name.
+ */
+export const LazyIcon: React.FC<LazyIconProps> = ({ iconName, ...props }) => {
+  const IconComponent = React.lazy(async () => {
+    const mod = await import(
+      /* webpackChunkName: "mui-icon-[request]" */
+      `@mui/icons-material/${iconName}`
+    );
+    return { default: mod.default as ComponentType<any> };
+  });
 
-  if (iconStatus.status === "pending") {
-    throw iconStatus.promise;
-  } else if (iconStatus.status === "fulfilled") {
-    const IconComponent = iconStatus.component;
-    return <IconComponent {...props} />;
-  } else {
-    return <div>Icon not found</div>;
-  }
+  return (
+    <Suspense fallback={<span style={{ width: 24, height: 24 }} />}>
+      <IconComponent {...props} />
+    </Suspense>
+  );
 };

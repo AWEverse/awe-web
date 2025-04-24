@@ -82,8 +82,6 @@ export default function useMenuPosition(
           currentOptions as StaticPositionOptions,
         );
       })
-      console.log(currentOptions);
-
     }
     else {
       requestNextMutation(() => {
@@ -92,6 +90,7 @@ export default function useMenuPosition(
         );
 
         return () => {
+          console.log(dynamicStyles);
           if (dynamicStyles) {
             applyStaticOptions(containerRef, bubbleRef, dynamicStyles);
           }

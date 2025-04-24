@@ -11,3 +11,4 @@ export * from "./storage";
 // export * from './string';
 export * from "./templates";
 export * from "./window";
+export * from "./polyfill";

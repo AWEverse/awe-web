@@ -1,23 +1,36 @@
+// dom-task-scheduler/index.ts
+
 import { setDOMPhase } from "./stricterdom";
 import safeExecDOM from "./safeExecDOM";
 import throttleWithRafFallback from "./throttleWithRafFallback";
 import { UnrolledTaskQueue } from "@/lib/core";
 
+export enum DOMPhase {
+  Measure = "measure",
+  Mutate = "mutate",
+}
+
 export type TaskFunction = () => void;
 export type ReflowTaskFunction = () => TaskFunction | void;
-type ErrorHandler = (error: Error) => void;
-
-let handleError: ErrorHandler = (error) =>
-  console.error("DOM task error:", error);
+export type ErrorHandler = (error: Error) => void;
 
 const measureTasks = new UnrolledTaskQueue<TaskFunction>();
 const mutationTasks = new UnrolledTaskQueue<TaskFunction>();
 const reflowTasks = new UnrolledTaskQueue<ReflowTaskFunction>();
 
-function processTasks<T>(
+let handleError: ErrorHandler = (error) =>
+  console.error("[DOMTaskScheduler] Error:", error);
+
+const MAX_MICROTASK_DEPTH = 100;
+let microtaskDepth = 0;
+
+const setPhase = (phase: DOMPhase) => setDOMPhase(phase);
+const execTask = (task: TaskFunction) => safeExecDOM(task);
+
+const processTasks = <T>(
   queue: UnrolledTaskQueue<T>,
   handler: (task: T) => void
-) {
+) => {
   if (queue.length === 0) return;
 
   queue.drainEach((task) => {
@@ -27,84 +40,108 @@ function processTasks<T>(
       handleError(error as Error);
     }
   });
-}
+};
 
 const runUpdatePass = throttleWithRafFallback(async () => {
+  if (
+    measureTasks.length === 0 &&
+    mutationTasks.length === 0 &&
+    reflowTasks.length === 0
+  ) {
+    return;
+  }
+
   try {
     if (measureTasks.length > 0) {
-      setDOMPhase("measure");
-      processTasks(measureTasks, (task) => safeExecDOM(task));
+      setPhase(DOMPhase.Measure);
+      processTasks(measureTasks, execTask);
     }
 
-    await Promise.resolve(); // микро-задачи
-
-    if (mutationTasks.length > 0) {
-      setDOMPhase("mutate");
-      processTasks(mutationTasks, (task) => safeExecDOM(task));
-    }
-
-    if (reflowTasks.length > 0) {
-      setDOMPhase("measure");
-      const followUp: TaskFunction[] = [];
-
-      processTasks(reflowTasks, (task) =>
-        safeExecDOM(() => {
-          const result = task();
-          if (result) followUp.push(result);
-        })
-      );
-
-      if (followUp.length > 0) {
-        setDOMPhase("mutate");
-        for (const task of followUp) {
-          try {
-            safeExecDOM(task);
-          } catch (err) {
-            handleError(err as Error);
-          }
-        }
+    queueMicrotask(() => {
+      if (++microtaskDepth > MAX_MICROTASK_DEPTH) {
+        handleError(
+          new Error("Exceeded max microtask depth. Possible infinite microtask loop.")
+        );
+        return;
       }
-    }
+
+      try {
+        if (mutationTasks.length > 0) {
+          setPhase(DOMPhase.Mutate);
+          processTasks(mutationTasks, execTask);
+        }
+
+        if (reflowTasks.length > 0) {
+          setPhase(DOMPhase.Measure);
+          processTasks(reflowTasks, (task) => {
+            const followUp: TaskFunction[] = [];
+
+            safeExecDOM(() => {
+              const result = task();
+              if (typeof result === "function") followUp.push(result);
+            });
+
+            if (followUp.length > 0) {
+              setPhase(DOMPhase.Mutate);
+              for (const task of followUp) {
+                try {
+                  safeExecDOM(task);
+                } catch (err) {
+                  handleError(err as Error);
+                }
+              }
+              followUp.length = 0;
+            }
+          });
+        }
+      } finally {
+        microtaskDepth--;
+      }
+    });
   } finally {
-    setDOMPhase("measure");
+    setPhase(DOMPhase.Measure);
   }
 });
 
-/**
- * Queue DOM read operations (measure phase).
- */
-export function requestMeasure(fn: TaskFunction) {
-  if (fn) {
-    measureTasks.add(fn);
-    runUpdatePass();
+function schedule<T extends TaskFunction | ReflowTaskFunction>(
+  queue: UnrolledTaskQueue<T>,
+  task: T,
+  signal?: AbortSignal
+) {
+  if (!task) return;
+  if (signal?.aborted) return;
+
+  if (signal) {
+    const abortListener = () => queue.delete(task);
+    signal.addEventListener("abort", abortListener, { once: true });
   }
+
+  queue.add(task);
+  runUpdatePass();
 }
 
-/**
- * Queue DOM write operations (mutate phase).
- */
-export function requestMutation(fn: TaskFunction) {
-  if (fn) {
-    mutationTasks.add(fn);
-    runUpdatePass();
-  }
+export function requestMeasure(fn: TaskFunction, signal?: AbortSignal) {
+  schedule(measureTasks, fn, signal);
 }
 
-/**
- * Queue measure-then-mutate operations.
- */
-export function requestNextMutation(fn: ReflowTaskFunction) {
-  if (fn) {
-    reflowTasks.add(fn);
-    runUpdatePass();
-  }
+export function requestMutation(fn: TaskFunction, signal?: AbortSignal) {
+  schedule(mutationTasks, fn, signal);
 }
 
-/**
- * Set a global error handler for task failures.
- */
+export function requestNextMutation(fn: ReflowTaskFunction, signal?: AbortSignal) {
+  schedule(reflowTasks, fn, signal);
+}
+
 export function setTaskErrorHandler(handler: ErrorHandler) {
   handleError = handler;
 }
 
-export * from "./stricterdom";
+
+export const __internal = {
+  runUpdatePass,
+  queues: {
+    measureTasks,
+    mutationTasks,
+    reflowTasks,
+  },
+};

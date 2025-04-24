@@ -96,3 +96,30 @@
     opacity: 1;
   }
 }
+
+
+.shiftContainer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 1.2rem;
+  font-weight: bold;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.arrow {
+  cursor: pointer;
+  transition: transform 0.2s ease;
+  font-size: 14px;
+
+  &:hover {
+    transform: scale(1.2);
+    color: #007aff;
+  }
+}
+
+.number {
+  font-size: 14px;
+  text-align: center;
+}

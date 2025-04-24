@@ -2,6 +2,7 @@ import { FC, useState, useCallback, useMemo, useRef, memo } from "react";
 import { FixedSizeList } from "react-window";
 import s from "./TimePicker.module.scss";
 import { clamp } from "@/lib/core";
+import { ArrowLeft, ArrowRight } from "@mui/icons-material";
 
 interface TimePickerProps {
   initialHour?: number;
@@ -11,15 +12,16 @@ interface TimePickerProps {
 const ITEM_HEIGHT = 28;
 const VISIBLE_ITEMS = 7;
 
-const shift = 5;
-
 const TimePicker: FC<TimePickerProps> = ({
   initialHour = 0,
   onTimeSelected,
 }) => {
+  const [selectedShift, setSelectedShift] = useState(0);
+
   const times = useMemo(() => {
     const minutesInDay = 24 * 60;
-    const normalizedShift = clamp(shift, 1, 60);
+
+    const normalizedShift = selectedShift === 0 ? 60 : selectedShift;
 
     return Array.from(
       { length: Math.floor(minutesInDay / normalizedShift) },
@@ -30,7 +32,7 @@ const TimePicker: FC<TimePickerProps> = ({
         return `${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}`;
       },
     );
-  }, []);
+  }, [selectedShift]);
 
   const listRef = useRef<FixedSizeList>(null);
   const [selectedIndex, setSelectedIndex] = useState(
@@ -81,6 +83,10 @@ const TimePicker: FC<TimePickerProps> = ({
     [times, selectedIndex, onTimeSelected],
   );
 
+  const handleShift = (value: number) => () => {
+    setSelectedShift((prev) => clamp(prev + value, 0, 60));
+  };
+
   return (
     <section className={s.container}>
       <FixedSizeList
@@ -93,6 +99,16 @@ const TimePicker: FC<TimePickerProps> = ({
         initialScrollOffset={(initialHour % times.length) * ITEM_HEIGHT}
         children={Row}
       />
+
+      <div className={s.shiftContainer}>
+        <span className={s.arrow} onClick={handleShift(-5)}>
+          <ArrowLeft />
+        </span>
+        <span className={s.number}>{selectedShift}</span>
+        <span className={s.arrow} onClick={handleShift(5)}>
+          <ArrowRight />
+        </span>
+      </div>
     </section>
   );
 };
