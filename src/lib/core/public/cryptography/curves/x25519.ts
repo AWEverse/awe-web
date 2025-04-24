@@ -10,8 +10,6 @@ import { secureErase } from '../secure';
  * • Designed for compatibility with hybrid PQ schemes (e.g. X3DH+PQ)
  */
 export class X25519 {
-
-
   /**
    * Generates a new X25519 key pair.
    *
@@ -19,11 +17,11 @@ export class X25519 {
    */
   static generateKeyPair(): CryptoKeyPair {
 
-    const { privateKey, publicKey } = sodium.crypto_kx_keypair(); // 32 + 32 bytes
+    const keypair = sodium.crypto_kx_keypair(); // 32-byte keys
 
     return {
-      privateKey: new Uint8Array(privateKey) as PrivateKey,
-      publicKey: new Uint8Array(publicKey) as PublicKey,
+      privateKey: new Uint8Array(keypair.privateKey) as PrivateKey,
+      publicKey: new Uint8Array(keypair.publicKey) as PublicKey,
     };
   }
 
@@ -38,13 +36,14 @@ export class X25519 {
    * @returns {Promise<Uint8Array>} A promise resolving to the shared secret (32 bytes).
    */
   static computeSharedSecret(privateKey: PrivateKey, publicKey: PublicKey): Uint8Array {
-
-    const priv = new Uint8Array(privateKey); // Copy to isolate
+    const priv = new Uint8Array(privateKey); // defensive copy
     const pub = new Uint8Array(publicKey);
 
-    const shared = sodium.crypto_scalarmult(priv, pub); // Raw X25519 shared secret
-
-    secureErase(priv);   // Clean private key
-    return new Uint8Array(shared); // Return result (caller should zeroize later)
+    try {
+      const shared = sodium.crypto_scalarmult(priv, pub); // X25519 DH
+      return new Uint8Array(shared); // caller responsible for zeroizing output
+    } finally {
+      secureErase(priv); // ensure cleanup even if exception thrown
+    }
   }
 }
