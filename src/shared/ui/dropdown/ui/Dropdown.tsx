@@ -1,10 +1,10 @@
-import React, { FC, memo, useCallback, useEffect, useRef } from "react";
+import React, { FC, memo, useCallback, useEffect, useMemo } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { useDropdownState } from "../hooks";
 import buildClassName from "@/shared/lib/buildClassName";
-import { useRefInstead, useStateRef } from "@/shared/hooks/base";
+import { useRefInstead } from "@/shared/hooks/base";
 import s from "./Dropdown.module.scss";
-import { dispatchHeavyAnimation, withFreezeWhenClosed } from "@/lib/core";
+import { dispatchHeavyAnimation } from "@/lib/core";
 import useBodyClass from "@/shared/hooks/DOM/useBodyClass";
 import { useBoundaryCheck } from "@/shared/hooks/mouse/useBoundaryCheck";
 import { useEffectWithPreviousDeps } from "@/shared/hooks/effects/useEffectWithPreviousDependencies";
@@ -39,8 +39,8 @@ interface OwnProps {
   ) => void;
 }
 
-const SCALE_FACTOR = 0.85; // Animation scale factor
-const ANIMATION_DURATION = 0.125; // Reduced for performance
+const SCALE_FACTOR = 0.85;
+const ANIMATION_DURATION = 0.125;
 
 const DropdownMenu: FC<OwnProps & OwnSharedProps> = ({
   ref,
@@ -65,19 +65,21 @@ const DropdownMenu: FC<OwnProps & OwnSharedProps> = ({
     shouldClose,
   });
 
-  const dropdownVariants = useStateRef(
-    shouldReduceMotion
-      ? {
-          initial: { opacity: 0 },
-          animate: { opacity: 1 },
-          exit: { opacity: 0 },
-        }
-      : {
-          initial: { transform: `scale(${SCALE_FACTOR})`, opacity: 0 },
-          animate: { transform: "scale(1)", opacity: 1 },
-          exit: { transform: `scale(${SCALE_FACTOR})`, opacity: 0 },
-        },
-  ).current;
+  const dropdownVariants = useMemo(
+    () =>
+      shouldReduceMotion
+        ? {
+            initial: { opacity: 0 },
+            animate: { opacity: 1 },
+            exit: { opacity: 0 },
+          }
+        : {
+            initial: { transform: `scale(${SCALE_FACTOR})`, opacity: 0 },
+            animate: { transform: "scale(1)", opacity: 1 },
+            exit: { transform: `scale(${SCALE_FACTOR})`, opacity: 0 },
+          },
+    [shouldReduceMotion],
+  );
 
   useKeyboardListeners({
     bindings: { onEsc: onClose, onEnter },
@@ -97,17 +99,13 @@ const DropdownMenu: FC<OwnProps & OwnSharedProps> = ({
 
   useEffectWithPreviousDeps(
     ([wasOpen]) => {
-      if (isOpen !== wasOpen) {
-        dispatchHeavyAnimation(ANIMATION_DURATION);
-      }
+      if (isOpen !== wasOpen) dispatchHeavyAnimation(ANIMATION_DURATION);
     },
     [isOpen],
   );
 
   useEffect(() => {
-    if (isOpen && dropdownRef.current) {
-      return trapFocus(dropdownRef.current);
-    }
+    if (isOpen && dropdownRef.current) return trapFocus(dropdownRef.current);
   }, [isOpen]);
 
   const renderBackdrop = useCallback(
@@ -117,6 +115,7 @@ const DropdownMenu: FC<OwnProps & OwnSharedProps> = ({
           className={s.dropdownBackdrop}
           role="presentation"
           onClick={handleClose}
+          aria-hidden="true"
         />
       ),
     [isOpen, handleClose],
@@ -136,13 +135,7 @@ const DropdownMenu: FC<OwnProps & OwnSharedProps> = ({
             initial="initial"
             animate="animate"
             exit="exit"
-            transition={{
-              duration: ANIMATION_DURATION,
-              ease: "easeInOut",
-            }}
-            style={{
-              willChange: "transform, opacity",
-            }}
+            transition={{ duration: ANIMATION_DURATION, ease: "easeInOut" }}
             role="menu"
             aria-hidden={!isOpen}
             aria-expanded={isOpen}
@@ -150,7 +143,7 @@ const DropdownMenu: FC<OwnProps & OwnSharedProps> = ({
             tabIndex={-1}
             className={buildClassName(s.dropdownMenu, className)}
             onMouseEnter={onBackdropMouseEnter}
-            onTransitionEnd={onTransitionEnd}
+            onAnimationComplete={onTransitionEnd}
           >
             {children}
           </motion.div>

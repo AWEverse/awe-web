@@ -1,20 +1,3 @@
-// ThreadCard.scss
-:root {
-  --card-bg: var(--awe-palette-background-paper, #121212);
-  --text-primary: var(--awe-palette-text-primary, #fff);
-  --text-secondary: var(--awe-palette-text-secondary, rgba(255, 255, 255, 0.7));
-  --text-disabled: var(--awe-palette-text-disabled, rgba(255, 255, 255, 0.5));
-  --link: var(--awe-palette-primary-main, #4991e5);
-  --link-hover: var(--awe-palette-primary-light, rgb(109, 167, 234));
-  --avatar-bg: var(--awe-palette-Avatar-defaultBg, #757575);
-  --divider: var(--awe-palette-divider, rgba(255, 255, 255, 0.12));
-  --gap-sm: 0.25rem;
-  --gap-md: 0.5rem;
-  --font-sm: 13px;
-  --font-md: 14px;
-  --font-lg: 18px;
-}
-
 .thread-card {
   position: relative;
   padding: var(--gap-md) 0;

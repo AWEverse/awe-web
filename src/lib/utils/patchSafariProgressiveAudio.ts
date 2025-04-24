@@ -7,7 +7,23 @@ function addEventListenerOnce(
   element.addEventListener(event, handler, { once: true });
 }
 
-// Function to patch the audio element for Safari progressive audio issue
+/**
+ * Patches an HTMLAudioElement to address Safari's progressive audio loading issue,
+ * where audio may fail to play correctly due to incomplete buffering.
+ * This function ensures the audio plays by temporarily seeking
+ * to the end during buffering and restoring the original time afterward.
+ * It uses dataset flags to track patching status and avoid redundant operations.
+ *
+ * @param audioEl - The HTMLAudioElement to patch.
+ * @returns void
+ *
+ * @remarks
+ * - Only applies the patch if not previously patched (checked via `dataset.patchedForSafari`).
+ * - Temporarily sets `dataset.patchForSafariInProgress` during the patching process.
+ * - Restores the original playback time after patching.
+ * - Automatically replays the audio if it was paused, unless `dataset.preventPlayAfterPatch` is set.
+ * - Uses `addEventListenerOnce` to ensure event listeners are executed only once, improving performance.
+ */
 export function patchSafariProgressiveAudio(audioEl: HTMLAudioElement) {
   if (audioEl.dataset.patchedForSafari) {
     return; // Early return if already patched

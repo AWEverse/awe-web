@@ -1,7 +1,7 @@
 import { FC, useRef, useState, memo, ReactNode } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useStableCallback } from "@/shared/hooks/base";
-import { throttle } from "@/lib/core";
+import { IS_MOBILE, throttle } from "@/lib/core";
 
 import { CalendarAnimationType, CalendarMode } from "../../private/lib/types";
 import {
@@ -74,6 +74,38 @@ const animationVariants = {
             transition: { duration: 0.2, ease: "easeInOut" },
           },
   },
+};
+
+const useGridInteraction = (
+  gridRef: React.RefObject<HTMLDivElement | null>,
+) => {
+  const handleMove = useStableCallback(
+    throttle((clientX: number, clientY: number) => {
+      const grid = gridRef.current;
+      if (!grid) return;
+
+      const rect = grid.getBoundingClientRect();
+      const x = clientX - rect.left;
+      const y = clientY - rect.top;
+
+      grid.style.setProperty("--mouse-x", `${x}px`);
+      grid.style.setProperty("--mouse-y", `${y}px`);
+    }, 16),
+  );
+
+  const _handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    handleMove(e.clientX, e.clientY);
+  };
+
+  const _handleTouchMove = (e: React.TouchEvent<HTMLDivElement>) => {
+    const touch = e.touches[0];
+    handleMove(touch.clientX, touch.clientY);
+  };
+
+  return {
+    handleMouseMove: !IS_MOBILE ? _handleMouseMove : undefined,
+    handleTouchMove: IS_MOBILE ? _handleTouchMove : undefined,
+  };
 };
 
 const getActiveVariants = (animated: CalendarAnimationType) =>
@@ -170,20 +202,6 @@ const DatePicker: FC<DatePickerProps> = ({
   const CalendarView = CALENDAR_VIEWS[zoomLevel];
   const transitionKey = `${dateState.currentSystemDate.getMonth()}-${zoomLevel}`;
 
-  const handleMouseMove = useStableCallback(
-    throttle((e: React.MouseEvent<HTMLDivElement>) => {
-      const grid = gridRef.current;
-      if (!grid) return;
-
-      const rect = grid.getBoundingClientRect();
-      const x = e.clientX - rect.left;
-      const y = e.clientY - rect.top;
-
-      grid.style.setProperty("--mouse-x", `${x}px`);
-      grid.style.setProperty("--mouse-y", `${y}px`);
-    }, 16),
-  );
-
   const { path, labelPath, count } = useGridSelection(
     { start: 10, end: 23 },
     {
@@ -193,6 +211,8 @@ const DatePicker: FC<DatePickerProps> = ({
       orientation: "horizontal",
     },
   );
+
+  const { handleMouseMove, handleTouchMove } = useGridInteraction(gridRef);
 
   return (
     <div
@@ -220,6 +240,7 @@ const DatePicker: FC<DatePickerProps> = ({
         aria-label="Date picker"
         role="grid"
         onMouseMove={handleMouseMove}
+        onTouchMove={handleTouchMove}
         className={`dp-grid-wrapper dp-spotlight ${classNames}`}
       >
         <AnimatePresence initial={false} custom={animated} mode="popLayout">

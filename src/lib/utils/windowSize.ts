@@ -7,95 +7,89 @@ interface IDimensions {
 }
 
 const RESIZE_THROTTLE_MS = 150;
+const dimensions: IDimensions = {
+  height: 0,
+  width: 0,
+};
+let initialHeight = 0;
 let rafId: number | null = null;
 
-const visualViewport = typeof window !== "undefined" && window.visualViewport;
-const isIOS = typeof window !== "undefined" && IS_IOS;
+const isClient = typeof window !== "undefined";
+const visualViewport = isClient ? window.visualViewport : null;
+const isIOS = isClient && IS_IOS;
 
-const dimensions: IDimensions = {
-  height: typeof window !== "undefined" ? window.innerHeight : 0,
-  width: typeof window !== "undefined" ? window.innerWidth : 0,
-} as const;
-
-let initialHeight = dimensions.height;
+if (isClient) {
+  dimensions.height = window.innerHeight;
+  dimensions.width = window.innerWidth;
+  initialHeight = window.innerHeight;
+}
 
 const updateCssVars = () => {
   const vh = round(dimensions.height * 0.01, 2);
-
   return () => {
     document.documentElement.style.setProperty("--vh", `${vh}px`);
-  }
-}
+  };
+};
 
-function getVisualViewportDimensions(): IDimensions {
-  if (!visualViewport) return { ...dimensions };
-
+const getVisualViewportDimensions = (): IDimensions => {
+  if (!visualViewport) return { height: window.innerHeight, width: window.innerWidth };
   return {
     width: Math.round(visualViewport.width),
     height: Math.round(visualViewport.height),
   };
-}
+};
 
-function handleViewportChange() {
+const handleViewportChange = () => {
   if (rafId) cancelAnimationFrame(rafId);
 
   rafId = requestAnimationFrame(() => {
-    const newDimensions = isIOS
-      ? getVisualViewportDimensions()
-      : { width: window.innerWidth, height: window.innerHeight };
+    const newDimensions = isIOS ? getVisualViewportDimensions() : {
+      width: window.innerWidth,
+      height: window.innerHeight,
+    };
 
-    if (
-      newDimensions.width !== dimensions.width ||
-      newDimensions.height !== dimensions.height
-    ) {
-      Object.assign(dimensions, newDimensions);
-      requestNextMutation(updateCssVars);
-    }
+    if (newDimensions.width === dimensions.width && newDimensions.height === dimensions.height) return;
+
+    dimensions.width = newDimensions.width;
+    dimensions.height = newDimensions.height;
+    requestNextMutation(updateCssVars);
   });
-}
+};
 
-function handleOrientationChange() {
+const handleOrientationChange = () => {
   initialHeight = window.innerHeight;
   handleViewportChange();
-}
+};
 
-const throttledResize = throttle(
-  handleViewportChange,
-  RESIZE_THROTTLE_MS,
-  true,
-);
+const throttledResize = throttle(handleViewportChange, RESIZE_THROTTLE_MS, true);
 
-export function initializeViewportListeners() {
-  if (typeof window === "undefined") return;
+const initializeViewportListeners = () => {
+  if (!isClient) return;
 
+  // Remove existing listeners to prevent duplicates
   window.removeEventListener("resize", throttledResize);
   window.removeEventListener("orientationchange", handleOrientationChange);
+  if (visualViewport) visualViewport.removeEventListener("resize", throttledResize);
 
+  // Add listeners with passive flag for performance
   window.addEventListener("resize", throttledResize, { passive: true });
-  window.addEventListener("orientationchange", handleOrientationChange, {
-    passive: true,
-  });
-
+  window.addEventListener("orientationchange", handleOrientationChange, { passive: true });
   if (visualViewport) {
-    visualViewport.removeEventListener("resize", throttledResize);
-    visualViewport.addEventListener("resize", throttledResize, {
-      passive: true,
-    });
+    visualViewport.addEventListener("resize", throttledResize, { passive: true });
   }
 
   requestNextMutation(updateCssVars);
-}
+};
 
-if (typeof window !== "undefined") {
-  initializeViewportListeners();
-}
+if (isClient) initializeViewportListeners();
 
 export default {
   get dimensions() {
-    return { ...dimensions };
+    return { width: dimensions.width, height: dimensions.height };
   },
   get isKeyboardVisible() {
     return isIOS && initialHeight > dimensions.height;
   },
   update: handleViewportChange,
+  initialize: initializeViewportListeners,
 };
