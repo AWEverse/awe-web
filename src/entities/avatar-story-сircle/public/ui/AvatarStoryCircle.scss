@@ -1,0 +1,213 @@
+// AvatarStoryCircle.scss
+
+// Variables for consistent styling
+$story-stroke-width: 0.1875rem;    // 3px
+$story-stroke-width-mobile: 0.125rem; // 2px
+$story-stroke-width-read: 0.125rem; // 2px
+$story-gap: 0.25rem;             // 4px
+
+// Story circle color variables
+$story-blue-gradient: linear-gradient(180deg, #34aaff 0%, #007ee5 100%);
+$story-green-gradient: linear-gradient(180deg, #4fcea0 0%, #37a671 100%);
+$story-purple-gradient: linear-gradient(180deg, #c669ff 0%, #8c42bb 100%);
+$story-read-color: rgba(255, 255, 255, 0.5);
+$story-solid-color: rgba(255, 255, 255, 0.12);
+$story-friend-solid-color: rgba(255, 255, 255, 0.16);
+$story-unread-solid-color: rgba(255, 255, 255, 0.24);
+
+// Match the size variables from Avatar component
+$avatar-micro-size: 1.25rem;   // 20px
+$avatar-tiny-size: 1.875rem;   // 30px
+$avatar-mini-size: 2.5rem;     // 40px
+$avatar-small-size: 3.125rem;  // 50px
+$avatar-small-mobile-size: 2.75rem; // 44px
+$avatar-medium-size: 3.75rem;  // 60px
+$avatar-large-size: 5rem;      // 80px
+$avatar-giant-size: 6.25rem;   // 100px
+$avatar-jumbo-size: 7.5rem;    // 120px
+
+.AvatarStoryCircle {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: calc(100% + #{$story-stroke-width * 2});
+  height: calc(100% + #{$story-stroke-width * 2});
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: 0;
+
+  // Canvas for drawing the story circle
+  canvas {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+  }
+
+  // Size-specific styles
+  &.size-micro {
+    width: calc(#{$avatar-micro-size} + #{$story-stroke-width-mobile * 2});
+    height: calc(#{$avatar-micro-size} + #{$story-stroke-width-mobile * 2});
+  }
+
+  &.size-tiny {
+    width: calc(#{$avatar-tiny-size} + #{$story-stroke-width-mobile * 2});
+    height: calc(#{$avatar-tiny-size} + #{$story-stroke-width-mobile * 2});
+  }
+
+  &.size-mini {
+    width: calc(#{$avatar-mini-size} + #{$story-stroke-width * 2});
+    height: calc(#{$avatar-mini-size} + #{$story-stroke-width * 2});
+  }
+
+  &.size-small {
+    width: calc(#{$avatar-small-size} + #{$story-stroke-width * 2});
+    height: calc(#{$avatar-small-size} + #{$story-stroke-width * 2});
+  }
+
+  &.size-small-mobile {
+    width: calc(#{$avatar-small-mobile-size} + #{$story-stroke-width * 2});
+    height: calc(#{$avatar-small-mobile-size} + #{$story-stroke-width * 2});
+  }
+
+  &.size-medium {
+    width: calc(#{$avatar-medium-size} + #{$story-stroke-width * 2});
+    height: calc(#{$avatar-medium-size} + #{$story-stroke-width * 2});
+  }
+
+  &.size-large {
+    width: calc(#{$avatar-large-size} + #{$story-stroke-width * 2});
+    height: calc(#{$avatar-large-size} + #{$story-stroke-width * 2});
+  }
+
+  &.size-giant {
+    width: calc(#{$avatar-giant-size} + #{$story-stroke-width * 2});
+    height: calc(#{$avatar-giant-size} + #{$story-stroke-width * 2});
+  }
+
+  &.size-jumbo {
+    width: calc(#{$avatar-jumbo-size} + #{$story-stroke-width * 2});
+    height: calc(#{$avatar-jumbo-size} + #{$story-stroke-width * 2});
+  }
+
+  // Extra gap for story circles
+  &.with-extra-gap {
+    width: calc(100% + #{($story-stroke-width + $story-gap) * 2});
+    height: calc(100% + #{($story-stroke-width + $story-gap) * 2});
+
+    &.size-micro {
+      width: calc(#{$avatar-micro-size} + #{($story-stroke-width-mobile + $story-gap) * 2});
+      height: calc(#{$avatar-micro-size} + #{($story-stroke-width-mobile + $story-gap) * 2});
+    }
+
+    &.size-tiny {
+      width: calc(#{$avatar-tiny-size} + #{($story-stroke-width-mobile + $story-gap) * 2});
+      height: calc(#{$avatar-tiny-size} + #{($story-stroke-width-mobile + $story-gap) * 2});
+    }
+
+    &.size-mini {
+      width: calc(#{$avatar-mini-size} + #{($story-stroke-width + $story-gap) * 2});
+      height: calc(#{$avatar-mini-size} + #{($story-stroke-width + $story-gap) * 2});
+    }
+
+    &.size-small {
+      width: calc(#{$avatar-small-size} + #{($story-stroke-width + $story-gap) * 2});
+      height: calc(#{$avatar-small-size} + #{($story-stroke-width + $story-gap) * 2});
+    }
+
+    &.size-small-mobile {
+      width: calc(#{$avatar-small-mobile-size} + #{($story-stroke-width + $story-gap) * 2});
+      height: calc(#{$avatar-small-mobile-size} + #{($story-stroke-width + $story-gap) * 2});
+    }
+
+    &.size-medium {
+      width: calc(#{$avatar-medium-size} + #{($story-stroke-width + $story-gap) * 2});
+      height: calc(#{$avatar-medium-size} + #{($story-stroke-width + $story-gap) * 2});
+    }
+
+    &.size-large {
+      width: calc(#{$avatar-large-size} + #{($story-stroke-width + $story-gap) * 2});
+      height: calc(#{$avatar-large-size} + #{($story-stroke-width + $story-gap) * 2});
+    }
+
+    &.size-giant {
+      width: calc(#{$avatar-giant-size} + #{($story-stroke-width + $story-gap) * 2});
+      height: calc(#{$avatar-giant-size} + #{($story-stroke-width + $story-gap) * 2});
+    }
+
+    &.size-jumbo {
+      width: calc(#{$avatar-jumbo-size} + #{($story-stroke-width + $story-gap) * 2});
+      height: calc(#{$avatar-jumbo-size} + #{($story-stroke-width + $story-gap) * 2});
+    }
+  }
+
+  // Solid variants for story circles
+  &.with-solid {
+    background-color: $story-solid-color;
+
+    &.force-friend-solid {
+      background-color: $story-friend-solid-color;
+    }
+
+    &.force-unread-solid {
+      background-color: $story-unread-solid-color;
+    }
+  }
+
+  // Different story viewer modes
+  &.viewer-mode-full {
+    cursor: pointer;
+    pointer-events: auto;
+  }
+
+  &.viewer-mode-single-peer {
+    cursor: pointer;
+    pointer-events: auto;
+  }
+
+  &.viewer-mode-disabled {
+    pointer-events: none;
+  }
+}
+
+// Modifiers for different story states
+.story-unseen {
+  opacity: 1;
+}
+
+.story-seen {
+  opacity: 0.6;
+}
+
+// Media queries for responsiveness
+@media (max-width: 768px) {
+  .AvatarStoryCircle {
+    width: calc(100% + #{$story-stroke-width-mobile * 2});
+    height: calc(100% + #{$story-stroke-width-mobile * 2});
+
+    &.with-extra-gap {
+      width: calc(100% + #{($story-stroke-width-mobile + $story-gap) * 2});
+      height: calc(100% + #{($story-stroke-width-mobile + $story-gap) * 2});
+    }
+  }
+}
+
+// Dark mode support
+@media (prefers-color-scheme: dark) {
+  .AvatarStoryCircle {
+    &.with-solid {
+      background-color: rgba(255, 255, 255, 0.08);
+
+      &.force-friend-solid {
+        background-color: rgba(255, 255, 255, 0.12);
+      }
+
+      &.force-unread-solid {
+        background-color: rgba(255, 255, 255, 0.16);
+      }
+    }
+  }
+}

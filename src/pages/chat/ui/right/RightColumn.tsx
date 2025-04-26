@@ -4,10 +4,7 @@ import EditScreen from "./EditScreen";
 import MainScreen from "./MainScreen";
 import "./RightColumn.scss";
 import useChatStore from "../../store/useChatSelector";
-import slideInVariant, {
-  RTL_SLIDE,
-  LTL_SLIDE,
-} from "@/shared/animations/slideInVariant";
+import { SLIDE_RIGHT, SLIDE_LEFT } from "@/shared/animations/slideInVariant";
 
 const TRANSITION_DURATION = 0.3; // seconds
 const PANEL_WIDTH = 420; // Assuming 420px is the panel width
@@ -36,7 +33,7 @@ const RightColumn: FC = () => {
               initial="hidden"
               animate="visible"
               exit="exit"
-              variants={isRightPanelEditing ? RTL_SLIDE : LTL_SLIDE}
+              variants={isRightPanelEditing ? SLIDE_RIGHT : SLIDE_LEFT}
             >
               {isRightPanelEditing ? <EditScreen /> : <MainScreen />}
             </motion.div>

@@ -1,81 +1,102 @@
 /**
- * Calculates the numerical derivative of a given function at a specific point using central difference.
- * @param {MathFunction} fn - The function for which to compute the derivative.
- * @param {number} x - The point at which to compute the derivative.
- * @param {number} [h=1e-5] - The step size used for numerical differentiation (default is 1e-5).
- * @returns {number} The approximate value of the derivative at the point x.
+ * Computes the numerical derivative of a function at a point using central difference.
+ * Optimized for JavaScript's floating-point arithmetic and browser performance.
+ *
+ * @param fn - Function to differentiate, mapping x to f(x).
+ * @param x - Point at which to compute the derivative.
+ * @param h - Step size for numerical differentiation (default: 1e-5, tuned for precision).
+ * @returns Approximate derivative at x.
  */
 export const derivative = (
   fn: (x: number) => number,
   x: number,
   h: number = 1e-5,
 ): number => {
-  return (fn(x + h) - fn(x - h)) / (2 * h);
+  if (!Number.isFinite(x) || !Number.isFinite(h) || h <= 0) return NaN;
+
+  // (f(x + h) - f(x - h)) / (2h)
+  const fPlus = fn(x + h);
+  const fMinus = fn(x - h);
+
+  if (!Number.isFinite(fPlus) || !Number.isFinite(fMinus)) return NaN;
+
+  return (fPlus - fMinus) / (2 * h);
 };
 
 /**
- * Calculates the numerical integral of a function using the trapezoidal rule.
+ * Computes the numerical integral of a function using Simpson's 1/3 rule.
+ * Optimized for browser performance and numerical stability in JavaScript.
  *
- * @param {function} f - The function to integrate.
- * @param {number} a - The start of the interval over which to integrate.
- * @param {number} b - The end of the interval over which to integrate.
- * @param {number} [n=1000] - The number of trapezoids to use in the approximation (default is 1000).
- * @returns {number} The approximate value of the integral.
+ * @param fn - Function to integrate, mapping x to f(x).
+ * @param a - Lower bound of integration interval.
+ * @param b - Upper bound of integration interval.
+ * @param n - Number of subintervals (default: 1000, must be even).
+ * @returns Approximate integral value from a to b.
  */
 export const integrate = (
-  f: (x: number) => number,
+  fn: (x: number) => number,
   a: number,
   b: number,
   n: number = 1000,
 ): number => {
+  // Validate inputs
+  if (
+    !Number.isFinite(a) ||
+    !Number.isFinite(b) ||
+    n <= 0 ||
+    !Number.isInteger(n)
+  )
+    return NaN;
+  if (n % 2 !== 0) n += 1;
+
   const h = (b - a) / n;
-  let sum = 0;
+  let sum = fn(a) + fn(b);
 
-  for (let i = 0; i < n; i += 2) {
-    const x1 = a + i * h;
-    const x2 = a + (i + 1) * h;
-    const x3 = a + (i + 2) * h;
-
-    sum += f(x1) + 4 * f(x2) + f(x3);
+  for (let i = 1; i < n; i++) {
+    const x = a + i * h;
+    sum += fn(x) * (4 >> (i & 1)); // Bitwise replacement for (i % 2 === 0 ? 2 : 4)
   }
 
-  return (h / 3) * sum;
+  const result = (h / 3) * sum;
+  return Number.isFinite(result) ? result : NaN;
 };
 
 /**
- * Calculates the factorial of a given number using an iterative approach.
+ * Computes the factorial of a non-negative integer using an iterative approach.
+ * Optimized for JavaScript's number precision and browser performance.
  *
- * @param {number} n - The number to compute the factorial for.
- * @returns {number} The factorial of the number n.
+ * @param n - Non-negative integer to compute factorial for.
+ * @returns Factorial of n, or NaN for invalid inputs.
  */
 export const factorial = (n: number): number => {
-  if (n < 0) {
-    return NaN;
-  }
+  // Validate input
+  if (!Number.isInteger(n) || n < 0 || n > 170) return NaN; // 170! exceeds JavaScript's safe number range
+
+  if (n <= 1) return 1;
 
   let result = 1;
-
   for (let i = 2; i <= n; i++) {
     result *= i;
   }
-
   return result;
 };
 
 /**
- * Calculates the average (mean) of an array of numbers.
+ * Computes the arithmetic mean of an array of numbers using a single-pass algorithm.
  *
- * @param {number[]} numbers - The array of numbers.
- * @returns {number} The mean of the numbers.
+ * @param numbers - Array of numbers to average.
+ * @returns The mean of the numbers, or 0 if the array is empty.
  */
 export const average = (numbers: number[]): number => {
-  if (numbers.length === 0) {
-    return 0;
+  const len = numbers.length;
+  if (len === 0) return 0;
+
+  let sum = 0;
+  for (let i = 0; i < len; i++) {
+    sum += numbers[i];
   }
-
-  return numbers.sum() / numbers.length;
+  return sum / len;
 };
-
 /**
  * Calculates the median of an array of numbers.
  *

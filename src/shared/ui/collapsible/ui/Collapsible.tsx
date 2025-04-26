@@ -5,9 +5,9 @@ import {
   JSX,
   FC,
   ReactElement,
-  useEffect,
+  useLayoutEffect,
 } from "react";
-import { CSSTransition } from "react-transition-group";
+import { motion, AnimatePresence, HTMLMotionProps } from "framer-motion";
 import buildClassName from "@/shared/lib/buildClassName";
 
 import s from "./Collapsible.module.scss";
@@ -17,24 +17,22 @@ import { requestMeasure } from "@/lib/modules/fastdom";
 import { clamp } from "@/lib/core";
 
 interface ContentProps {
+  children: React.ReactNode;
+  className?: string;
   unmountOnExit?: boolean;
   contentClassName?: string;
   component?: keyof JSX.IntrinsicElements | null;
 }
 
-type DivProps = JSX.IntrinsicElements["div"];
 type ButtonProps = JSX.IntrinsicElements["button"];
+type DivProps = Omit<
+  JSX.IntrinsicElements["div"],
+  keyof HTMLMotionProps<"div">
+>;
 
-const MIN_DURATION = 150;
-const MAX_DURATION = 500;
+const MIN_DURATION = 0.15; // in seconds for framer-motion
+const MAX_DURATION = 0.5; // in seconds for framer-motion
 const MAX_HEIGHT = 1000;
-
-const classNames = {
-  enter: s.enter,
-  enterActive: s.enterActive,
-  exit: s.exit,
-  exitActive: s.exitActive,
-};
 
 const calculateDuration = (height: number): number => {
   const duration =
@@ -51,56 +49,88 @@ const Content: FC<ContentProps & DivProps> = ({
   unmountOnExit = true,
   ...props
 }) => {
-  const nodeRef = useRef<HTMLDivElement>(null);
+  const contentRef = useRef<HTMLDivElement>(null);
   const { isOpen } = useCollapsible();
-
   const [duration, setDuration] = useState(MIN_DURATION);
+  const [contentHeight, setContentHeight] = useState(0);
 
-  const styles = { transitionDuration: `${duration}ms` };
-
-  useEffect(() => {
-    const node = nodeRef.current;
+  useLayoutEffect(() => {
+    const node = contentRef.current;
 
     if (!node) return;
 
     requestMeasure(() => {
       const height = node.scrollHeight;
+      setContentHeight(height);
       const newDuration = calculateDuration(height);
 
       setDuration((prevDuration) =>
         prevDuration !== newDuration ? newDuration : prevDuration,
       );
     });
-  }, [isOpen]);
+  }, [isOpen, children]);
+
+  const variants = {
+    open: {
+      height: contentHeight,
+      opacity: 1,
+      transition: {
+        duration: duration,
+        ease: "easeInOut",
+      },
+    },
+    closed: {
+      height: 0,
+      opacity: 0,
+      transition: {
+        duration: duration,
+        ease: "easeInOut",
+      },
+    },
+  };
+
+  const safeMotionProps: HTMLMotionProps<"div"> = {};
+
+  for (const key in props) {
+    if (
+      ![
+        "onDrag",
+        "onDragStart",
+        "onDragEnd",
+        "onAnimationStart",
+        "onAnimationComplete",
+      ].includes(key)
+    ) {
+      safeMotionProps[key as keyof HTMLMotionProps<"div">] =
+        props[key as keyof typeof props];
+    }
+  }
 
   const renderChild = () => (
-    <CSSTransition
-      classNames={classNames}
-      in={isOpen}
-      nodeRef={nodeRef}
-      timeout={duration}
-      unmountOnExit={unmountOnExit}
-    >
-      <div
-        ref={nodeRef}
-        className={buildClassName(s.Content, contentClassName)}
-        style={styles}
-        {...props}
-      >
-        {children}
-      </div>
-    </CSSTransition>
+    <AnimatePresence initial={false}>
+      {(isOpen || !unmountOnExit) && (
+        <motion.div
+          ref={contentRef}
+          className={buildClassName(s.Content, contentClassName)}
+          initial="closed"
+          animate={isOpen ? "open" : "closed"}
+          exit="closed"
+          variants={variants}
+          style={{ overflow: "hidden" }}
+          {...safeMotionProps}
+        >
+          {children}
+        </motion.div>
+      )}
+    </AnimatePresence>
   );
 
-  const element =
-    component !== null
-      ? (createElement(component, {
-          className: buildClassName(s.root, className),
-          children: renderChild(),
-        }) as ReactElement)
-      : renderChild();
-
-  return element;
+  return component !== null
+    ? (createElement(component, {
+        className: buildClassName(s.root, className),
+        children: renderChild(),
+      }) as ReactElement)
+    : renderChild();
 };
 
 interface TriggerProps {
@@ -143,7 +173,7 @@ interface RootProps {
   component?: keyof JSX.IntrinsicElements | null;
 }
 
-const Root: FC<RootProps & DivProps> = ({
+const Root: FC<RootProps & JSX.IntrinsicElements["div"]> = ({
   title,
   children,
   className,
@@ -156,21 +186,16 @@ const Root: FC<RootProps & DivProps> = ({
     setIsOpen((prev) => !prev);
   });
 
-  const element =
-    component !== null ? (
-      (createElement(component, {
-        title: title,
-        className: buildClassName(s.root, className),
-        children,
-        ...props,
-      }) as ReactElement)
-    ) : (
-      <>{children}</>
-    );
-
   return (
     <CollapsibleContext.Provider value={{ isOpen, toggleCollapse }}>
-      {element}
+      {component !== null
+        ? (createElement(component, {
+            title: title,
+            className: buildClassName(s.root, className),
+            children,
+            ...props,
+          }) as ReactElement)
+        : children}
     </CollapsibleContext.Provider>
   );
 };

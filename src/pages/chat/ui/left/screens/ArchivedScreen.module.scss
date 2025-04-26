@@ -1,0 +1,73 @@
+// styles.module.scss
+.container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding: 20px;
+  background: #1a1a1a;
+  height: 100vh;
+  color: white;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  width: 100%;
+  font-size: 18px;
+}
+
+.blocksSection {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  gap: 5px;
+}
+
+.blockCount {
+  font-size: 48px;
+  width: 100%;
+  font-weight: bold;
+}
+
+.slider {
+  width: 100%;
+  max-width: 300px;
+}
+
+.options {
+  display: flex;
+  flex-wrap: wrap 2;
+  gap: 10px;
+  width: 100%;
+}
+
+.option {
+  flex: 1;
+  padding: 10px;
+  background: #333;
+  text-align: center;
+  border-radius: 5px;
+
+}
+
+.toggle {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+
+  padding: 10px;
+  background: #333;
+  border-radius: 5px;
+}
+
+.button {
+  width: 100%;
+  padding: 15px;
+  background: #d4ff00;
+  color: black;
+  text-align: center;
+  border-radius: 5px;
+  font-weight: bold;
+}

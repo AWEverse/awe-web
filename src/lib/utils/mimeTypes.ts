@@ -1,128 +1,123 @@
-declare const mimeTypeSymbol: unique symbol;
-export type MIMEType = string & { [mimeTypeSymbol]: true };
+declare const MimeTypeSymbol: unique symbol;
+export type MIMEType = string & { [MimeTypeSymbol]: true };
 
-export const stringToMIMEType = (value: string): MIMEType => {
-  return value as MIMEType;
+export const stringToMIMEType = (value: string): MIMEType => value as MIMEType;
+export const MIMETypeToString = (value: MIMEType): string => value;
+
+export const MIME_TYPES = Object.freeze({
+  APPLICATION: Object.freeze({
+    OCTET_STREAM: stringToMIMEType("application/octet-stream"),
+    JSON: stringToMIMEType("application/json"),
+    PDF: stringToMIMEType("application/pdf"),
+    XML: stringToMIMEType("application/xml"),
+    ZIP: stringToMIMEType("application/zip"),
+    GZIP: stringToMIMEType("application/gzip"),
+    X_TAR: stringToMIMEType("application/x-tar"),
+    X_WWW_FORM_URLENCODED: stringToMIMEType(
+      "application/x-www-form-urlencoded",
+    ),
+    JAVASCRIPT: stringToMIMEType("application/javascript"),
+    MSWORD: stringToMIMEType("application/msword"),
+    VND_MS_EXCEL: stringToMIMEType("application/vnd.ms-excel"),
+    VND_MS_POWERPOINT: stringToMIMEType("application/vnd.ms-powerpoint"),
+    VND_OPENXML_WORD: stringToMIMEType(
+      "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    ),
+    VND_OPENXML_SHEET: stringToMIMEType(
+      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    ),
+    VND_OPENXML_PRESENTATION: stringToMIMEType(
+      "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+    ),
+    RTF: stringToMIMEType("application/rtf"),
+  }),
+  AUDIO: Object.freeze({
+    AAC: stringToMIMEType("audio/aac"),
+    MP3: stringToMIMEType("audio/mpeg"),
+    OGG: stringToMIMEType("audio/ogg"),
+    WAV: stringToMIMEType("audio/wav"),
+    WEBM: stringToMIMEType("audio/webm"),
+    FLAC: stringToMIMEType("audio/flac"),
+    MIDI: stringToMIMEType("audio/midi"),
+    X_AIFF: stringToMIMEType("audio/x-aiff"),
+  }),
+  IMAGE: Object.freeze({
+    GIF: stringToMIMEType("image/gif"),
+    JPEG: stringToMIMEType("image/jpeg"),
+    PNG: stringToMIMEType("image/png"),
+    WEBP: stringToMIMEType("image/webp"),
+    ICO: stringToMIMEType("image/x-icon"),
+    BMP: stringToMIMEType("image/bmp"),
+    TIFF: stringToMIMEType("image/tiff"),
+    SVG_XML: stringToMIMEType("image/svg+xml"),
+    HEIC: stringToMIMEType("image/heic"),
+    HEIF: stringToMIMEType("image/heif"),
+    AVIF: stringToMIMEType("image/avif"),
+  }),
+  TEXT: Object.freeze({
+    PLAIN: stringToMIMEType("text/plain"),
+    HTML: stringToMIMEType("text/html"),
+    CSS: stringToMIMEType("text/css"),
+    JAVASCRIPT: stringToMIMEType("text/javascript"),
+    CSV: stringToMIMEType("text/csv"),
+    XML: stringToMIMEType("text/xml"),
+    LONG_MESSAGE: stringToMIMEType("text/x-signal-plain"),
+    ATTACHMENT: stringToMIMEType("text/x-signal-story"),
+    VCARD: stringToMIMEType("text/vcard"),
+    CALENDAR: stringToMIMEType("text/calendar"),
+  }),
+  VIDEO: Object.freeze({
+    MP4: stringToMIMEType("video/mp4"),
+    QUICKTIME: stringToMIMEType("video/quicktime"),
+    MPEG: stringToMIMEType("video/mpeg"),
+    OGG: stringToMIMEType("video/ogg"),
+    WEBM: stringToMIMEType("video/webm"),
+    _3GPP: stringToMIMEType("video/3gpp"),
+    AVI: stringToMIMEType("video/x-msvideo"),
+    X_FLV: stringToMIMEType("video/x-flv"),
+  }),
+  MULTIPART: Object.freeze({
+    FORM_DATA: stringToMIMEType("multipart/form-data"),
+    MIXED: stringToMIMEType("multipart/mixed"),
+    RELATED: stringToMIMEType("multipart/related"),
+  }),
+  FONT: Object.freeze({
+    WOFF: stringToMIMEType("font/woff"),
+    WOFF2: stringToMIMEType("font/woff2"),
+    TTF: stringToMIMEType("font/ttf"),
+    OTF: stringToMIMEType("font/otf"),
+  }),
+});
+
+export const isHeic = (value: string, fileName: string): boolean => {
+  const lowerFileName = fileName.toLowerCase();
+  return (
+    value === MIME_TYPES.IMAGE.HEIC ||
+    value === MIME_TYPES.IMAGE.HEIF ||
+    lowerFileName.endsWith(".heic") ||
+    lowerFileName.endsWith(".heif")
+  );
 };
-export const MIMETypeToString = (value: MIMEType): string => {
-  return value as string;
-};
 
-// MIME Type Constants (Expanded List)
-// Application Types
-export const APPLICATION_OCTET_STREAM = stringToMIMEType(
-  "application/octet-stream",
-);
-export const APPLICATION_JSON = stringToMIMEType("application/json");
-export const APPLICATION_PDF = stringToMIMEType("application/pdf");
-export const APPLICATION_XML = stringToMIMEType("application/xml");
-export const APPLICATION_ZIP = stringToMIMEType("application/zip");
-export const APPLICATION_GZIP = stringToMIMEType("application/gzip");
-export const APPLICATION_X_TAR = stringToMIMEType("application/x-tar");
-export const APPLICATION_X_WWW_FORM_URLENCODED = stringToMIMEType(
-  "application/x-www-form-urlencoded",
-);
-export const APPLICATION_JAVASCRIPT = stringToMIMEType(
-  "application/javascript",
-);
-export const APPLICATION_MSWORD = stringToMIMEType("application/msword");
-export const APPLICATION_VND_MS_EXCEL = stringToMIMEType(
-  "application/vnd.ms-excel",
-);
-export const APPLICATION_VND_MS_POWERPOINT = stringToMIMEType(
-  "application/vnd.ms-powerpoint",
-);
-export const APPLICATION_VND_OPENXMLFORMATS_OFFICEDOCUMENT_WORDPROCESSINGML_DOCUMENT =
-  stringToMIMEType(
-    "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-  );
-export const APPLICATION_VND_OPENXMLFORMATS_OFFICEDOCUMENT_SPREADSHEETML_SHEET =
-  stringToMIMEType(
-    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-  );
-export const APPLICATION_VND_OPENXMLFORMATS_OFFICEDOCUMENT_PRESENTATIONML_PRESENTATION =
-  stringToMIMEType(
-    "application/vnd.openxmlformats-officedocument.presentationml.presentation",
-  );
-export const APPLICATION_RTF = stringToMIMEType("application/rtf");
-
-export const AUDIO_AAC = stringToMIMEType("audio/aac");
-export const AUDIO_MP3 = stringToMIMEType("audio/mp3"); // Alias for audio/mpeg
-export const AUDIO_MPEG = stringToMIMEType("audio/mpeg");
-export const AUDIO_OGG = stringToMIMEType("audio/ogg");
-export const AUDIO_WAV = stringToMIMEType("audio/wav");
-export const AUDIO_WEBM = stringToMIMEType("audio/webm");
-export const AUDIO_FLAC = stringToMIMEType("audio/flac");
-export const AUDIO_MIDI = stringToMIMEType("audio/midi");
-export const AUDIO_X_AIFF = stringToMIMEType("audio/x-aiff");
-
-export const IMAGE_GIF = stringToMIMEType("image/gif");
-export const IMAGE_JPEG = stringToMIMEType("image/jpeg");
-export const IMAGE_PNG = stringToMIMEType("image/png");
-export const IMAGE_WEBP = stringToMIMEType("image/webp");
-export const IMAGE_ICO = stringToMIMEType("image/x-icon");
-export const IMAGE_BMP = stringToMIMEType("image/bmp");
-export const IMAGE_TIFF = stringToMIMEType("image/tiff");
-export const IMAGE_SVG_XML = stringToMIMEType("image/svg+xml");
-export const IMAGE_HEIC = stringToMIMEType("image/heic");
-export const IMAGE_HEIF = stringToMIMEType("image/heif");
-export const IMAGE_AVIF = stringToMIMEType("image/avif");
-
-export const TEXT_PLAIN = stringToMIMEType("text/plain");
-export const TEXT_HTML = stringToMIMEType("text/html");
-export const TEXT_CSS = stringToMIMEType("text/css");
-export const TEXT_JAVASCRIPT = stringToMIMEType("text/javascript");
-export const TEXT_CSV = stringToMIMEType("text/csv");
-export const TEXT_XML = stringToMIMEType("text/xml");
-export const LONG_MESSAGE = stringToMIMEType("text/x-signal-plain");
-export const TEXT_ATTACHMENT = stringToMIMEType("text/x-signal-story");
-export const TEXT_VCARD = stringToMIMEType("text/vcard");
-export const TEXT_CALENDAR = stringToMIMEType("text/calendar");
-
-export const VIDEO_MP4 = stringToMIMEType("video/mp4");
-export const VIDEO_QUICKTIME = stringToMIMEType("video/quicktime");
-export const VIDEO_MPEG = stringToMIMEType("video/mpeg");
-export const VIDEO_OGG = stringToMIMEType("video/ogg");
-export const VIDEO_WEBM = stringToMIMEType("video/webm");
-export const VIDEO_3GPP = stringToMIMEType("video/3gpp");
-export const VIDEO_AVI = stringToMIMEType("video/x-msvideo");
-export const VIDEO_X_MSVIDEO = stringToMIMEType("video/x-msvideo"); // Alias for AVI
-export const VIDEO_X_FLV = stringToMIMEType("video/x-flv");
-
-export const MULTIPART_FORM_DATA = stringToMIMEType("multipart/form-data");
-export const MULTIPART_MIXED = stringToMIMEType("multipart/mixed");
-export const MULTIPART_RELATED = stringToMIMEType("multipart/related");
-
-export const FONT_WOFF = stringToMIMEType("font/woff");
-export const FONT_WOFF2 = stringToMIMEType("font/woff2");
-export const FONT_TTF = stringToMIMEType("font/ttf");
-export const FONT_OTF = stringToMIMEType("font/otf");
-
-export const isHeic = (value: string, fileName: string): boolean =>
-  value === "image/heic" ||
-  value === "image/heif" ||
-  fileName.toLowerCase().endsWith(".heic") ||
-  fileName.toLowerCase().endsWith(".heif");
-
-export const isGif = (value: string): value is MIMEType => value === IMAGE_GIF;
+export const isGif = (value: string): value is MIMEType =>
+  value === MIME_TYPES.IMAGE.GIF;
 export const isJPEG = (value: string): value is MIMEType =>
-  value === IMAGE_JPEG;
+  value === MIME_TYPES.IMAGE.JPEG;
 export const isImage = (value: string): value is MIMEType =>
-  Boolean(value) && value.startsWith("image/");
+  value.startsWith("image/");
 export const isVideo = (value: string): value is MIMEType =>
-  Boolean(value) && value.startsWith("video/");
+  value.startsWith("video/");
 export const isAudio = (value: string): value is MIMEType =>
-  Boolean(value) && value.startsWith("audio/") && !value.endsWith("aiff");
+  value.startsWith("audio/") && value !== MIME_TYPES.AUDIO.X_AIFF;
 export const isLongMessage = (value: string): value is MIMEType =>
-  value === LONG_MESSAGE;
+  value === MIME_TYPES.TEXT.LONG_MESSAGE;
 export const supportsIncrementalMac = (value: string): boolean =>
-  value === VIDEO_MP4;
-
+  value === MIME_TYPES.VIDEO.MP4;
 export const isText = (value: string): value is MIMEType =>
-  Boolean(value) && value.startsWith("text/");
+  value.startsWith("text/");
 export const isApplication = (value: string): value is MIMEType =>
-  Boolean(value) && value.startsWith("application/");
+  value.startsWith("application/");
 export const isMultipart = (value: string): value is MIMEType =>
-  Boolean(value) && value.startsWith("multipart/");
+  value.startsWith("multipart/");
 export const isFont = (value: string): value is MIMEType =>
-  Boolean(value) && value.startsWith("font/");
+  value.startsWith("font/");

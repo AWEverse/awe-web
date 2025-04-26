@@ -1,0 +1,312 @@
+// Avatar.scss
+
+// Variables for consistent styling
+$avatar-micro-size: 1.25rem;   // 20px
+$avatar-tiny-size: 1.875rem;   // 30px
+$avatar-mini-size: 2.5rem;     // 40px
+$avatar-small-size: 3.125rem;  // 50px
+$avatar-small-mobile-size: 2.75rem; // 44px
+$avatar-medium-size: 3.75rem;  // 60px
+$avatar-large-size: 5rem;      // 80px
+$avatar-giant-size: 6.25rem;   // 100px
+$avatar-jumbo-size: 7.5rem;    // 120px
+
+$story-stroke-width: 0.1875rem;    // 3px
+$story-stroke-width-mobile: 0.125rem; // 2px
+$story-gap: 0.25rem;             // 4px
+$story-highlight-color: rgba(255, 255, 255, 0.7);
+$default-bg-color: #d8dee4;
+$saved-icon-color: #fff;
+$saved-bg-color: #5aa8ed;
+
+.Avatar {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  border-radius: 50%;
+  background-color: $default-bg-color;
+  font-weight: 500;
+  color: #fff;
+  user-select: none;
+  flex-shrink: 0;
+  text-decoration: none;
+  text-transform: uppercase;
+  vertical-align: middle;
+  box-sizing: border-box;
+
+  // Default styles for the inner content
+  .inner {
+    position: relative;
+    height: 100%;
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    font-size: 1rem;
+    line-height: 1;
+    z-index: 1;
+  }
+
+  // Badge styling
+  .avatar-badge {
+    position: absolute;
+    bottom: 0;
+    right: 0;
+    z-index: 2;
+    border: 0.125rem solid #fff;
+    border-radius: 50%;
+    background-color: #fff;
+    box-shadow: 0 0.0625rem 0.125rem rgba(0, 0, 0, 0.2);
+  }
+
+  // Media styling (images and videos)
+  .avatar-image,
+  .avatar-video {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    opacity: 0;
+    transition: opacity 0.15s ease;
+
+    &.loaded {
+      opacity: 1;
+    }
+  }
+
+  // Saved messages/dialog specific styles
+  &.is-saved-messages,
+  &.is-saved-dialog {
+    background-color: $saved-bg-color;
+
+    .saved-messages-icon,
+    .saved-dialog-icon {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+      height: 100%;
+      color: $saved-icon-color;
+      font-size: 1.25rem;
+
+      i {
+        font-size: 1.1em;
+      }
+    }
+  }
+
+  // Sizes definitions
+  &.size-micro {
+    width: $avatar-micro-size;
+    height: $avatar-micro-size;
+    font-size: 0.5rem;
+
+    .inner {
+      font-size: 0.5rem;
+    }
+  }
+
+  &.size-tiny {
+    width: $avatar-tiny-size;
+    height: $avatar-tiny-size;
+    font-size: 0.625rem;
+
+    .inner {
+      font-size: 0.625rem;
+    }
+
+    .avatar-badge {
+      width: 0.625rem;
+      height: 0.625rem;
+    }
+  }
+
+  &.size-mini {
+    width: $avatar-mini-size;
+    height: $avatar-mini-size;
+    font-size: 1rem;
+
+    .inner {
+      font-size: 1rem;
+    }
+
+    .avatar-badge {
+      width: 0.75rem;
+      height: 0.75rem;
+    }
+  }
+
+  &.size-small {
+    width: $avatar-small-size;
+    height: $avatar-small-size;
+    font-size: 1.25rem;
+
+    .inner {
+      font-size: 1.25rem;
+    }
+
+    .avatar-badge {
+      width: 1rem;
+      height: 1rem;
+    }
+  }
+
+  &.size-small-mobile {
+    width: $avatar-small-mobile-size;
+    height: $avatar-small-mobile-size;
+    font-size: 1.125rem;
+
+    .inner {
+      font-size: 1.125rem;
+    }
+
+    .avatar-badge {
+      width: 0.875rem;
+      height: 0.875rem;
+    }
+  }
+
+  &.size-medium {
+    width: $avatar-medium-size;
+    height: $avatar-medium-size;
+    font-size: 1.5rem;
+
+    .inner {
+      font-size: 1.5rem;
+    }
+
+    .avatar-badge {
+      width: 1.25rem;
+      height: 1.25rem;
+    }
+  }
+
+  &.size-large {
+    width: $avatar-large-size;
+    height: $avatar-large-size;
+    font-size: 2rem;
+
+    .inner {
+      font-size: 2rem;
+    }
+
+    .avatar-badge {
+      width: 1.5rem;
+      height: 1.5rem;
+    }
+  }
+
+  &.size-giant {
+    width: $avatar-giant-size;
+    height: $avatar-giant-size;
+    font-size: 2.5rem;
+
+    .inner {
+      font-size: 2.5rem;
+    }
+
+    .avatar-badge {
+      width: 1.75rem;
+      height: 1.75rem;
+    }
+  }
+
+  &.size-jumbo {
+    width: $avatar-jumbo-size;
+    height: $avatar-jumbo-size;
+    font-size: 3rem;
+
+    .inner {
+      font-size: 3rem;
+    }
+
+    .avatar-badge {
+      width: 2rem;
+      height: 2rem;
+    }
+  }
+
+  // Story specific styles
+  &.with-story {
+    margin: $story-stroke-width;
+
+    // Add extra padding when stories are present
+    &.with-story-gap {
+      margin: calc($story-stroke-width + $story-gap);
+    }
+  }
+
+  // Premium promo specific styles
+  &.for-premium-promo {
+    background-color: #eba434;
+    color: #fff;
+  }
+
+  // Media loaded state
+  &.media-loaded {
+    background-color: transparent;
+  }
+
+  // No personal photo state
+  &.no-personal-photo {
+    background-color: #b5bbc3;
+    color: #fff;
+  }
+
+  // Video specific styles
+  &.with-video {
+    .inner {
+      overflow: hidden;
+    }
+  }
+}
+
+// Media queries for responsiveness
+@media (max-width: 768px) {
+  .Avatar {
+    &.with-story {
+      margin: $story-stroke-width-mobile;
+
+      &.with-story-gap {
+        margin: calc($story-stroke-width-mobile + $story-gap);
+      }
+    }
+  }
+}
+
+// Dark mode support
+@media (prefers-color-scheme: dark) {
+  .Avatar {
+    background-color: #40444b;
+
+    .avatar-badge {
+      border-color: #2f3136;
+    }
+
+    &.no-personal-photo {
+      background-color: #5d6169;
+    }
+  }
+}
+
+
+@function getUserColor($index) {
+  $colors: (
+    #f44336, #e91e63, #9c27b0, #673ab7,
+    #3f51b5, #2196f3, #03a9f4, #00bcd4,
+    #009688, #4caf50, #8bc34a, #cddc39,
+    #ffc107, #ff9800, #ff5722, #795548
+  );
+  @return nth($colors, ($index % length($colors)) + 1);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .Avatar {
+    .avatar-image,
+    .avatar-video {
+      transition: none !important;
+    }
+  }
+}
