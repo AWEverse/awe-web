@@ -1,4 +1,3 @@
-import murmurHash2 from '@/lib/core/public/cryptography/utils/murmurHash2';
 import { LRUCache } from 'lru-cache';
 import { useMemo } from 'react';
 
@@ -13,7 +12,6 @@ export type ClassValue =
 
 export type Parts = ClassValue[];
 
-// Optimized hash function using a bitwise approach
 function hashString(str: string): number {
   let hash = 5381;
   for (let i = 0; i < str.length; i++) {
@@ -38,7 +36,6 @@ function hashObject(obj: { [key: string]: ClassValue }): number {
   return hash >>> 0;
 }
 
-// Optimized hash function with memoization for complex structures
 const hashCache = new WeakMap<object, number>();
 
 function hash(parts: Parts, depth: number = 0): number {

@@ -6,6 +6,8 @@ import AvatarStoryCircle from "@/entities/avatar-story-сircle";
 import { ObserveFn } from "@/shared/hooks/DOM/useIntersectionObserver";
 import buildClassName from "../lib/buildClassName";
 
+import "./Avatar.scss";
+
 export type AvatarSize =
   | "micro"
   | "tiny"
@@ -250,9 +252,10 @@ const Avatar: React.FC<OwnProps> = (props) => {
           : content}
       </div>
 
-      {withStory && realPeer?.hasStories && (
+      {/* && realPeer?.hasStories */}
+      {withStory && (
         <AvatarStoryCircle
-          peerId={realPeer.id}
+          peerId={realPeer?.id || "0"}
           size={size}
           withExtraGap={withStoryGap}
           withSolid={withStorySolid}
@@ -261,7 +264,6 @@ const Avatar: React.FC<OwnProps> = (props) => {
           viewerMode={storyViewerMode}
         />
       )}
-
       {badge && <div className="avatar-badge">{badge}</div>}
     </div>
   );

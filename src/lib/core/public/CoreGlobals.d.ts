@@ -9,6 +9,8 @@
  */
 type Brand<T, B extends string> = T & { __brand: B };
 
+type ReadonlyPartial<T> = Partial<Readonly<T>>;
+
 /**
  * Creates a partial version of a given type where all properties are optional.
  * @template T - The type to make partial.

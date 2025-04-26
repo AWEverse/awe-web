@@ -8,11 +8,66 @@ import ActionButton from "@/shared/ui/ActionButton";
 import { MAX_BIO_LENGTH } from "@/lib/config/app";
 import { useStableCallback } from "@/shared/hooks/base";
 import useChatStore from "@/pages/chat/store/useChatSelector";
+import Avatar from "@/shared/ui/Avatar";
+import { useModalComposer } from "@/composers/modals";
 
 interface OwnProps {
   nodeRef?: React.RefObject<HTMLDivElement>;
   className?: string;
 }
+const mockUser = {
+  id: "12345",
+  firstName: "John",
+  lastName: "Doe",
+  username: "johndoe",
+  phone: "+1234567890",
+  isPremium: true,
+  isMin: false,
+  phoneNumber: "+1234567890",
+  isCustomerPeer: true,
+  hasStories: true,
+};
+
+const mockChat = {
+  id: "67890",
+  title: "Group Chat",
+  isChannel: false,
+  participantsCount: 10,
+};
+
+const mockPhoto = {
+  id: "photo123",
+  imageUrl: "https://i.pravatar.cc/300",
+  width: 100,
+  height: 100,
+  date: new Date(),
+};
+
+const mockProps = {
+  className: "avatar-container",
+  peer: mockUser,
+  size: "medium",
+  photo: mockPhoto,
+  text: "JD",
+  isSavedMessages: false,
+  isSavedDialog: false,
+  withVideo: false,
+  withStory: true,
+  forPremiumPromo: false,
+  withStoryGap: true,
+  withStorySolid: false,
+  forceFriendStorySolid: false,
+  forceUnreadStorySolid: false,
+  storyViewerMode: "full",
+  loopIndefinitely: false,
+  noPersonalPhoto: false,
+  observeIntersection: undefined,
+  onClick: (e: any, hasMedia: any) => console.log("Avatar clicked", hasMedia),
+  customContent: <span>Custom</span>,
+  imageUrl: "https://example.com/custom-avatar.jpg",
+  badge: <div className="status-badge">Online</div>,
+  fallbackLetter: true,
+};
 
 const EditScreen: FC<OwnProps> = ({ nodeRef, className }) => {
   const toggleRightEditingPanel = useChatStore((s) => s.toggleProfileEditing);
@@ -36,12 +91,25 @@ const EditScreen: FC<OwnProps> = ({ nodeRef, className }) => {
     toggleRightEditingPanel();
   };
 
+  const { openModal } = useModalComposer();
+
   return (
     <div ref={nodeRef} className={buildClassName(s.EditScreen, className)}>
       <HeaderNavigation
         className={"RightHeaderNavigation"}
         name="Edit Your Profile"
         onPrevClick={toggleRightEditingPanel}
+      />
+
+      <Avatar
+        className={s.EditAvatar}
+        peer={mockUser}
+        imageUrl={"https://i.pravatar.cc/100"}
+        size="jumbo"
+        withStory
+        onClick={() => {
+          openModal("edit-avatar", { children: <></> });
+        }}
       />
 
       <form

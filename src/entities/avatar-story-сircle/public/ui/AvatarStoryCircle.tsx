@@ -51,7 +51,7 @@ const AvatarStoryCircle = memo((props: OwnProps & StateProps) => {
     className,
     sx,
     peerStories,
-    storyIds,
+    storyIds = [1, 2, 3, 4, 5, 6, 7],
     lastReadId,
     withExtraGap,
     withSolid,
@@ -65,10 +65,8 @@ const AvatarStoryCircle = memo((props: OwnProps & StateProps) => {
   const dpr = useDevicePixelRatio();
   const isDarkMode = theme.palette.mode === "dark";
 
-  // Get stats for read/unread stories
   const { total, read, hasUnread } = useStoryReadStats(storyIds, lastReadId);
 
-  // Logic to determine if any unread stories are for close friends
   const hasPriorityContent = useMemo(() => {
     if (!peerStories || !storyIds?.length) {
       return { isCloseFriend: false, isPremium: false };
@@ -77,7 +75,6 @@ const AvatarStoryCircle = memo((props: OwnProps & StateProps) => {
     let isCloseFriend = false;
     let isPremium = false;
 
-    // Check for close friends or premium content in unread stories
     for (const id of storyIds) {
       const story = peerStories[id];
       if (!story) continue;
@@ -93,24 +90,20 @@ const AvatarStoryCircle = memo((props: OwnProps & StateProps) => {
         isPremium = true;
       }
 
-      // If we found both priority types, no need to continue
       if (isCloseFriend && isPremium) break;
     }
 
     return { isCloseFriend, isPremium };
   }, [lastReadId, peerStories, storyIds]);
 
-  // Calculate circle color based on content type
   const circleColor = useMemo(() => {
     if (hasPriorityContent.isCloseFriend) return "green";
     if (hasPriorityContent.isPremium) return "purple";
     return "blue";
   }, [hasPriorityContent]);
 
-  // Size calculations
   const maxSize = SIZES[size];
 
-  // Handle draw for solid background if specified
   const handleSolidBackground = useCallback(() => {
     if (!canvasRef.current) return;
 
@@ -154,7 +147,6 @@ const AvatarStoryCircle = memo((props: OwnProps & StateProps) => {
     ctx.fill();
   }, [circleColor, dpr, forceFriendSolid, hasUnread, isDarkMode, maxSize]);
 
-  // Draw circle effect
   useLayoutEffect(() => {
     if (!canvasRef.current) return;
 
@@ -185,12 +177,10 @@ const AvatarStoryCircle = memo((props: OwnProps & StateProps) => {
     isDarkMode,
   ]);
 
-  // No stories to show
   if (!total) {
     return null;
   }
 
-  // Determine pointer events based on viewer mode
   const pointerEvents = viewerMode === "disabled" ? "none" : "auto";
 
   return (

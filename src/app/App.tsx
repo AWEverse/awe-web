@@ -32,8 +32,6 @@ const App: FC<StateProps> = ({ themeKey = "dark" }) => {
     windowSize.update();
   });
 
-  useGlobalDragEventPrevention();
-
   return (
     <ThemeProvider defaultMode={themeKey} theme={theme}>
       <CssBaseline />
