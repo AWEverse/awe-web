@@ -21,6 +21,7 @@ const useGlobalDragEventPrevention = () => {
 
     const handleDrop = (e: DragEvent) => {
       e.preventDefault();
+      e.stopPropagation();
     };
 
     body.addEventListener('dragover', handleDrag, listenerOptions);

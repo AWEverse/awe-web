@@ -6,7 +6,7 @@ const MembersViewModal = lazy(() => import("./modal-members-list"));
 const EditAvatarModal = lazy(() => import("./modal-edit-avatar"));
 
 const modalRegistry = {
-  calendar: CalendarModal,
+  "calendar": CalendarModal,
   "link-preview": LinkPreviewModal,
   "members-view": MembersViewModal,
   "edit-avatar": EditAvatarModal,

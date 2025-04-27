@@ -7,9 +7,8 @@ import pluginJsxA11y from "eslint-plugin-jsx-a11y";
 import boundaries from "eslint-plugin-boundaries";
 import importPlugin from "eslint-plugin-import";
 
-/** @type {import("eslint").Linter.FlatConfig[]} */
+/** @type {import("eslint").Linter.Config[]} */
 export default [
-  // Base JS/TS + React rules
   pluginJs.configs.recommended,
   ...tseslint.configs.recommended,
   pluginReact.configs.flat.recommended,
@@ -43,7 +42,6 @@ export default [
       "jsx-a11y/alt-text": "error",
       "jsx-a11y/anchor-is-valid": "error",
 
-      // Import constraints
       "import/no-internal-modules": [
         "error",
         {
@@ -54,48 +52,137 @@ export default [
             "**/widgets/**",
             "**/pages/**",
             "**/app/**",
+            "**/core/**",
+            "**/utils/**",
+            "**/infra/**",
+            "**/domain/**",
           ],
         },
       ],
 
-      // Boundaries rules for FSD + composers
+      "no-restricted-imports": [
+        "error",
+        {
+          patterns: [
+            {
+              group: ["@entities/*/*", "!@entities/*/index"],
+              message: "Import via public API (index.ts) only.",
+            },
+            {
+              group: ["@features/*/*", "!@features/*/index"],
+              message: "Import via public API (index.ts) only.",
+            },
+            {
+              group: ["@widgets/*/*", "!@widgets/*/index"],
+              message: "Import via public API (index.ts) only.",
+            },
+          ],
+        },
+      ],
+
       "boundaries/element-types": [
         "error",
         {
           default: "disallow",
           rules: [
+            // core - самый базовый, нельзя импортировать ничего кроме себя
             {
-              from: "shared",
+              from: "core",
               disallow: [
+                "utils",
+                "infra",
+                "domain",
                 "shared",
                 "entities",
                 "features",
                 "widgets",
                 "pages",
                 "app",
-                "composers",
               ],
             },
-            { from: "entities", allow: ["shared", "entities", "composers"] },
+
+            // utils могут импортировать core, но не infra/domain
+            { from: "utils", allow: ["core", "utils"] },
+            {
+              from: "utils",
+              disallow: [
+                "infra",
+                "domain",
+                "shared",
+                "entities",
+                "features",
+                "widgets",
+                "pages",
+                "app",
+              ],
+            },
+
+            // infra может импортировать core и utils
+            { from: "infra", allow: ["core", "utils", "infra"] },
+            {
+              from: "infra",
+              disallow: [
+                "domain",
+                "shared",
+                "entities",
+                "features",
+                "widgets",
+                "pages",
+                "app",
+              ],
+            },
+
+            // domain может использовать core/utils/infra
+            { from: "domain", allow: ["core", "utils", "infra", "domain"] },
+
+            // старые слои (FSD)
+            {
+              from: "shared",
+              allow: ["core", "utils", "infra", "domain", "shared"],
+            },
             {
               from: "entities",
-              disallow: ["features", "widgets", "pages", "app"],
+              allow: ["shared", "core", "utils", "infra", "domain", "entities"],
             },
             {
               from: "features",
-              allow: ["shared", "entities", "features", "composers"],
+              allow: [
+                "shared",
+                "entities",
+                "features",
+                "core",
+                "utils",
+                "infra",
+                "domain",
+              ],
             },
-            { from: "features", disallow: ["widgets", "pages", "app"] },
             {
               from: "widgets",
-              allow: ["shared", "entities", "features", "widgets", "composers"],
+              allow: [
+                "shared",
+                "entities",
+                "features",
+                "widgets",
+                "core",
+                "utils",
+                "infra",
+                "domain",
+              ],
             },
-            { from: "widgets", disallow: ["pages", "app"] },
             {
               from: "pages",
-              allow: ["shared", "entities", "features", "widgets", "pages"],
+              allow: [
+                "shared",
+                "entities",
+                "features",
+                "widgets",
+                "pages",
+                "core",
+                "utils",
+                "infra",
+                "domain",
+              ],
             },
-            { from: "pages", disallow: ["app", "composers"] },
             {
               from: "app",
               allow: [
@@ -105,42 +192,13 @@ export default [
                 "widgets",
                 "pages",
                 "app",
+                "core",
+                "utils",
+                "infra",
+                "domain",
               ],
             },
-            { from: "app", disallow: ["composers"] },
-            {
-              from: "composers",
-              disallow: [
-                "shared",
-                "entities",
-                "features",
-                "widgets",
-                "pages",
-                "app",
-                "composers",
-              ],
-            },
-          ],
-        },
-      ],
-
-      // Restrict deep imports bypassing public API
-      "no-restricted-imports": [
-        "error",
-        {
-          patterns: [
-            {
-              group: ["@entities/*/*", "!@entities/*/index"],
-              message: "Import is only allowed via public API (index.ts)",
-            },
-            {
-              group: ["@features/*/*", "!@features/*/index"],
-              message: "Import is only allowed via public API (index.ts)",
-            },
-            {
-              group: ["@widgets/*/*", "!@widgets/*/index"],
-              message: "Import is only allowed via public API (index.ts)",
-            },
+            { from: "composers", disallow: ["*"] }, // special isolated layer
           ],
         },
       ],

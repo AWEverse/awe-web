@@ -1,145 +1,87 @@
-import { useStableCallback } from "@/shared/hooks/base";
-import { useComponentDidMount } from "@/shared/hooks/effects/useLifecycle";
-import { FC, useState, useRef } from "react";
+import React, { JSX, useSyncExternalStore } from "react";
 
-export interface ActionOptions {
-  forceOnHeavyAnimation?: boolean;
-  forceSyncOnIOs?: boolean;
-  forceOutdated?: boolean;
-}
-export type StickToFirstFn = () => void;
+type ActionType<A, S> = {
+  [K in keyof A]: A[K] extends (state: S, ...args: infer P) => S
+    ? (...args: P) => void
+    : never;
+};
 
-export function typify<ProjectGlobalState, ActionPayloads>() {
-  type ActionFunction<P> = undefined extends P
-    ? (payload?: P, options?: ActionOptions) => void
-    : (payload: P, options?: ActionOptions) => void;
+export function createStateManager<
+  State,
+  Actions extends Record<string, any>,
+>() {
+  let state: State;
+  const listeners = new Set<NoneToVoidFunction>();
 
-  type ProjectActions = {
-    [K in keyof ActionPayloads]: ActionFunction<ActionPayloads[K]>;
+  const subscribe = (listener: NoneToVoidFunction) => {
+    listeners.add(listener);
+    return () => listeners.delete(listener);
   };
 
-  type ActionHandlers = {
-    [K in keyof ActionPayloads]: (
-      global: ProjectGlobalState,
-      actions: ProjectActions,
-      payload: ActionPayloads[K],
-    ) => ProjectGlobalState | void | Promise<void>;
-  };
+  const getState = () => state;
 
-  let globalState: ProjectGlobalState;
-  const handlers: Partial<ActionHandlers> = {};
-  const subscribers: Array<(state: ProjectGlobalState) => void> = [];
+  const setState = (next: State | ((prev: State) => State)) => {
+    const nextState = typeof next === "function" ? (next as any)(state) : next;
 
-  const notifySubscribers = () => {
-    subscribers.forEach((subscriber) => subscriber(globalState));
-  };
-
-  const getGlobal = <T extends ProjectGlobalState>(): T => {
-    return globalState as T; // [[5]]
-  };
-
-  const setGlobal = (state: ProjectGlobalState) => {
-    globalState = state;
-    notifySubscribers();
-  };
-
-  const getActions = (): ProjectActions => {
-    const actions = {} as ProjectActions;
-    for (const key in handlers) {
-      const actionName = key as keyof ActionPayloads;
-
-      actions[actionName] = ((
-        payload: ActionPayloads[keyof ActionPayloads],
-      ) => {
-        const handler = handlers[actionName];
-
-        if (handler) {
-          const result = handler(
-            globalState,
-            actions,
-            payload as ActionPayloads[typeof actionName],
-          );
-
-          if (result instanceof Promise) {
-            result.then((asyncResult) => {
-              if (asyncResult !== undefined) {
-                globalState = asyncResult;
-                notifySubscribers();
-              }
-            });
-          } else if (result) {
-            globalState = result;
-            notifySubscribers();
-          }
-        }
-      }) as ActionFunction<ActionPayloads[typeof actionName]>; // [[2]][[3]]
+    if (nextState !== state) {
+      state = nextState;
+      listeners.forEach((l) => l());
     }
+  };
+
+  const actions = {} as ActionType<Actions, State>;
+
+  const registerActions = (defs: {
+    [K in keyof Actions]: (state: State, ...args: any[]) => State;
+  }) => {
+    (Object.keys(defs) as (keyof Actions)[]).forEach((key) => {
+      actions[key] = ((...args: any[]) => {
+        setState((prev) => defs[key](prev, ...args));
+      }) as any;
+    });
     return actions;
   };
 
-  const addActionHandler = <K extends keyof ActionPayloads>(
-    name: K,
-    handler: ActionHandlers[K],
-  ) => {
-    handlers[name] = handler;
-  };
+  function useStore<Selected>(
+    selector: (state: State) => Selected = (s) => s as any,
+  ): [Selected, typeof actions] {
+    const selected = useSyncExternalStore(
+      subscribe,
+      () => selector(state),
+      () => selector(state),
+    );
+    return [selected, actions];
+  }
 
-  const withStateProps = <OwnProps extends AnyLiteral>(
-    mapStateToProps: (
-      global: ProjectGlobalState,
-      ownProps: OwnProps,
-    ) => AnyLiteral,
-    activationFn?: (
-      global: ProjectGlobalState,
-      ownProps: OwnProps,
-      stickToFirst: StickToFirstFn,
-    ) => boolean,
-  ) => {
-    return (Component: FC<any>): FC<OwnProps> =>
-      (props: OwnProps) => {
-        const [state, setState] = useState(globalState);
-
-        const subscriberRef = useRef<
-          ((state: ProjectGlobalState) => void) | null
-        >(null);
-
-        const stickToFirst = useStableCallback(() => {
-          const subscriber = subscriberRef.current;
-          if (subscriber) {
-            const index = subscribers.indexOf(subscriber);
-            if (index !== -1) subscribers.splice(index, 1);
-            subscriberRef.current = null;
-          }
-        });
-
-        useComponentDidMount(() => {
-          const subscriber = (newState: ProjectGlobalState) =>
-            setState(newState);
-          subscriberRef.current = subscriber; // Store in ref [[10]]
-          subscribers.push(subscriber);
-
-          return () => {
-            const index = subscribers.indexOf(subscriber);
-            if (index !== -1) subscribers.splice(index, 1);
-          };
-        });
-
-        const mappedProps = mapStateToProps(state, props);
-        const shouldActivate = activationFn
-          ? activationFn(state, props, stickToFirst) // Now accessible [[8]]
-          : true;
-
-        return shouldActivate ? (
-          <Component {...props} {...mappedProps} />
-        ) : null;
-      };
+  const init = (initial: State) => {
+    state = initial;
+    listeners.forEach((l) => l());
   };
 
   return {
-    getGlobal,
-    setGlobal,
-    getActions,
-    addActionHandler,
-    withStateProps,
+    getState,
+    setState,
+    registerActions,
+    useStore,
+    init,
+  };
+}
+
+/**
+ * HOC to provide initial state to a component using the state manager.
+ * Usage:
+ *   export default withGlobalState(MyComponent, manager, initialState)
+ */
+export function withGlobalState<S, P extends JSX.IntrinsicAttributes = {}>(
+  Component: React.ComponentType<P>,
+  manager: ReturnType<typeof createStateManager<S, any>>,
+  initialState: S,
+) {
+  return function WrappedComponent(props: P) {
+    React.useMemo(() => {
+      manager.init(initialState);
+      // eslint-disable-next-line
+    }, []);
+    return <Component {...props} />;
   };
 }

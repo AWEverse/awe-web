@@ -5,6 +5,15 @@ import initViewOptimizer from "./lib/utils/initViewOptimizer";
 import initAppServices from "./services/initAppServices";
 import initAppRoot from "./services/initAppRoot";
 import initApplicationRequirements from "./services/initApplicationRequirements ";
+import { setTaskErrorHandler } from "@/lib/modules/fastdom";
+import { enableStrict } from "@/lib/modules/fastdom/stricterdom";
+import { DEBUG } from "@/lib/config/dev";
+
+
+if(DEBUG) {
+  enableStrict();
+  setTaskErrorHandler((error) => console.error("Scheduler Error:", error));
+}
 
 /**
  * Main application initialization sequence
@@ -12,12 +21,11 @@ import initApplicationRequirements from "./services/initApplicationRequirements 
  */
 (async () => {
   try {
+    initAppRoot();
+    initViewOptimizer();
     initApplicationRequirements();
 
     await initAppServices();
-
-    initViewOptimizer();
-    initAppRoot();
   } catch (error) {
     try {
       await loadErrorModule(error);

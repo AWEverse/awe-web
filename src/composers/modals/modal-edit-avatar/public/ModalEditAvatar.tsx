@@ -2,13 +2,6 @@ import { FC, ReactNode, useState, useRef, ChangeEvent, DragEvent } from "react";
 import s from "./ModalEditAvatar.module.scss";
 import { CameraAltOutlined } from "@mui/icons-material";
 
-type Props = Readonly<{
-  children?: ReactNode;
-  onClose: () => void;
-  onSave: (file: File) => Promise<void>;
-  userAvatarUrl?: string;
-}>;
-
 const ModalEditAvatar: FC<Props> = ({
   userAvatarUrl = "",
   onClose,
