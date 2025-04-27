@@ -1,61 +1,64 @@
-
-
 /**
- * Clamps a number between a minimum and a maximum value.
- * If `inclusive` is true, `num` will be clamped inclusively.
- * If `inclusive` is false, the clamped result will be within (min, max).
- *
- * @param num - The number to clamp.
- * @param min - The minimum value.
- * @param max - The maximum value.
- * @returns The clamped number.
+ * Clamps a number between a minimum and maximum value using bitwise min/max.
+ * @param num - Number to clamp.
+ * @param min - Minimum value.
+ * @param max - Maximum value.
+ * @returns Clamped number.
  */
 export const clamp = (num: number, min: number, max: number): number => {
-  return Math.min(Math.max(min, num), max);
+  return Number.isInteger(num) && Number.isInteger(min) && Number.isInteger(max)
+    ? num < min
+      ? min
+      : num > max
+        ? max
+        : num
+    : Math.min(Math.max(min, num), max);
 };
 
 /**
- * Clamps a number between 0 and 1.
- * If `x` is not a number, it returns 0.
- *
- * @param x - The number to clamp.
- * @returns The clamped number between 0 and 1.
+ * Clamps a number between 0 and 1, handling NaN.
+ * @param x - Number to clamp.
+ * @returns Clamped number between 0 and 1, or 0 if NaN.
  */
 export const clamp01 = (x: number): number => {
-  if (isNaN(x)) return 0;
-  return clamp(x, 0, 1);
+  return Number.isNaN(x) ? 0 : clamp(x, 0, 1);
 };
 
 /**
- * Checks if a number is between a minimum and maximum value.
- * Allows specifying whether the min and max bounds are inclusive.
- *
- * @param num - The number to check.
- * @param min - The minimum bound.
- * @param max - The maximum bound.
- * @returns True if `num` is within the range, false otherwise.
+ * Checks if a number is between min and max (inclusive) using bitwise comparisons.
+ * @param num - Number to check.
+ * @param min - Minimum bound.
+ * @param max - Maximum bound.
+ * @returns True if num is within [min, max], false otherwise.
  */
 export const isBetween = (num: number, min: number, max: number): boolean => {
-  return min <= num && num <= max;
+  return Number.isInteger(num) && Number.isInteger(min) && Number.isInteger(max)
+    ? (num | 0) >= (min | 0) && (num | 0) <= (max | 0)
+    : min <= num && num <= max;
 };
 
 /**
- * Rounds a number to a specific number of decimal places.
- *
- * @param num - The number to round.
- * @param decimals - The number of decimal places to round to (default is 0).
- * @returns The rounded number.
+ * Rounds a number to a specified number of decimal places.
+ * @param num - Number to round.
+ * @param decimals - Decimal places (default: 0).
+ * @returns Rounded number.
  */
 export const round = (num: number, decimals: number = 0): number => {
   const factor = 10 ** decimals;
   return Math.round(num * factor) / factor;
 };
 
+/**
+ * Rounds a number with precision, correcting for floating-point errors.
+ * @param num - Number to round.
+ * @param decimals - Decimal places (default: 0).
+ * @returns Rounded number.
+ */
 export const roundWithPrecision = (
   num: number,
   decimals: number = 0,
 ): number => {
-  const precision = Math.floor(decimals);
+  const precision = decimals | 0; // Bitwise floor
   if (precision === 0) return Math.round(num);
 
   const factor = 10 ** precision;
@@ -69,191 +72,157 @@ export const roundWithPrecision = (
 
 /**
  * Performs linear interpolation between two numbers.
- *
- * @param start - The starting value.
- * @param end - The ending value.
- * @param interpolationRatio - A ratio between 0 and 1 indicating the interpolation progress.
- * @returns The interpolated value.
+ * @param start - Start value.
+ * @param end - End value.
+ * @param t - Interpolation ratio (0 to 1).
+ * @returns Interpolated value.
  */
-export const lerp = (
-  start: number,
-  end: number,
-  interpolationRatio: number,
-): number => {
-  return (1 - interpolationRatio) * start + interpolationRatio * end;
+export const lerp = (start: number, end: number, t: number): number => {
+  return (1 - t) * start + t * end;
 };
 
 /**
- * Clamps the linear interpolation result between 0 and 1.
- *
- * @param x - The interpolation ratio.
- * @returns The clamped interpolated value between 0 and 1.
+ * Clamps linear interpolation between 0 and 1.
+ * @param x - Interpolation ratio.
+ * @returns Clamped interpolated value.
  */
 export const lerp01 = (x: number): number => {
   return clamp(lerp(0, 1, x), 0, 1);
 };
 
 /**
- * Rounds a number to the nearest even integer.
- *
- * @param value - The number to round.
- * @returns The nearest even integer.
+ * Rounds a number to the nearest even integer using bitwise operations.
+ * @param value - Number to round.
+ * @returns Nearest even integer.
  */
 export const roundToNearestEven = (value: number): number => {
-  return value % 2 === 0 ? value : value + (value > 0 ? 1 : -1);
+  const rounded = value | 0;
+
+  return (rounded & 1) === 0 ? rounded : rounded + (value > 0 ? 1 : -1);
 };
 
 /**
- * Rounds a number to the nearest odd integer.
- *
- * @param value - The number to round.
- * @returns The nearest odd integer.
+ * Rounds a number to the nearest odd integer using bitwise operations.
+ * @param value - Number to round.
+ * @returns Nearest odd integer.
  */
 export const roundToNearestOdd = (value: number): number => {
-  return value % 2 !== 0 ? value : value + (value > 0 ? 1 : -1);
+  const rounded = value | 0;
+
+  return (rounded & 1) === 1 ? rounded : rounded + (value > 0 ? 1 : -1);
 };
 
 /**
  * Squares a number.
- *
- * @param x - The number to square.
- * @returns The squared value.
+ * @param x - Number to square.
+ * @returns Squared value.
  */
 export const square = (x: number): number => x * x;
 
 /**
- * Calculates the distance between coordinates in 2D or N-dimensional space.
- *
- * @param x - The x-coordinate (for 2D distance calculation).
- * @param y - The y-coordinate (for 2D distance calculation).
- * @returns The Euclidean distance between the two points.
- */
-export function distance(x: number, y: number): number;
-
-/**
- * Implementation of the distance function with support for 2D and N-dimensional space.
- *
- * @param args - Either two parameters (x, y) for 2D or a list of coordinate values.
- * @returns The Euclidean distance.
+ * Calculates Euclidean distance in 2D or N-dimensional space.
+ * @param args - Two numbers (x, y) for 2D or array of coordinates.
+ * @returns Euclidean distance.
  */
 export function distance(...args: number[]): number {
-  if (args.length === 2) {
-    const [x, y] = args;
-
-    return Math.hypot(x, y);
-  }
-
   return Math.hypot(...args);
 }
 
 /**
  * Converts radians to degrees.
- *
- * @param x - The angle in radians.
- * @returns The angle in degrees.
+ * @param x - Angle in radians.
+ * @returns Angle in degrees.
  */
 export const radToDeg = (x: number): number => (x * 180) / Math.PI;
 
 /**
  * Converts degrees to radians.
- *
- * @param x - The angle in degrees.
- * @returns The angle in radians.
+ * @param x - Angle in degrees.
+ * @returns Angle in radians.
  */
 export const degToRad = (x: number): number => (x * Math.PI) / 180;
 
 /**
- * Calculates the angle (in radians) between the positive X-axis and a point.
- *
- * @param x - The x-coordinate of the point.
- * @param y - The y-coordinate of the point.
- * @returns The angle in radians.
+ * Calculates the angle (in radians) between the X-axis and a point.
+ * @param x - X-coordinate.
+ * @param y - Y-coordinate.
+ * @returns Angle in radians.
  */
 export const angle = (x: number, y: number): number => Math.atan2(y, x);
 
 /**
- * Calculates the angle (in degrees) between the positive X-axis and a point.
- *
- * @param x - The x-coordinate of the point.
- * @param y - The y-coordinate of the point.
- * @returns The angle in degrees.
+ * Calculates the angle (in degrees) between the X-axis and a point.
+ * @param x - X-coordinate.
+ * @param y - Y-coordinate.
+ * @returns Angle in degrees.
  */
-export const angleDeg = (x: number, y: number): number => {
-  return radToDeg(angle(x, y));
-};
+export const angleDeg = (x: number, y: number): number => radToDeg(angle(x, y));
 
 /**
- * Calculates the angle (in radians) between the positive X-axis and a point.
- *
- * @param x - The x-coordinate of the point.
- * @param y - The y-coordinate of the point.
- * @returns The angle in radians.
+ * Alias for angle function (radians).
+ * @param x - X-coordinate.
+ * @param y - Y-coordinate.
+ * @returns Angle in radians.
  */
-export const angleRad = (x: number, y: number): number => {
-  return angle(x, y);
-};
+export const angleRad = (x: number, y: number): number => angle(x, y);
 
 /**
- * Returns the sign of a number (-1, 0, or 1).
- *
- * @param x - The number to get the sign of.
- * @returns -1 if `x` is negative, 0 if `x` is zero, 1 if `x` is positive.
+ * Returns the sign of a number using bitwise operations.
+ * @param x - Number to evaluate.
+ * @returns -1 (negative), 0 (zero), or 1 (positive).
  */
 export const sign = (x: number): number => {
-  if (Math.abs(x) < Number.EPSILON) {
-    return 0;
-  }
-
-  return x > 0 ? 1 : -1;
+  return Number.isFinite(x)
+    ? x === 0
+      ? 0
+      : ((x | 0) >> 31) | 1 // -1 for negative, 1 for positive
+    : 0;
 };
 
 /**
- * Clamps an angle in radians to the range [-π, π].
- *
- * @param x - The angle in radians.
- * @returns The clamped angle.
+ * Clamps an angle in radians to [-π, π] without modulo.
+ * @param x - Angle in radians.
+ * @returns Clamped angle.
  */
 export const clampAngle = (x: number): number => {
-  const normalizedAngle = x % (2 * Math.PI);
-
-  if (normalizedAngle > Math.PI) {
-    return normalizedAngle - 2 * Math.PI;
-  }
-
-  return normalizedAngle;
+  let angle = x;
+  const twoPi = 2 * Math.PI;
+  while (angle > Math.PI) angle -= twoPi;
+  while (angle <= -Math.PI) angle += twoPi;
+  return angle;
 };
 
 /**
- * Returns a random integer between `min` and `max` (inclusive).
- *
- * @param min - The minimum value (default is 0).
- * @param max - The maximum value (default is 1).
- * @returns A random integer between `min` and `max`.
+ * Returns a random integer between min and max (inclusive) using bitwise operations.
+ * @param min - Minimum value (default: 0).
+ * @param max - Maximum value (default: 1).
+ * @returns Random integer.
  */
-export const randomInt = (min: number = 0, max: number = 1): number =>
-  min + Math.floor(Math.random() * (max - min + 1));
+export const randomInt = (min: number = 0, max: number = 1): number => {
+  min = min | 0;
+  max = max | 0;
+  return min + ((Math.random() * (max - min + 1)) | 0);
+};
 
 /**
- * Returns a random boolean value (true or false).
- *
- * @returns A random boolean.
+ * Returns a random boolean using bitwise comparison.
+ * @returns Random true or false.
  */
-export const randomBoolean = (): boolean => Math.random() > 0.5;
+export const randomBoolean = (): boolean => !!((Math.random() * 2) | 0); // 0 or 1, coerced to boolean
 
 /**
- * Returns a random index from an array.
- *
- * @param array - The array to pick an index from.
- * @returns A random index from the array.
+ * Returns a random index from an array using bitwise operations.
+ * @param array - Array to pick from.
+ * @returns Random index.
  */
-export const randomIndex = <T>(array: T[]): number =>
-  Math.floor(Math.random() * array.length);
+export const randomIndex = <T>(array: T[]): number => {
+  return (Math.random() * array.length) | 0;
+};
 
 /**
  * Returns a random element from an array.
- *
- * @param array - The array to pick an element from.
- * @returns A random element from the array.
+ * @param array - Array to pick from.
+ * @returns Random element.
  */
 export const randomElementFromArray = <T>(array: T[]): T =>
   array[randomIndex(array)];

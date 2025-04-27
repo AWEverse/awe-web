@@ -10,6 +10,7 @@ import MainScreen from "./screens/MainScreen";
 import useAppLayout from "@/lib/hooks/ui/useAppLayout";
 import useChatStore from "../../store/useChatSelector";
 import ScreenProvider, { useLeftScreenNavigation } from "./lib/ScreenContext"; // Використовуємо ScreenContext
+import { SLIDE_LEFT, SLIDE_RIGHT } from "@/shared/animations/slideInVariant";
 
 const SettingsNavigation = lazy(
   () => import("./screens/settings/SettingsNavigation"),
@@ -75,12 +76,8 @@ const LeftColumn: FC<OwnProps> = ({ className }) => {
   const isMobile = useAppLayout((state) => state.isMobile);
   const isLeftPanelOpen = useChatStore((s) => s.isChatList);
 
-  const { currentScreen } = useLeftScreenNavigation();
+  const { currentScreen, direction } = useLeftScreenNavigation();
   const shouldReduceMotion = useReducedMotion();
-
-  const transition = {
-    duration: shouldReduceMotion ? 0 : 0.2,
-  };
 
   const ScreenComponent = screens[currentScreen];
   const Fallback = skeletons.default;
@@ -97,12 +94,10 @@ const LeftColumn: FC<OwnProps> = ({ className }) => {
             className="scrollable_area"
             aria-label={`Current screen: ${currentScreen}`}
             key={currentScreen}
-            variants={screenVariants}
-            initial="initial"
-            animate="animate"
+            initial="hidden"
+            animate="visible"
             exit="exit"
-            custom={-1}
-            transition={transition}
+            variants={direction === "left" ? SLIDE_RIGHT : SLIDE_LEFT}
           >
             <Suspense fallback={Fallback}>
               <ScreenComponent />

@@ -6,16 +6,19 @@ import { DEBUG } from "@/lib/config/dev";
 const MAX_HISTORY_SIZE = 50;
 const FALLBACK_SCREEN: Screen = "Main";
 
+export type Direction = "left" | "right";
+
 export interface ScreenContextType {
   currentScreen: Screen;
+  direction: Direction;
   goTo: (screen: Screen) => void;
   goBack: () => void;
 }
 
-interface NavigationStack {
-  entries: Screen[];
-  head: number;
-  size: number;
+interface NavigationState {
+  currentScreen: Screen;
+  direction: Direction;
+  stack: Screen[];
 }
 
 const LeftScreenNavigationContext = createContext<
@@ -33,46 +36,30 @@ const transitionCache = (() => {
 export const LeftScreenNavigationProvider: React.FC<{
   children: React.ReactNode;
 }> = ({ children }) => {
-  const [navigationState, setNavigationState] = useState<{
-    currentScreen: Screen;
-    stack: NavigationStack;
-  }>({
-    currentScreen: "Main",
-    stack: {
-      entries: new Array(MAX_HISTORY_SIZE).fill(null),
-      head: 0,
-      size: 0,
-    },
+  const [navigationState, setNavigationState] = useState<NavigationState>({
+    currentScreen: FALLBACK_SCREEN,
+    direction: "right",
+    stack: [],
   });
 
   const goTo = useStableCallback((screen: Screen) => {
-    if (screen === navigationState.currentScreen) {
-      return;
-    }
+    if (screen === navigationState.currentScreen) return;
 
     try {
-      // Validate transition using cache
-      if (!transitionCache[navigationState.currentScreen].has(screen)) {
+      if (!transitionCache[navigationState.currentScreen]?.has(screen)) {
         throw new Error(
           `Invalid transition: ${navigationState.currentScreen} -> ${screen}`,
         );
       }
 
       setNavigationState((prev) => {
-        const newStack = { ...prev.stack };
-        const prevScreen = prev.currentScreen;
-
-        if (newStack.size < MAX_HISTORY_SIZE) {
-          newStack.entries[newStack.head] = prevScreen;
-          newStack.head = (newStack.head + 1) % MAX_HISTORY_SIZE;
-          newStack.size++;
-        } else {
-          newStack.entries[newStack.head] = prevScreen;
-          newStack.head = (newStack.head + 1) % MAX_HISTORY_SIZE;
-        }
+        const newStack = [...prev.stack];
+        newStack.push(prev.currentScreen);
+        if (newStack.length > MAX_HISTORY_SIZE) newStack.shift();
 
         return {
           currentScreen: transition(prev.currentScreen, screen),
+          direction: "right",
           stack: newStack,
         };
       });
@@ -82,59 +69,34 @@ export const LeftScreenNavigationProvider: React.FC<{
   });
 
   const goBack = useStableCallback(() => {
-    if (navigationState.stack.size === 0) {
-      DEBUG && console.warn("No history to go back to");
-      setNavigationState((prev) => ({
-        ...prev,
-        currentScreen: FALLBACK_SCREEN,
-      }));
-      return;
-    }
-
     setNavigationState((prev) => {
-      let newStack = { ...prev.stack };
+      const newStack = [...prev.stack];
+      let attempts = newStack.length;
       let current = prev.currentScreen;
-      let attempts = newStack.size;
 
-      // Iteratively find a valid previous screen
-      while (newStack.size > 0 && attempts > 0) {
-        const prevHead =
-          (newStack.head - 1 + MAX_HISTORY_SIZE) % MAX_HISTORY_SIZE;
-        const previousScreen = newStack.entries[prevHead];
-
-        try {
-          if (transitionCache[current].has(previousScreen)) {
-            // Valid transition found
-            newStack.head = prevHead;
-            newStack.size--;
-            return {
-              currentScreen: transition(current, previousScreen),
-              stack: newStack,
-            };
-          } else {
-            // Invalid transition, pop and continue
-            throw new Error(
+      while (newStack.length > 0 && attempts-- > 0) {
+        const previousScreen = newStack.pop()!;
+        if (transitionCache[current]?.has(previousScreen)) {
+          return {
+            currentScreen: transition(current, previousScreen),
+            direction: "left",
+            stack: newStack,
+          };
+        } else {
+          DEBUG &&
+            console.warn(
               `Invalid back transition: ${current} -> ${previousScreen}`,
             );
-          }
-        } catch (error) {
-          DEBUG && console.error(`Go back error: ${error}`);
-          newStack.head = prevHead;
-          newStack.size--;
-          current = previousScreen; // Try the next entry
-          attempts--;
+          current = previousScreen; // пробуем откатиться дальше
         }
       }
 
-      // No valid history found, fallback to default
-      DEBUG && console.warn("No valid history entries, falling back");
+      DEBUG &&
+        console.warn("No valid back transition found, fallback to default");
       return {
         currentScreen: FALLBACK_SCREEN,
-        stack: {
-          entries: new Array(MAX_HISTORY_SIZE).fill(null),
-          head: 0,
-          size: 0,
-        },
+        direction: "left",
+        stack: [],
       };
     });
   });
@@ -142,10 +104,11 @@ export const LeftScreenNavigationProvider: React.FC<{
   const contextValue = useMemo(
     () => ({
       currentScreen: navigationState.currentScreen,
+      direction: navigationState.direction,
       goTo,
       goBack,
     }),
-    [navigationState.currentScreen, goTo, goBack],
+    [navigationState.currentScreen, navigationState.direction, goTo, goBack],
   );
 
   return (

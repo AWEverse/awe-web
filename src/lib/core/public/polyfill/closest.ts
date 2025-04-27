@@ -8,7 +8,7 @@ interface ElementWithClassList extends Element {
   classList: DOMTokenList;
 }
 
-(function (prototype) {
+(function (prototype: Element) {
   if (typeof prototype.closest === "function") return;
 
   function parseSimpleSelector(selector: string): ParsedSelector {
@@ -64,3 +64,5 @@ interface ElementWithClassList extends Element {
     return null;
   };
 })(Element.prototype);
+
+export { };

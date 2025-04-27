@@ -1,13 +1,10 @@
-.root {
+.communityRoot {
+  position: relative;
   display: flex;
+  justify-content: center;
   flex-direction: column;
-  gap: 1.5rem;
-  padding: 1rem;
-
-  @media screen and (max-width: 600px) {
-    gap: 1rem;
-    padding: 4px;
-  }
+  gap: 0.25rem;
+  background-color: var(--awe-palette-background-default);
 }
 
 .community__background {

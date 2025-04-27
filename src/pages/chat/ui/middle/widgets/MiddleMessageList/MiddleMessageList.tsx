@@ -61,8 +61,6 @@ const MiddleMessageList: FC<OwnProps & StateProps> = () => {
     targets: ['[data-ctx="true"]'],
   });
 
-  console.log("contextMenuTarget", contextMenuTarget);
-
   const { handleClick, handleMouseDown } = useFastClick(
     (e: React.MouseEvent<HTMLDivElement>) => {
       if (e.button === EMouseButton.Secondary) {

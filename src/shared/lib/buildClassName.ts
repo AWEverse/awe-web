@@ -1,4 +1,4 @@
-import murmurHash2 from '@/lib/core/public/cryptography/utils/murmurHash2';
+import { LRUCache } from 'lru-cache';
 import { useMemo } from 'react';
 
 export type ClassValue =
@@ -12,125 +12,175 @@ export type ClassValue =
 
 export type Parts = ClassValue[];
 
-// Optimized fast hash for objects using a single-pass DJB2-like algorithm
-function fastHashObject(obj: { [key: string]: ClassValue }): number {
+function hashString(str: string): number {
+  let hash = 5381;
+  for (let i = 0; i < str.length; i++) {
+    hash = ((hash << 5) + hash) ^ str.charCodeAt(i); // hash * 33 XOR char
+  }
+  return hash >>> 0; // Convert to unsigned 32-bit integer
+}
+
+function hashObject(obj: { [key: string]: ClassValue }): number {
   let hash = 5381;
 
-  for (const key in obj) {
-    if (obj[key] && Object.prototype.hasOwnProperty.call(obj, key)) {
-      let keyHash = 0;
-      for (let i = 0, len = key.length; i < len; i++) {
-        keyHash = (keyHash * 33) ^ key.charCodeAt(i);
-      }
-      hash = (hash * 33) ^ keyHash;
+  const keys = Object.keys(obj);
+  keys.sort();
+
+  for (let i = 0; i < keys.length; i++) {
+    const key = keys[i];
+    if (obj[key]) {
+      hash = ((hash << 5) + hash) ^ hashString(key);
     }
   }
+
   return hash >>> 0;
 }
 
-function fastHash(parts: Parts, depth: number = 0, cacheRefs: Map<any, number> = new Map()): number {
-  if (depth > 10) return 0xDEAD;
+const hashCache = new WeakMap<object, number>();
 
-  let hash = 0;
-  for (let i = 0, len = parts.length; i < len; ++i) {
+function hash(parts: Parts, depth: number = 0): number {
+  if (depth > 5) return 0;
+
+  let result = 5381;
+
+  for (let i = 0; i < parts.length; i++) {
     const part = parts[i];
     if (part === null || part === undefined) continue;
 
-    if (Array.isArray(part)) {
-      hash = (hash * 31) ^ fastHash(part, depth + 1, cacheRefs);
+    if (typeof part === 'object' && part !== null) {
+      let objHash = hashCache.get(part);
+
+      if (objHash === undefined) {
+        if (Array.isArray(part)) {
+          objHash = hash(part, depth + 1);
+        } else {
+          objHash = hashObject(part as { [key: string]: ClassValue });
+        }
+        hashCache.set(part, objHash);
+      }
+
+      result = ((result << 5) + result) ^ objHash;
       continue;
     }
 
-    const type = typeof part;
-    if (type === 'string') {
-      let strHash = 0;
-      const str = part as string;
-      for (let j = 0, len = str.length; j < len; j++) {
-        strHash = (strHash * 33) ^ str.charCodeAt(j);
-      }
-      hash = (hash * 31) ^ strHash;
-    } else if (type === 'number') {
-      hash = (hash * 31) ^ (part as number | 0);
-    } else if (type === 'boolean') {
-      hash = (hash * 31) ^ (part ? 1 : 0);
-    } else if (type === 'object') {
-      const cachedHash = cacheRefs.get(part);
-      if (cachedHash !== undefined) {
-        hash = (hash * 31) ^ cachedHash;
-      } else {
-        const objectHash = fastHashObject(part as { [key: string]: ClassValue });
-        cacheRefs.set(part, objectHash);
-        hash = (hash * 31) ^ objectHash;
-      }
+    if (typeof part === 'string') {
+      result = ((result << 5) + result) ^ hashString(part);
+    } else if (typeof part === 'number') {
+      result = ((result << 5) + result) ^ (part | 0);
+    } else if (typeof part === 'boolean') {
+      result = ((result << 5) + result) ^ (part ? 1 : 0);
     }
   }
-  return hash >>> 0;
+
+  return result >>> 0;
 }
 
-function processPart(part: ClassValue, out: string[], offset: number): number {
-  if (part === null || part === undefined) return offset;
+const BUFFER_SIZE = 128;
+const classBuffer = new Array<string>(BUFFER_SIZE);
 
-  if (Array.isArray(part)) {
-    for (let i = 0, len = part.length; i < len; ++i) {
-      offset = processPart(part[i], out, offset);
-    }
-    return offset;
+function processClassNames(parts: Parts): string {
+  let bufferSize = BUFFER_SIZE;
+  let buffer = classBuffer;
+  if (parts.length > BUFFER_SIZE / 2) {
+    bufferSize = parts.length * 2;
+    buffer = new Array<string>(bufferSize);
   }
 
-  const type = typeof part;
-  if (type === 'string' || type === 'number') {
-    const str = String(part);
-    if (str) {
-      out[offset++] = str;
-    }
-  } else if (type === 'object' && part !== null && !Array.isArray(part)) {
-    const obj = part as { [key: string]: ClassValue };
-    const keys = Object.keys(obj);
+  let index = 0;
+  const seen = new Set<string>();
 
-    for (let i = 0, len = keys.length; i < len; i++) {
-      const key = keys[i];
-      if (obj[key]) {
-        out[offset++] = key;
+  function processPart(part: ClassValue): void {
+    if (part === null || part === undefined) return;
+
+    if (Array.isArray(part)) {
+      for (let i = 0; i < part.length; i++) {
+        processPart(part[i]);
+      }
+      return;
+    }
+
+    if (typeof part === 'string') {
+      if (part && !seen.has(part)) {
+        seen.add(part);
+        buffer[index++] = part;
+      }
+      return;
+    }
+
+    if (typeof part === 'number' || typeof part === 'boolean') {
+      const str = String(part);
+      if (!seen.has(str)) {
+        seen.add(str);
+        buffer[index++] = str;
+      }
+      return;
+    }
+
+    if (typeof part === 'object') {
+      const obj = part as { [key: string]: ClassValue };
+      for (const key in obj) {
+        if (obj[key] && !seen.has(key)) {
+          seen.add(key);
+          buffer[index++] = key;
+        }
       }
     }
   }
-  return offset;
+
+  for (let i = 0; i < parts.length; i++) {
+    processPart(parts[i]);
+  }
+
+  return buffer.slice(0, index).join(' ');
 }
+
+type CacheConfig = {
+  max: number;
+  ttl?: number;
+  updateAgeOnGet?: boolean;
+};
+
+const HOOK_CACHE_CONFIG: CacheConfig = {
+  max: 500,
+  ttl: 1000 * 60 * 5, // 5 minutes
+  updateAgeOnGet: true,
+};
+
+const STATIC_CACHE_CONFIG: CacheConfig = {
+  max: 1000,
+  ttl: 1000 * 60 * 30, // 30 minutes
+  updateAgeOnGet: false,
+};
+
 
 export function useClassNameBuilder(): (...parts: Parts) => string {
-  const cache = useMemo(() => new Map<number, string>(), []);
+  const cache = useMemo(() => new LRUCache<number, string>(HOOK_CACHE_CONFIG), []);
 
   return (...parts: Parts): string => {
-    const key = murmurHash2(fastHash(parts).toString(), 32);
-    const cached = cache.get(key);
-    if (cached !== undefined) return cached;
+    const hashKey = hash(parts);
+    const cachedResult = cache.get(hashKey);
 
-    const classNames = new Array<string>(parts.length * 2);
-    let length = 0;
-
-    for (let i = 0, len = parts.length; i < len; ++i) {
-      length = processPart(parts[i], classNames, length);
+    if (cachedResult !== undefined) {
+      return cachedResult;
     }
 
-    const result = classNames.slice(0, length).join(' ');
-    cache.set(key, result);
-
-    if (cache.size > 1000) {
-      const firstKey = cache.keys().next().value;
-      if (firstKey !== undefined) cache.delete(firstKey);
-    }
-
+    const result = processClassNames(parts);
+    cache.set(hashKey, result);
     return result;
   };
 }
 
-export default function buildClassName(...parts: Parts): string {
-  const classNames = new Array<string>(parts.length * 2);
-  let length = 0;
+const staticCache = new LRUCache<number, string>(STATIC_CACHE_CONFIG);
 
-  for (let i = 0, len = parts.length; i < len; ++i) {
-    length = processPart(parts[i], classNames, length);
+export default function buildClassName(...parts: Parts): string {
+  const hashKey = hash(parts);
+  const cachedResult = staticCache.get(hashKey);
+
+  if (cachedResult !== undefined) {
+    return cachedResult;
   }
 
-  return classNames.slice(0, length).join(' ');
+  const result = processClassNames(parts);
+  staticCache.set(hashKey, result);
+  return result;
 }

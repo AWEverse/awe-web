@@ -1,15 +1,14 @@
 .VideoRoot {
   --video-container-gap: 1rem;
   --right-column-breakpoint: 882px;
-  --right-column-min-width: 300px;
-  --right-column-max-width: 402px;
+  --right-column-min-width: 255px;
+  --right-column-max-width: 350px;
   --padding-base: 5rem;
   --padding-mobile: 0.5rem;
   --container-gap: var(--video-container-gap);
 
   display: flex;
   flex-direction: column;
-  padding: var(--padding-mobile);
   gap: var(--video-container-gap);
   position: relative;
   overflow: hidden;
@@ -17,20 +16,12 @@
   -webkit-overflow-scrolling: touch;
   z-index: 1;
 
-  @media (min-width: 1024px) {
-    padding-inline: calc(var(--padding-base));
-  }
-
-  @media (min-width: 769px) and (max-width: 1024px) {
-    padding-inline: calc(var(--padding-base) / 1.5);
-  }
-
-  @media (min-width: 769px) {
-    flex-direction: row;
-  }
-
   @media (max-width: 768px) {
-    padding: var(--padding-mobile);
+    --right-column-max-width: 100%;
+  }
+
+  @media (min-width: 768px) {
+    flex-direction: row;
   }
 }
 

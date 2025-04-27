@@ -1,41 +1,28 @@
-export function stopVideo(video: HTMLVideoElement) {
+export function stopVideo(video: HTMLVideoElement): void {
   if (!video) return;
 
-  if (!video.paused) {
-    video.pause();
-  }
+  if (!video.paused) video.pause();
 
   if (video.src) {
     try {
-      const url = new URL(video.src);
-      if (url.protocol === "blob:") {
-        URL.revokeObjectURL(url.href);
-      }
-    } catch (e) {
+      if (video.src.startsWith("blob:")) URL.revokeObjectURL(video.src);
+    } catch {
       // ignore
     }
+    video.src = "";
   }
 
-  video.src = "";
-
-  if ("srcObject" in video) {
-    video.srcObject = null;
-  }
-
+  if ("srcObject" in video) video.srcObject = null;
   video.load();
 }
 
-export function clearVideoElement(video: HTMLVideoElement) {
+export function clearVideoElement(video: HTMLVideoElement): void {
   if (!video) return;
-
-  while (video.firstChild) {
-    video.removeChild(video.firstChild);
-  }
+  video.replaceChildren();
 }
 
-export default function unloadVideo(video: HTMLVideoElement) {
+export default function unloadVideo(video: HTMLVideoElement): void {
   if (!video) return;
-
   clearVideoElement(video);
   stopVideo(video);
 }

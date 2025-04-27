@@ -1,0 +1,10 @@
+.ModalGlobalContainer {
+  min-width: 416px;
+  min-height: 363px;
+}
+
+.ModalGlobalTitle {
+  font-size: larger;
+  font-weight: bold;
+  margin-bottom: 16px;
+}

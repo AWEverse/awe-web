@@ -23,6 +23,7 @@ import IconButton from "@/shared/ui/IconButton";
 import { useStableCallback } from "@/shared/hooks/base";
 import ConfirmActionModal from "@/entities/ConfirmActionModal";
 import buildClassName from "@/shared/lib/buildClassName";
+import { useLeftScreenNavigation } from "../../lib/ScreenContext";
 
 interface OwnProps {
   className?: string;
@@ -34,10 +35,10 @@ const SettingsNavigation = forwardRef<HTMLDivElement, OwnProps>(
     const { className, onScreenChange } = props;
     const [showExitAccountModal, setShowExitAccountModal] = useState(false);
 
-    const setScreen = useChatStore((store) => store.setScreen);
+    const { goBack } = useLeftScreenNavigation();
 
     const handleSearchClose = useStableCallback(() => {
-      setScreen(LeftColumnScreenType.Main);
+      goBack();
     });
 
     const handleOpenExitAccountModal = useStableCallback(() => {

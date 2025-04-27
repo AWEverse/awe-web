@@ -1,32 +1,28 @@
-// hooks/useMidnightCron.ts
-import { useEffect, useState } from "react";
+import { useState } from "react";
+import { cleanupMidnightScheduler, getMidnightScheduler } from "../helpers/midnightScheduler";
 import { useStableCallback } from "@/shared/hooks/base";
-import { getMidnightScheduler } from "../helpers/midnightScheduler";
+import { useComponentDidMount } from "@/shared/hooks/effects/useLifecycle";
 
-/**
- * React hook to subscribe to midnight ticks (shared between all components)
- * @param onTick - Optional callback to call when midnight occurs
- * @returns Current tick count
- */
 const useMidnightCron = (onTick?: (tick: number) => void): number => {
   const scheduler = getMidnightScheduler();
   const [tick, setTick] = useState(scheduler.getTick());
-  const onTickStable = useStableCallback(onTick);
+  const stableTickHandler = useStableCallback(onTick);
 
-  useEffect(() => {
-    scheduler.initIfNeeded(); // Lazy initialize scheduler
+  useComponentDidMount(() => {
+    scheduler.initIfNeeded();
 
-    const handler = (e: { tick: number }) => {
-      setTick(e.tick);
-      if (onTickStable) onTickStable(e.tick);
+    const handler = (newTick: number) => {
+      setTick(newTick);
+      stableTickHandler?.(newTick);
     };
 
     scheduler.on("tick", handler);
 
     return () => {
       scheduler.off("tick", handler);
+      cleanupMidnightScheduler();
     };
-  }, [scheduler, onTickStable]);
+  });
 
   return tick;
 };

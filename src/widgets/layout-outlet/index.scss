@@ -1,10 +1,4 @@
-/* Optimized CSS Variables */
-:root {
-  --layout-header-z-index: 10;
-  --layout-header-height: 56px;
-  --background-pattern: radial-gradient(transparent 1px, #0b1012 1px);
-  --blur-effect: blur(10rem); /* Reduced blur for better performance */
-}
+
 
 /* Header Component */
 .LayoutHeader {
@@ -19,7 +13,6 @@
   align-items: center;
   background-image: var(--background-pattern);
   background-size: 4px 4px;
-
 
   /* Optimized backdrop filter */
   @supports (backdrop-filter: blur(0)) {
@@ -45,8 +38,66 @@
  }
 
 .LayoutOutlet {
+  --layout-header-z-index: 10;
+  --layout-header-height: 56px;
+  --background-pattern: radial-gradient(transparent 1px, #0b1012 1px);
+  --blur-effect: blur(10rem);
 
   overflow-y: auto;
   max-height: 100dvh;
+  max-width: 100dvw;
   will-change: scroll-position;
+  scroll-behavior: smooth; /* Smooth scrolling */
+  -webkit-overflow-scrolling: touch; /* Improved iOS scrolling */
 }
+
+/* Tablets */
+@media (max-width: 768px) {
+  .LayoutOutlet {
+    --layout-header-height: 48px; /* Smaller header for tablets */
+  }
+}
+
+/* Mobile */
+@media (max-width: 480px) {
+  .LayoutOutlet {
+    --layout-header-height: 44px; /* Smaller header for mobile */
+    scrollbar-width: thin; /* Firefox: thinner scrollbar */
+  }
+
+  /* Chrome, Safari, Edge: thinner scrollbar */
+  .LayoutOutlet::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  .LayoutOutlet::-webkit-scrollbar-thumb {
+    background-color: rgba(0, 0, 0, 0.3);
+    border-radius: 3px;
+  }
+}
+
+.LayoutBody {
+  background-color: var(--awe-palette-background-default);
+  width: 100%;
+  margin: 0 auto;
+
+  padding: 1rem;
+
+  @media screen and (max-width: 600px) {
+    gap: 1rem;
+    padding: 4px;
+  }
+}
+
+@media (min-width: 768px) {
+  .LayoutBody {
+    max-width: 1332px;
+  }
+}
+
+@media (max-width: 768px) {
+  .LayoutBody {
+    max-width: 720px;
+  }
+}
+

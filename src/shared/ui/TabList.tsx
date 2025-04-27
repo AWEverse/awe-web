@@ -141,13 +141,16 @@ const TabList: FC<OwnProps> = (props) => {
           onCloseAnimationEnd={handleContextMenuHide}
           withPortal
         >
-          <ActionButton size="sm" fullWidth>
-            Edit folder
-          </ActionButton>
-
-          <ActionButton color="error" variant="text" size="sm" fullWidth>
-            Remove folder
-          </ActionButton>
+          {contextMenuOptions.map(
+            ({ icon, description, label, group, onClick }) => (
+              <ActionButton
+                size="sm"
+                icon={icon}
+                label={label}
+                title={description}
+              />
+            ),
+          )}
         </ContextMenu>
       )}
     </>

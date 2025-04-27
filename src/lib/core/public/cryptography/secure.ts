@@ -6,7 +6,6 @@ import sodium from 'libsodium-wrappers';
  * @param buffer The Uint8Array to erase.
  */
 export function secureErase(buffer: Uint8Array): void {
-
   sodium.memzero(buffer);
 }
 

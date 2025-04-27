@@ -12,6 +12,12 @@ import {
   STROKE_WIDTH_READ,
 } from '../constants';
 
+// Predefined gradients cache to avoid recreation
+const gradientCache = new Map<string, string[]>();
+
+/**
+ * Optimized function to draw gradient circles for avatar story indicators
+ */
 export default function drawGradientCircle({
   canvas,
   size,
@@ -33,67 +39,88 @@ export default function drawGradientCircle({
   dpr: number;
   strokeWidth?: number;
 }) {
-  if (segmentsCount > SEGMENTS_MAX) {
-    const _prepareRound = readSegmentsCount * (SEGMENTS_MAX / segmentsCount);
+  // Get 2D context once
+  const ctx = canvas.getContext('2d', { alpha: true });
+  if (!ctx) return;
 
-    readSegmentsCount = Math.round(_prepareRound);
+  // Cap segments at maximum and adjust read segments proportionally
+  if (segmentsCount > SEGMENTS_MAX) {
+    readSegmentsCount = Math.round(readSegmentsCount * (SEGMENTS_MAX / segmentsCount));
     segmentsCount = SEGMENTS_MAX;
   }
 
+  // Calculate key dimensions and angles once
   const strokeModifier = Math.max(Math.max(size - SIZES.large * dpr, 0) / dpr / REM / 1.5, 1) * dpr;
-
-  const ctx = canvas.getContext('2d');
-  if (!ctx) {
-    return;
-  }
-
-  canvas.width = size;
-  canvas.height = size;
+  const actualStrokeWidth = strokeWidth * strokeModifier;
   const centerCoordinate = size / 2;
-  const radius = (size - STROKE_WIDTH * strokeModifier) / 2;
+  const radius = (size - actualStrokeWidth) / 2;
   const segmentAngle = (2 * Math.PI) / segmentsCount;
   const gapSize = (GAP_PERCENT / 100) * (2 * Math.PI);
+  const baseAngle = -Math.PI / 2; // Starting at the top (12 o'clock position)
 
-  const gradient = ctx.createLinearGradient(
+  // Set canvas dimensions (only if they've changed)
+  if (canvas.width !== size || canvas.height !== size) {
+    canvas.width = size;
+    canvas.height = size;
+  }
+
+  // Clear the canvas
+  ctx.clearRect(0, 0, size, size);
+
+  // Set common drawing properties
+  ctx.lineCap = 'round';
+
+  // Create or get gradient from cache
+  let gradient;
+  const colorKey = `${color}-${size}`;
+  let colorStops = gradientCache.get(colorKey);
+
+  if (!colorStops) {
+    colorStops = color === 'purple' ? PURPLE : color === 'green' ? GREEN : BLUE;
+    gradientCache.set(colorKey, colorStops);
+  }
+
+  // Create gradient only once, outside the loop
+  gradient = ctx.createLinearGradient(
     20,
     0,
     Math.ceil(size * Math.cos(Math.PI / 2)),
     Math.ceil(size * Math.sin(Math.PI / 2)),
   );
 
-  const colorStops = color === 'purple' ? PURPLE : color === 'green' ? GREEN : BLUE;
-
   colorStops.forEach((colorStop, index) => {
     gradient.addColorStop(index / (colorStops.length - 1), colorStop);
   });
 
-  ctx.lineCap = 'round';
-  ctx.clearRect(0, 0, size, size);
-
-  const canvasIterate = Array.from({ length: segmentsCount });
-
-  canvasIterate.forEach((_, i) => {
+  // Draw each segment in a batch
+  for (let i = 0; i < segmentsCount; i++) {
     const isRead = i < readSegmentsCount;
-    let startAngle = i * segmentAngle - Math.PI / 2 + gapSize / 2;
+
+    // Calculate segment angles
+    let startAngle = baseAngle + i * segmentAngle + gapSize / 2;
     let endAngle = startAngle + segmentAngle - (segmentsCount > 1 ? gapSize : 0);
 
+    // Handle extra gap if needed
     if (withExtraGap) {
-      // Check if the segment intersects with the extra gap
+      // Skip if segment is entirely within the extra gap
       if (startAngle >= EXTRA_GAP_START && endAngle <= EXTRA_GAP_END) {
-        // Segment is entirely inside the extra gap, skip drawing
-        return;
-      } else {
-        // Adjust start and end angles if the segment intersects with the extra gap
-        startAngle = Math.max(startAngle, EXTRA_GAP_START);
-        endAngle = Math.min(endAngle, EXTRA_GAP_END);
+        continue;
+      }
+
+      // Check if segment overlaps with the extra gap
+      if (startAngle < EXTRA_GAP_END && endAngle > EXTRA_GAP_START) {
+        // Skip segments that would cross the gap
+        continue;
       }
     }
 
+    // Set appropriate stroke style and width
     ctx.strokeStyle = isRead ? readSegmentColor : gradient;
-    ctx.lineWidth = strokeWidth ? strokeWidth : (isRead ? STROKE_WIDTH_READ : STROKE_WIDTH) * strokeModifier;
+    ctx.lineWidth = isRead ? STROKE_WIDTH_READ * strokeModifier : actualStrokeWidth;
 
+    // Draw the segment
     ctx.beginPath();
     ctx.arc(centerCoordinate, centerCoordinate, radius, startAngle, endAngle);
     ctx.stroke();
-  });
+  }
 }

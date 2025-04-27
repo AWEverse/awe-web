@@ -1,4 +1,4 @@
-type ExtendedReturnTypeMap = {
+export type ReturnTypeMap = {
   is: boolean;
   toggle: () => void;
   open: () => void;
@@ -6,29 +6,24 @@ type ExtendedReturnTypeMap = {
   getIs: () => boolean;
 };
 
-type BaseKeyActions = keyof ExtendedReturnTypeMap;
+export type ActionKeys = keyof ReturnTypeMap;
 
-type SliceStateInterface<N extends string> = {
-  [K in `${BaseKeyActions}${N}`]: K extends `${infer Action}${N}`
-    ? Action extends BaseKeyActions
-      ? ExtendedReturnTypeMap[Action]
-      : never
+export type SliceStateInterface<
+  N extends string,
+  Map extends Record<string, any> = ReturnTypeMap,
+> = {
+    [K in `${ActionKeys & string}${N}`]: K extends `${infer Action extends ActionKeys}${N}`
+    ? Map[Action]
     : never;
-};
+  };
 
-type SliceStateFactory<Args extends string[]> = SliceStateInterface<Args[number]>;
+export type SliceStateFactory<
+  Names extends readonly string[],
+  Map extends Record<string, any> = ReturnTypeMap,
+> = UnionToIntersection<SliceStateInterface<Names[number], Map>>;
 
-// Now  will have types like:
-// {
-//   Menu: {
-//     isMenu: boolean;
-//     toggleMenu: () => void;
-//     openMenu: () => void;
-//     closeMenu: () => void;
-//     getIsMenu: () => boolean;
-//   };
-//   Modal: { ... };
-//   Sidebar: { ... };
-// }
-
-export type { SliceStateInterface, SliceStateFactory };
+type UnionToIntersection<U> = (U extends any ? (k: U) => void : never) extends (
+  k: infer I,
+) => void
+  ? I
+  : never;

@@ -1,0 +1,61 @@
+.InfoSection {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+  background-color: var(--awe-palette-background);
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.Avatar {
+  border: 2px solid var(--awe-palette-primary-main);
+}
+
+.UserDetails {
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+
+  h1 {
+    margin: 0;
+    font-size: var(--font-size-title);
+    color: var(--awe-palette-text-primary);
+  }
+
+  p {
+    margin: 0;
+    font-size: var(--font-size-desc);
+    color: var(--awe-palette-text-secondary);
+  }
+}
+
+.LastSeen {
+  font-size: var(--font-size-small);
+  color: var(--awe-palette-text-muted);
+}
+
+.Bio {
+  font-size: var(--font-size-desc);
+  color: var(--awe-palette-text-secondary);
+  max-width: 400px;
+}
+
+.ContactInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  width: 100%;
+}
+
+.Actions {
+  display: flex;
+  justify-content: center;
+  width: 100%;
+}
+
+.FollowButton {
+  padding: 0.5rem 2rem;
+  font-size: var(--font-size-desc);
+}

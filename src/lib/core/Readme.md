@@ -1,4 +1,4 @@
-### The Core library module is a self-sufficient organism that provides utilities and tools that are implemented at the highest level. In the future, it is also expected that an intelligent component will be implemented that will be responsible for optimizing the code during compilation, and not just mindlessly importing from place to place. 
+### The Core library module is a self-sufficient organism that provides utilities and tools that are implemented at the highest level. In the future, it is also expected that an intelligent component will be implemented that will be responsible for optimizing the code during compilation, and not just mindlessly importing from place to place.
 
 ## Class and Folder Structure for Access Modifiers
 
@@ -52,7 +52,7 @@ lib/
 ├── index.ts                     # Main entry point of the project
 ```
 
-- **Public (`public`)**: 
+- **Public (`public`)**:
   - Contains all entities that are publicly accessible and intended to be used by external modules. These include core utilities, mathematical functions, algorithms, and other essential public components.
 
   ```bash
@@ -64,7 +64,7 @@ lib/
   │   │   ├── ...         # Additional public components
   ```
 
-- **Internal (`internal`)**: 
+- **Internal (`internal`)**:
   - Consists of modules and utilities that are only meant for internal use within the core system. These modules are not exposed to external consumers and serve the purpose of supporting internal logic, optimizations, or shared helpers.
 
   ```bash
@@ -76,7 +76,7 @@ lib/
   │   │   ├── ...         # Other internal components
   ```
 
-- **Private (`private`)**: 
+- **Private (`private`)**:
   - Encompasses the most restricted components, used solely for internal mechanisms that should not be accessible outside of the core system, not even by internal modules. These can include sensitive logic, secrets, or low-level internal operations.
 
   ```bash
@@ -113,7 +113,7 @@ The folder structure you’ve outlined has several key **benefits** related to o
    - It also encourages **code organization best practices**, such as grouping related functionality (e.g., all math utilities under `math/` and algorithms under `algo/`).
 
 ### 4. **Scalability**
-   - As your project grows, this structure allows you to **scale** without losing clarity. You can add more modules under **public**, **internal**, or **private** without cluttering the root directories or making it difficult to navigate. 
+   - As your project grows, this structure allows you to **scale** without losing clarity. You can add more modules under **public**, **internal**, or **private** without cluttering the root directories or making it difficult to navigate.
    - For example, if you introduce new **core functionality** or utilities, you can organize them into appropriate namespaces (e.g., `math`, `algo`, etc.) while keeping the overall structure intact.
 
 ### 5. **Security**
@@ -169,3 +169,9 @@ Here’s what I think:
    - Your vision sets the stage for the Core module to **adapt to future needs**. By integrating intelligent compilation and optimizations, you’re ensuring that the library can evolve as new technologies emerge, and as application complexity grows, the Core will be able to handle it intelligently and efficiently.
 
 Overall, it’s a great vision that combines performance optimization with ease of use. With the right implementation, this could make the Core library a highly efficient and developer-friendly tool.
+
+the error and steps that was done before
+
+[error message]
+  └> call that func
+  └> [error]

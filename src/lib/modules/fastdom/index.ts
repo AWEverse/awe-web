@@ -1,111 +1,147 @@
-import safeExecDOM from "./safeExecDOM";
+// dom-task-scheduler/index.ts
+
 import { setDOMPhase } from "./stricterdom";
+import safeExecDOM from "./safeExecDOM";
 import throttleWithRafFallback from "./throttleWithRafFallback";
+import { UnrolledTaskQueue } from "@/lib/core";
 
-type TaskFunction = () => void;
-type ReflowTaskFunction = () => TaskFunction | void;
+export enum DOMPhase {
+  Measure = "measure",
+  Mutate = "mutate",
+}
 
-type ErrorHandler = (error: Error) => void;
+export type TaskFunction = () => void;
+export type ReflowTaskFunction = () => TaskFunction | void;
+export type ErrorHandler = (error: Error) => void;
+
+const measureTasks = new UnrolledTaskQueue<TaskFunction>();
+const mutationTasks = new UnrolledTaskQueue<TaskFunction>();
+const reflowTasks = new UnrolledTaskQueue<ReflowTaskFunction>();
+
 let handleError: ErrorHandler = (error) =>
-  console.error("DOM task error:", error);
+  console.error("[DOMTaskScheduler] Error:", error);
 
-const measureTasks = new Set<TaskFunction>();
-const mutationTasks = new Set<TaskFunction>();
-const reflowTasks = new Set<ReflowTaskFunction>();
+const MAX_MICROTASK_DEPTH = 100;
+let microtaskDepth = 0;
 
-const processTasks = <T>(tasks: Set<T>, handler: (task: T) => void) => {
-  if (tasks.size === 0) return;
+const setPhase = (phase: DOMPhase) => setDOMPhase(phase);
+const execTask = (task: TaskFunction) => safeExecDOM(task);
 
-  const queue = Array.from(tasks);
-  tasks.clear();
+const processTasks = <T>(
+  queue: UnrolledTaskQueue<T>,
+  handler: (task: T) => void
+) => {
+  if (queue.length === 0) return;
 
-  for (let j = 0, len = queue.length; j < len; j++) {
+  queue.drainEach((task) => {
     try {
-      handler(queue[j]);
+      handler(task);
     } catch (error) {
       handleError(error as Error);
     }
-  }
+  });
 };
 
 const runUpdatePass = throttleWithRafFallback(async () => {
+  if (
+    measureTasks.length === 0 &&
+    mutationTasks.length === 0 &&
+    reflowTasks.length === 0
+  ) {
+    return;
+  }
+
   try {
-    if (measureTasks.size) {
-      setDOMPhase("measure");
-      processTasks(measureTasks, (task) => safeExecDOM(task));
+    if (measureTasks.length > 0) {
+      setPhase(DOMPhase.Measure);
+      processTasks(measureTasks, execTask);
     }
 
-    // Ждем завершения микротасков
-    await Promise.resolve(); // Позволяем выполниться микротаскам
-
-    // Фаза мутации
-    if (mutationTasks.size) {
-      setDOMPhase("mutate");
-      processTasks(mutationTasks, (task) => safeExecDOM(task));
-    }
-
-    if (reflowTasks.size) {
-      setDOMPhase("measure");
-      const followUp: TaskFunction[] = [];
-
-      processTasks(reflowTasks, (task) =>
-        safeExecDOM(() => {
-          const result = task();
-          if (result) followUp.push(result);
-        }),
-      );
-
-      if (followUp.length) {
-        setDOMPhase("mutate");
-        processTasks(new Set(followUp), (task) => safeExecDOM(task));
+    queueMicrotask(() => {
+      if (++microtaskDepth > MAX_MICROTASK_DEPTH) {
+        handleError(
+          new Error("Exceeded max microtask depth. Possible infinite microtask loop.")
+        );
+        return;
       }
-    }
+
+      try {
+        if (mutationTasks.length > 0) {
+          setPhase(DOMPhase.Mutate);
+          processTasks(mutationTasks, execTask);
+        }
+
+        if (reflowTasks.length > 0) {
+          setPhase(DOMPhase.Measure);
+          processTasks(reflowTasks, (task) => {
+            const followUp: TaskFunction[] = [];
+
+            safeExecDOM(() => {
+              const result = task();
+              if (typeof result === "function") followUp.push(result);
+            });
+
+            if (followUp.length > 0) {
+              setPhase(DOMPhase.Mutate);
+              for (const task of followUp) {
+                try {
+                  safeExecDOM(task);
+                } catch (err) {
+                  handleError(err as Error);
+                }
+              }
+              followUp.length = 0;
+            }
+          });
+        }
+      } finally {
+        microtaskDepth--;
+      }
+    });
   } finally {
-    setDOMPhase("measure");
+    setPhase(DOMPhase.Measure);
   }
 });
 
-/**
- * Queue DOM read operations (measure phase).
- * @example
- * requestMeasure(() => console.log("Element width:", element.offsetWidth));
- */
-export function requestMeasure(fn: TaskFunction) {
-  if (fn && !measureTasks.has(fn)) {
-    measureTasks.add(fn);
-    runUpdatePass();
+function schedule<T extends TaskFunction | ReflowTaskFunction>(
+  queue: UnrolledTaskQueue<T>,
+  task: T,
+  signal?: AbortSignal
+) {
+  if (!task) return;
+  if (signal?.aborted) return;
+
+  if (signal) {
+    const abortListener = () => queue.delete(task);
+    signal.addEventListener("abort", abortListener, { once: true });
   }
+
+  queue.add(task);
+  runUpdatePass();
 }
 
-/**
- * Queue DOM write operations (mutate phase).
- * @example
- * requestMutation(() => element.style.color = "red");
- */
-export function requestMutation(fn: TaskFunction) {
-  if (fn && !mutationTasks.has(fn)) {
-    mutationTasks.add(fn);
-    runUpdatePass();
-  }
+export function requestMeasure(fn: TaskFunction, signal?: AbortSignal) {
+  schedule(measureTasks, fn, signal);
 }
 
-/**
- * Queue measure-then-mutate operations.
- * @example
- * requestNextMutation(() => {
- *   const height = element.offsetHeight;
- *   return () => element.style.height = `${height}px`;
- * });
- */
-export function requestNextMutation(fn: ReflowTaskFunction) {
-  if (fn && !reflowTasks.has(fn)) {
-    reflowTasks.add(fn);
-    runUpdatePass();
-  }
+export function requestMutation(fn: TaskFunction, signal?: AbortSignal) {
+  schedule(mutationTasks, fn, signal);
+}
+
+export function requestNextMutation(fn: ReflowTaskFunction, signal?: AbortSignal) {
+  schedule(reflowTasks, fn, signal);
 }
 
 export function setTaskErrorHandler(handler: ErrorHandler) {
   handleError = handler;
 }
 
-export * from "./stricterdom";
+
+export const __internal = {
+  runUpdatePass,
+  queues: {
+    measureTasks,
+    mutationTasks,
+    reflowTasks,
+  },
+};

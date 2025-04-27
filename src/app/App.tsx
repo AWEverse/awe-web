@@ -35,8 +35,8 @@ const App: FC<StateProps> = ({ themeKey = "dark" }) => {
   useGlobalDragEventPrevention();
 
   return (
-    <ThemeProvider defaultMode={themeKey} theme={theme}>
-      <CssBaseline />
+    <ThemeProvider defaultMode={themeKey} theme={theme} disableTransitionOnChange>
+      <CssBaseline enableColorScheme/>
 
       <ModalComposerProvider>
         <AWERoutesBrowserRouter />

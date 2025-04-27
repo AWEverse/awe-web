@@ -1,13 +1,14 @@
-import { createRef, FC, JSX, memo, ReactNode, useMemo, useRef } from "react";
+import React, { FC, memo, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import buildClassName from "../lib/buildClassName";
-import "./Tab.scss";
 import { capitalize } from "@/lib/utils/helpers/string/stringFormaters";
+import { Link } from "react-router";
+import "./Tab.scss";
 
 type OwnProps = {
   layoutId: string;
   className?: string;
-  href?: string | undefined;
+  href?: string;
   title: string;
   isActive?: boolean;
   isBlocked?: boolean;
@@ -26,15 +27,16 @@ const classNames = {
 
 const TRANSITION_SETTINGS = {
   type: "spring",
-  stiffness: 500,
-  damping: 30,
+  stiffness: 400,
+  damping: 24,
+  mass: 0.5,
   restDelta: 0.001,
 };
 
 const platformVariants = {
-  initial: { opacity: 0, scale: 0.9 },
-  animate: { opacity: 1, scale: 1 },
-  exit: { opacity: 0, scale: 0.9 },
+  initial: { opacity: 0, scaleX: 0.9, scaleY: 0.9 },
+  animate: { opacity: 1, scaleX: 1, scaleY: 1 },
+  exit: { opacity: 0, scaleX: 0.9, scaleY: 0.95 },
 };
 
 const Tab: FC<OwnProps> = ({
@@ -51,9 +53,13 @@ const Tab: FC<OwnProps> = ({
   variant = "pannels",
   tabIndex = 0,
 }) => {
-  const renderBadge = useMemo(() => {
-    if (badgeCount) {
-      return (
+  const handleClick = () => {
+    onClick?.(clickArg);
+  };
+
+  const renderBadge = useMemo(
+    () =>
+      badgeCount ? (
         <span
           aria-label={`Notifications: ${badgeCount}`}
           className={buildClassName(
@@ -64,67 +70,69 @@ const Tab: FC<OwnProps> = ({
         >
           {badgeCount}
         </span>
-      );
-    }
-    return null;
-  }, [badgeCount, isBadgeActive, layoutId]);
+      ) : null,
+    [badgeCount, isBadgeActive],
+  );
 
-  const handleClick = () => {
-    onClick?.(clickArg);
+  const platformClass = useMemo(
+    () => buildClassName("platform", `platform-${variant}`),
+    [variant],
+  );
+
+  const tabProps = {
+    "aria-label": title,
+    "aria-selected": isActive,
+    className: buildClassName(
+      "Tab",
+      onClick && "Tab-interactive",
+      isActive && classNames.active,
+      className,
+    ),
+    role: "tab",
+    tabIndex,
+    onClick: handleClick,
   };
 
-  const RelativeTag = (href ? "a" : "button") as keyof Pick<
-    JSX.IntrinsicElements,
-    "a" | "button"
-  >;
-
-  return (
-    <RelativeTag
-      {...(href ? { href } : { type: "button" })}
-      aria-label={title}
-      aria-selected={isActive}
-      className={buildClassName(
-        "Tab",
-        onClick && "Tab-interactive",
-        isActive && classNames.active,
-        className,
-      )}
-      role="tab"
-      tabIndex={tabIndex}
-      onClick={handleClick}
+  const tabContent = (
+    <motion.span
+      className={buildClassName("TabInner", capitalize(variant))}
+      data-active={isActive}
+      whileHover={{ scale: 1.02 }}
+      whileTap={{ scale: 0.975 }}
+      transition={{ type: "spring", stiffness: 250, damping: 20 }}
     >
-      <motion.span
-        className={buildClassName("TabInner", capitalize(variant))}
-        data-active={isActive}
-        whileHover={{ scale: 1.02 }}
-        whileTap={{ scale: 0.98 }}
-        transition={{ duration: 0.1 }}
-      >
-        <span className="Tab-title">{title}</span>
-        {renderBadge}
-        {isBlocked && (
-          <i aria-hidden="true" className="icon icon-lock-badge blocked" />
+      <span className="Tab-title">{title}</span>
+      {renderBadge}
+      {isBlocked && (
+        <i aria-hidden="true" className="icon icon-lock-badge blocked" />
+      )}
+      <AnimatePresence mode="wait">
+        {isActive && (
+          <motion.i
+            key={`${layoutId}-${variant}`}
+            layoutId={layoutId}
+            className={platformClass}
+            transition={TRANSITION_SETTINGS}
+            variants={platformVariants}
+            initial="initial"
+            animate="animate"
+            exit="exit"
+          >
+            <span className={`platform-inner-${variant}`} />
+          </motion.i>
         )}
+      </AnimatePresence>
+    </motion.span>
+  );
 
-        <AnimatePresence>
-          {isActive && (
-            <motion.i
-              key={`${title}-active`}
-              layoutId={layoutId}
-              className={buildClassName("platform", `platform-${variant}`)}
-              transition={TRANSITION_SETTINGS}
-              variants={platformVariants}
-              initial="initial"
-              animate="animate"
-              exit="exit"
-              style={{ willChange: "transform, opacity" }}
-            >
-              <span className="platform-inner-pannels" />
-            </motion.i>
-          )}
-        </AnimatePresence>
-      </motion.span>
-    </RelativeTag>
+  return href ? (
+    <Link {...tabProps} to={href}>
+      {tabContent}
+    </Link>
+  ) : (
+    <button {...tabProps} type="button">
+      {tabContent}
+    </button>
   );
 };
 

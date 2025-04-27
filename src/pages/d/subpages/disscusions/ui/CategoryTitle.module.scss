@@ -1,4 +1,7 @@
 .CategoryTitle {
+  margin-block-start: 1rem;
+  padding-inline: var(--section-padding);
+
   .title > h1 {
     font-size: var(--font-size-title);
     font-weight: 700;

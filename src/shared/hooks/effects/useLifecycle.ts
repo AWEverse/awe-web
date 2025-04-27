@@ -14,7 +14,7 @@ const EMPTY_DEPS = [] as const;
  */
 export function useComponentDidMount(effect: EffectCallback) {
   useEffect(() => {
-    effect();
+    return effect();
   }, EMPTY_DEPS);
 }
 
