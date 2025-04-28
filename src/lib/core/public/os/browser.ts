@@ -88,17 +88,15 @@ function applyBrowserClasses(platform: string | undefined, browser: string | und
   const normalizedPlatform = platform || '';
   const normalizedBrowser = normalizeBrowserName(browser);
 
-  requestMutation(() => {
-    const classList = document.body.classList;
-    if (normalizedPlatform) {
-      classList.remove(normalizedPlatform);
-      classList.add(normalizedPlatform);
-    }
-    if (normalizedBrowser) {
-      classList.remove(normalizedBrowser);
-      classList.add(normalizedBrowser);
-    }
-  });
+  const classList = document.body.classList;
+  if (normalizedPlatform) {
+    classList.remove(normalizedPlatform);
+    classList.add(normalizedPlatform);
+  }
+  if (normalizedBrowser) {
+    classList.remove(normalizedBrowser);
+    classList.add(normalizedBrowser);
+  }
 }
 
 // Export and apply browser environment
