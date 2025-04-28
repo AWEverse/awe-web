@@ -209,8 +209,7 @@ type FixedSizeArray<T, N extends number> = N extends 0
 /**
  * Represents types that are considered "falsy" in JavaScript.
  */
-type Falsy = false | 0 | "" | null | undefined;
-
+type Falsy = false | 0n | 0 | -0 | number & typeof NaN | "" | null | undefined;
 /**
  * Represents types that are inherently "truthy" (non-falsy).
  */

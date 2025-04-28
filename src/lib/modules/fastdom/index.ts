@@ -112,8 +112,7 @@ function schedule<T extends TaskFunction | ReflowTaskFunction>(
   if (signal?.aborted) return;
 
   if (signal) {
-    const abortListener = () => queue.delete(task);
-    signal.addEventListener("abort", abortListener, { once: true });
+    signal.addEventListener("abort", () => queue.delete(task), { once: true });
   }
 
   queue.add(task);
