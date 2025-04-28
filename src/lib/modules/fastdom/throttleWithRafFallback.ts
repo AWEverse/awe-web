@@ -1,9 +1,10 @@
 import { throttleWith, fastRaf } from "@/lib/core";
 
-const throttleWithRafFallback = <F extends AnyToVoidFunction>(callback: F) =>
-  throttleWith(
+function throttleWithRafFallback<F extends AnyToVoidFunction>(callback: F) {
+  return throttleWith(
     (throttledFn: NoneToVoidFunction) => fastRaf(throttledFn, true),
     callback,
   );
+}
 
 export default throttleWithRafFallback;

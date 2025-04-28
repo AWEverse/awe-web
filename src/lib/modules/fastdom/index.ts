@@ -1,5 +1,3 @@
-// dom-task-scheduler/index.ts
-
 import { setDOMPhase } from "./stricterdom";
 import safeExecDOM from "./safeExecDOM";
 import throttleWithRafFallback from "./throttleWithRafFallback";
