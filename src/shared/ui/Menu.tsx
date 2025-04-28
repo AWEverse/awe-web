@@ -2,7 +2,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import Portal from "./Portal";
 
 import "./Menu.scss";
-import { dispatchHeavyAnimation, IS_BACKDROP_BLUR_SUPPORTED } from "@/lib/core";
+import { IS_BACKDROP_BLUR_SUPPORTED } from "@/lib/core";
 import { useStableCallback } from "@/shared/hooks/base";
 import useAppLayout from "@/lib/hooks/ui/useAppLayout";
 import { FC, useRef, useEffect, memo } from "react";
@@ -89,29 +89,12 @@ const Menu: FC<OwnProps> = ({
     [isOpen, onClose],
   );
 
-  useEffectWithPreviousDeps(
-    ([prevIsOpen]) => {
-      if (isOpen || (!isOpen && prevIsOpen === true)) {
-        dispatchHeavyAnimation(ANIMATION_DURATION * 1000); // Animation duration in milliseconds
-      }
-    },
-    [isOpen],
-  );
-
   const handleKeyDown = useKeyboardListNavigation(
     bubbleRef,
     isOpen,
     autoClose ? onClose : undefined,
     undefined,
     true,
-  );
-
-  useVirtualBackdrop(
-    isOpen,
-    containerRef,
-    noCloseOnBackdrop ? undefined : onClose,
-    undefined,
-    backdropExcludedSelector,
   );
 
   const bubbleFullClassName = buildClassName(

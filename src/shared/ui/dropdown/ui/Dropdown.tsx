@@ -4,7 +4,6 @@ import { useDropdownState } from "../hooks";
 import buildClassName from "@/shared/lib/buildClassName";
 import { useRefInstead } from "@/shared/hooks/base";
 import s from "./Dropdown.module.scss";
-import { dispatchHeavyAnimation } from "@/lib/core";
 import useBodyClass from "@/shared/hooks/DOM/useBodyClass";
 import { useBoundaryCheck } from "@/shared/hooks/mouse/useBoundaryCheck";
 import { useEffectWithPreviousDeps } from "@/shared/hooks/effects/useEffectWithPreviousDependencies";
@@ -96,13 +95,6 @@ const DropdownMenu: FC<OwnProps & OwnSharedProps> = ({
     onExit: handleClose,
     options: { outboxSize: 60, throttleInterval: 250 },
   });
-
-  useEffectWithPreviousDeps(
-    ([wasOpen]) => {
-      if (isOpen !== wasOpen) dispatchHeavyAnimation(ANIMATION_DURATION);
-    },
-    [isOpen],
-  );
 
   useEffect(() => {
     if (isOpen && dropdownRef.current) return trapFocus(dropdownRef.current);

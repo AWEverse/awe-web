@@ -1,4 +1,3 @@
-import { queueMicrotask } from "../polyfill";
 import { CircularQueueNode } from "./UnrolledQueue";
 
 /**

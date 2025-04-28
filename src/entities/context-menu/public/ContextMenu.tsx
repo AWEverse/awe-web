@@ -17,7 +17,7 @@ import { useClickAway } from "@/lib/hooks/events/useClick";
 import { useBoundaryCheck } from "@/shared/hooks/mouse/useBoundaryCheck";
 import "./ContextMenu.scss";
 import { useEffectWithPreviousDeps } from "@/shared/hooks/effects/useEffectWithPreviousDependencies";
-import { dispatchHeavyAnimation, IVector2 } from "@/lib/core";
+import { IVector2 } from "@/lib/core";
 import useBodyClass from "@/shared/hooks/DOM/useBodyClass";
 import useKeyboardListeners from "@/lib/hooks/events/useKeyboardListeners";
 import { useStableCallback } from "@/shared/hooks/base";
@@ -126,15 +126,6 @@ const ContextMenu: FC<Readonly<OwnProps>> = ({
     extraPaddingX: 0,
     options: { outboxSize: 60, throttleInterval: 250 },
   });
-
-  useEffectWithPreviousDeps(
-    ([wasOpen]) => {
-      if (isOpen !== wasOpen) {
-        return dispatchHeavyAnimation(ANIMATION_DURATION);
-      }
-    },
-    [isOpen],
-  );
 
   useEffect(() => {
     if (isOpen) {
