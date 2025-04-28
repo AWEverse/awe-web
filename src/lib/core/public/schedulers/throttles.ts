@@ -1,4 +1,3 @@
-import fastRaf from "./fastRaf";
 import onTickEnd from "./onTickEnd";
 
 export type Scheduler = typeof requestAnimationFrame | typeof onTickEnd;
@@ -35,6 +34,3 @@ export function throttleWithRAF<F extends AnyToVoidFunction>(fn: F) {
   return throttleWith(requestAnimationFrame, fn);
 }
 
-export function throttleWithFastRAF<F extends AnyToVoidFunction>(fn: F) {
-  return throttleWith(fastRaf, fn);
-}
