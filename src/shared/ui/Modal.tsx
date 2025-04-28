@@ -17,7 +17,6 @@ import { useStableCallback } from "@/shared/hooks/base";
 import { useEffectWithPreviousDeps } from "../hooks/effects/useEffectWithPreviousDependencies";
 import buildClassName from "../lib/buildClassName";
 import useUniqueId from "@/lib/hooks/utilities/useUniqueId";
-import { dispatchHeavyAnimation } from "@/lib/core";
 import useBodyClass from "../hooks/DOM/useBodyClass";
 
 import "./Modal.scss";
@@ -135,15 +134,6 @@ const Modal: FC<ModalProps> = memo(
     }, [isOpen, onClose, handleEnter]);
 
     useBodyClass("has-open-dialog", isOpen);
-
-    useEffectWithPreviousDeps(
-      ([prevIsOpen]) => {
-        if (isOpen !== prevIsOpen) {
-          return dispatchHeavyAnimation(ANIMATION_DURATION);
-        }
-      },
-      [isOpen],
-    );
 
     return (
       <Portal>

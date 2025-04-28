@@ -1,8 +1,8 @@
-const FAST_RAF_TIMEOUT_FALLBACK_MS = 35; // < 30 FPS
+var FAST_RAF_TIMEOUT_FALLBACK_MS = 35; // < 30 FPS
 
-let fastRafCallbacks: Set<NoneToVoidFunction> | undefined;
-let fastRafFallbackCallbacks: Set<NoneToVoidFunction> | undefined;
-let fastRafFallbackTimeout: number | undefined;
+var fastRafCallbacks: Set<NoneToVoidFunction> | undefined;
+var fastRafFallbackCallbacks: Set<NoneToVoidFunction> | undefined;
+var fastRafFallbackTimeout: number | undefined;
 
 // May result in an immediate execution if called from another RAF callback which was scheduled
 // (and therefore is executed) earlier than RAF callback scheduled by `fastRaf`

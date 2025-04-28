@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef } from "react";
-import { fastRaf, getIsHeavyAnimating } from "@/lib/core";
+import { fastRaf } from "@/lib/core";
 
 function createThrottledCallbackManager() {
   const callbacks = new Set<NoneToVoidFunction>();

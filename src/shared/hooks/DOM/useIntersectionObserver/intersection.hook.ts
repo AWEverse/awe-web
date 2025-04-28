@@ -9,7 +9,7 @@ import { useStableCallback } from "../../base";
 import { IntersectionController } from "./intersection.controller";
 import { Scheduler } from "@/lib/core";
 import { TargetCallback, ObserveFn } from ".";
-import useHeavyAnimationCheck from "@/lib/hooks/sensors/useHeavyAnimationCheck";
+import useBackgroundMode from "@/lib/hooks/ui/useBackgroundMode";
 
 // Props for configuring the Intersection Observer
 interface IntersectionProps {
@@ -102,7 +102,7 @@ export function useIntersectionObserver(
   const freeze = useStableCallback(() => controllerRef.current?.freeze());
   const unfreeze = useStableCallback(() => controllerRef.current?.unfreeze());
 
-  useHeavyAnimationCheck(freeze, unfreeze);
+  // useBackgroundMode(freeze, unfreeze)
 
   return { observe, freeze, unfreeze };
 }

@@ -9,23 +9,18 @@ import { setTaskErrorHandler } from "@/lib/modules/fastdom";
 import { enableStrict } from "@/lib/modules/fastdom/stricterdom";
 import { DEBUG } from "@/lib/config/dev";
 
-
-if(DEBUG) {
-  enableStrict();
-  setTaskErrorHandler((error) => console.error("Scheduler Error:", error));
-}
-
 /**
  * Main application initialization sequence
  * Organizes initialization steps to optimize loading performance
  */
 (async () => {
   try {
-    initAppRoot();
-    initViewOptimizer();
-    initApplicationRequirements();
-
     await initAppServices();
+
+    initApplicationRequirements();
+    initViewOptimizer();
+
+    initAppRoot();
   } catch (error) {
     try {
       await loadErrorModule(error);
