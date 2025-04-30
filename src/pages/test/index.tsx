@@ -16,6 +16,7 @@ import {
 } from "@/lib/core/public/cryptography/DoubleRatchet";
 import sodium from "libsodium-wrappers";
 import TimePicker from "@/entities/date-picker/public/ui/additional/TimePicker";
+import Image from "@/shared/ui/Image";
 
 const AdvancedEncryptionPage: React.FC = () => {
   const { openModal, closeModal } = useModalContext();
@@ -26,6 +27,24 @@ const AdvancedEncryptionPage: React.FC = () => {
         Open Calendar
       </button>
       <TimePicker />
+
+      <Image
+        src="/img/primary-background.jpg"
+        alt="Sunset over mountain range"
+        title="Mountain Landscape"
+        width={800}
+        height={600}
+        aspectRatio={4 / 3}
+        loading="eager"
+        fetchPriority="high"
+        placeholderType="shimmer"
+        placeholderColor="#ddd"
+        borderRadius="8px"
+        srcSet="/img/primary-background.jpg 480w, /img/primary-background.jpg 800w,/img/primary-background.jpg 1200w"
+        sizes="(max-width: 768px) 100vw, 800px"
+        onError={() => console.error("Image failed")}
+        onRetry={(attempt) => console.log(`Attempt ${attempt}`)}
+      />
     </>
   );
 };
