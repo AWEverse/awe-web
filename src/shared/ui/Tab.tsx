@@ -1,9 +1,11 @@
 import React, { FC, memo, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import buildClassName from "../lib/buildClassName";
-import { capitalize } from "@/lib/utils/helpers/string/stringFormaters";
 import { Link } from "react-router";
 import "./Tab.scss";
+import { capitalize } from "@/lib/utils/helpers/string/stringFormaters";
+
+type TabVariant = "folders" | "panels" | "fill";
 
 type OwnProps = {
   layoutId: string;
@@ -13,16 +15,12 @@ type OwnProps = {
   isActive?: boolean;
   isBlocked?: boolean;
   badgeCount?: number;
+  badgeMax?: number;
   isBadgeActive?: boolean;
   clickArg?: number;
-  variant: "folders" | "pannels" | "fill";
+  variant?: TabVariant;
   tabIndex?: number;
   onClick?: (arg: number) => void;
-};
-
-const classNames = {
-  active: "Tab-active",
-  badgeActive: "Tab-badge-active",
 };
 
 const TRANSITION_SETTINGS = {
@@ -47,32 +45,40 @@ const Tab: FC<OwnProps> = ({
   isActive,
   isBlocked,
   badgeCount,
+  badgeMax,
   isBadgeActive,
-  onClick,
   clickArg = 0,
-  variant = "pannels",
+  variant = "panels",
   tabIndex = 0,
+  onClick,
 }) => {
   const handleClick = () => {
     onClick?.(clickArg);
   };
 
-  const renderBadge = useMemo(
-    () =>
-      badgeCount ? (
-        <span
-          aria-label={`Notifications: ${badgeCount}`}
-          className={buildClassName(
-            "badge",
-            isBadgeActive && classNames.badgeActive,
-          )}
-          role="alert"
-        >
-          {badgeCount}
-        </span>
-      ) : null,
-    [badgeCount, isBadgeActive],
-  );
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if ((e.key === "Enter" || e.key === " ") && onClick) {
+      e.preventDefault();
+      handleClick();
+    }
+  };
+
+  const renderBadge = useMemo(() => {
+    if (badgeCount === undefined) return null;
+
+    const displayCount =
+      badgeMax && badgeCount > badgeMax ? `${badgeMax}+` : badgeCount;
+
+    return (
+      <span
+        aria-label={`Notifications: ${displayCount}`}
+        className={buildClassName("badge", isBadgeActive && "Tab-badge-active")}
+        role="alert"
+      >
+        {displayCount}
+      </span>
+    );
+  }, [badgeCount, badgeMax, isBadgeActive]);
 
   const platformClass = useMemo(
     () => buildClassName("platform", `platform-${variant}`),
@@ -85,12 +91,13 @@ const Tab: FC<OwnProps> = ({
     className: buildClassName(
       "Tab",
       onClick && "Tab-interactive",
-      isActive && classNames.active,
+      isActive && "Tab-active",
       className,
     ),
     role: "tab",
     tabIndex,
     onClick: handleClick,
+    onKeyDown: handleKeyDown,
   };
 
   const tabContent = (
