@@ -16,7 +16,6 @@ import {
 } from "@mui/icons-material";
 import IconButton from "@/shared/ui/IconButton";
 import ContactsSortDropdown from "./contacts/ContactsSortDropdown";
-import { CSSTransition } from "react-transition-group";
 import { useLeftScreenNavigation } from "../lib/ScreenContext";
 
 interface OwnProps {
@@ -76,24 +75,7 @@ const ContactsScreen = forwardRef<HTMLDivElement, OwnProps & StateProps>(
           </ActionButton>
         </section>
 
-        <section className={s.ContactsSort}>
-          Sort by{" "}
-          <CSSTransition
-            classNames={{
-              enter: s.SortEnter,
-              enterActive: s.SortEnterActive,
-              exit: s.SortExit,
-              exitActive: s.SortExitActive,
-            }}
-            in={isChanged}
-            nodeRef={nodeRef}
-            timeout={300}
-          >
-            <span ref={nodeRef}>
-              {sortType.replace(/_/g, " ")} {isChanged}
-            </span>
-          </CSSTransition>
-        </section>
+        <section className={s.ContactsSort}>Sort by </section>
 
         <section
           className={buildClassName(s.ContactsResultList, s.ContactSection)}

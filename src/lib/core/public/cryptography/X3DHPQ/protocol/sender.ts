@@ -1,6 +1,4 @@
-import { hkdf } from "@noble/hashes/hkdf";
-import { sha256 } from "@noble/hashes/sha256";
-
+import * as sodium from 'libsodium-wrappers';
 import { MLKEM } from "../crypto/ml-kem";
 import { concatUint8Arrays } from "../utils/arrays";
 import {
@@ -15,18 +13,18 @@ import { KeyBundle, InitialMessage } from "../types";
 import { X3DHError } from "./errors";
 import { validateInitialMessage } from "../utils/validation";
 import { wipeBytes } from "../../secure";
-import { Ed25519 } from "../../curves/ed25519";
-import { X25519 } from "../../curves/x25519";
+import { PublicKey } from '../../types';
 
-/** Computes the sender's shared secret and initial message */
 export async function computeSenderSharedSecret(
   senderBundle: KeyBundle,
   recipientBundle: KeyBundle,
 ): Promise<{ sharedSecret: Uint8Array; initialMessage: InitialMessage }> {
+  await sodium.ready;
+
   try {
-    // Inline signature verification for speed
+    // Verify signed pre-key signature
     if (
-      !Ed25519.verify(
+      !sodium.crypto_sign_verify_detached(
         recipientBundle.signedPreKey.signature,
         recipientBundle.signedPreKey.keyPair.publicKey,
         recipientBundle.identityKey.publicKey,
@@ -38,10 +36,9 @@ export async function computeSenderSharedSecret(
       );
     }
 
-    const [ephemeralKeyEC, ephemeralKeyPQ] = await Promise.all([
-      X25519.generateKeyPair(),
-      MLKEM.generateKeyPair(MLKEM_VERSION),
-    ]);
+    // Generate ephemeral key pairs
+    const ephemeralKeyEC = sodium.crypto_kx_keypair();
+    const ephemeralKeyPQ = await MLKEM.generateKeyPair(MLKEM_VERSION);
 
     const hasOneTimePrekey = !!recipientBundle.oneTimePreKey;
     const hasPQOneTimePrekey = !!recipientBundle.pqOneTimePreKey;
@@ -56,28 +53,33 @@ export async function computeSenderSharedSecret(
       signedPreKey: new Uint8Array(0),
     };
 
+    // Perform key exchanges
     const results = await Promise.all([
       // DH1: IK_A (X25519) x SPK_B
-      X25519.computeSharedSecret(
+      sodium.crypto_kx_client_session_keys(
+        senderBundle.identityKeyX25519.publicKey,
         senderBundle.identityKeyX25519.privateKey,
         recipientBundle.signedPreKey.keyPair.publicKey,
-      ),
+      ).sharedRx,
       // DH2: EK_A x IK_B (X25519)
-      X25519.computeSharedSecret(
+      sodium.crypto_kx_client_session_keys(
+        ephemeralKeyEC.publicKey,
         ephemeralKeyEC.privateKey,
         recipientBundle.identityKeyX25519.publicKey,
-      ),
+      ).sharedRx,
       // DH3: EK_A x SPK_B
-      X25519.computeSharedSecret(
+      sodium.crypto_kx_client_session_keys(
+        ephemeralKeyEC.publicKey,
         ephemeralKeyEC.privateKey,
         recipientBundle.signedPreKey.keyPair.publicKey,
-      ),
+      ).sharedRx,
       // DH4: EK_A x OPK_B (if available)
       hasOneTimePrekey
-        ? X25519.computeSharedSecret(
+        ? sodium.crypto_kx_client_session_keys(
+          ephemeralKeyEC.publicKey,
           ephemeralKeyEC.privateKey,
           recipientBundle.oneTimePreKey!.publicKey,
-        )
+        ).sharedRx
         : new Uint8Array(0),
       // PQ1: Encapsulate to PQ IK_B
       MLKEM.encapsulate(recipientBundle.pqIdentityKey.publicKey, MLKEM_VERSION),
@@ -123,12 +125,17 @@ export async function computeSenderSharedSecret(
     ]);
 
     // Derive shared secret (HKDF)
-    const sharedSecret = hkdf(sha256, combined, salt, HKDF_INFO, KEY_LENGTH);
+    const sharedSecret = sodium.crypto_kdf_derive_from_key(
+      KEY_LENGTH,
+      0,
+      HKDF_INFO,
+      sodium.crypto_generichash(32, combined, salt),
+    );
 
     // Construct initial message
     const initialMessage: InitialMessage = {
       version: PROTOCOL_VERSION,
-      ephemeralKeyEC: ephemeralKeyEC.publicKey,
+      ephemeralKeyEC: ephemeralKeyEC.publicKey as PublicKey,
       ephemeralKeyPQ: ephemeralKeyPQ.publicKey,
       senderIdentityKey: senderBundle.identityKey.publicKey,
       senderIdentityKeyX25519: senderBundle.identityKeyX25519.publicKey,

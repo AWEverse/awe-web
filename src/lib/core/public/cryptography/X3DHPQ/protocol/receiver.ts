@@ -1,5 +1,4 @@
-import { hkdf } from "@noble/hashes/hkdf";
-import { sha256 } from "@noble/hashes/sha256";
+import sodium from "libsodium-wrappers";
 import { MLKEM } from "../crypto/ml-kem";
 import { KeyBundle, InitialMessage } from "../types";
 import { X3DHError } from "./errors";
@@ -7,47 +6,43 @@ import { validateInitialMessage } from "../utils/validation";
 import { DH_OUTPUT_SIZE, HKDF_INFO, KEY_LENGTH, MLKEM_SS_SIZE, MLKEM_VERSION } from "../config";
 import { wipeBytes } from "../../secure";
 import { concatUint8Arrays } from "../utils/arrays";
-import { X25519 } from "../../curves/x25519";
 
-// Optimized receiver shared secret computation
 export async function computeReceiverSharedSecret(
   receiverBundle: KeyBundle,
   message: InitialMessage
 ): Promise<Uint8Array> {
+  await sodium.ready;
   try {
-    // Validate message (assumed lightweight)
     validateInitialMessage(message);
 
-    // Pre-allocate buffer for DH and ML-KEM results
     const hasOneTimePrekey = !!receiverBundle.oneTimePreKey;
     const hasPQOneTimePrekey = !!message.pqEncapsulations.oneTimePreKey && !!receiverBundle.pqOneTimePreKey;
     const combinedLength =
-      DH_OUTPUT_SIZE * 3 + // DH1, DH2, DH3
-      (hasOneTimePrekey ? DH_OUTPUT_SIZE : 0) + // DH4
-      MLKEM_SS_SIZE * 2 + // PQ identity, signed pre-key
-      (hasPQOneTimePrekey ? MLKEM_SS_SIZE : 0); // PQ one-time pre-key
+      DH_OUTPUT_SIZE * 3 +
+      (hasOneTimePrekey ? DH_OUTPUT_SIZE : 0) +
+      MLKEM_SS_SIZE * 2 +
+      (hasPQOneTimePrekey ? MLKEM_SS_SIZE : 0);
     const combined = new Uint8Array(combinedLength);
 
-    // Compute DH and ML-KEM operations in parallel
     const results = await Promise.all([
       // DH1: SPK_B x IK_A (X25519)
-      X25519.computeSharedSecret(
+      sodium.crypto_scalarmult(
         receiverBundle.signedPreKey.keyPair.privateKey,
         message.senderIdentityKeyX25519
       ),
-      // DH2: IK_B (X25519) x EK_A
-      X25519.computeSharedSecret(
+      // DH2: IK_B x EK_A
+      sodium.crypto_scalarmult(
         receiverBundle.identityKeyX25519.privateKey,
         message.ephemeralKeyEC
       ),
       // DH3: SPK_B x EK_A
-      X25519.computeSharedSecret(
+      sodium.crypto_scalarmult(
         receiverBundle.signedPreKey.keyPair.privateKey,
         message.ephemeralKeyEC
       ),
       // DH4: OPK_B x EK_A (if available)
       hasOneTimePrekey
-        ? X25519.computeSharedSecret(
+        ? sodium.crypto_scalarmult(
           receiverBundle.oneTimePreKey!.privateKey,
           message.ephemeralKeyEC
         )
@@ -74,7 +69,6 @@ export async function computeReceiverSharedSecret(
         : new Uint8Array(0),
     ]);
 
-    // Fill combined buffer
     let offset = 0;
     for (let i = 0; i < 4; i++) {
       if (results[i].length) {
@@ -91,13 +85,17 @@ export async function computeReceiverSharedSecret(
       combined.set(results[6], offset);
     }
 
-    // Compute salt (IK_A || EK_A)
     const salt = concatUint8Arrays([
       message.senderIdentityKey,
       message.ephemeralKeyEC,
     ]);
 
-    const sharedSecret = hkdf(sha256, combined, salt, HKDF_INFO, KEY_LENGTH);
+    const sharedSecret = sodium.crypto_kdf_derive_from_key(
+      KEY_LENGTH,
+      0,
+      HKDF_INFO,
+      sodium.crypto_generichash(KEY_LENGTH, concatUint8Arrays([combined, salt]))
+    );
 
     wipeBytes(combined, salt);
 

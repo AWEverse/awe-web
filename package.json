@@ -29,20 +29,7 @@
     "dev:host": "vite --host=192.168.1.106",
     "build": "vite build",
     "build:mode": "vite build --mode ${MODE:-platform}",
-    "build:platform": "npm run build:mode -- --mode platform",
-    "build:browser": "npm run build:mode -- --mode browser",
-    "build:electron": "npm run build:mode -- --mode electron",
-    "build:linux": "npm run build:mode -- --mode linux",
-    "build:mac": "npm run build:mode -- --mode mac",
-    "build:windows": "npm run build:mode -- --mode windows",
     "preview": "vite preview",
-    "preview:mode": "vite preview --mode ${MODE:-platform}",
-    "preview:platform": "npm run preview:mode -- --mode platform",
-    "preview:browser": "npm run preview:mode -- --mode browser",
-    "preview:electron": "npm run preview:mode -- --mode electron",
-    "preview:linux": "npm run preview:mode -- --mode linux",
-    "preview:mac": "npm run preview:mode -- --mode mac",
-    "start": "vite preview",
     "lint": "eslint . --ext .ts,.tsx --report-unused-disable-directives --max-warnings 0",
     "format": "prettier --write . && eslint . --ext .ts,.tsx --fix",
     "prepare": "husky install",
@@ -55,7 +42,6 @@
     "**/*": "prettier --write --ignore-unknown"
   },
   "dependencies": {
-    "@astrojs/react": "^4.2.5",
     "@emotion/react": "^11.14.0",
     "@emotion/styled": "^11.14.0",
     "@mui/icons-material": "^7.0.2",
@@ -63,6 +49,7 @@
     "@noble/post-quantum": "^0.4.1",
     "dompurify": "^3.2.5",
     "emoji-picker-react": "^4.12.2",
+    "framer-motion": "^12.9.2",
     "i18next": "^25.0.1",
     "i18next-browser-languagedetector": "^8.0.5",
     "i18next-http-backend": "^3.0.2",
@@ -85,8 +72,8 @@
   "devDependencies": {
     "@chromatic-com/storybook": "^3.2.2",
     "@eslint/js": "^9.25.1",
-    "@mui/types": "^7.4.1",
-    "@react-docgen/cli": "^2.0.6",
+    "@jest/globals": "^29.7.0",
+    "@rollup/plugin-terser": "^0.4.4",
     "@storybook/addon-essentials": "^8.4.7",
     "@storybook/addon-interactions": "^8.4.7",
     "@storybook/addon-onboarding": "^8.6.12",
@@ -110,8 +97,8 @@
     "@typescript-eslint/parser": "^8.31.0",
     "@vitejs/plugin-basic-ssl": "^2.0.0",
     "@vitejs/plugin-react": "^4.4.1",
+    "@vitejs/plugin-react-swc": "^3.9.0",
     "autoprefixer": "^10.4.21",
-    "crypto-browserify": "^3.12.1",
     "cssnano": "^7.0.6",
     "cypress": "^14.3.2",
     "eslint": "^9.25.1",
@@ -139,6 +126,7 @@
     "sass": "^1.87.0",
     "storybook": "^8.6.12",
     "stream-browserify": "^3.0.0",
+    "terser": "^5.39.0",
     "ts-jest": "^29.3.2",
     "ts-node": "^10.9.2",
     "typescript": "^5.8.3",
@@ -154,5 +142,6 @@
     "extends": [
       "plugin:storybook/recommended"
     ]
-  }
+  },
+  "packageManager": "pnpm@10.10.0+sha512.d615db246fe70f25dcfea6d8d73dee782ce23e2245e3c4f6f888249fb568149318637dca73c2c5c8ef2a4ca0d5657fb9567188bfab47f566d1ee6ce987815c39"
 }

@@ -1,12 +1,17 @@
-import { defineConfig } from 'vite';
+import { defineConfig, loadEnv } from 'vite';
 import { pluginsConfig, buildConfig, resolveConfig } from './config';
 import { serverOptions, defineOptions } from './config/utils';
 
-export default defineConfig({
-  base: '',
-  build: buildConfig,
-  define: defineOptions,
-  plugins: pluginsConfig,
-  resolve: resolveConfig,
-  server: serverOptions,
-});
+export default ({ mode }) => {
+  const env = loadEnv(mode, process.cwd(), "VITE_");
+
+  return defineConfig({
+    base: '',
+    plugins: pluginsConfig,
+    build: buildConfig(mode),
+    define: defineOptions,
+    resolve: resolveConfig,
+    server: serverOptions,
+  });
+
+}

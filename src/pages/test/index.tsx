@@ -1,5 +1,4 @@
 import React, { useState } from "react";
-import { Buffer } from "buffer";
 import useModalContext from "@/composers/modals/utils/hooks/useModalComposer";
 import {
   computeReceiverSharedSecret,
@@ -17,6 +16,19 @@ import {
 import sodium from "libsodium-wrappers";
 import TimePicker from "@/entities/date-picker/public/ui/additional/TimePicker";
 import Image from "@/shared/ui/Image";
+
+// Utility to convert Uint8Array to hex string
+const toHex = (array: Uint8Array): string => {
+  return Array.from(array)
+    .map((b) => b.toString(16).padStart(2, "0"))
+    .join("");
+};
+
+// Utility to compare two Uint8Arrays
+const uint8ArrayEquals = (a: Uint8Array, b: Uint8Array): boolean => {
+  if (a.length !== b.length) return false;
+  return a.every((val, i) => val === b[i]);
+};
 
 const AdvancedEncryptionPage: React.FC = () => {
   const { openModal, closeModal } = useModalContext();
@@ -49,7 +61,7 @@ const AdvancedEncryptionPage: React.FC = () => {
   );
 };
 
-// Тестовая функция
+// Test function
 async function testProtocol() {
   try {
     const aliceBundle = await generateKeyBundle();
@@ -66,20 +78,16 @@ async function testProtocol() {
       initialMessage,
     );
 
-    console.log("Sender Secret:", Buffer.from(aliceSecret).toString("hex"));
-    console.log("Receiver Secret:", Buffer.from(bobSecret).toString("hex"));
-    console.log(
-      "Secrets match:",
-      Buffer.from(aliceSecret).toString("hex") ===
-        Buffer.from(bobSecret).toString("hex"),
-    );
+    console.log("Sender Secret:", toHex(aliceSecret));
+    console.log("Receiver Secret:", toHex(bobSecret));
+    console.log("Secrets match:", uint8ArrayEquals(aliceSecret, bobSecret));
   } catch (error) {
     console.error("Test failed:", error);
   }
 }
 
-// --- Detailed Performance and Speed Tests ---
-async function runAllTests(iterations = 10) {
+// Detailed Performance and Speed Tests
+async function runAllTests(iterations: number = 10) {
   console.log("🚀 Starting performance & integrity tests...");
 
   const time = async <T,>(
@@ -128,14 +136,14 @@ async function runAllTests(iterations = 10) {
       stats.receiver,
     );
 
-    if (!Buffer.from(secretA).equals(Buffer.from(secretB))) {
+    if (!uint8ArrayEquals(secretA, secretB)) {
       throw new Error(`❌ Shared secret mismatch at iteration ${i + 1}`);
     }
   }
 
   console.log(`\n✅ All ${iterations} iterations passed successfully`);
 
-  const average = (arr: number[]) =>
+  const average = (arr: number[]): string =>
     (arr.reduce((a, b) => a + b, 0) / arr.length).toFixed(2);
 
   console.log("\n📊 --- Average Timing Summary ---");
@@ -153,133 +161,129 @@ async function runAllTests(iterations = 10) {
 testProtocol();
 
 export async function main() {
-  // Ініціалізація
+  // Initialization
   const stateSender: State = {} as State;
   const stateReceiver: State = {} as State;
-  const SK = sodium.randombytes_buf(32); // Загальний секрет (наприклад, від X3DH)
+  const SK = sodium.randombytes_buf(32); // Shared secret (e.g., from X3DH)
   const bobKeyPair = Crypto.generateDH();
 
-  console.log("Ініціалізація відправника:");
-  console.log("Секретний ключ відправника:", sodium.to_base64(SK));
-  console.log(
-    "Публічний ключ приймача:",
-    sodium.to_base64(bobKeyPair.publicKey),
-  );
+  console.log("Sender initialization:");
+  console.log("Sender secret key:", sodium.to_base64(SK));
+  console.log("Receiver public key:", sodium.to_base64(bobKeyPair.publicKey));
 
-  // Ініціалізуємо стани ратчету
+  // Initialize ratchet states
   await ratchetInitSender(stateSender, SK, bobKeyPair.publicKey);
-  ratchetInitReceiver(stateReceiver, SK, bobKeyPair);
+  await ratchetInitReceiver(stateReceiver, SK, bobKeyPair);
 
-  const AD = Buffer.from("ДодатковіДані");
+  const AD = new TextEncoder().encode("AssociatedData");
 
   // A1 → B
   const { header: h1, ciphertext: c1 } = ratchetEncrypt(
     stateSender,
-    "Привіт, Боб! Як справи? 😉",
+    "Hello, Bob! How are you? 😉",
     AD,
   );
   const m1 = ratchetDecrypt(stateReceiver, h1, c1, AD);
   console.log("\n--- A1 → B ---");
   console.log(
-    "Зашифроване (h1, c1):",
+    "Encrypted (h1, c1):",
     sodium.to_base64(h1),
     sodium.to_base64(c1),
   );
-  console.log("Розшифроване (B ← A1):", m1);
+  console.log("Decrypted (B ← A1):", m1);
 
   // B1 → A
   const { header: h2, ciphertext: c2 } = ratchetEncrypt(
     stateReceiver,
-    "Привіт, Алиса! Все ок, у тебе як? 😎",
+    "Hi, Alice! I'm good, you? 😎",
     AD,
   );
   const m2 = ratchetDecrypt(stateSender, h2, c2, AD);
   console.log("\n--- B1 → A ---");
   console.log(
-    "Зашифроване (h2, c2):",
+    "Encrypted (h2, c2):",
     sodium.to_base64(h2),
     sodium.to_base64(c2),
   );
-  console.log("Розшифроване (A ← B1):", m2);
+  console.log("Decrypted (A ← B1):", m2);
 
   // A2 → B
   const { header: h3, ciphertext: c3 } = ratchetEncrypt(
     stateSender,
-    "Як там у тебе? Щось цікаве є? 😊",
+    "What's up? Anything interesting? 😊",
     AD,
   );
   const m3 = ratchetDecrypt(stateReceiver, h3, c3, AD);
   console.log("\n--- A2 → B ---");
   console.log(
-    "Зашифроване (h3, c3):",
+    "Encrypted (h3, c3):",
     sodium.to_base64(h3),
     sodium.to_base64(c3),
   );
-  console.log("Розшифроване (B ← A2):", m3);
+  console.log("Decrypted (B ← A2):", m3);
 
   // B2 → A
   const { header: h4, ciphertext: c4 } = ratchetEncrypt(
     stateReceiver,
-    "Все добре, ти як? Може, поговоримо ще трохи? 😁",
+    "All good here! Wanna chat more? 😁",
     AD,
   );
   const m4 = ratchetDecrypt(stateSender, h4, c4, AD);
   console.log("\n--- B2 → A ---");
   console.log(
-    "Зашифроване (h4, c4):",
+    "Encrypted (h4, c4):",
     sodium.to_base64(h4),
     sodium.to_base64(c4),
   );
-  console.log("Розшифроване (A ← B2):", m4);
+  console.log("Decrypted (A ← B2):", m4);
 
   // A3 → B
   const { header: h5, ciphertext: c5 } = ratchetEncrypt(
     stateSender,
-    "Теж нормально! Продовжую робити цей Double Ratchet 😁💪",
+    "Doing great! Still working on this Double Ratchet 😁💪",
     AD,
   );
   const m5 = ratchetDecrypt(stateReceiver, h5, c5, AD);
   console.log("\n--- A3 → B ---");
   console.log(
-    "Зашифроване (h5, c5):",
+    "Encrypted (h5, c5):",
     sodium.to_base64(h5),
     sodium.to_base64(c5),
   );
-  console.log("Розшифроване (B ← A3):", m5);
+  console.log("Decrypted (B ← A3):", m5);
 
-  // --- емітуємо затримане повідомлення ---
-  // B3 → A, B4 → A, але B3 затримується
-
+  // Simulate delayed message
+  // B3 → A, B4 → A, but B3 is delayed
   const { header: h6b4, ciphertext: c6b4 } = ratchetEncrypt(
     stateReceiver,
-    "B4: Ого, це вражаюче! 😲",
+    "B4: Wow, that's impressive! 😲",
     AD,
-  ); // відправляється першим
+  ); // Sent first
   const { header: h6b3, ciphertext: c6b3 } = ratchetEncrypt(
     stateReceiver,
-    "B3: Молодець! Чудова робота! 👏",
+    "B3: Great job! Well done! 👏",
     AD,
-  ); // але буде доставлено пізніше
+  ); // Delivered later
 
-  // A ← B4 (до того, як отримали B3)
+  // A ← B4 (before B3)
   const m6b4 = ratchetDecrypt(stateSender, h6b4, c6b4, AD);
   console.log("\n--- A ← B4 ---");
   console.log(
-    "Зашифроване (h6b4, c6b4):",
+    "Encrypted (h6b4, c6b4):",
     sodium.to_base64(h6b4),
     sodium.to_base64(c6b4),
   );
-  console.log("Розшифроване (A ← B4):", m6b4);
+  console.log("Decrypted (A ← B4):", m6b4);
 
-  // A ← B3 (пізніше, out-of-order)
+  // A ← B3 (later, out-of-order)
   const m6b3 = ratchetDecrypt(stateSender, h6b3, c6b3, AD);
-  console.log("\n--- A ← B3 (затримка) ---");
+  console.log("\n--- A ← B3 (delayed) ---");
   console.log(
-    "Зашифроване (h6b3, c6b3):",
+    "Encrypted (h6b3, c6b3):",
     sodium.to_base64(h6b3),
     sodium.to_base64(c6b3),
   );
-  console.log("Розшифроване (A ← B3):", m6b3);
+  console.log("Decrypted (A ← B3):", m6b3);
 
   console.log(stateSender);
   console.log(stateReceiver);
@@ -292,7 +296,7 @@ export async function benchmark() {
   const iterations = 1000;
   const messageSize = 1024; // 1KB
   const message = "A".repeat(messageSize);
-  const AD = Buffer.from("AssociatedData");
+  const AD = new TextEncoder().encode("AssociatedData");
 
   // Setup
   const aliceState: State = {} as State;
@@ -320,8 +324,8 @@ export async function benchmark() {
   );
 
   // Reset states
-  ratchetInitSender(aliceState, SK, bobKeyPair.publicKey);
-  ratchetInitReceiver(bobState, SK, bobKeyPair);
+  await ratchetInitSender(aliceState, SK, bobKeyPair.publicKey);
+  await ratchetInitReceiver(bobState, SK, bobKeyPair);
 
   // Pre-generate messages for decryption benchmark
   const headers: Uint8Array[] = [];
@@ -333,7 +337,7 @@ export async function benchmark() {
   }
 
   // Reset Receiver's state
-  ratchetInitReceiver(bobState, SK, bobKeyPair);
+  await ratchetInitReceiver(bobState, SK, bobKeyPair);
 
   // Benchmark decryption
   console.log(`\nDecryption Benchmark (${iterations} iterations):`);
@@ -357,8 +361,8 @@ export async function benchmark() {
 
   const aliceStateDH: State = {} as State;
   const bobStateDH: State = {} as State;
-  ratchetInitSender(aliceStateDH, SK, bobKeyPair.publicKey);
-  ratchetInitReceiver(bobStateDH, SK, bobKeyPair);
+  await ratchetInitSender(aliceStateDH, SK, bobKeyPair.publicKey);
+  await ratchetInitReceiver(bobStateDH, SK, bobKeyPair);
 
   const dhStart = performance.now();
   for (let i = 0; i < dhIterations; i++) {

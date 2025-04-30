@@ -42,6 +42,8 @@
 .timeList {
   height: 100%;
   scroll-snap-type: y mandatory;
+  scroll-behavior: smooth;
+  overflow-y: auto;
 
   &::-webkit-scrollbar {
     display: none;
