@@ -284,3 +284,11 @@ MIT License
 ---
 
 This documentation covers all aspects of `StructRecord`, including its API, usage patterns, internal mechanics, and design decisions. It serves as a complete reference for developers integrating or extending the library.
+
+# CHANGELOG
+## [1.0.0] - Initial Release
+### Added
+- `StructRecord.immutable()` and `.mutable()`
+- Type validation during creation and updates
+- `update()`, `fork()`, `branch()` methods
+- TypeScript support
