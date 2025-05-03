@@ -1,7 +1,7 @@
 /** Protocol version */
 export const PROTOCOL_VERSION = "X3DH+PQ";
 /** HKDF info string */
-export const HKDF_INFO = "X3DH+v2";
+export const HKDF_INFO = "PQXDH-HKDF";
 /** Expected length of shared secrets */
 export const SHARED_SECRET_LENGTH = 32;
 

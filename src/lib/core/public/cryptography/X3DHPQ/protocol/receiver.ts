@@ -36,27 +36,29 @@ export async function computeReceiverSharedSecret(
       (hasPQOneTimePrekey ? MLKEM_SS_SIZE : 0); // PQ3
     const combined = new Uint8Array(combinedLength);
 
-    // Perform key exchanges in parallel
     const [dh1, dh2, dh3, dh4, pq1, pq2, pq3] = await Promise.all([
-      // DH1: SPK_B x IK_A (X25519)
+      // DH1: SPK_B × IK_A (X25519)
       sodium.crypto_kx_server_session_keys(
         receiverBundle.signedPreKey.keyPair.publicKey,
         receiverBundle.signedPreKey.keyPair.privateKey,
         message.senderIdentityKeyX25519
       ).sharedTx,
-      // DH2: IK_B x EK_A (X25519)
+
+      // DH2: IK_B × EK_A (X25519)
       sodium.crypto_kx_server_session_keys(
         receiverBundle.identityKeyX25519.publicKey,
         receiverBundle.identityKeyX25519.privateKey,
         message.ephemeralKeyEC
       ).sharedTx,
-      // DH3: SPK_B x EK_A (X25519)
+
+      // DH3: SPK_B × EK_A (X25519)
       sodium.crypto_kx_server_session_keys(
         receiverBundle.signedPreKey.keyPair.publicKey,
         receiverBundle.signedPreKey.keyPair.privateKey,
         message.ephemeralKeyEC
       ).sharedTx,
-      // DH4: OPK_B x EK_A (if available)
+
+      // DH4: OPK_B × EK_A (if available)
       hasOneTimePrekey
         ? sodium.crypto_kx_server_session_keys(
           receiverBundle.oneTimePreKey!.publicKey,
@@ -64,18 +66,21 @@ export async function computeReceiverSharedSecret(
           message.ephemeralKeyEC
         ).sharedTx
         : new Uint8Array(0),
+
       // PQ1: Decapsulate PQ IK_B
       MLKEM.decapsulate(
         message.pqEncapsulations.identity,
         receiverBundle.pqIdentityKey.privateKey,
         MLKEM_VERSION
       ),
+
       // PQ2: Decapsulate PQ SPK_B
       MLKEM.decapsulate(
         message.pqEncapsulations.signedPreKey,
         receiverBundle.pqSignedPreKey.privateKey,
         MLKEM_VERSION
       ),
+
       // PQ3: Decapsulate PQ OPK_B (if available)
       hasPQOneTimePrekey
         ? MLKEM.decapsulate(

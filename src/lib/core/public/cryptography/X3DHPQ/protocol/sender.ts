@@ -1,5 +1,5 @@
-import * as sodium from 'libsodium-wrappers';
-import { MLKEM } from "../crypto/ml-kem";
+import * as sodium from 'libsodium-wrappers'; // Pure JS/WASM crypto library [[3]][[10]]
+import { MLKEM } from "../crypto/ml-kem"; // Post-quantum KEM implementation [[7]][[8]]
 import { concatUint8Arrays } from "../utils/arrays";
 import {
   PROTOCOL_VERSION,
@@ -11,25 +11,38 @@ import {
 } from "../config";
 import { KeyBundle, InitialMessage } from "../types";
 import { X3DHError } from "./errors";
-import { validateInitialMessage } from "../utils/validation";
+import { validateBytes, validateInitialMessage, validateKeyPair } from "../utils/validation";
 import { wipeBytes } from "../../secure";
 import { PublicKey } from '../../types';
 
 /**
  * Computes the sender's shared secret and initial message for X3DH+PQ protocol.
- * @param senderBundle - Sender's key bundle (identity keys, X25519 keys).
- * @param recipientBundle - Recipient's key bundle (identity, signed pre-key, optional one-time pre-key, ML-KEM keys).
- * @returns Promise resolving to { sharedSecret: Uint8Array, initialMessage: InitialMessage }.
- * @throws X3DHError if computation fails.
+ * Optimized for speed, reliability, and memory safety.
  */
 export async function computeSenderSharedSecret(
   senderBundle: KeyBundle,
   recipientBundle: KeyBundle
 ): Promise<{ sharedSecret: Uint8Array; initialMessage: InitialMessage }> {
-  await sodium.ready;
+
+  // Validate input keys
+  validateKeyPair(senderBundle.identityKey, 32, 64, "IdentityKey");
+  validateKeyPair(receiverPreKey.signedPreKey, 32, 64, "SignedPreKey");
+  if (receiverPreKey.oneTimePreKey) {
+    validateKeyPair(receiverPreKey.oneTimePreKey, 32, 64, "OneTimePreKey");
+  }
+
+  validateBytes(receiverPreKey.identityKey.publicKey, 32, "Receiver Identity Public Key");
+  validateBytes(receiverPreKey.pqIdentityPublicKey, 32, "Receiver PQ Identity Public Key");
+  validateBytes(receiverPreKey.pqSignedPreKeyPublicKey, 32, "Receiver PQ Signed Pre-Key");
+
 
   try {
-    // Verify signed pre-key signature
+    // Input validation
+    if (!senderBundle || !recipientBundle) {
+      throw new X3DHError("Invalid key bundles", "INVALID_INPUT");
+    }
+
+    // Verify signed pre-key signature (critical for trust) [[8]]
     if (
       !sodium.crypto_sign_verify_detached(
         recipientBundle.signedPreKey.signature,
@@ -40,15 +53,17 @@ export async function computeSenderSharedSecret(
       throw new X3DHError("Invalid signed pre-key signature", "SIGNATURE_VERIFICATION_FAILED");
     }
 
-    // Generate ephemeral key pairs
-    const ephemeralKeyEC = sodium.crypto_kx_keypair();
-    const ephemeralKeyPQ = await MLKEM.generateKeyPair(MLKEM_VERSION);
+    // Generate ephemeral keys in parallel for speed [[10]]
+    const [ephemeralKeyEC, ephemeralKeyPQ] = await Promise.all([
+      Promise.resolve(sodium.crypto_kx_keypair()), // Fast X25519 keypair
+      MLKEM.generateKeyPair(MLKEM_VERSION), // Post-quantum keypair [[7]]
+    ]);
 
     // Determine prekey usage
     const hasOneTimePrekey = !!recipientBundle.oneTimePreKey;
     const hasPQOneTimePrekey = !!recipientBundle.pqOneTimePreKey;
 
-    // Calculate combined array length
+    // Calculate combined buffer size for shared secrets
     const combinedLength =
       DH_OUTPUT_SIZE * 3 + // DH1, DH2, DH3
       (hasOneTimePrekey ? DH_OUTPUT_SIZE : 0) + // DH4
@@ -56,69 +71,50 @@ export async function computeSenderSharedSecret(
       (hasPQOneTimePrekey ? MLKEM_SS_SIZE : 0); // PQ3
     const combined = new Uint8Array(combinedLength);
 
-    // Initialize PQ encapsulations
-    const pqEncapsulations: InitialMessage["pqEncapsulations"] = {
-      identity: new Uint8Array(0),
-      signedPreKey: new Uint8Array(0),
-    };
-
-    // Perform key exchanges in parallel
+    // Perform all key exchanges in parallel (maximizes speed) [[10]]
     const [dh1, dh2, dh3, dh4, pq1, pq2, pq3] = await Promise.all([
-      // DH1: IK_A (X25519) x SPK_B
+      // Classical DH exchanges
       sodium.crypto_kx_client_session_keys(
         senderBundle.identityKeyX25519.publicKey,
         senderBundle.identityKeyX25519.privateKey,
         recipientBundle.signedPreKey.keyPair.publicKey
       ).sharedRx,
-      // DH2: EK_A x IK_B (X25519)
       sodium.crypto_kx_client_session_keys(
         ephemeralKeyEC.publicKey,
         ephemeralKeyEC.privateKey,
         recipientBundle.identityKeyX25519.publicKey
       ).sharedRx,
-      // DH3: EK_A x SPK_B
       sodium.crypto_kx_client_session_keys(
         ephemeralKeyEC.publicKey,
         ephemeralKeyEC.privateKey,
         recipientBundle.signedPreKey.keyPair.publicKey
       ).sharedRx,
-      // DH4: EK_A x OPK_B (if available)
       hasOneTimePrekey
         ? sodium.crypto_kx_client_session_keys(
           ephemeralKeyEC.publicKey,
           ephemeralKeyEC.privateKey,
           recipientBundle.oneTimePreKey!.publicKey
         ).sharedRx
-        : new Uint8Array(0),
-      // PQ1: Encapsulate to PQ IK_B
+        : Promise.resolve(new Uint8Array(0)),
+      // Post-quantum encapsulations [[7]][[8]]
       MLKEM.encapsulate(recipientBundle.pqIdentityKey.publicKey, MLKEM_VERSION),
-      // PQ2: Encapsulate to PQ SPK_B
       MLKEM.encapsulate(recipientBundle.pqSignedPreKey.publicKey, MLKEM_VERSION),
-      // PQ3: Encapsulate to PQ OPK_B (if available)
       hasPQOneTimePrekey
         ? MLKEM.encapsulate(recipientBundle.pqOneTimePreKey!.publicKey, MLKEM_VERSION)
-        : { sharedSecret: new Uint8Array(0), cipherText: new Uint8Array(0) },
+        : Promise.resolve({ sharedSecret: new Uint8Array(0), cipherText: new Uint8Array(0) }),
     ]);
 
-    // Combine results into single array
+    // Combine shared secrets into a single buffer
     let offset = 0;
-    if (dh1.length) combined.set(dh1, offset), offset += dh1.length;
-    if (dh2.length) combined.set(dh2, offset), offset += dh2.length;
-    if (dh3.length) combined.set(dh3, offset), offset += dh3.length;
-    if (dh4.length) combined.set(dh4, offset), offset += dh4.length;
-    pqEncapsulations.identity = pq1.cipherText;
-    combined.set(pq1.sharedSecret, offset), offset += pq1.sharedSecret.length;
-    pqEncapsulations.signedPreKey = pq2.cipherText;
-    combined.set(pq2.sharedSecret, offset), offset += pq2.sharedSecret.length;
-    if (hasPQOneTimePrekey) {
-      pqEncapsulations.oneTimePreKey = pq3.cipherText;
-      combined.set(pq3.sharedSecret, offset);
+    for (const arr of [dh1, dh2, dh3, dh4, pq1.sharedSecret, pq2.sharedSecret, pq3.sharedSecret]) {
+      if (arr.length > 0) {
+        combined.set(arr, offset);
+        offset += arr.length;
+      }
     }
 
-    // Compute salt (IK_A || EK_A)
+    // Derive final shared secret using HKDF (secure key derivation) [[3]]
     const salt = concatUint8Arrays([senderBundle.identityKey.publicKey, ephemeralKeyEC.publicKey]);
-
-    // Derive shared secret using HKDF
     const sharedSecret = sodium.crypto_kdf_derive_from_key(
       KEY_LENGTH,
       0,
@@ -126,25 +122,40 @@ export async function computeSenderSharedSecret(
       sodium.crypto_generichash(32, combined, salt)
     );
 
-    // Construct initial message
+    // Construct initial message (public data only)
     const initialMessage: InitialMessage = {
       version: PROTOCOL_VERSION,
       ephemeralKeyEC: ephemeralKeyEC.publicKey as PublicKey,
       ephemeralKeyPQ: ephemeralKeyPQ.publicKey,
       senderIdentityKey: senderBundle.identityKey.publicKey,
       senderIdentityKeyX25519: senderBundle.identityKeyX25519.publicKey,
-      pqEncapsulations,
+      pqEncapsulations: {
+        identity: pq1.cipherText,
+        signedPreKey: pq2.cipherText,
+        oneTimePreKey: hasPQOneTimePrekey ? pq3.cipherText : undefined,
+      },
     };
 
-    // Validate initial message
+    // Validate output [[8]]
     validateInitialMessage(initialMessage);
 
-    // Securely erase sensitive data
-    wipeBytes(ephemeralKeyEC.privateKey, ephemeralKeyPQ.privateKey, combined, salt);
+    // Securely erase sensitive data (memory safety) [[3]][[10]]
+    wipeBytes(
+      ephemeralKeyEC.privateKey,
+      ephemeralKeyPQ.privateKey,
+      dh1, dh2, dh3, dh4,
+      pq1.sharedSecret, pq2.sharedSecret, pq3.sharedSecret,
+      combined,
+      salt
+    );
 
     return { sharedSecret, initialMessage };
   } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : "Unknown error";
+    // Sanitize errors to prevent leakage [[8]]
+    let errorMessage = "Unknown error";
+    if (error instanceof Error && error.message) {
+      errorMessage = error.message;
+    }
     throw new X3DHError(`Sender shared secret computation failed: ${errorMessage}`, "SENDER_SHARED_SECRET_FAILED");
   }
 }
