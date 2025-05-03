@@ -14,6 +14,7 @@ import { usePageVisibility } from "@/lib/hooks/ui/usePageVisibility";
 import "@/lib/core/public/templates/linq";
 import useGlobalDragEventPrevention from "./lib/hooks/useGlobalDragEventPrevention";
 import ModalComposerProvider from "@/composers/modals/ModalComposer";
+import { ALLOW_DRAG_CLASS_NAME, ALLOW_DRAG_DATA_ATTR } from "@/lib/config";
 
 interface StateProps {
   themeKey?: ThemeKey;
@@ -32,11 +33,15 @@ const App: FC<StateProps> = ({ themeKey = "dark" }) => {
     windowSize.update();
   });
 
-  useGlobalDragEventPrevention();
+  useGlobalDragEventPrevention([ALLOW_DRAG_CLASS_NAME, ALLOW_DRAG_DATA_ATTR]);
 
   return (
-    <ThemeProvider defaultMode={themeKey} theme={theme} disableTransitionOnChange>
-      <CssBaseline enableColorScheme/>
+    <ThemeProvider
+      defaultMode={themeKey}
+      theme={theme}
+      disableTransitionOnChange
+    >
+      <CssBaseline enableColorScheme />
 
       <ModalComposerProvider>
         <AWERoutesBrowserRouter />
