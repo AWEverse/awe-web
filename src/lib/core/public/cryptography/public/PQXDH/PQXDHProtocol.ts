@@ -1,4 +1,4 @@
-import crypto from "libsodium-wrappers";
+import { randombytes_buf } from "libsodium-wrappers";
 import PQXDHCrypto from "./PQXDHCrypto";
 import PQXDHKeyManager from "./PQXDHKeyManager";
 import {
@@ -12,11 +12,9 @@ import {
 
 class PQXDHProtocol {
   private context: PQXDHContext;
-  private crypto: PQXDHCrypto;
 
   constructor(context: PQXDHContext) {
     this.context = context;
-    this.crypto = new PQXDHCrypto(context.parameters);
   }
 
   /**
@@ -26,7 +24,7 @@ class PQXDHProtocol {
    * @returns Ініціалізований контекст PQXDH
    */
   static createContext(params: PQXDHParameters): PQXDHContext {
-    const crypto = new PQXDHCrypto(params);
+    const crypto = new PQXDHCrypto();
 
     return {
       parameters: params,
@@ -53,7 +51,7 @@ class PQXDHProtocol {
     const { receiver, parameters, sig } = this.context;
     const { IK_r, SPK_r, OPK_r, PQSPK_r, PQOPK_r } = receiver;
 
-    const random = crypto.randombytes_buf(32);
+    const random = randombytes_buf(32);
 
     const encodedSPK = parameters.encodeEC(SPK_r.publicKey);
     const encodedPQKEM = parameters.encodeKEM(

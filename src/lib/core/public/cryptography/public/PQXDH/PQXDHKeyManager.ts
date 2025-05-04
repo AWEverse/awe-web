@@ -1,4 +1,8 @@
-import crypto from "libsodium-wrappers";
+import {
+  crypto_box_keypair,
+  randombytes_buf,
+  to_base64,
+} from "libsodium-wrappers";
 import {
   Curve,
   ECKeyPair,
@@ -14,7 +18,7 @@ namespace PQXDHKeyManager {
     switch (curve) {
       case "curve25519":
       default: {
-        const keypair = crypto.crypto_box_keypair();
+        const keypair = crypto_box_keypair();
 
         return {
           publicKey: { curve, data: keypair.publicKey },
@@ -49,8 +53,8 @@ namespace PQXDHKeyManager {
         break;
     }
 
-    const publicKeyData = crypto.randombytes_buf(publicKeySize);
-    const privateKeyData = crypto.randombytes_buf(privateKeySize);
+    const publicKeyData = randombytes_buf(publicKeySize);
+    const privateKeyData = randombytes_buf(privateKeySize);
 
     return {
       publicKey: { kem, data: publicKeyData },
@@ -69,20 +73,20 @@ namespace PQXDHKeyManager {
     return {
       IK_r: generateECKeyPair(params.curve),
       SPK_r: {
-        ...generateECKeyPair(params.curve)                /* var: SPK_r */,
-        id: crypto.to_base64(crypto.randombytes_buf(16))  /*var: spkId  */,
+        ...generateECKeyPair(params.curve) /* var: SPK_r */,
+        id: to_base64(randombytes_buf(16)) /*var: spkId  */,
       }, // field: SPK_r_with_id,
       OPK_r: {
-        ...generateECKeyPair(params.curve)                /* var: OPK_r */,
-        id: crypto.to_base64(crypto.randombytes_buf(16))  /*var: opkId */,
+        ...generateECKeyPair(params.curve) /* var: OPK_r */,
+        id: to_base64(randombytes_buf(16)) /*var: opkId */,
       }, // field: OPK_r_with_id,
       PQSPK_r: {
-        ...generatePQKEMKeyPair(params.pqkem)              /* var: PQSPK_r */,
-        id: crypto.to_base64(crypto.randombytes_buf(16))   /*var: pqspkId */,
+        ...generatePQKEMKeyPair(params.pqkem) /* var: PQSPK_r */,
+        id: to_base64(randombytes_buf(16)) /*var: pqspkId */,
       }, // field: PQSPK_r_with_id,
       PQOPK_r: {
-        ...generatePQKEMKeyPair(params.pqkem)              /* var: PQOPK_r */,
-        id: crypto.to_base64(crypto.randombytes_buf(16))   /*var: pqopkId */,
+        ...generatePQKEMKeyPair(params.pqkem) /* var: PQOPK_r */,
+        id: to_base64(randombytes_buf(16)) /*var: pqopkId */,
       }, // field: PQOPK_r_with_id
     };
   }
