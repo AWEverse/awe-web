@@ -203,7 +203,7 @@ export class MLKEM {
     const combined = new Uint8Array(key1.length + key2.length);
     combined.set(key1);
     combined.set(key2, key1.length);
-    return createHash("sha256").update(combined).digest(); // Hybrid key derivation [[7]]
+    return createHash("sha512").update(combined).digest(); // Hybrid key derivation [[7]]
   }
 
   private static constantTimeEqual(a: Uint8Array, b: Uint8Array): boolean {

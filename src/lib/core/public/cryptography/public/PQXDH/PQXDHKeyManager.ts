@@ -15,12 +15,10 @@ namespace PQXDHKeyManager {
       case "curve25519":
       default: {
         const keypair = crypto.crypto_box_keypair();
-        const publicKeyData = keypair.publicKey;
-        const privateKeyData = keypair.privateKey;
 
         return {
-          publicKey: { curve, data: publicKeyData },
-          privateKey: { curve, data: privateKeyData },
+          publicKey: { curve, data: keypair.publicKey },
+          privateKey: { curve, data: keypair.privateKey },
         };
       }
       case "curve448": {
@@ -71,21 +69,21 @@ namespace PQXDHKeyManager {
     return {
       IK_r: generateECKeyPair(params.curve),
       SPK_r: {
-        ...generateECKeyPair(params.curve)                  /* SPK_r */,
-        id: crypto.to_base64(crypto.randombytes_buf(16))  /*spkId  */,
-      }, // SPK_r_with_id,
+        ...generateECKeyPair(params.curve)                /* var: SPK_r */,
+        id: crypto.to_base64(crypto.randombytes_buf(16))  /*var: spkId  */,
+      }, // field: SPK_r_with_id,
       OPK_r: {
-        ...generateECKeyPair(params.curve)                  /* OPK_r */,
-        id: crypto.to_base64(crypto.randombytes_buf(16))  /*opkId */,
-      }, // OPK_r_with_id,
+        ...generateECKeyPair(params.curve)                /* var: OPK_r */,
+        id: crypto.to_base64(crypto.randombytes_buf(16))  /*var: opkId */,
+      }, // field: OPK_r_with_id,
       PQSPK_r: {
-        ...generatePQKEMKeyPair(params.pqkem)               /* PQSPK_r */,
-        id: crypto.to_base64(crypto.randombytes_buf(16))  /*pqspkId */,
-      }, // PQSPK_r_with_id,
+        ...generatePQKEMKeyPair(params.pqkem)              /* var: PQSPK_r */,
+        id: crypto.to_base64(crypto.randombytes_buf(16))   /*var: pqspkId */,
+      }, // field: PQSPK_r_with_id,
       PQOPK_r: {
-        ...generatePQKEMKeyPair(params.pqkem)               /* PQOPK_r */,
-        id: crypto.to_base64(crypto.randombytes_buf(16))  /*pqopkId */,
-      }, // PQOPK_r_with_id
+        ...generatePQKEMKeyPair(params.pqkem)              /* var: PQOPK_r */,
+        id: crypto.to_base64(crypto.randombytes_buf(16))   /*var: pqopkId */,
+      }, // field: PQOPK_r_with_id
     };
   }
 }
