@@ -11,7 +11,7 @@
  * Представляє еліптичну криву, що використовується для операцій Діффі-Геллмана.
  * Підтримує Curve25519 (основна для Signal) і Curve448 відповідно до RFC 7748.
  */
-export type Curve = "curve25519" | "curve448";
+export type Curve = "curve25519" | "ed25519" | "curve448";
 
 /**
  * Специфікує геш-функцію, що використовується в протоколі.
@@ -139,6 +139,7 @@ export type KeyIdentifier = string;
 export interface SenderKeys {
   /** Довгостроковий ідентифікаційний ключ відправника. */
   IK_s: ECKeyPair;
+  IK_s_dh: ECKeyPair;
   /** Ефемерний ключ відправника, що генерується для кожного запуску протоколу. */
   EK_s: ECKeyPair;
 }
@@ -149,6 +150,7 @@ export interface SenderKeys {
 export interface ReceiverKeys {
   /** Довгостроковий ідентифікаційний ключ одержувача. */
   IK_r: ECKeyPair;
+  IK_r_dh: ECKeyPair;
   /** Підписана попередня пара ключів одержувача з її ідентифікатором, періодично замінюється. */
   SPK_r: ECKeyPair & { id: KeyIdentifier };
   /** Опціональна одноразова попередня пара ключів одержувача з її ідентифікатором,
@@ -178,7 +180,6 @@ export type DHFunction = (
 export type SignatureFunction = (
   privateKey: PrivateKey,
   message: Uint8Array,
-  randomness: Uint8Array,
 ) => Uint8Array;
 
 /**
@@ -263,6 +264,7 @@ export interface PrekeyBundle {
   OPK_r?: PublicKey;
   /** Ідентифікатор для опціонального одноразового попереднього ключа одержувача. */
   OPK_r_Id?: KeyIdentifier;
+  random: UintArray;
 }
 
 /**
@@ -308,6 +310,8 @@ export interface PQXDHParameters {
   pqkem: PQKEM;
   /** Схема AEAD, що використовується для шифрування. */
   aead: AEAD;
+  convertPublicKeyToCurve25519?: (ed25519PublicKey: Uint8Array) => Uint8Array;
+  convertPrivateKeyToCurve25519?: (ed25519PrivateKey: Uint8Array) => Uint8Array;
   /** Функція для кодування публічних ключів еліптичної кривої. */
   encodeEC: EncodeEC;
   /** Функція для декодування публічних ключів еліптичної кривої. */

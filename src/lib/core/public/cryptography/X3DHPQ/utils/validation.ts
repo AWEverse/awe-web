@@ -1,30 +1,31 @@
-import { X3DHError } from "..";
-import { KeyPair, InitialMessage } from "../types";
+import { InitialMessage, KeyPair, X3DHError } from "..";
 
-const MLKEM_SS_SIZE = 32; // Adjust based on Kyber or ML-KEM variant
-
-function requireValue<T>(value: T | null | undefined, message: string): T {
-  if (value == null) {
-    throw new X3DHError(message, "INVALID_INPUT");
+export function validateInitialMessage(message: InitialMessage): void {
+  if (!message || !message.senderIdentityKeyX25519 || !message.ephemeralKeyEC) {
+    throw new X3DHError("Invalid InitialMessage: Missing required keys.", "INVALID_MESSAGE");
   }
-  return value;
+
+  if (!message.pqEncapsulations || !message.pqEncapsulations.identity || !message.pqEncapsulations.signedPreKey) {
+    throw new X3DHError("Invalid InitialMessage: Missing PQ encapsulations.", "INVALID_MESSAGE");
+  }
+
+  if (message.pqEncapsulations.oneTimePreKey && !message.pqEncapsulations.oneTimePreKey.length) {
+    throw new X3DHError("Invalid InitialMessage: OneTimePreKey is empty.", "INVALID_MESSAGE");
+  }
 }
 
 export function validateBytes(
   bytes: Uint8Array,
   expectedLength: number,
-  name: string,
+  name: string
 ): void {
-  requireValue(bytes, `${name} must not be null or undefined`);
-
   if (!(bytes instanceof Uint8Array)) {
     throw new X3DHError(`${name} must be a Uint8Array`, "INVALID_INPUT");
   }
-
   if (bytes.length !== expectedLength) {
     throw new X3DHError(
       `${name} must be ${expectedLength} bytes, got ${bytes.length}`,
-      "INVALID_LENGTH",
+      "INVALID_LENGTH"
     );
   }
 }
@@ -33,63 +34,24 @@ export function validateKeyPair(
   keyPair: KeyPair,
   publicKeyLength: number,
   privateKeyLength: number,
-  name: string,
+  name: string
 ): void {
-  validateBytes(
-    requireValue(keyPair.publicKey, `${name} public key must be defined`),
-    publicKeyLength,
-    `${name} public key`,
-  );
-
-  validateBytes(
-    requireValue(keyPair.privateKey, `${name} private key must be defined`),
-    privateKeyLength,
-    `${name} private key`,
-  );
-}
-
-export function validateInitialMessage(message: InitialMessage): void {
-  const senderIdentityKey = requireValue(
-    message.senderIdentityKeyX25519,
-    "Invalid InitialMessage: Missing sender identity key.",
-  );
-  const ephemeralKey = requireValue(
-    message.ephemeralKeyEC,
-    "Invalid InitialMessage: Missing ephemeral key.",
-  );
-  const pqEncapsulations = requireValue(
-    message.pqEncapsulations,
-    "Invalid InitialMessage: Missing PQ encapsulations.",
-  );
-
-  validateBytes(senderIdentityKey, 32, "Sender identity key (X25519)");
-  validateBytes(ephemeralKey, 32, "Ephemeral key (Curve25519)");
-
-  const identityEncapsulation = requireValue(
-    pqEncapsulations.identity,
-    "Invalid InitialMessage: Missing PQ identity encapsulation.",
-  );
-  const signedPreKeyEncapsulation = requireValue(
-    pqEncapsulations.signedPreKey,
-    "Invalid InitialMessage: Missing PQ signed pre-key encapsulation.",
-  );
-
-  validateBytes(
-    identityEncapsulation,
-    MLKEM_SS_SIZE,
-    "PQ identity encapsulation",
-  );
-  validateBytes(
-    signedPreKeyEncapsulation,
-    MLKEM_SS_SIZE,
-    "PQ signed pre-key encapsulation",
-  );
-
-  if (pqEncapsulations.oneTimePreKey) {
-    validateBytes(
-      pqEncapsulations.oneTimePreKey,
-      MLKEM_SS_SIZE,
-      "PQ one-time pre-key encapsulation",
+  if (!(keyPair.publicKey instanceof Uint8Array)) {
+    throw new X3DHError(`${name} public key must be Uint8Array`, "INVALID_KEY");
+  }
+  if (!(keyPair.privateKey instanceof Uint8Array)) {
+    throw new X3DHError(`${name} private key must be Uint8Array`, "INVALID_KEY");
+  }
+  if (keyPair.publicKey.length !== publicKeyLength) {
+    throw new X3DHError(
+      `${name} public key length invalid: expected ${publicKeyLength}, got ${keyPair.publicKey.length}`,
+      "INVALID_KEY_LENGTH"
+    );
+  }
+  if (keyPair.privateKey.length !== privateKeyLength) {
+    throw new X3DHError(
+      `${name} private key length invalid: expected ${privateKeyLength}, got ${keyPair.privateKey.length}`,
+      "INVALID_KEY_LENGTH"
     );
   }
 }

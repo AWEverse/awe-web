@@ -1,10 +1,10 @@
 import sodium from "libsodium-wrappers"
 import { ml_kem512, ml_kem768, ml_kem1024 } from "@noble/post-quantum/ml-kem";
-import { CryptoKeyPair, PublicKey, PrivateKey, EncapsulatePair } from "../../types";
 import { SHARED_SECRET_LENGTH } from "../config";
 import { secureErase } from "../../secure";
 import { X3DHError } from "../protocol/errors";
 import { createHash } from "crypto"; // For hybrid cryptography [[7]]
+import { CryptoKeyPair, EncapsulatePair, PrivateKey, PublicKey } from "../types";
 
 // Define ML-KEM variant configurations
 type MLKEMVariant = "512" | "768" | "1024";
@@ -203,7 +203,7 @@ export class MLKEM {
     const combined = new Uint8Array(key1.length + key2.length);
     combined.set(key1);
     combined.set(key2, key1.length);
-    return createHash("sha512").update(combined).digest(); // Hybrid key derivation [[7]]
+    return sodium.crypto_generichash(64, combined) // Hybrid key derivation [[7]]
   }
 
   private static constantTimeEqual(a: Uint8Array, b: Uint8Array): boolean {

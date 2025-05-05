@@ -10,6 +10,12 @@ import {
   PQXDHResult,
 } from "./types";
 
+const toHex = (array: Uint8Array): string => {
+  return Array.from(array)
+    .map((b) => b.toString(16).padStart(2, "0"))
+    .join("");
+};
+
 class PQXDHProtocol {
   private context: PQXDHContext;
 
@@ -53,13 +59,20 @@ class PQXDHProtocol {
 
     const random = randombytes_buf(32);
 
+    // Create the message to be signed for SPK
     const encodedSPK = parameters.encodeEC(SPK_r.publicKey);
+    const spkMessage = new Uint8Array(encodedSPK.length + random.length);
+    spkMessage.set(encodedSPK);
+    spkMessage.set(random, encodedSPK.length);
+
+    // Create the message to be signed for PQKEM
     const encodedPQKEM = parameters.encodeKEM(
       PQOPK_r ? PQOPK_r.publicKey : PQSPK_r.publicKey,
     );
 
-    const SPK_r_Sig = sig(IK_r.privateKey, encodedSPK, random);
-    const PQPK_r_Sig = sig(IK_r.privateKey, encodedPQKEM, random);
+    // Sign both messages
+    const SPK_r_Sig = sig(IK_r.privateKey, spkMessage);
+    const PQPK_r_Sig = sig(IK_r.privateKey, encodedPQKEM);
 
     const usePQOPK = !!PQOPK_r;
     const PQPK_r = usePQOPK ? PQOPK_r!.publicKey : PQSPK_r.publicKey;
@@ -75,6 +88,7 @@ class PQXDHProtocol {
       PQPK_r_Sig,
       OPK_r: OPK_r?.publicKey,
       OPK_r_Id: OPK_r?.id,
+      random,
     };
   }
 
@@ -86,10 +100,18 @@ class PQXDHProtocol {
     const { sender, parameters, dh, verify, kdf, pqkemEnc, aeadEnc } =
       this.context;
 
+    // Recreate the message that was signed for SPK verification
     const encodedSPK = parameters.encodeEC(prekeyBundle.SPK_r);
+    const spkMessage = new Uint8Array(
+      encodedSPK.length + prekeyBundle.random.length,
+    );
+    spkMessage.set(encodedSPK);
+    spkMessage.set(prekeyBundle.random, encodedSPK.length);
+
+    // Check SPK signature
     const isValidSPK = verify(
       prekeyBundle.IK_r,
-      encodedSPK,
+      spkMessage,
       prekeyBundle.SPK_r_Sig,
     );
 
@@ -97,6 +119,7 @@ class PQXDHProtocol {
       throw new Error("Недійсний підпис для SPK_r");
     }
 
+    // Check PQPK signature
     const encodedPQPK = parameters.encodeKEM(prekeyBundle.PQPK_r);
     const isValidPQPK = verify(
       prekeyBundle.IK_r,
@@ -108,7 +131,9 @@ class PQXDHProtocol {
       throw new Error("Недійсний підпис для PQPK_r");
     }
 
-    const DH1 = dh(prekeyBundle.SPK_r, sender.IK_s.privateKey);
+    // Use the correct DH keys - we need curve25519 keys for DH operations
+    // We use IK_s_dh.privateKey instead of IK_s.privateKey for DH operations
+    const DH1 = dh(prekeyBundle.SPK_r, sender.IK_s_dh.privateKey);
     const DH2 = dh(prekeyBundle.IK_r, sender.EK_s.privateKey);
     const DH3 = dh(prekeyBundle.SPK_r, sender.EK_s.privateKey);
 
@@ -142,6 +167,8 @@ class PQXDHProtocol {
     const salt = new Uint8Array(32); // Нульова сіль
 
     const masterKey = kdf(salt, inputKeyMaterial, infoBytes, 32);
+    console.log(toHex(masterKey))
+
 
     const combinedAD = new Uint8Array(
       associatedData.length +
@@ -213,8 +240,9 @@ class PQXDHProtocol {
       OPK_r = receiver.OPK_r;
     }
 
+    // Use IK_r_dh for the DH operations
     const DH1 = dh(initialMessage.IK_s, SPK_r.privateKey);
-    const DH2 = dh(initialMessage.EK_s, receiver.IK_r.privateKey);
+    const DH2 = dh(initialMessage.EK_s, receiver.IK_r_dh.privateKey);
     const DH3 = dh(initialMessage.EK_s, SPK_r.privateKey);
 
     let DH4: Uint8Array | null = null;
@@ -247,6 +275,8 @@ class PQXDHProtocol {
     const salt = new Uint8Array(32);
 
     const masterKey = kdf(salt, inputKeyMaterial, infoBytes, 32);
+
+    console.log(toHex(masterKey))
 
     const combinedAD = new Uint8Array(
       associatedData.length +

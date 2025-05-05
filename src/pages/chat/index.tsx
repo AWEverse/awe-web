@@ -9,14 +9,14 @@ import ScreenProvider from "./ui/left/lib/ScreenContext";
 
 const ChatPage: FC = () => {
   return (
-    <ChatLayout.Root>
-      <ScreenProvider>
+    <ScreenProvider>
+      <ChatLayout.Root>
         <LeftColumn />
-      </ScreenProvider>
 
-      <MiddleColumn />
-      <RightColumn />
-    </ChatLayout.Root>
+        <MiddleColumn />
+        <RightColumn />
+      </ChatLayout.Root>
+    </ScreenProvider>
   );
 };
 

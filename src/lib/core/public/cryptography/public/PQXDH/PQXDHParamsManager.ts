@@ -1,3 +1,4 @@
+import { crypto_sign_ed25519_pk_to_curve25519, crypto_sign_ed25519_sk_to_curve25519 } from "libsodium-wrappers";
 import {
   PublicKey,
   Curve,
@@ -8,7 +9,8 @@ import {
 
 enum CURVE_ID {
   curve25519 = 0x01,
-  curve448 = 0x02
+  ed25519 = 0x02,
+  curve448 = 0x03
 }
 
 enum KEM_ID {
@@ -21,6 +23,7 @@ namespace PQXDHParamsManager {
   // Reverse mapping: number -> Curve or PQKEM
   const ID_TO_CURVE: Record<number, Curve> = {
     [CURVE_ID.curve25519]: "curve25519",
+    [CURVE_ID.ed25519]: "ed25519",
     [CURVE_ID.curve448]: "curve448"
   };
 
@@ -41,6 +44,16 @@ namespace PQXDHParamsManager {
       pqkem: "CRYSTALS-KYBER-1024",
       aead: "AES-256-GCM",
 
+      convertPublicKeyToCurve25519: (ed25519PublicKey: Uint8Array): Uint8Array => {
+        try {
+          return crypto_sign_ed25519_pk_to_curve25519(ed25519PublicKey);
+        } catch (e) {
+          throw new Error("Помилка конвертації публічного ключа Ed25519 в Curve25519");
+        }
+      },
+      convertPrivateKeyToCurve25519: (ed25519PrivateKey: Uint8Array): Uint8Array => {
+        return crypto_sign_ed25519_sk_to_curve25519(ed25519PrivateKey);
+      },
       // Encodes an elliptic curve public key into Uint8Array
       encodeEC(pk: PublicKey): Uint8Array {
         const out = new Uint8Array(1 + pk.data.length);

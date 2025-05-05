@@ -30,15 +30,11 @@ class PQXDHCrypto {
     publicKey: PublicKey,
     privateKey: PrivateKey,
   ): Uint8Array => {
-    if (publicKey.curve !== privateKey.curve) {
-      throw new Error("Криві для публічного та приватного ключів не співпадають");
-    }
-    if (publicKey.curve !== "curve25519" || publicKey.data.length !== 32) {
-      throw new Error("Непідтримуваний формат ключа або крива");
-    }
+
     try {
       return diffieHellman(privateKey.data, publicKey.data);
-    } catch {
+    } catch (error) {
+      console.log(error, privateKey.data.byteLength, publicKey.data.byteLength)
       throw new Error("Помилка обчислення Diffie-Hellman");
     }
   };
@@ -47,7 +43,7 @@ class PQXDHCrypto {
     privateKey: PrivateKey,
     message: Uint8Array,
   ): Uint8Array => {
-    if (privateKey.curve !== "curve25519" || privateKey.data.length !== 64) {
+    if (privateKey.curve !== "ed25519" || privateKey.data.length !== 64) {
       throw new Error("Недійсний приватний ключ Ed25519: некоректна довжина або крива");
     }
     if (!message || !(message instanceof Uint8Array)) {
@@ -55,7 +51,7 @@ class PQXDHCrypto {
     }
     try {
       const signature = signDetached(message, privateKey.data);
-      memzero(privateKey.data);
+      // Don't zero out the privateKey here as it might be reused
       return signature;
     } catch {
       throw new Error("Помилка створення підпису");
@@ -67,7 +63,7 @@ class PQXDHCrypto {
     message: Uint8Array,
     signature: Uint8Array,
   ): boolean => {
-    if (publicKey.curve !== "curve25519" || publicKey.data.length !== 32) {
+    if (publicKey.curve !== "ed25519" || publicKey.data.length !== 32) {
       throw new Error("Недійсний публічний ключ Ed25519: некоректна довжина або крива");
     }
     if (!message || !(message instanceof Uint8Array)) {
@@ -77,11 +73,12 @@ class PQXDHCrypto {
       throw new Error("Недійсний підпис: некоректна довжина");
     }
     try {
-      return verifyDetached(signature, message, publicKey.data);
+      // Create a copy of publicKey.data to avoid modifying the original
+      const publicKeyData = new Uint8Array(publicKey.data);
+      const result = verifyDetached(signature, message, publicKeyData);
+      return result;
     } catch {
       return false;
-    } finally {
-      memzero(publicKey.data);
     }
   };
 
@@ -170,8 +167,9 @@ class PQXDHCrypto {
     }
 
     try {
-      const sharedSecret = mlkem.decapsulate(ciphertext, sk.data);
-      memzero(sk.data);
+      // Create a copy of private key data to avoid modifying the original
+      const privateKeyData = new Uint8Array(sk.data);
+      const sharedSecret = mlkem.decapsulate(ciphertext, privateKeyData);
       return sharedSecret;
     } catch {
       throw new Error("Помилка декапсуляції KEM");
@@ -186,14 +184,22 @@ class PQXDHCrypto {
     if (key.length !== 32) {
       throw new Error("Недійсна довжина ключа AEAD: має бути 32 байти");
     }
+
+    // Generate a random nonce
     const nonce = getRandomBytes(XChaCha20NonceBytes);
+
     try {
+      // Make sure encryptXChaCha20 returns both ciphertext and authentication tag
       const ciphertext = encryptXChaCha20(plaintext, associatedData, null, nonce, key);
+
+      // Combine nonce and ciphertext
       const result = new Uint8Array(nonce.length + ciphertext.length);
       result.set(nonce);
       result.set(ciphertext, nonce.length);
+
       return result;
-    } catch {
+    } catch (error) {
+      console.error("Encryption error:", error);
       throw new Error("Помилка шифрування AEAD");
     }
   };
@@ -206,18 +212,31 @@ class PQXDHCrypto {
     if (key.length !== 32) {
       throw new Error("Недійсна довжина ключа AEAD: має бути 32 байти");
     }
+
     const nonceLength = XChaCha20NonceBytes;
+
+    // Validate ciphertext length
     if (ciphertext.length < nonceLength) {
       throw new Error("Недійсний шифротекст: занадто короткий");
     }
+
+    // Extract nonce and actual ciphertext
     const nonce = ciphertext.slice(0, nonceLength);
     const actualCiphertext = ciphertext.slice(nonceLength);
+
     try {
-      return decryptXChaCha20(null, actualCiphertext, associatedData, nonce, key);
-    } catch {
+      // Ensure associated data is handled consistently
+      // If associatedData is null/undefined in one place but not in another, it could cause issues
+      const associatedDataToUse = associatedData || new Uint8Array(0);
+
+      return decryptXChaCha20(null, actualCiphertext, associatedDataToUse, nonce, key);
+    } catch (error) {
+      console.error("Decryption error:", error);
       throw new Error("Помилка автентифікації: шифротекст або додаткові дані були змінені");
     }
   };
 }
+
+
 
 export default PQXDHCrypto;

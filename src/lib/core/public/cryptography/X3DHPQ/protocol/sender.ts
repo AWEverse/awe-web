@@ -9,11 +9,10 @@ import {
   KEY_LENGTH,
   MLKEM_SS_SIZE,
 } from "../config";
-import { KeyBundle, InitialMessage } from "../types";
+import { KeyBundle, InitialMessage, PublicKey } from "../types";
 import { X3DHError } from "./errors";
 import { validateBytes, validateInitialMessage, validateKeyPair } from "../utils/validation";
 import { wipeBytes } from "../../secure";
-import { PublicKey } from '../../types';
 
 /**
  * Computes the sender's shared secret and initial message for X3DH+PQ protocol.
@@ -23,18 +22,6 @@ export async function computeSenderSharedSecret(
   senderBundle: KeyBundle,
   recipientBundle: KeyBundle
 ): Promise<{ sharedSecret: Uint8Array; initialMessage: InitialMessage }> {
-
-  // Validate input keys
-  validateKeyPair(senderBundle.identityKey, 32, 64, "IdentityKey");
-  validateKeyPair(receiverPreKey.signedPreKey, 32, 64, "SignedPreKey");
-  if (receiverPreKey.oneTimePreKey) {
-    validateKeyPair(receiverPreKey.oneTimePreKey, 32, 64, "OneTimePreKey");
-  }
-
-  validateBytes(receiverPreKey.identityKey.publicKey, 32, "Receiver Identity Public Key");
-  validateBytes(receiverPreKey.pqIdentityPublicKey, 32, "Receiver PQ Identity Public Key");
-  validateBytes(receiverPreKey.pqSignedPreKeyPublicKey, 32, "Receiver PQ Signed Pre-Key");
-
 
   try {
     // Input validation
