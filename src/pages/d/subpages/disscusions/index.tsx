@@ -42,25 +42,8 @@ const DisscusionsPage = () => {
         className={s.topic}
         name={item.name}
         desc={item.desc}
-        posts={item.posts}
-        endDecorator={
-          <LastPublisher
-            avatarSrc="https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?ixlib=rb-1.2.1&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=880&q=80"
-            className={s.lastPublisher}
-            dateText="2 days ago"
-            publisherClassName="awe-user"
-            startDecorator={<InfoActions />}
-            title={item.name}
-          />
-        }
-      >
-        {item.tags?.map(({ name }, idx) => (
-          <TagListItem key={`${name}-${idx}`}>
-            <span className={s.circle} />
-            {name}
-          </TagListItem>
-        ))}
-      </TopicItem>
+        tags={item.tags}
+      />
     ),
     [],
   );
