@@ -1,48 +1,90 @@
-# 📄 Device ID Protocol v2.0 — Specification
-### Version: v2.0
-**Author:** Andrii Volynets (Original v1.2)
-**Revised by:** AWE Industries
+# 📄 Device ID Protocol v3.0 — Specification
+
+## Document Information
+- **Version**: 3.0
+- **Original Author**: Andrii Volynets (v1.0)
+- **Previous Revision**: AWE Industries (v2.0)
+- **Current Revision**: May 6, 2025
 
 ## 1. Executive Summary
 
-The Device ID Protocol defines a **cross-platform**, **privacy-preserving**, and **tamper-resistant** mechanism for generating and verifying device identifiers. This specification builds upon established cryptographic primitives to deliver a robust solution for device authentication without relying on personally identifiable information (PII).
+The Device ID Protocol provides a **cross-platform**, **privacy-preserving**, and **tamper-resistant** mechanism for generating and verifying device identifiers. This specification leverages established cryptographic primitives to deliver a robust solution for device authentication without relying on personally identifiable information (PII).
 
 ### 1.1 Core Principles
 
-* **Uniqueness**: Each device generates a cryptographically distinct identifier
-* **Stability**: Identifiers persist across reasonable system changes
-* **Privacy**: No PII is used in identifier generation
-* **Security**: Anti-cloning measures and attestation support
-* **Auditability**: Full lifecycle management with verifiable history
+| Principle | Description |
+|-----------|-------------|
+| **Uniqueness** | Each conforming device produces a cryptographically distinct identifier |
+| **Stability** | Identifiers remain consistent despite routine system updates |
+| **Privacy** | No personally identifiable information (PII) is collected or transmitted |
+| **Security** | Strong protections against impersonation and device cloning |
+| **Auditability** | Complete lifecycle management with comprehensive event logs |
+| **Recovery** | Defined processes for key recovery and identifier restoration |
 
 ### 1.2 Target Use Cases
 
-* Mobile application authentication
-* IoT device registration
-* Distributed systems with device-level permissions
-* Fraud prevention in financial applications
-* Multi-factor authentication systems
+- **Authentication and access control**
+  - Secure authentication in mobile applications
+  - Support for multi-factor authentication (MFA)
+  - Device authentication when accessing corporate systems
+  - Enhanced identity verification for high-risk operations
+- **IoT and distributed systems**
+  - Registration and identification of devices in IoT networks
+  - Authentication of devices in distributed infrastructures
+  - Secure device registration in multi-tenant architectures
+- **Financial security and fraud prevention**
+  - Detection and prevention of fraudulent activities in fintech environments
+  - Protection of payment transactions and e-commerce operations
+  - Issuance of temporary or enhanced access to high-risk functions
+- **Privacy-preserving analytics**
+  - Identification of devices without revealing user identity
+  - Collection of statistical data while preserving device confidentiality
 
----
+## 2. Protocol Overview
 
-## 2. Cryptographic Foundations
+### 2.1 Architectural Components
 
-### 2.1 Notation and Symbols
+The Device ID Protocol consists of four primary components:
 
-| Symbol | Description |
-|--------|-------------|
-| $DID$ | Device Identifier (final output) |
-| $FP$ | Device Fingerprint (metadata hash) |
-| $(sk_{device}, pk_{device})$ | Device Key Pair (private, public) |
-| $\sigma$ | Digital signature |
-| $H(\cdot)$ | Cryptographic hash function |
-| $S(\cdot, \cdot)$ | Signature function |
-| $V(\cdot, \cdot, \cdot)$ | Verification function |
-| $M$ | Device metadata |
-| $r$ | Random salt (32 bytes) |
-| $AT$ | Attestation Token |
+1. **Device Key Pair (DKP)**: An Ed25519 asymmetric key pair stored in secure hardware
+2. **Device Fingerprint (FP)**: A structured collection of non-PII device attributes
+3. **Device ID (DID)**: A cryptographic digest of the device fingerprint
+4. **Attestation Token (AT)**: Platform-specific evidence of device authenticity
 
-### 2.2 Core Functions
+### 2.2 Workflow Summary
+
+```mermaid
+graph TD
+    A[Device Initialization] -->|Generate Key Pair| B[Key Generation]
+    B -->|Store in TEE/SE| C[Protected Storage]
+    A -->|Collect Metadata| D[Data Collection]
+    D -->|Canonicalize| E[Fingerprint Computation]
+    E -->|Hash| F[Device ID Generation]
+    F -->|Sign| G[Signature Generation]
+    G -->|Send| H[Registration]
+    H -->|Verify| I[Server Validation]
+    I -->|Store| J[Device Registry]
+```
+
+## 3. Cryptographic Foundations
+
+### 3.1 Notation and Symbols
+
+For cryptographic operations, we use the following notation:
+
+- $DID$: Device Identifier (final output)
+- $FP$: Device Fingerprint (metadata hash)
+- $(sk_{device}, pk_{device})$: Device Key Pair (private, public)
+- $\sigma$: Digital signature
+- $H(\cdot)$: Cryptographic hash function
+- $S(\cdot, \cdot)$: Signature function
+- $V(\cdot, \cdot, \cdot)$: Verification function
+- $r$: Random salt (32 bytes)
+- $AT$: Attestation Token
+- $C$: Context identifier
+- $DID_C$: Context-derived Device Identifier
+
+### 3.2 Core Functions
 
 1. **Key Generation:** $(sk_{device}, pk_{device}) \leftarrow KeyGen(1^\lambda)$ where $\lambda$ is security parameter
 2. **Fingerprint Computation:** $FP = Encode(M \mathbin\Vert r)$ where $\mathbin\Vert$ denotes concatenation
@@ -50,20 +92,21 @@ The Device ID Protocol defines a **cross-platform**, **privacy-preserving**, and
 4. **Signature Generation:** $\sigma = S(sk_{device}, DID)$
 5. **Signature Verification:** $V(pk_{device}, DID, \sigma) \in \{true, false\}$
 
-### 2.3 Cryptographic Primitives
+### 3.3 Cryptographic Primitives
 
-| Component | Algorithm | Standard | Key Size |
-|-----------|-----------|----------|----------|
-| Key Pair | Ed25519 | RFC 8032 | 256-bit |
-| Hash Function | SHA-256 or BLAKE3 | FIPS 180-4 / BLAKE3 spec | 256-bit output |
-| Encoding | JCS or CBOR | RFC 8785 / RFC 8949 | N/A |
-| Attestation | JWT | RFC 7519 | Platform-dependent |
+| Component | Algorithm | Standard | Security Level |
+|-----------|-----------|----------|---------------|
+| Key Generation | Ed25519 | RFC 8032 | 128-bit |
+| Hash Function | BLAKE3 | BLAKE3 Spec | 256-bit |
+| Alternative Hash | SHA-256 | FIPS 180-4 | 128-bit |
+| Data Encoding | JCS | RFC 8785 | N/A |
+| Alternative Encoding | CBOR | RFC 8949 | N/A |
+| Key Derivation | HKDF | RFC 5869 | 256-bit |
+| Post-Quantum Option | Dilithium | NIST PQC | 128-bit quantum |
 
----
+## 4. Protocol Components
 
-## 3. Protocol Components
-
-### 3.1 Device Key Pair (DKP)
+### 4.1 Device Key Pair (DKP)
 
 The foundation of the protocol is an Ed25519 asymmetric key pair:
 
@@ -71,34 +114,39 @@ $$
 (sk_{device}, pk_{device}) \leftarrow \text{Ed25519\_KeyGen}()
 $$
 
-**Requirements:**
-* Private key ($sk_{device}$) MUST be stored in hardware-backed secure storage
-* Key usage MUST be gated by device authentication (biometric, PIN, or password)
-* Key MUST NOT be exportable from secure storage
+**Security Requirements:**
+- Private key material **MUST** be stored in hardware-backed secure storage:
+  - Android: Android Keystore with StrongBox when available
+  - iOS: Secure Enclave
+  - Windows: TPM-backed Windows Hello
+  - Linux: TPM 2.0 or HSM
+- Key usage **MUST** be gated by device authentication (biometric, PIN, or password)
+- Key **MUST NOT** be exportable from secure storage
 
-### 3.2 Device Fingerprint (FP)
+### 4.2 Device Fingerprint (FP)
 
 A structured collection of device attributes that does not contain PII:
 
-```
-FP = JCS_Encode({
-  "platform": String,          // e.g., "android", "ios", "windows"
+```json
+{
+  "platform": "String",          // e.g., "android", "ios", "windows"
   "os_version": {
-    "major": Integer,          // Semantic versioning
-    "minor": Integer
+    "major": "Integer",          // Semantic versioning
+    "minor": "Integer"
   },
   "app_version": {
-    "major": Integer,
-    "minor": Integer
+    "major": "Integer",
+    "minor": "Integer"
   },
-  "install_ts": Integer,       // Installation timestamp (seconds since epoch)
-  "random_salt": ByteString,   // 32 bytes of cryptographically secure randomness
-  "device_model": String,      // Optional, for UI display only
-  "protocol_version": "2.0"    // Required field in v2.0
-})
+  "install_ts": "Integer",       // Installation timestamp (seconds since epoch)
+  "random_salt": "ByteString",   // 32 bytes of cryptographically secure randomness
+  "device_model": "String",      // Optional, for UI display only
+  "protocol_version": "3.0",     // Required field, updated for current version
+  "security_level": "String"     // e.g., "strongbox", "tee", "software"
+}
 ```
 
-### 3.3 Device ID (DID)
+### 4.3 Device ID (DID)
 
 The cryptographic digest of the fingerprint:
 
@@ -111,7 +159,7 @@ $$
 
 Where $H$ is either SHA-256 or BLAKE3 hash function.
 
-### 3.4 Device Signature ($\sigma$)
+### 4.4 Device Signature ($\sigma$)
 
 Ed25519 signature over the raw device ID:
 
@@ -125,7 +173,7 @@ $$
 V(pk_{device}, DID_{raw}, \sigma) = true
 $$
 
-### 3.5 Attestation Token (AT)
+### 4.5 Attestation Token (AT)
 
 Platform-specific evidence of device authenticity:
 
@@ -134,11 +182,9 @@ Platform-specific evidence of device authenticity:
 * **Windows:** TPM attestation or Windows Hello
 * **Custom Hardware:** Vendor-specific attestation mechanism
 
----
+## 5. Protocol Lifecycle
 
-## 4. Protocol Lifecycle
-
-### 4.1 Initial Registration
+### 5.1 Initial Registration
 
 ```mermaid
 sequenceDiagram
@@ -159,7 +205,7 @@ sequenceDiagram
     Server->>Device: Registration confirmation
 ```
 
-### 4.2 Authentication Flow
+### 5.2 Authentication Flow
 
 1. **Device** retrieves stored $sk_{device}$ and computes:
    * $FP = Encode(metadata)$
@@ -173,7 +219,7 @@ sequenceDiagram
    * $DID$ matches a registered device
    * $nonce$ is valid and not reused
 
-### 4.3 Salt Rotation
+### 5.3 Salt Rotation
 
 Salt rotation occurs every 90 days or according to server policy:
 
@@ -190,7 +236,7 @@ $$
 P(DID = DID') \approx 0 \text{ when } r \neq r'
 $$
 
-### 4.4 Key Rotation
+### 5.4 Key Rotation
 
 For enhanced security, the device key pair may be rotated:
 
@@ -200,11 +246,9 @@ For enhanced security, the device key pair may be rotated:
 3. **Device** sends $(DID, pk_{device}', \sigma_{link}, t_{rot})$ to server
 4. **Server** verifies $\sigma_{link}$ using $pk_{device}$ and updates to $pk_{device}'$
 
----
+## 6. Implementation Guidelines
 
-## 5. Implementation Guidelines
-
-### 5.1 Platform-Specific Storage
+### 6.1 Platform-Specific Storage
 
 | Platform | Secure Storage | Property Protection |
 |----------|----------------|---------------------|
@@ -213,7 +257,7 @@ For enhanced security, the device key pair may be rotated:
 | Windows | TPM / Windows Hello | `CRYPTOAPI_BLOB` with user authentication |
 | Linux | TPM2.0 / PKCS#11 | Hardware token with PIN protection |
 
-### 5.2 Canonical Encoding
+### 6.2 Canonical Encoding
 
 To ensure consistent hashing across platforms:
 
@@ -227,7 +271,7 @@ canonical = JCS_Encode(metadata)
 // Result: fixed byte representation regardless of field order
 ```
 
-### 5.3 Collision Resistance
+### 6.3 Collision Resistance
 
 With proper implementation, collision probability is negligible:
 
@@ -237,11 +281,9 @@ $$
 
 For context, this is approximately 1 in 10^77, far lower than cosmic ray bit-flip probability.
 
----
+## 7. Security Analysis
 
-## 6. Security Analysis
-
-### 6.1 Threat Model
+### 7.1 Threat Model
 
 | Threat Vector | Description | Security Level |
 |---------------|-------------|---------------|
@@ -253,7 +295,7 @@ For context, this is approximately 1 in 10^77, far lower than cosmic ray bit-fli
 | Replay Attacks | Reusing valid authentication messages | **Strong** (with nonce) |
 | Quantum Attacks | Future quantum computer threats | **Moderate** (need PQ extension) |
 
-### 6.2 Security Proofs
+### 7.2 Security Proofs
 
 Assuming secure primitives, the protocol achieves:
 
@@ -261,7 +303,7 @@ Assuming secure primitives, the protocol achieves:
 2. **Non-transferability:** $sk_{device}$ cannot be extracted from secure hardware
 3. **Unlinkability:** Different $DID$ values (after salt rotation) cannot be linked without server cooperation
 
-### 6.3 Defense-in-Depth Measures
+### 7.3 Defense-in-Depth Measures
 
 1. **Mandatory attestation** for high-security operations
 2. **Rate limiting** on registration and authentication endpoints
@@ -269,11 +311,9 @@ Assuming secure primitives, the protocol achieves:
 4. **Geo-fencing** to detect impossible travel patterns
 5. **Revocation lists** for compromised devices
 
----
+## 8. Privacy Considerations
 
-## 7. Privacy Considerations
-
-### 7.1 Data Minimization
+### 8.1 Data Minimization
 
 The protocol adheres to privacy-by-design principles:
 
@@ -282,7 +322,7 @@ The protocol adheres to privacy-by-design principles:
 * No geolocation or user demographic information
 * No persistent user identifiers in the DID
 
-### 7.2 Salt Rotation Impact
+### 8.2 Salt Rotation Impact
 
 Regular salt rotation provides pseudonymity properties:
 
@@ -292,7 +332,7 @@ $$
 
 This prevents long-term tracking across services if the same protocol is used independently.
 
-### 7.3 Compliance
+### 8.3 Compliance
 
 The protocol supports compliance with:
 
@@ -303,14 +343,12 @@ The protocol supports compliance with:
 
 Through its data minimization approach and support for right-to-be-forgotten via device revocation.
 
----
+## 9. API Specifications
 
-## 8. API Specifications
-
-### 8.1 Registration Endpoint
+### 9.1 Registration Endpoint
 
 ```http
-POST /api/v2/device/register
+POST /api/v3/device/register
 Content-Type: application/json
 ```
 
@@ -327,7 +365,8 @@ Content-Type: application/json
     "install_ts": 1715000000,
     "random_salt": "base64url(32B)",
     "device_model": "Pixel 7",
-    "protocol_version": "2.0"
+    "protocol_version": "3.0",
+    "security_level": "strongbox"
   },
   "attestation_token": "JWT"
 }
@@ -342,10 +381,10 @@ Content-Type: application/json
 }
 ```
 
-### 8.2 Authentication Endpoint
+### 9.2 Authentication Endpoint
 
 ```http
-POST /api/v2/device/authenticate
+POST /api/v3/device/authenticate
 Content-Type: application/json
 ```
 
@@ -368,10 +407,10 @@ Content-Type: application/json
 }
 ```
 
-### 8.3 Salt Rotation Endpoint
+### 9.3 Salt Rotation Endpoint
 
 ```http
-POST /api/v2/device/rotate-salt
+POST /api/v3/device/rotate-salt
 Content-Type: application/json
 ```
 
@@ -388,17 +427,41 @@ Content-Type: application/json
     "install_ts": 1715000000,
     "random_salt": "base64url(new_32B)",
     "device_model": "Pixel 7",
-    "protocol_version": "2.0"
+    "protocol_version": "3.0",
+    "security_level": "strongbox"
   },
   "rotation_timestamp": 1715090000
 }
 ```
 
----
+### 9.4 Key Rotation Endpoint
 
-## 9. Extensions
+```http
+POST /api/v3/device/rotate-key
+Content-Type: application/json
+```
 
-### 9.1 Post-Quantum Resistance
+**Request Body:**
+```json
+{
+  "device_id": "base64url(DID)",
+  "new_device_key": "base64url(pk_device')",
+  "link_signature": "base64url(σ_link)",
+  "rotation_timestamp": 1715090000
+}
+```
+
+**Response (Success):**
+```json
+{
+  "status": "success",
+  "expiry": "ISO8601 timestamp"
+}
+```
+
+## 10. Extensions
+
+### 10.1 Post-Quantum Resistance
 
 Hybrid signature approach combining classical and post-quantum algorithms:
 
@@ -412,7 +475,7 @@ $$
 V_{hybrid}(pk, m, \sigma_{hybrid}) = V_{Ed25519}(pk_{Ed25519}, m, \sigma_{Ed25519}) \land V_{Dilithium}(pk_{Dilithium}, m, \sigma_{Dilithium})
 $$
 
-### 9.2 Multi-Device Federation
+### 10.2 Multi-Device Federation
 
 Hierarchical identity structure where multiple devices can be linked:
 
@@ -426,7 +489,7 @@ $$
 \sigma_{link} = S(sk_{parent}, DID_{child} || t_{link})
 $$
 
-### 9.3 Offline Validation
+### 10.3 Offline Validation
 
 Distributed revocation lists using signed Merkle trees:
 
@@ -442,11 +505,9 @@ $$
 \sigma_{revlist} = S(sk_{server}, MerkleRoot || t_{issue})
 $$
 
----
+## 11. Reference Implementation
 
-## 10. Reference Implementation
-
-### 10.1 Client SDK (Pseudocode)
+### 11.1 Client SDK (Pseudocode)
 
 ```typescript
 class DeviceIdProtocol {
@@ -506,7 +567,8 @@ class DeviceIdProtocol {
       install_ts: installTs,
       random_salt: arrayBufferToBase64Url(salt),
       device_model: await getDeviceModel(),
-      protocol_version: "2.0"
+      protocol_version: "3.0",
+      security_level: await getSecurityLevel()
     };
 
     // Canonicalize and hash
@@ -535,11 +597,116 @@ class DeviceIdProtocol {
     };
   }
 
-  // Additional methods for authentication, salt rotation, etc.
+  async authenticate(nonce: string): Promise<{
+    deviceId: string;
+    signature: string;
+    nonce: string;
+    timestamp: number;
+  }> {
+    const keyPair = await this.storage.getKeyPair('device_id_keypair');
+    const didRaw = await this.getDeviceIdRaw();
+
+    // Prepare data to sign (DID + nonce)
+    const dataToSign = new Uint8Array(didRaw.byteLength + nonce.length);
+    dataToSign.set(new Uint8Array(didRaw), 0);
+    dataToSign.set(new TextEncoder().encode(nonce), didRaw.byteLength);
+
+    // Sign the data
+    const signature = await crypto.subtle.sign(
+      'Ed25519',
+      keyPair.privateKey,
+      dataToSign
+    );
+
+    return {
+      deviceId: arrayBufferToBase64Url(didRaw),
+      signature: arrayBufferToBase64Url(signature),
+      nonce: nonce,
+      timestamp: Math.floor(Date.now() / 1000)
+    };
+  }
+
+  async rotateSalt(): Promise<{
+    oldDeviceId: string;
+    newDeviceId: string;
+    signature: string;
+    metadata: object;
+    rotationTimestamp: number;
+  }> {
+    const keyPair = await this.storage.getKeyPair('device_id_keypair');
+    const oldSalt = await this.storage.getBytes('device_id_salt');
+    const oldDidRaw = await this.getDeviceIdRaw();
+
+    // Generate new salt
+    const newSalt = crypto.getRandomValues(new Uint8Array(32));
+
+    // Create updated metadata
+    const metadata = await this.getMetadata();
+    metadata.random_salt = arrayBufferToBase64Url(newSalt);
+
+    // Compute new DID
+    const canonicalData = canonicalizeJson(metadata);
+    const fingerprint = new TextEncoder().encode(canonicalData);
+    const newDidRaw = await crypto.subtle.digest('SHA-256', fingerprint);
+
+    // Current timestamp
+    const timestamp = Math.floor(Date.now() / 1000);
+
+    // Prepare data to sign (new DID + timestamp)
+    const dataToSign = new Uint8Array(newDidRaw.byteLength + 8);
+    dataToSign.set(new Uint8Array(newDidRaw), 0);
+    new DataView(dataToSign.buffer).setBigUint64(newDidRaw.byteLength, BigInt(timestamp));
+
+    // Sign the data
+    const signature = await crypto.subtle.sign(
+      'Ed25519',
+      keyPair.privateKey,
+      dataToSign
+    );
+
+    // Store the new salt
+    await this.storage.storeBytes('device_id_salt', newSalt);
+
+    return {
+      oldDeviceId: arrayBufferToBase64Url(oldDidRaw),
+      newDeviceId: arrayBufferToBase64Url(newDidRaw),
+      signature: arrayBufferToBase64Url(signature),
+      metadata: metadata,
+      rotationTimestamp: timestamp
+    };
+  }
+
+  // Helper methods
+  private async getDeviceIdRaw(): Promise<ArrayBuffer> {
+    const metadata = await this.getMetadata();
+    const canonicalData = canonicalizeJson(metadata);
+    const fingerprint = new TextEncoder().encode(canonicalData);
+    return await crypto.subtle.digest('SHA-256', fingerprint);
+  }
+
+  private async getMetadata(): Promise<object> {
+    const salt = await this.storage.getBytes('device_id_salt');
+    const installTs = await this.storage.getData('install_ts');
+    const osInfo = await getOsInfo();
+
+    return {
+      platform: this.options.platform,
+      os_version: {
+        major: osInfo.major,
+        minor: osInfo.minor
+      },
+      app_version: this.options.appVersion,
+      install_ts: installTs,
+      random_salt: arrayBufferToBase64Url(salt),
+      device_model: await getDeviceModel(),
+      protocol_version: "3.0",
+      security_level: await getSecurityLevel()
+    };
+  }
 }
 ```
 
-### 10.2 Server Verification (Pseudocode)
+### 11.2 Server Verification (Pseudocode)
 
 ```typescript
 async function verifyDeviceId(request) {
@@ -594,11 +761,89 @@ async function verifyDeviceId(request) {
 
   return true;
 }
+
+async function verifyAuthentication(request, registeredDevice) {
+  const {
+    device_id: deviceId,
+    signature,
+    nonce,
+    timestamp
+  } = request;
+
+  // Validate timestamp is recent
+  const currentTime = Math.floor(Date.now() / 1000);
+  if (Math.abs(currentTime - timestamp) > 300) { // 5 minute window
+    throw new Error('Authentication timestamp expired');
+  }
+
+  // Verify nonce hasn't been used before
+  if (await isNonceReused(nonce)) {
+    throw new Error('Nonce reuse detected');
+  }
+
+  // Decode from base64url
+  const didRaw = base64UrlToArrayBuffer(deviceId);
+  const signatureRaw = base64UrlToArrayBuffer(signature);
+
+  // Prepare data that should have been signed
+  const dataToVerify = new Uint8Array(didRaw.byteLength + nonce.length);
+  dataToVerify.set(new Uint8Array(didRaw), 0);
+  dataToVerify.set(new TextEncoder().encode(nonce), didRaw.byteLength);
+
+  // Import public key from registered device
+  const publicKeyRaw = base64UrlToArrayBuffer(registeredDevice.publicKey);
+  const publicKeyObj = await crypto.subtle.importKey(
+    'raw',
+    publicKeyRaw,
+    { name: 'Ed25519' },
+    false,
+    ['verify']
+  );
+
+  // Verify signature
+  const isValid = await crypto.subtle.verify(
+    'Ed25519',
+    publicKeyObj,
+    signatureRaw,
+    dataToVerify
+  );
+
+  if (!isValid) {
+    throw new Error('Invalid signature');
+  }
+
+  // Mark nonce as used
+  await storeUsedNonce(nonce, timestamp);
+
+  return true;
+}
 ```
 
----
+## 12. Security Considerations
 
-## 11. References
+### 12.1 Key Protection Requirements
+
+| Platform | Recommended Storage | Minimum Security Level |
+|----------|---------------------|------------------------|
+| Android 9+ | StrongBox Keymaster | Hardware-backed TEE |
+| Android <9 | Android Keystore | TEE |
+| iOS | Secure Enclave | Hardware Security |
+| Windows 10+ | TPM 2.0 | Hardware security |
+| macOS | Secure Enclave | Hardware security |
+| Linux | TPM 2.0 / HSM | Hardware or software TEE |
+| Web | WebAuthn | FIDO2 security key |
+
+### 12.2 Implementation Vulnerabilities
+
+Common implementation pitfalls to avoid:
+
+1. **Improper key storage**: Failing to use hardware-backed storage when available
+2. **Weak entropy**: Using predictable random sources for salt generation
+3. **Time-of-check/time-of-use**: Not atomically verifying and using device credentials
+4. **Signature replay**: Not including timestamps or nonces in authenticated requests
+5. **Side-channel leaks**: Exposing key material through timing or power analysis
+
+## 13. References
 
 1. RFC 8032 — Edwards-Curve Digital Signature Algorithm (EdDSA)
 2. RFC 8785 — JSON Canonicalization Scheme (JCS)

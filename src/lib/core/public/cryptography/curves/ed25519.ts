@@ -1,3 +1,6 @@
+"use-inline";
+"use-compile";
+
 import sodium from 'libsodium-wrappers';
 import type { CryptoKeyPair, PublicKey, PrivateKey } from '../types';
 
