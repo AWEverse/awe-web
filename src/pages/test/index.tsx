@@ -64,8 +64,8 @@ const AdvancedEncryptionPage: React.FC = () => {
 // Test function
 async function testProtocol() {
   try {
-    const aliceBundle = await generateKeyBundle(true);
-    const bobBundle = await generateKeyBundle(true);
+    const aliceBundle = await generateKeyBundle();
+    const bobBundle = await generateKeyBundle();
 
     console.log(aliceBundle);
     console.log(bobBundle);

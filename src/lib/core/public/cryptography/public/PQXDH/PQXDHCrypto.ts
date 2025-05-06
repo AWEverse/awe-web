@@ -1,242 +1,267 @@
-import {
-  crypto_aead_xchacha20poly1305_ietf_decrypt as decryptXChaCha20,
-  crypto_aead_xchacha20poly1305_ietf_encrypt as encryptXChaCha20,
-  crypto_aead_xchacha20poly1305_ietf_NPUBBYTES as XChaCha20NonceBytes,
-  crypto_auth as hmacAuth,
-  crypto_scalarmult as diffieHellman,
-  crypto_sign_detached as signDetached,
-  crypto_sign_verify_detached as verifyDetached,
-  randombytes_buf as getRandomBytes,
-  memzero,
-} from "libsodium-wrappers";
-import { ml_kem512, ml_kem768, ml_kem1024 } from "@noble/post-quantum/ml-kem";
-import {
-  AEADDecFunction,
-  AEADEncFunction,
-  DHFunction,
-  KDFFunction,
-  PQKEMDecFunction,
-  PQKEMEncFunction,
-  PQKEMPrivateKey,
-  PQKEMPublicKey,
-  PrivateKey,
-  PublicKey,
-  SignatureFunction,
-  VerifyFunction,
-} from "./types";
+import sodium from 'libsodium-wrappers';
+import { ml_kem768 } from '@noble/post-quantum/ml-kem';
+import { hkdf } from '@noble/hashes/hkdf';
+import { sha512 } from '@noble/hashes/sha512';
 
-class PQXDHCrypto {
-  public dh: DHFunction = (
-    publicKey: PublicKey,
-    privateKey: PrivateKey,
-  ): Uint8Array => {
+// Wait for libsodium to be ready
+await sodium.ready;
 
-    try {
-      return diffieHellman(privateKey.data, publicKey.data);
-    } catch (error) {
-      console.log(error, privateKey.data.byteLength, publicKey.data.byteLength)
-      throw new Error("Помилка обчислення Diffie-Hellman");
-    }
-  };
+// Constants for encoding
+const CURVE_ID = 0x01; // curve25519
+const PQKEM_ID = 0x02; // ml_kem768
 
-  sig: SignatureFunction = (
-    privateKey: PrivateKey,
-    message: Uint8Array,
-  ): Uint8Array => {
-    if (privateKey.curve !== "ed25519" || privateKey.data.length !== 64) {
-      throw new Error("Недійсний приватний ключ Ed25519: некоректна довжина або крива");
-    }
-    if (!message || !(message instanceof Uint8Array)) {
-      throw new Error("Недійсне повідомлення для підпису");
-    }
-    try {
-      const signature = signDetached(message, privateKey.data);
-      // Don't zero out the privateKey here as it might be reused
-      return signature;
-    } catch {
-      throw new Error("Помилка створення підпису");
-    }
-  };
+// KDF constants
+const F = new Uint8Array(32).fill(0xff); // 32 0xFF bytes for curve25519
+const INFO_STR = 'MyProtocol_CURVE25519_SHA-512_ML-KEM768';
+const INFO = new TextEncoder().encode(INFO_STR);
+const SALT = new Uint8Array(64); // Zero-filled for SHA-512
 
-  verify: VerifyFunction = (
-    publicKey: PublicKey,
-    message: Uint8Array,
-    signature: Uint8Array,
-  ): boolean => {
-    if (publicKey.curve !== "ed25519" || publicKey.data.length !== 32) {
-      throw new Error("Недійсний публічний ключ Ed25519: некоректна довжина або крива");
-    }
-    if (!message || !(message instanceof Uint8Array)) {
-      throw new Error("Недійсне повідомлення для верифікації");
-    }
-    if (!signature || signature.length !== 64) {
-      throw new Error("Недійсний підпис: некоректна довжина");
-    }
-    try {
-      // Create a copy of publicKey.data to avoid modifying the original
-      const publicKeyData = new Uint8Array(publicKey.data);
-      const result = verifyDetached(signature, message, publicKeyData);
-      return result;
-    } catch {
-      return false;
-    }
-  };
+// Type definitions
+type CurvePublicKey = Uint8Array; // 32 bytes
+type CurvePrivateKey = Uint8Array; // 32 bytes
+type EdPublicKey = Uint8Array; // 32 bytes
+type EdPrivateKey = Uint8Array; // 64 bytes
+type PqkemPublicKey = Uint8Array; // 1184 bytes
+type PqkemPrivateKey = Uint8Array; // 2400 bytes
+type PqkemCiphertext = Uint8Array; // 1088 bytes
+type KeyId = Uint8Array; // 8 bytes
 
-  kdf: KDFFunction = (
-    salt: Uint8Array,
-    inputKeyMaterial: Uint8Array,
-    info: Uint8Array,
-    outputLength: number,
-  ): Uint8Array => {
-    if (salt.length !== 32) {
-      throw new Error("Недійсна довжина солі: має бути 32 байти");
-    }
-    try {
-      const prk = hmacAuth(inputKeyMaterial, salt);
-      const T = new Uint8Array(outputLength);
-      let T_prev = new Uint8Array(0);
-      let counter = 1;
-      let offset = 0;
+interface PrekeyBundle {
+  ikSign: EdPublicKey;
+  ikDh: CurvePublicKey;
+  spk: CurvePublicKey;
+  spkId: KeyId;
+  spkSig: Uint8Array;
+  pqpk: PqkemPublicKey;
+  pqpkId: KeyId;
+  pqpkSig: Uint8Array;
+  opk?: CurvePublicKey;
+  opkId?: KeyId;
+}
 
-      while (offset < outputLength) {
-        const blockInput = new Uint8Array(T_prev.length + info.length + 1);
-        blockInput.set(T_prev);
-        blockInput.set(info, T_prev.length);
-        blockInput[blockInput.length - 1] = counter;
+interface InitialMessage {
+  ikA: CurvePublicKey;
+  ekA: CurvePublicKey;
+  ct: PqkemCiphertext;
+  spkId: KeyId;
+  pqpkId: KeyId;
+  opkId?: KeyId;
+  nonce: Uint8Array;
+  ciphertext: Uint8Array;
+}
 
-        const blockOutput = hmacAuth(blockInput, prk);
-        const blockSize = Math.min(blockOutput.length, outputLength - offset);
-        T.set(blockOutput.subarray(0, blockSize), offset);
+// Encoding and decoding functions
+function encodeEC(pk: CurvePublicKey): Uint8Array {
+  if (pk.length !== 32) throw new Error('Invalid curve public key');
+  const encoded = new Uint8Array(1 + 32);
+  encoded[0] = CURVE_ID;
+  encoded.set(pk, 1);
+  return encoded;
+}
 
-        T_prev = Uint8Array.from(blockOutput);
-        offset += blockSize;
-        counter++;
-      }
-      memzero(prk);
-      return T;
-    } catch {
-      throw new Error("Помилка виведення ключа KDF");
-    }
-  };
+function decodeEC(encoded: Uint8Array): CurvePublicKey {
+  if (encoded.length !== 33 || encoded[0] !== CURVE_ID) {
+    throw new Error('Invalid encoded curve public key');
+  }
+  return encoded.subarray(1);
+}
 
-  pqkemEnc: PQKEMEncFunction = (
-    pk: PQKEMPublicKey,
-  ): { ciphertext: Uint8Array; sharedSecret: Uint8Array } => {
-    let mlkem;
-    switch (pk.kem) {
-      case "CRYSTALS-KYBER-512":
-        mlkem = ml_kem512;
-        break;
-      case "CRYSTALS-KYBER-768":
-        mlkem = ml_kem768;
-        break;
-      case "CRYSTALS-KYBER-1024":
-        mlkem = ml_kem1024;
-        break;
-      default:
-        throw new Error(`Непідтримуваний KEM: ${pk.kem}`);
-    }
-    if (pk.data.length !== mlkem.publicKeyLen) {
-      throw new Error("Недійсний публічний ключ KEM");
-    }
-    try {
-      const { sharedSecret, cipherText } = mlkem.encapsulate(pk.data);
-      return { ciphertext: cipherText, sharedSecret };
-    } catch {
-      throw new Error("Помилка інкапсуляції KEM");
-    }
-  };
+function encodeKEM(pk: PqkemPublicKey): Uint8Array {
+  if (pk.length !== 1184) throw new Error('Invalid pqkem public key');
+  const encoded = new Uint8Array(1 + 1184);
+  encoded[0] = PQKEM_ID;
+  encoded.set(pk, 1);
+  return encoded;
+}
 
-  pqkemDec: PQKEMDecFunction = (
-    sk: PQKEMPrivateKey,
-    ciphertext: Uint8Array,
-  ): Uint8Array => {
-    let mlkem;
-    switch (sk.kem) {
-      case "CRYSTALS-KYBER-512":
-        mlkem = ml_kem512;
-        break;
-      case "CRYSTALS-KYBER-768":
-        mlkem = ml_kem768;
-        break;
-      case "CRYSTALS-KYBER-1024":
-        mlkem = ml_kem1024;
-        break;
-      default:
-        throw new Error(`Непідтримуваний KEM: ${sk.kem}`);
-    }
+function decodeKEM(encoded: Uint8Array): PqkemPublicKey {
+  if (encoded.length !== 1185 || encoded[0] !== PQKEM_ID) {
+    throw new Error('Invalid encoded pqkem public key');
+  }
+  return encoded.subarray(1);
+}
 
-    try {
-      // Create a copy of private key data to avoid modifying the original
-      const privateKeyData = new Uint8Array(sk.data);
-      const sharedSecret = mlkem.decapsulate(ciphertext, privateKeyData);
-      return sharedSecret;
-    } catch {
-      throw new Error("Помилка декапсуляції KEM");
-    }
-  };
+// Utility to concatenate Uint8Arrays
+function concatenate(...arrays: Uint8Array[]): Uint8Array {
+  const totalLength = arrays.reduce((sum, arr) => sum + arr.length, 0);
+  const result = new Uint8Array(totalLength);
+  let offset = 0;
+  for (const arr of arrays) {
+    result.set(arr, offset);
+    offset += arr.length;
+  }
+  return result;
+}
 
-  aeadEnc: AEADEncFunction = (
-    key: Uint8Array,
-    plaintext: Uint8Array,
-    associatedData: Uint8Array,
-  ): Uint8Array => {
-    if (key.length !== 32) {
-      throw new Error("Недійсна довжина ключа AEAD: має бути 32 байти");
-    }
+// KDF implementation
+function kdf(km: Uint8Array): Uint8Array {
+  const ikm = concatenate(F, km);
+  return hkdf(sha512, ikm, SALT, INFO, 32);
+}
 
-    // Generate a random nonce
-    const nonce = getRandomBytes(XChaCha20NonceBytes);
-
-    try {
-      // Make sure encryptXChaCha20 returns both ciphertext and authentication tag
-      const ciphertext = encryptXChaCha20(plaintext, associatedData, null, nonce, key);
-
-      // Combine nonce and ciphertext
-      const result = new Uint8Array(nonce.length + ciphertext.length);
-      result.set(nonce);
-      result.set(ciphertext, nonce.length);
-
-      return result;
-    } catch (error) {
-      console.error("Encryption error:", error);
-      throw new Error("Помилка шифрування AEAD");
-    }
-  };
-
-  aeadDec: AEADDecFunction = (
-    key: Uint8Array,
-    ciphertext: Uint8Array,
-    associatedData: Uint8Array,
-  ): Uint8Array => {
-    if (key.length !== 32) {
-      throw new Error("Недійсна довжина ключа AEAD: має бути 32 байти");
-    }
-
-    const nonceLength = XChaCha20NonceBytes;
-
-    // Validate ciphertext length
-    if (ciphertext.length < nonceLength) {
-      throw new Error("Недійсний шифротекст: занадто короткий");
-    }
-
-    // Extract nonce and actual ciphertext
-    const nonce = ciphertext.slice(0, nonceLength);
-    const actualCiphertext = ciphertext.slice(nonceLength);
-
-    try {
-      // Ensure associated data is handled consistently
-      // If associatedData is null/undefined in one place but not in another, it could cause issues
-      const associatedDataToUse = associatedData || new Uint8Array(0);
-
-      return decryptXChaCha20(null, actualCiphertext, associatedDataToUse, nonce, key);
-    } catch (error) {
-      console.error("Decryption error:", error);
-      throw new Error("Помилка автентифікації: шифротекст або додаткові дані були змінені");
-    }
+// Key generation functions
+function generateIdentityKeys() {
+  const ikSign = sodium.crypto_sign_keypair();
+  const skDh = sodium.crypto_sign_ed25519_sk_to_curve25519(ikSign.privateKey);
+  const ikDh = sodium.crypto_scalarmult_base(skDh);
+  return {
+    ikSign: { publicKey: ikSign.publicKey, privateKey: ikSign.privateKey },
+    ikDh: { publicKey: ikDh, privateKey: skDh }
   };
 }
 
+function generateCurvePrekey() {
+  const keypair = sodium.crypto_box_keypair();
+  const id = sodium.randombytes_buf(8);
+  return { publicKey: keypair.publicKey, privateKey: keypair.privateKey, id };
+}
 
+function generatePqkemPrekey() {
+  const { publicKey, secretKey } = ml_kem768.keygen();
+  const id = sodium.randombytes_buf(8);
+  return { publicKey, privateKey: secretKey, id };
+}
 
-export default PQXDHCrypto;
+function signPrekey(sk: EdPrivateKey, pk: CurvePublicKey): Uint8Array {
+  return sodium.crypto_sign_detached(encodeEC(pk), sk);
+}
+
+function signPqkemPrekey(sk: EdPrivateKey, pk: PqkemPublicKey): Uint8Array {
+  return sodium.crypto_sign_detached(encodeKEM(pk), sk);
+}
+
+// Simulated server state (in a real app, this would be a database)
+const bobKeys = generateIdentityKeys();
+const bobSpk = generateCurvePrekey();
+const bobSpkSig = signPrekey(bobKeys.ikSign.privateKey, bobSpk.publicKey);
+const bobPqspk = generatePqkemPrekey();
+const bobPqspkSig = signPqkemPrekey(bobKeys.ikSign.privateKey, bobPqspk.publicKey);
+const bobOpks = [generateCurvePrekey()];
+const bobPqopks = [generatePqkemPrekey()];
+const bobPqopkSigs = bobPqopks.map(pqopk => signPqkemPrekey(bobKeys.ikSign.privateKey, pqopk.publicKey));
+
+// Simulate fetching a prekey bundle
+function getPrekeyBundle(): PrekeyBundle {
+  let pqpk: PqkemPublicKey, pqpkId: KeyId, pqpkSig: Uint8Array;
+  if (bobPqopks.length > 0) {
+    const pqopk = bobPqopks.shift()!;
+    pqpk = pqopk.publicKey;
+    pqpkId = pqopk.id;
+    pqpkSig = bobPqopkSigs.shift()!;
+  } else {
+    pqpk = bobPqspk.publicKey;
+    pqpkId = bobPqspk.id;
+    pqpkSig = bobPqspkSig;
+  }
+  let opk: CurvePublicKey | undefined, opkId: KeyId | undefined;
+  if (bobOpks.length > 0) {
+    const opkSelected = bobOpks.shift()!;
+    opk = opkSelected.publicKey;
+    opkId = opkSelected.id;
+  }
+  return {
+    ikSign: bobKeys.ikSign.publicKey,
+    ikDh: bobKeys.ikDh.publicKey,
+    spk: bobSpk.publicKey,
+    spkId: bobSpk.id,
+    spkSig: bobSpkSig,
+    pqpk,
+    pqpkId,
+    pqpkSig,
+    opk,
+    opkId
+  };
+}
+
+// Alice's identity key (for this example)
+const aliceKeys = generateIdentityKeys();
+
+// Alice sends the initial message
+async function aliceSendInitialMessage(plaintext: Uint8Array): Promise<InitialMessage> {
+  const bundle = getPrekeyBundle();
+
+  // Verify signatures
+  if (!sodium.crypto_sign_verify_detached(bundle.spkSig, encodeEC(bundle.spk), bundle.ikSign)) {
+    throw new Error('Invalid SPK signature');
+  }
+  if (!sodium.crypto_sign_verify_detached(bundle.pqpkSig, encodeKEM(bundle.pqpk), bundle.ikSign)) {
+    throw new Error('Invalid PQPK signature');
+  }
+
+  // Generate ephemeral key
+  const ekA = sodium.crypto_box_keypair();
+
+  // PQKEM encapsulation
+  const { ciphertext: ct, sharedSecret: ss } = ml_kem768.encapsulate(bundle.pqpk);
+
+  // Compute DH values
+  const dh1 = sodium.crypto_scalarmult(aliceKeys.ikDh.privateKey, bundle.spk);
+  const dh2 = sodium.crypto_scalarmult(ekA.privateKey, bundle.ikDh);
+  const dh3 = sodium.crypto_scalarmult(ekA.privateKey, bundle.spk);
+  const km = bundle.opk
+    ? concatenate(dh1, dh2, dh3, sodium.crypto_scalarmult(ekA.privateKey, bundle.opk), ss)
+    : concatenate(dh1, dh2, dh3, ss);
+
+  const sk = kdf(km);
+
+  // Construct AD
+  const ad = concatenate(encodeEC(aliceKeys.ikDh.publicKey), encodeEC(bundle.ikDh), encodeKEM(bundle.pqpk));
+
+  // Encrypt initial message
+  const nonce = sodium.randombytes_buf(sodium.crypto_aead_xchacha20poly1305_ietf_NPUBBYTES);
+  const ciphertext = sodium.crypto_aead_xchacha20poly1305_ietf_encrypt(plaintext, ad, null, nonce, sk);
+
+  return {
+    ikA: aliceKeys.ikDh.publicKey,
+    ekA: ekA.publicKey,
+    ct,
+    spkId: bundle.spkId,
+    pqpkId: bundle.pqpkId,
+    opkId: bundle.opkId,
+    nonce,
+    ciphertext
+  };
+}
+
+// Bob receives and processes the initial message
+async function bobReceiveInitialMessage(message: InitialMessage): Promise<Uint8Array> {
+  // Load private keys (in practice, use identifiers to fetch from storage)
+  const sskDh = bobSpk.privateKey;
+  const pqssk = bobPqopks.length > 0 && message.pqpkId === bobPqopks[0].id
+    ? bobPqopks[0].privateKey
+    : bobPqspk.privateKey;
+  const opkSk = message.opkId && bobOpks.find(opk => sodium.memcmp(opk.id, message.opkId))?.privateKey;
+
+  // Decapsulate PQKEM
+  const ss = ml_kem768.decapsulate(pqssk, message.ct);
+
+  // Compute DH values
+  const dh1 = sodium.crypto_scalarmult(sskDh, message.ikA);
+  const dh2 = sodium.crypto_scalarmult(bobKeys.ikDh.privateKey, message.ekA);
+  const dh3 = sodium.crypto_scalarmult(sskDh, message.ekA);
+  const km = message.opkId && opkSk
+    ? concatenate(dh1, dh2, dh3, sodium.crypto_scalarmult(opkSk, message.ekA), ss)
+    : concatenate(dh1, dh2, dh3, ss);
+
+  const sk = kdf(km);
+
+  // Construct AD (assuming pqpk is the one used)
+  const ad = concatenate(encodeEC(message.ikA), encodeEC(bobKeys.ikDh.publicKey), encodeKEM(bobPqspk.publicKey));
+
+  // Decrypt
+  const plaintext = sodium.crypto_aead_xchacha20poly1305_ietf_decrypt(null, message.ciphertext, ad, message.nonce, sk);
+
+  // Clean up one-time prekeys (simplified here)
+  if (message.opkId) bobOpks.shift();
+  if (message.pqpkId !== bobPqspk.id) bobPqopks.shift();
+
+  return plaintext;
+}
+
+// Example usage
+(async () => {
+  const message = new TextEncoder().encode('Hello, Bob!');
+  const initialMessage = await aliceSendInitialMessage(message);
+  const receivedPlaintext = await bobReceiveInitialMessage(initialMessage);
+  console.log(new TextDecoder().decode(receivedPlaintext)); // "Hello, Bob!"
+})();

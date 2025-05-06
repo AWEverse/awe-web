@@ -46,6 +46,7 @@
     "@emotion/styled": "^11.14.0",
     "@mui/icons-material": "^7.0.2",
     "@mui/material": "^7.0.2",
+    "@noble/hashes": "^1.8.0",
     "@noble/post-quantum": "^0.4.1",
     "dompurify": "^3.2.5",
     "emoji-picker-react": "^4.12.2",

@@ -25,8 +25,6 @@ interface TopicItemProps extends WithDecorators {
   publisherName?: string;
 }
 
-document.
-
 const TopicItem: FC<TopicItemProps> = memo(
   ({
     name,
