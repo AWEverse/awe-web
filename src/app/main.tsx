@@ -18,7 +18,6 @@ import { DEBUG } from "@/lib/config/dev";
     await initAppServices();
 
     initApplicationRequirements();
-    initViewOptimizer();
 
     initAppRoot();
   } catch (error) {

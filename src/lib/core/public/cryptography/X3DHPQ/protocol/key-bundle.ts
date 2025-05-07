@@ -2,8 +2,9 @@ import { MLKEM } from "../crypto/ml-kem";
 import { KeyBundle } from "../types";
 import { X3DHError } from "./errors";
 import { MLKEM_VERSION } from "../config";
-import { Ed25519 } from "../../curves/ed25519";
-import { X25519 } from "../../curves/x25519";
+import { Ed25519 } from "../../public/Curves/ed25519";
+import { X25519 } from "../../public/Curves/x25519";
+
 
 /** Generates a hybrid key bundle for use in X3DH+PQ protocol */
 export async function generateKeyBundle(): Promise<KeyBundle> {

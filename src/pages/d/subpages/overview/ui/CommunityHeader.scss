@@ -4,9 +4,21 @@
   position: relative;
   backdrop-filter: blur(10rem);
   overflow: hidden;
-  z-index: 10;
   border-radius: 10px;
-  background-color: rgba(var(--awe-palette-secondary-mainChannel) / 0.275);
+  background-color: transparent;
+  border: 2px solid rgba(var(--awe-palette-secondary-mainChannel) / 0.275);
+
+  &__background {
+    z-index: -1;
+    position: absolute;
+    height: 100%;
+    width: 100%;
+    inset: 0;
+    aspect-ratio: 16 / 9;
+    object-fit: cover;
+    object-position: center;
+    background-color: rgba(var(--awe-palette-secondary-mainChannel) / 0.275);
+  }
 
   // &::after {
   //   content: "";

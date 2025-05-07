@@ -1,7 +1,12 @@
 .accordion-swift-group {
-  --padding-x: 16px;
-  --padding-y: 12px;
+  --padding-x: 12px;
+  --padding-y: 6px;
+
+  --bg: rgba(var(--awe-palette-secondary-mainChannel) / 0.275);
+  --fg: var(--awe-palette-text-primary, #fff);
+  --fg-secondary: var(--awe-palette-text-secondary, rgba(255,255,255,0.7));
+  --border: var(--awe-palette-divider, rgba(255,255,255,0.12));
+  --accent: var(--awe-palette-primary-main, #4991e5);
 
   position: relative;
-
 }

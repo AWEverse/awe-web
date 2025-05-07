@@ -1,0 +1,32 @@
+.communityLayout {
+  display: grid;
+  grid-template-columns: minmax(0, 800px) 400px;
+  gap: 2rem;
+  margin: 0 auto;
+
+  > .communityContent {
+    grid-column: 1;
+  }
+
+  > .communitySidebar {
+    grid-column: 2;
+  }
+
+  @media (max-width: 1024px) {
+    grid-template-columns: 1fr;
+    > .communityContent {
+      grid-column: 1;
+    }
+    > .communitySidebar {
+      display: none;
+    }
+  }
+
+  @media (max-width: 640px) {
+    display: block;
+    > .communityContent,
+    > .communitySidebar {
+      width: 100%;
+    }
+  }
+}

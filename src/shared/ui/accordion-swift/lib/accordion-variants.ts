@@ -79,27 +79,36 @@ export const itemVariants = {
  * Optimized variants for accordion content
  * Uses layout animations for smoother height transitions
  */
-export const contentVariants = {
-  visible: {
-    opacity: 1,
-    height: "auto",
-    transitionEnd: { overflow: "visible" },
-    transition: {
-      height: { ...defaultTransition },
-      opacity: { duration: TRANSITION_DURATION * 0.75, ease: "linear" }
-    }
-  },
-  hidden: {
-    opacity: 0,
-    height: 0,
-    overflow: "hidden",
-    transition: {
-      height: { ...defaultTransition },
-      opacity: { duration: TRANSITION_DURATION * 0.5, ease: "linear" }
-    }
+export const contentVariants = (
+  contentHeight: number,
+  shouldReduceMotion?: boolean
+) => {
+  if (shouldReduceMotion) {
+    return {
+      visible: { opacity: 1, height: "auto" },
+      hidden: { opacity: 0, height: 0 }
+    };
   }
-};
 
+  return {
+    visible: {
+      opacity: 1,
+      height: contentHeight,
+      transition: {
+        height: defaultTransition,
+        opacity: { duration: TRANSITION_DURATION * 0.75, ease: "linear" }
+      }
+    },
+    hidden: {
+      opacity: 0,
+      height: 0,
+      transition: {
+        height: defaultTransition,
+        opacity: { duration: TRANSITION_DURATION * 0.5, ease: "linear" }
+      }
+    }
+  };
+};
 /**
  * Helper to create motion item props
  * Centralizes common props for motion items

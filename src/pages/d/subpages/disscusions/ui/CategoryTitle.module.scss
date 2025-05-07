@@ -1,21 +1,54 @@
-.CategoryTitle {
+.CategoryTitleWrapper {
   margin-block-start: 1rem;
-  padding-inline: var(--section-padding);
+  overflow: hidden;
+}
 
-  .title > h1 {
-    font-size: var(--font-size-title);
-    font-weight: 700;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
+.CategoryTitle {
+  --post-count-color: var(--awe-palette-text-secondary, #666);
+  --icon-size: 1.25rem;
+  --title-gap: 0.75rem;
+
+  min-height: 58px;
+  width: 100%;
+  padding-inline: var(--section-padding);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--title-gap);
+  cursor: pointer; // Only if interactive by default
+
+  &:hover {
+    // Optional: Add hover effect if interactive
+    background: rgba(0, 0, 0, 0.03);
   }
 
-  .title > p {
+  .TitleSplitter {
+    display: flex;
+    align-items: center;
+    // margin-left: auto; // Removed as redundant with space-between
+  }
+}
+
+.title {
+  & > h1 {
+    display: flex;
+    align-items: center;
+    gap: 0.375rem; // Slightly increased gap
+    font-size: var(--font-size-title);
+    font-weight: 700;
+    line-height: 1.2; // Better text alignment
+  }
+
+  & > p {
     font-size: var(--font-size-body);
     font-weight: 400;
+    margin-top: 0.25em; // Relative spacing
   }
 }
 
 .postCount {
-  font-size: 1rem;
+  font-size: 0.85em; // Relative to parent
+  font-weight: 400;
+  color: var(--post-count-color);
+  letter-spacing: -0.02em; // Improve readability
 }

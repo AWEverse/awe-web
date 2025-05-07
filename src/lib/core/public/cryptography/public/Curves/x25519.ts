@@ -1,6 +1,4 @@
-import sodium from 'libsodium-wrappers';
-import { CryptoKeyPair, PrivateKey, PublicKey } from '../types';
-import { secureErase } from '../secure';
+import { crypto_kx_keypair, crypto_scalarmult, memzero } from 'libsodium-wrappers';
 
 /**
  * High-assurance X25519 cryptographic operations using libsodium
@@ -13,15 +11,14 @@ export class X25519 {
   /**
    * Generates a new X25519 key pair.
    *
-   * @returns {Promise<CryptoKeyPair>} - A secure random CryptoKeyPair { privateKey, publicKey }
    */
-  static generateKeyPair(): CryptoKeyPair {
+  static generateKeyPair() {
 
-    const keypair = sodium.crypto_kx_keypair(); // 32-byte keys
+    const keypair = crypto_kx_keypair(); // 32-byte keys
 
     return {
-      privateKey: new Uint8Array(keypair.privateKey) as PrivateKey,
-      publicKey: new Uint8Array(keypair.publicKey) as PublicKey,
+      privateKey: new Uint8Array(keypair.privateKey),
+      publicKey: new Uint8Array(keypair.publicKey),
     };
   }
 
@@ -35,15 +32,15 @@ export class X25519 {
    * @param publicKey {PublicKey} - Recipient's public key (32 bytes).
    * @returns {Promise<Uint8Array>} A promise resolving to the shared secret (32 bytes).
    */
-  static computeSharedSecret(privateKey: PrivateKey, publicKey: PublicKey): Uint8Array {
+  static computeSharedSecret(privateKey: Uint8Array, publicKey: Uint8Array): Uint8Array {
     const priv = new Uint8Array(privateKey); // defensive copy
     const pub = new Uint8Array(publicKey);
 
     try {
-      const shared = sodium.crypto_scalarmult(priv, pub); // X25519 DH
+      const shared = crypto_scalarmult(priv, pub); // X25519 DH
       return new Uint8Array(shared); // caller responsible for zeroizing output
     } finally {
-      secureErase(priv); // ensure cleanup even if exception thrown
+      memzero(priv); // ensure cleanup even if exception thrown
     }
   }
 }

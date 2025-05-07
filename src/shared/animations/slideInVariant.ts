@@ -23,17 +23,17 @@ export default function slideInVariant({
   distance = "100%",
   reducedMotion = false,
 
-  enterDuration = 0.25,
-  exitDuration = 0.25,
+  enterDuration = 0.125, // Shorter enter duration
+  exitDuration = 0.125, // Shorter exit duration
   delay = 0,
-  type = "spring",
-  ease = "easeOut",
-  stiffness = 300,
-  damping = 30,
-  mass = 0.8,
+  type = "tween" as TransitionType, // Default to tween for performance
+  ease = "linear", // Simple linear easing
+  stiffness = 500, // Tighter spring
+  damping = 50, // Higher damping
+  mass = 0.5, // Lower mass
 }: SlideInOptions = {}): Variants {
   const parseDistance = (val: number | string) =>
-    typeof val === "number" ? `${val}${typeof val === "number" ? "%" : ""}` : val;
+    typeof val === "number" ? `${val}%` : val;
 
   const offsetMap: Record<SlideDirection, { x: string | 0; y: string | 0 }> = {
     left: { x: `-${parseDistance(distance)}`, y: 0 },
@@ -47,8 +47,20 @@ export default function slideInVariant({
   if (reducedMotion) {
     return {
       hidden: { opacity: 0 },
-      visible: { opacity: 1, transition: { duration: 0.125 } },
-      exit: { opacity: 0, transition: { duration: 0.125 } },
+      visible: {
+        opacity: 1,
+        transition: {
+          duration: 0.1, // Faster reduced motion transition
+          ease: "linear",
+        },
+      },
+      exit: {
+        opacity: 0,
+        transition: {
+          duration: 0.1, // Faster reduced motion transition
+          ease: "linear",
+        },
+      },
     };
   }
 
@@ -86,7 +98,31 @@ export default function slideInVariant({
   };
 }
 
-export const SLIDE_LEFT = slideInVariant({ direction: "left", distance: "100%" });
-export const SLIDE_RIGHT = slideInVariant({ direction: "right", distance: "100%" });
-export const SLIDE_TOP = slideInVariant({ direction: "top", distance: "100%" });
-export const SLIDE_BOTTOM = slideInVariant({ direction: "bottom", distance: "100%" });
+// Optimized presets using tween by default
+export const SLIDE_LEFT = slideInVariant({
+  direction: "left",
+  type: "tween",
+  enterDuration: 0.125,
+  exitDuration: 0.125,
+});
+
+export const SLIDE_RIGHT = slideInVariant({
+  direction: "right",
+  type: "tween",
+  enterDuration: 0.125,
+  exitDuration: 0.125,
+});
+
+export const SLIDE_TOP = slideInVariant({
+  direction: "top",
+  type: "tween",
+  enterDuration: 0.125,
+  exitDuration: 0.125,
+});
+
+export const SLIDE_BOTTOM = slideInVariant({
+  direction: "bottom",
+  type: "tween",
+  enterDuration: 0.125,
+  exitDuration: 0.125,
+});
