@@ -58,7 +58,7 @@ export function cleanupState(state: State): void {
 
   // Wipe all skipped message keys
   for (const mk of state.MKSKIPPED.values()) {
-    Crypto.wipeMemory(mk);
+    Crypto.wipeMemory(mk.key);
   }
 
   state.MKSKIPPED.clear();

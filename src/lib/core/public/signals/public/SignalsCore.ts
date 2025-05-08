@@ -1304,9 +1304,7 @@ export function reactiveObject<T extends Record<string, unknown>>(
     if (!Object.prototype.hasOwnProperty.call(obj, key)) continue;
 
     const currentPath = [...path, key];
-    const value = obj[key];
-
-    const createSignal = <V>(val: V): Signal<V> => {
+    const value = obj[key]; const createSignal = <V>(val: V): Signal<V> => {
       const sig = signal(val);
       if (callback && matcher(currentPath)) {
         effect(() => callback(currentPath, sig.peek()));
@@ -1315,19 +1313,20 @@ export function reactiveObject<T extends Record<string, unknown>>(
     };
 
     if (Array.isArray(value)) {
-      reactive[key] = makeReactiveArray(
+      const reactiveArray = makeReactiveArray(
         value,
         callback,
         currentPath,
         matcher,
-      ) as Signalify<T>[typeof key];
+      );
+      reactive[key] = signal(reactiveArray.value) as Signalify<T>[typeof key];
     } else if (isPlainObject(value)) {
       const nested = reactiveObject(value as Record<string, unknown>, {
         callback,
         path: currentPath,
         trackPatterns,
       });
-      reactive[key] = createSignal(nested) as Signalify<T>[typeof key];
+      reactive[key] = signal(nested) as Signalify<T>[typeof key];
     } else {
       reactive[key] = createSignal(value) as Signalify<T>[typeof key];
     }
@@ -1372,14 +1371,6 @@ function makeReactiveArray<T>(
   const reactiveItems = arr.map((item, index) => {
     const itemPath = [...path, index];
 
-    const createSignal = <V>(val: V): Signal<V> => {
-      const sig = signal(val);
-      if (callback && matcher(itemPath)) {
-        effect(() => callback(itemPath, sig.peek()));
-      }
-      return sig;
-    };
-
     if (isPlainObject(item)) {
       return reactiveObject(item as Record<string, unknown>, {
         callback,
@@ -1388,9 +1379,14 @@ function makeReactiveArray<T>(
       }) as T;
     }
     if (Array.isArray(item)) {
-      return makeReactiveArray(item, callback, itemPath, matcher) as T;
+      const nestedArray = makeReactiveArray(item, callback, itemPath, matcher);
+      return nestedArray.value as T;
     }
-    return createSignal(item).value as T; // Unwrap signal for primitive values
+    const sig = signal(item);
+    if (callback && matcher(itemPath)) {
+      effect(() => callback(itemPath, sig.peek()));
+    }
+    return sig.value as T;
   });
 
   const arraySignal = signal(reactiveItems as T[]);
@@ -1468,49 +1464,58 @@ declare global {
  * Use in development only
  */
 export function monitorSignals(enable: boolean): void {
+  const globalThis = window as SharedWidnow;
+
   if (!enable) {
     // Restore original methods if stored
-    if (window.__originalSignalSet) {
+    if (globalThis.__originalSignalSet) {
+      const descriptor = Object.getOwnPropertyDescriptor(Signal.prototype, "value")!;
+      const originalSet = globalThis.__originalSignalSet;
       Object.defineProperty(Signal.prototype, "value", {
-        set: window.__originalSignalSet,
-        get: Object.getOwnPropertyDescriptor(Signal.prototype, "value")!.get,
-        configurable: true,
+        ...descriptor,
+        set: originalSet,
+        configurable: true
       });
-      delete window.__originalSignalSet;
+      delete globalThis.__originalSignalSet;
     }
-    if (window.__originalComputedRefresh) {
-      Computed.prototype._refresh = window.__originalComputedRefresh;
-      delete window.__originalComputedRefresh;
+
+    if (globalThis.__originalComputedRefresh) {
+      const originalRefresh = globalThis.__originalComputedRefresh as () => boolean;
+      Computed.prototype._refresh = originalRefresh;
+      delete globalThis.__originalComputedRefresh;
     }
     return;
   }
 
   // Store original methods only if not already stored
-  if (!window.__originalSignalSet) {
-    window.__originalSignalSet = Object.getOwnPropertyDescriptor(
-      Signal.prototype,
-      "value",
-    )!.set!;
-  }
-  if (!window.__originalComputedRefresh) {
-    window.__originalComputedRefresh = Computed.prototype._refresh;
+  if (!globalThis.__originalSignalSet) {
+    const descriptor = Object.getOwnPropertyDescriptor(Signal.prototype, "value")!;
+    const originalSet = descriptor.set!;
+    globalThis.__originalSignalSet = originalSet;
+
+    // Create new setter that logs updates
+    Object.defineProperty(Signal.prototype, "value", {
+      ...descriptor,
+      set: function (this: Signal, value: any) {
+        const signalName = signalRegistry.get(this) || "anonymous";
+        console.log(`Signal "${signalName}" updated:`, value);
+        originalSet.call(this, value);
+      },
+      configurable: true
+    });
   }
 
-  // Override signal setter to track updates
-  Object.defineProperty(Signal.prototype, "value", {
-    set(value) {
-      console.log(`Signal updated: ${String(value)}`);
-      (window as SharedWidnow).__originalSignalSet?.call(this, value);
-    },
-    get: Object.getOwnPropertyDescriptor(Signal.prototype, "value")!.get,
-    configurable: true,
-  });
+  if (!globalThis.__originalComputedRefresh) {
+    const originalRefresh = Computed.prototype._refresh;
+    globalThis.__originalComputedRefresh = originalRefresh;
 
-  // Override computed refresh to track recomputation
-  Computed.prototype._refresh = function () {
-    console.log("Computed refreshing");
-    return (window as SharedWidnow).__originalComputedRefresh?.call(this);
-  };
+    // Wrap refresh method to log recomputation
+    Computed.prototype._refresh = function (this: Computed): boolean {
+      const signalName = signalRegistry.get(this) || "anonymous";
+      console.log(`Computed "${signalName}" refreshing`);
+      return originalRefresh.call(this);
+    };
+  }
 }
 
 export {
