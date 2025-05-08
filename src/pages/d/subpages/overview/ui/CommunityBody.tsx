@@ -20,14 +20,6 @@ const CommunityBody: FC<OwnProps & StateProps> = () => {
           <AccordionSwiftItem index={0} title={"Forum highlights"}>
             asflsaflasllsaf
           </AccordionSwiftItem>
-
-          <AccordionSwiftItem index={1} title={"Forum highlights"}>
-            asflsaflasllsafdsadasdsa d as d asd as d asd as dsa
-            asflsaflasllsafdsadasdsa d as d asd as d asd as dsa Lorem ipsum
-            dolor, sit amet consectetur adipisicing elit. Nisi esse excepturi
-            quo, magnam est quod dolorum magni tenetur culpa laborum itaque nemo
-            molestiae architecto nihil eum possimus voluptas dicta neque!
-          </AccordionSwiftItem>
         </AccordionSwiftGroup>
         <h2>Main Content</h2>
         <p>This area stays centered and resizes nicely.</p>

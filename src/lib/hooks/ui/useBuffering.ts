@@ -1,23 +1,26 @@
 import { RefObject, useEffect, useState } from "react";
 import { useStableCallback } from "@/shared/hooks/base";
-import { isSafariPatchInProgress } from "../../utils/patchSafariProgressiveAudio";
 import { areDeepEqual } from "../../utils/areDeepEqual";
-import { useDebouncedFunction } from "@/shared/hooks/shedulers";
 import { isMediaReadyToPlay } from "@/lib/core";
+import { useDebouncedFunction } from "@/shared/hooks/shedulers";
 
-// Avoid flickering when re-mounting previously buffered video
 const DEBOUNCE = 200;
-const MIN_ALLOWED_MEDIA_DURATION = 0.1; // Some video emojis have weird duration of 0.04 causing extreme amount of events
+const MIN_ALLOWED_MEDIA_DURATION = 0.1;
 
-/**
- * Time range relative to the duration [0, 1]
- */
+export type BufferedRange = { start: number; end: number };
+export type BufferingEvent = (e: Event | React.SyntheticEvent<HTMLMediaElement>) => void;
+
+interface UseBufferingOptions {
+  mediaRef: RefObject<HTMLMediaElement | null>;
+  noInitiallyBuffered?: boolean;
+  onTimeUpdate?: (e?: Event | React.SyntheticEvent<HTMLMediaElement>) => void;
+  onBroken?: (errMessage?: string) => void;
+
+}
 
 export type HTMLMediaBufferedEvent =
   | Event
   | React.SyntheticEvent<HTMLMediaElement>;
-export type BufferedRange = { start: number; end: number };
-export type BufferingEvent = (e: HTMLMediaBufferedEvent) => void;
 
 export type BufferedCallback = {
   isReady: boolean;
@@ -34,49 +37,13 @@ export type BufferingPair<T = BufferingEvent> = {
 
 export type ObserveBufferingFn = (target: HTMLMediaBufferedEvent) => void;
 
-interface UseBufferingOptions {
-  mediaRef: RefObject<HTMLMediaElement | null>;
-}
 
-export function useBufferingObserver({ mediaRef }: UseBufferingOptions) {
-  const observer = useStableCallback((e: HTMLMediaBufferedEvent) => {
-    return e.target as HTMLMediaElement;
-  });
-
-  useEffect(() => {
-    const mediaElement = mediaRef.current;
-
-    if (mediaElement) {
-      const events = [
-        "play",
-        "loadeddata",
-        "playing",
-        "loadstart", // Needed for Safari to start
-        "pause", // Needed for Chrome when seeking
-        "timeupdate", // Needed for audio buffering progress
-        "progress", // Needed for buffering
-      ];
-
-      events.forEach((event) => mediaElement.addEventListener(event, observer));
-
-      return () => {
-        events.forEach((event) =>
-          mediaElement.removeEventListener(event, observer),
-        );
-      };
-    }
-  }, [mediaRef, observer]);
-
-  return {
-    observer,
-  };
-}
-
-const useBuffering = (
+export default function useBuffering({
+  mediaRef,
   noInitiallyBuffered = false,
-  onTimeUpdate?: AnyToVoidFunction,
-  onBroken?: (errMessage?: string) => void,
-) => {
+  onTimeUpdate,
+  onBroken,
+}: UseBufferingOptions) {
   const [isReady, setIsReady] = useState(false);
   const [isBuffered, _setIsBuffered] = useState(!noInitiallyBuffered);
   const [bufferedProgress, setBufferedProgress] = useState(0);
@@ -86,79 +53,93 @@ const useBuffering = (
     _setIsBuffered,
     DEBOUNCE,
     false,
-    true,
-    [],
+    true
   );
 
-  const handleBuffering = useStableCallback<BufferingEvent>((e) => {
+  const handleBuffering = useStableCallback((e: any) => {
     const media = e.currentTarget as HTMLMediaElement;
-    const isMediaReady = isMediaReadyToPlay(media);
+    if (!media) return;
 
     if (media.duration < MIN_ALLOWED_MEDIA_DURATION) {
-      onBroken?.("Video duration is too short duration!");
+      onBroken?.("Media duration is too short");
       return;
     }
 
-    if (e.type === "timeupdate") {
-      onTimeUpdate?.(e);
+    if (e.type === "timeupdate") onTimeUpdate?.(e);
+
+    // Skip updates during seeking
+    if (media.seeking) return;
+
+    // Handle buffered ranges and progress
+    if (media.buffered.length > 0) {
+      const ranges = getTimeRanges(media.buffered, media.duration);
+
+      const newProgress = isFinite(media.duration)
+        ? calculateBufferedProgress(ranges, media.duration)
+        : 1; // Assume full progress for live streams
+
+      setBufferedProgress(newProgress);
+      updateBufferedRanges(ranges);
     }
 
-    // Only safari: Safari has a bug where it doesn't update buffered ranges when seeking
-    if (!isSafariPatchInProgress(media)) {
-      if (media.buffered.length) {
-        const ranges = getTimeRanges(media.buffered, media.duration);
-
-        const bufferedLength = ranges.sum((range) => range.end - range.start);
-
-        setBufferedProgress(bufferedLength / media.duration);
-
-        setBufferedRanges((currentRanges) => {
-          if (areDeepEqual(currentRanges, ranges)) {
-            return currentRanges;
-          }
-
-          return ranges;
-        });
-      }
-
-      setIsBuffered(media.currentTime > 0 || isMediaReady);
-      setIsReady((current) => current || isMediaReady);
-    }
+    const mediaReady = isMediaReadyToPlay(media);
+    setIsBuffered(media.currentTime > 0 || mediaReady);
+    setIsReady(prev => prev || mediaReady);
   });
 
-  const bufferingHandlers = {
-    onPlay: handleBuffering,
-    onLoadedData: handleBuffering,
-    onPlaying: handleBuffering,
-    onLoadStart: handleBuffering, // Needed for Safari to start
-    onPause: handleBuffering, // Needed for Chrome when seeking
-    onTimeUpdate: handleBuffering, // Needed for audio buffering progress
-    onProgress: handleBuffering, // Needed for video buffering progress
+  const updateBufferedRanges = (ranges: BufferedRange[]) => {
+    setBufferedRanges(prev => areDeepEqual(prev, ranges) ? prev : ranges);
   };
+
+  // Initial state check
+  useEffect(() => {
+    const media = mediaRef.current;
+    if (media) {
+      setIsBuffered(isMediaReadyToPlay(media));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mediaRef]);
 
   return {
     isReady,
     isBuffered,
     bufferedProgress,
     bufferedRanges,
-    bufferingHandlers,
-    checkBuffering(element: HTMLMediaElement) {
-      setIsBuffered(isMediaReadyToPlay(element));
+    bufferingHandlers: {
+      onPlay: handleBuffering,
+      onLoadedData: handleBuffering,
+      onPlaying: handleBuffering,
+      onLoadStart: handleBuffering,
+      onPause: handleBuffering,
+      onTimeUpdate: handleBuffering,
+      onProgress: handleBuffering,
+      onWaiting: handleBuffering,
+      onStalled: handleBuffering,
+      onCanPlay: handleBuffering,
+      onSeeked: handleBuffering,
+    },
+    checkBuffering: (media: HTMLMediaElement) => {
+      setIsBuffered(isMediaReadyToPlay(media));
     },
   };
-};
+}
 
-export function getTimeRanges(ranges: TimeRanges, duration: number) {
+// Helper functions
+function getTimeRanges(ranges: TimeRanges, duration: number): BufferedRange[] {
   const result: BufferedRange[] = [];
-
   for (let i = 0; i < ranges.length; i++) {
     result.push({
-      start: ranges.start(i) / duration,
-      end: ranges.end(i) / duration,
+      start: ranges.start(i) / (isFinite(duration) ? duration : 1),
+      end: ranges.end(i) / (isFinite(duration) ? duration : 1),
     });
   }
-
   return result;
 }
 
-export default useBuffering;
+function calculateBufferedProgress(ranges: BufferedRange[], duration: number): number {
+  const bufferedLength = ranges.reduce(
+    (acc, range) => acc + (range.end - range.start),
+    0
+  );
+  return bufferedLength / duration;
+}

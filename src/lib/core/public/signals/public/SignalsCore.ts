@@ -1,36 +1,108 @@
-import { MAX_INT32 } from "../../math";
 import { PathSegment, createPathMatcher } from "../private/PathMatcher";
 import { PathSyntaxError } from "../private/PathSyntaxError";
 
+/**
+ * Symbol used to identify signals across the system.
+ * Using Symbol.for ensures consistency across modules.
+ */
 const SIGNAL_SYMBOL = Symbol.for("signals");
 
+/**
+ * Pool of reusable SignalNode instances to reduce garbage collection pressure.
+ * Nodes are recycled when no longer needed instead of being created anew.
+ */
 const NODE_POOL: SignalNode[] = [];
 const MAX_POOL_SIZE = 1000;
 
-// Config constants
+// Config constants with documentation
+/**
+ * Maximum number of batch iterations allowed before assuming an infinite loop.
+ * This prevents the system from freezing when signals form circular update patterns.
+ */
 const MAX_BATCH_ITERATIONS = 1000;
+
+/**
+ * Maximum recursion depth for signal evaluation to prevent stack overflow errors.
+ * If signal evaluations nest deeper than this limit, an error is thrown.
+ */
 const MAX_RECURSION_DEPTH = 100;
 
+/**
+ * Increments version number safely, handling overflow by cycling back to 1.
+ * Uses 1 instead of 0 because 0 is a special value (CURRENT_VERSION).
+ *
+ * @param version - Current version number
+ * @returns Incremented version number
+ */
 function incrementVersion(version: number): number {
-  return version === MAX_INT32 ? 1 : -~version;
+  return version >= Number.MAX_SAFE_INTEGER - 1 ? 1 : version + 1;
 }
 
-// Flags for Computed and Effect.
+/**
+ * Signal identity tracking registry that maps signals to their debug names.
+ * Uses WeakMap to avoid memory leaks - signals can be garbage collected.
+ */
+const signalRegistry = new WeakMap<Signal, string>();
+
+/**
+ * Signal path tracking for debugging and error reporting.
+ * Maps signals to their dependency paths.
+ */
+const signalPaths = new WeakMap<Signal | Computed | Effect, string[]>();
+
+// Flags for Computed and Effect with clear documentation.
+/**
+ * RUNNING: Signal is currently being evaluated
+ */
 const RUNNING = 1 << 0; // 1
+
+/**
+ * NOTIFIED: Signal is scheduled for update in the current batch
+ */
 const NOTIFIED = 1 << 1; // 2
+
+/**
+ * OUTDATED: Signal's value needs to be recomputed
+ */
 const OUTDATED = 1 << 2; // 4
+
+/**
+ * DISPOSED: Signal has been disposed and should not be used
+ */
 const DISPOSED = 1 << 3; // 8
+
+/**
+ * HAS_ERROR: Signal evaluation resulted in an error
+ */
 const HAS_ERROR = 1 << 4; // 16
+
+/**
+ * TRACKING: Signal is tracking its dependencies
+ */
 const TRACKING = 1 << 5; // 32
 
+/**
+ * DEBUG_MODE: Signal has enhanced debugging enabled
+ */
+const DEBUG_MODE = 1 << 6; // 64
+
+/**
+ * Special version values used in the system.
+ */
 enum EVersion {
-  NotUsed = -1, // SignalNode is not reused
+  NotUsed = -1, // SignalNode is not reused (marks potentially unused but reusable nodes)
   Current = 0, // Current active version
 }
 
 /**
+ * Type alias for any function
+ */
+type AnyFunction = (...args: any[]) => any;
+
+/**
  * SignalNode in a linked list, used to track dependencies (sources) and dependents (targets).
- * Also used to remember the last version number of the source that the target saw.
+ * Each node represents a connection between a source signal and a target (computed or effect).
+ * The linked lists allow efficient traversal of dependencies and dependents.
  */
 type SignalNode = {
   // Source signal that the target depends on
@@ -55,7 +127,8 @@ type SignalNode = {
 };
 
 /**
- * Get a node from the pool or create a new one
+ * Get a node from the pool or create a new one.
+ * This reduces garbage collection pressure by reusing nodes.
  */
 function getSignalNode(): SignalNode {
   if (NODE_POOL.length > 0) {
@@ -75,7 +148,10 @@ function getSignalNode(): SignalNode {
 }
 
 /**
- * Return a node to the pool for reuse
+ * Return a node to the pool for reuse.
+ * Clears all references to avoid memory leaks.
+ *
+ * @param node - The SignalNode to recycle
  */
 function recycleSignalNode(node: SignalNode): void {
   // Clear references to help GC
@@ -105,17 +181,31 @@ let globalVersion = 0;
 // Current evaluation context (computed or effect being evaluated)
 let evalContext: Computed | Effect | undefined = undefined;
 
+/**
+ * Starts a new batch operation.
+ * Batching coalesces multiple signal updates into a single notification cycle.
+ */
 function startBatch() {
   batchDepth++;
 }
 
+/**
+ * Ends the current batch operation and processes all pending effects.
+ * This is where the actual work of updating computed values and running effects happens.
+ * @throws Error if maximum batch iterations are exceeded or if effect callbacks throw
+ */
 function endBatch() {
   if (batchDepth > 1) {
     batchDepth--;
     return;
   }
 
-  const errors: Array<{ effect: Effect; error: unknown; stack?: string }> = [];
+  const errors: Array<{
+    effect: Effect;
+    error: unknown;
+    stack?: string;
+    path?: string[];
+  }> = [];
 
   try {
     while (batchedEffect !== undefined) {
@@ -127,7 +217,7 @@ function endBatch() {
       // Safety check to prevent infinite loops
       if (batchIteration > MAX_BATCH_ITERATIONS) {
         throw new Error(
-          `Maximum batch iteration limit reached (${MAX_BATCH_ITERATIONS}). Possible infinite loop detected.`,
+          `Maximum batch iteration limit reached (${MAX_BATCH_ITERATIONS}). Possible infinite loop detected in effect chain.`,
         );
       }
 
@@ -142,10 +232,13 @@ function endBatch() {
             recursionDepth = 0; // Reset recursion depth for each effect
             effect._callback();
           } catch (err) {
+            // Enhanced error reporting with effect path info
+            const path = signalPaths.get(effect);
             errors.push({
               effect,
               error: err,
               stack: err instanceof Error ? err.stack : undefined,
+              path,
             });
           }
         }
@@ -159,12 +252,23 @@ function endBatch() {
     recursionDepth = 0;
   }
 
-  // Handle errors after processing all effects
+  // Enhanced error handling with path information
   if (errors.length === 1) {
-    throw errors[0].error;
+    const { error, path } = errors[0];
+    if (error instanceof Error && path) {
+      error.message = `Error in effect${path ? ` [${path.join(" → ")}]` : ""}: ${error.message}`;
+    }
+    throw error;
   } else if (errors.length > 0) {
+    const enhancedErrors = errors.map(({ error, path }) => {
+      if (error instanceof Error && path) {
+        error.message = `Error in effect${path ? ` [${path.join(" → ")}]` : ""}: ${error.message}`;
+      }
+      return error;
+    });
+
     throw new AggregateError(
-      errors.map((e) => e.error),
+      enhancedErrors,
       `${errors.length} errors occurred during batch processing`,
     );
   }
@@ -174,10 +278,9 @@ function endBatch() {
  * Batch multiple signal value updates into a single "commit" at the end of the provided callback.
  *
  * Batches can be nested, and changes are flushed only after the outermost batch's callback completes.
- *
  * Accessing a signal that was changed in a batch will reflect its updated value.
  *
- * @param fn The callback function.
+ * @param fn - The callback function.
  * @returns The value returned by the callback.
  */
 function batch<T>(fn: () => T): T {
@@ -195,8 +298,9 @@ function batch<T>(fn: () => T): T {
 
 /**
  * Run a callback function that can access signal values without subscribing to signal updates.
+ * This is useful when you want to read a signal's value without creating a dependency.
  *
- * @param fn The callback function.
+ * @param fn - The callback function.
  * @returns The value returned by the callback.
  */
 function untracked<T>(fn: () => T): T {
@@ -212,12 +316,22 @@ function untracked<T>(fn: () => T): T {
 
 /**
  * Checks whether we've exceeded the maximum recursion depth
- * to prevent stack overflows
+ * to prevent stack overflows.
+ * @throws Error if maximum recursion depth is exceeded
  */
 function checkRecursionDepth(): void {
   if (++recursionDepth > MAX_RECURSION_DEPTH) {
+    // Enhanced error message with context path
+    let contextPath = "";
+    if (evalContext) {
+      const path = signalPaths.get(evalContext);
+      if (path) {
+        contextPath = ` in ${path.join(" → ")}`;
+      }
+    }
+
     throw new Error(
-      `Maximum recursion depth exceeded (${MAX_RECURSION_DEPTH}). Possible infinite recursion detected.`,
+      `Maximum recursion depth exceeded (${MAX_RECURSION_DEPTH})${contextPath}. Possible infinite recursion detected.`,
     );
   }
 }
@@ -225,6 +339,9 @@ function checkRecursionDepth(): void {
 /**
  * Adds a dependency between the current evaluation context and the provided signal.
  * Returns the dependency node or undefined if there's no current context.
+ *
+ * @param signal - The signal to add as a dependency
+ * @returns The SignalNode representing the dependency or undefined
  */
 function addDependency(signal: Signal): SignalNode | undefined {
   if (evalContext === undefined) {
@@ -261,6 +378,14 @@ function addDependency(signal: Signal): SignalNode | undefined {
       signal._subscribe(node);
     }
 
+    if (DEBUG_MODE) {
+      const sourceName = signalRegistry.get(signal) || "anonymous";
+      const targetPath = signalPaths.get(evalContext) || [];
+      if (!targetPath.includes(sourceName)) {
+        signalPaths.set(evalContext, [...targetPath, sourceName]);
+      }
+    }
+
     return node;
   } else if (node._version === EVersion.NotUsed) {
     // This is an existing dependency from a previous evaluation. Reuse it.
@@ -294,6 +419,9 @@ function addDependency(signal: Signal): SignalNode | undefined {
 /**
  * Determines if a computed or effect needs to recompute by checking if any of its
  * dependencies have changed.
+ *
+ * @param target - The computed or effect to check
+ * @returns true if the target needs to recompute, false otherwise
  */
 function needsToRecompute(target: Computed | Effect): boolean {
   // Check dependencies for changed values
@@ -321,6 +449,8 @@ function needsToRecompute(target: Computed | Effect): boolean {
 /**
  * Prepares the sources of a computed or effect before evaluation.
  * Marks current nodes as reusable and sets up rollbacks.
+ *
+ * @param target - The computed or effect being prepared
  */
 function prepareSources(target: Computed | Effect) {
   let currentSignalNode = target._sources;
@@ -356,6 +486,8 @@ function prepareSources(target: Computed | Effect) {
 /**
  * Cleans up sources after evaluation, removing unused dependencies
  * and restoring node state.
+ *
+ * @param target - The computed or effect being cleaned up
  */
 function cleanupSources(target: Computed | Effect) {
   let currentSignalNode = target._sources;
@@ -406,10 +538,38 @@ function cleanupSources(target: Computed | Effect) {
 }
 
 /**
+ * Validates a value for use in a signal.
+ * Checks for problematic values and provides warnings.
+ *
+ * @param value - The value to validate
+ * @param signalName - Optional name of the signal for better error messages
+ * @returns true if valid, false if potentially problematic
+ */
+function validateSignalValue(value: unknown, signalName?: string): boolean {
+  // Special handling for NaN values
+  if (typeof value === "number" && isNaN(value)) {
+    console.warn(
+      `Warning: Signal${signalName ? ` "${signalName}"` : ""} set to NaN, which may cause unexpected behavior`,
+    );
+    return false;
+  }
+
+  // Warning for function values (often accidental)
+  if (typeof value === "function") {
+    console.warn(
+      `Warning: Signal${signalName ? ` "${signalName}"` : ""} set to a function value. This might be unintentional.`,
+    );
+    return false;
+  }
+
+  return true;
+}
+
+/**
  * Base class for signals (both simple and computed).
  */
 declare class Signal<T = any> {
-  /** @internal */
+  /** @internal The current value of the signal */
   _value: unknown;
 
   /**
@@ -419,28 +579,32 @@ declare class Signal<T = any> {
    */
   _version: number;
 
-  /** @internal */
+  /** @internal Current dependency node */
   _node?: SignalNode;
 
-  /** @internal */
+  /** @internal List of dependents (computed signals or effects) */
   _targets?: SignalNode;
 
-  constructor(value?: T);
+  /** @internal Debug flag */
+  _debug: boolean;
 
-  /** @internal */
+  constructor(value?: T, name?: string);
+
+  /** @internal Refresh the signal's value if needed */
   _refresh(): boolean;
 
-  /** @internal */
+  /** @internal Subscribe a dependent to this signal */
   _subscribe(node: SignalNode): void;
 
-  /** @internal */
+  /** @internal Unsubscribe a dependent from this signal */
   _unsubscribe(node: SignalNode): void;
 
-  /** @internal */
+  /** @internal Notify all dependents of a change */
   _notifyDependencies(): void;
 
   /**
    * Subscribe to this signal's changes
+   * @param fn Function to call when the signal changes
    * @returns A function to unsubscribe
    */
   subscribe(fn: (value: T) => void): NoneToVoidFunction;
@@ -459,6 +623,13 @@ declare class Signal<T = any> {
    */
   peek(): T;
 
+  /**
+   * Set a debug name for this signal
+   * @param name The name to identify this signal in debugging
+   * @returns this signal (for chaining)
+   */
+  withName(name: string): Signal<T>;
+
   /** Signal brand symbol */
   brand: typeof SIGNAL_SYMBOL;
 
@@ -471,11 +642,18 @@ declare class Signal<T = any> {
  * Signal implementation using ES5-style prototypes to control
  * transpiled output size.
  */
-function Signal(this: Signal, value?: unknown) {
+function Signal(this: Signal, value?: unknown, name?: string) {
   this._value = value;
   this._version = EVersion.Current;
   this._node = undefined;
   this._targets = undefined;
+  this._debug = false;
+
+  // Register with name if provided
+  if (name) {
+    signalRegistry.set(this, name);
+    signalPaths.set(this, [name]);
+  }
 }
 
 Signal.prototype.brand = SIGNAL_SYMBOL;
@@ -566,6 +744,15 @@ Signal.prototype.peek = function () {
   }
 };
 
+/**
+ * Sets a debug name for this signal for better error messages and debugging
+ */
+Signal.prototype.withName = function (name: string) {
+  signalRegistry.set(this, name);
+  signalPaths.set(this, [name]);
+  return this;
+};
+
 Object.defineProperty(Signal.prototype, "value", {
   get(this: Signal) {
     const node = addDependency(this);
@@ -575,6 +762,10 @@ Object.defineProperty(Signal.prototype, "value", {
     return this._value;
   },
   set(this: Signal, value) {
+    // Validate the value before setting
+    const signalName = signalRegistry.get(this);
+    validateSignalValue(value, signalName);
+
     if (this._value !== value) {
       // Skip all the work if the value hasn't changed
       if (Object.is(value, this._value)) {
@@ -590,7 +781,10 @@ Object.defineProperty(Signal.prototype, "value", {
       }
 
       if (batchIteration > MAX_BATCH_ITERATIONS / 2) {
-        throw new Error("Cycle detected in signal updates");
+        const signalName = signalRegistry.get(this) || "anonymous";
+        throw new Error(
+          `Cycle detected in signal updates (signal: ${signalName})`,
+        );
       }
 
       this._value = value;
@@ -610,13 +804,29 @@ Object.defineProperty(Signal.prototype, "value", {
 /**
  * Create a new plain signal.
  *
- * @param value The initial value for the signal.
+ * @param value - The initial value for the signal.
+ * @param name - Optional name for debugging purposes
  * @returns A new signal.
  */
 export function signal<T>(value: T): Signal<T>;
 export function signal<T = undefined>(): Signal<T | undefined>;
-export function signal<T>(value?: T): Signal<T> {
-  return new Signal(value);
+export function signal<T>(
+  valueOrName?: T | string,
+  maybeNameOrUndefined?: string,
+): Signal<T> {
+  let initialValue: T | undefined;
+  let name: string | undefined;
+
+  if (typeof valueOrName === "string" && maybeNameOrUndefined === undefined) {
+    name = valueOrName as string;
+    initialValue = undefined as unknown as T;
+  } else {
+    // Called as signal(value) or signal(value, name)
+    initialValue = valueOrName as T;
+    name = maybeNameOrUndefined;
+  }
+
+  return new Signal(initialValue, name);
 }
 
 /**
@@ -629,13 +839,13 @@ declare class Computed<T = any> extends Signal<T> {
   _flags: number;
   _lastGlobalVersion: number; // Track the last seen global version for optimizations
 
-  constructor(fn: () => T);
+  constructor(fn: () => T, name?: string);
 
   _notify(): void;
   get value(): T;
 }
 
-function Computed(this: Computed, fn: () => unknown) {
+function Computed(this: Computed, fn: () => unknown, name?: string) {
   Signal.call(this, undefined);
 
   this._fn = fn;
@@ -643,6 +853,12 @@ function Computed(this: Computed, fn: () => unknown) {
   this._globalVersion = globalVersion - 1;
   this._lastGlobalVersion = 0;
   this._flags = OUTDATED;
+
+  // Register with name if provided
+  if (name) {
+    signalRegistry.set(this, name);
+    signalPaths.set(this, [name]);
+  }
 }
 
 Computed.prototype = Object.create(Signal.prototype);
@@ -766,7 +982,13 @@ Computed.prototype._notify = function () {
 Object.defineProperty(Computed.prototype, "value", {
   get(this: Computed) {
     if (this._flags & RUNNING) {
-      throw new Error("Cycle detected in computed dependencies");
+      const name = signalRegistry.get(this) || "computed";
+      const path = signalPaths.get(this) || [];
+      const pathStr = path.length > 0 ? ` in path [${path.join(" → ")}]` : "";
+
+      throw new Error(
+        `Cycle detected in computed dependencies: ${name}${pathStr}`,
+      );
     }
 
     const node = addDependency(this);
@@ -793,6 +1015,7 @@ interface ReadonlySignal<T = any> {
   valueOf(): T;
   toString(): string;
   toJSON(): T;
+  withName(name: string): ReadonlySignal<T>;
   brand: typeof SIGNAL_SYMBOL;
 }
 
@@ -875,7 +1098,7 @@ function endEffect(this: Effect, prevContext?: Computed | Effect) {
   endBatch();
 }
 
-type EffectFn = NoneToVoidFunction | NoneToVoidFunction;
+type EffectFn = NoneToVoidFunction;
 type CleanupEffectFn = NoneToVoidFunction;
 
 /**
@@ -1199,15 +1422,15 @@ export function watch<T>(
 }
 
 interface SharedWidnow extends Window {
-  __originalSignalSet?: AnyFunction
-  __originalComputedRefresh?: AnyFunction
+  __originalSignalSet?: AnyFunction;
+  __originalComputedRefresh?: AnyFunction;
 }
 
 // Ensure global storage for original methods
 declare global {
   interface Window {
-    __originalSignalSet?: AnyFunction
-    __originalComputedRefresh?: AnyFunction
+    __originalSignalSet?: AnyFunction;
+    __originalComputedRefresh?: AnyFunction;
   }
 }
 /**
@@ -1236,7 +1459,7 @@ export function monitorSignals(enable: boolean): void {
   if (!window.__originalSignalSet) {
     window.__originalSignalSet = Object.getOwnPropertyDescriptor(
       Signal.prototype,
-      "value"
+      "value",
     )!.set!;
   }
   if (!window.__originalComputedRefresh) {
@@ -1259,8 +1482,6 @@ export function monitorSignals(enable: boolean): void {
     return (window as SharedWidnow).__originalComputedRefresh?.call(this);
   };
 }
-
-
 
 export {
   computed,

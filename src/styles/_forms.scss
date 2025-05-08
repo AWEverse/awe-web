@@ -2,7 +2,7 @@
 .max-length-indicator {
   position: absolute;
   right: 0.75rem;
-  bottom: -0.5rem; /* Adjusted for cleaner measurement */
+  bottom: -0.5rem;
   padding: 0 0.25rem;
   border-radius: 0.25rem;
   color: var(--awe-palette-text-secondary);
@@ -45,6 +45,7 @@
     top: 1rem;
   }
 
+  // States
   &.touched label,
   &.error label,
   &.success label,
@@ -53,21 +54,32 @@
     transform: scale(0.75) translate(-0.5rem, -1.75rem);
   }
 
-  input::placeholder,
-  .form-control::placeholder {
-    color: var(--awe-palette-text-disabled);
-  }
-
   &.touched label {
     color: var(--awe-palette-text-secondary);
   }
 
-  &.error label {
-    color: var(--awe-palette-error-main) !important;
+  &.error {
+    label {
+      color: var(--awe-palette-error-main);
+    }
+
+    .form-control {
+      border-color: var(--awe-palette-error-main);
+      box-shadow: inset 0 0 0 1px var(--awe-palette-error-main);
+      caret-color: var(--awe-palette-error-main);
+    }
   }
 
-  &.success label {
-    color: var(--awe-palette-success-main) !important;
+  &.success {
+    label {
+      color: var(--awe-palette-success-main);
+    }
+
+    .form-control {
+      border-color: var(--awe-palette-success-main);
+      box-shadow: inset 0 0 0 1px var(--awe-palette-success-main);
+      caret-color: var(--awe-palette-success-main);
+    }
   }
 
   &.disabled {
@@ -75,6 +87,7 @@
     pointer-events: none;
   }
 
+  // RTL Support
   &[dir="rtl"] {
     input {
       text-align: right;
@@ -83,7 +96,7 @@
     label {
       left: auto;
       right: 0.75rem;
-      transform-origin: right center; /* Improved RTL scaling */
+      transform-origin: right center;
     }
 
     &.with-arrow::after {
@@ -98,7 +111,7 @@
     &.success label,
     .form-control:focus + label,
     .form-control.focus + label {
-      transform: scale(0.75) translate(0.5rem, -1.75rem); /* Fixed RTL translation */
+      transform: scale(0.75) translate(0.5rem, -1.75rem);
     }
   }
 }
@@ -116,19 +129,19 @@
   background-color: var(--awe-palette-secondary-main);
   outline: none;
   transition: border-color 0.15s ease;
-  word-break: break-word;
+  font-size: 1rem;
+  line-height: 1.25rem;
   -webkit-appearance: none;
   -moz-appearance: none;
   appearance: none;
-  font-size: 1rem;
-  line-height: 1.25rem;
 
-  &[dir] {
-    text-align: initial;
+  &::placeholder {
+    color: var(--awe-palette-text-disabled);
   }
 
   &:hover {
     border-color: var(--awe-palette-primary-main);
+
     & + label {
       color: var(--awe-palette-primary-main);
     }
@@ -139,27 +152,17 @@
     border-color: var(--awe-palette-primary-main);
     box-shadow: inset 0 0 0 1px var(--awe-palette-primary-main);
     caret-color: var(--awe-palette-primary-main);
+
     & + label {
       color: var(--awe-palette-primary-main);
     }
   }
 
   &:disabled {
-    background: none !important;
+    background: none;
   }
 
-  .error & {
-    border-color: var(--awe-palette-error-main);
-    box-shadow: inset 0 0 0 1px var(--awe-palette-error-main);
-    caret-color: var(--awe-palette-error-main);
-  }
-
-  .success & {
-    border-color: var(--awe-palette-success-main);
-    box-shadow: inset 0 0 0 1px var(--awe-palette-success-main);
-    caret-color: var(--awe-palette-success-main);
-  }
-
+  // Autofill handling
   &:autofill,
   &:-webkit-autofill-strong-password,
   &:-webkit-autofill-strong-password-viewable,
@@ -168,6 +171,7 @@
     -webkit-text-fill-color: var(--awe-palette-text-primary);
   }
 
+  // Hide browser-specific elements
   &::-webkit-strong-password-auto-fill-button {
     opacity: 0;
     width: 0 !important;
@@ -184,16 +188,11 @@
   }
 }
 
-/* Select Options */
-select.form-control option {
-  line-height: 2rem;
-}
-
 /* Textarea Specific Styles */
 textarea.form-control {
-  resize: none;
+  resize: vertical;
   line-height: 1.3125rem;
-  padding-top: calc(0.75rem - var(--border-width)); /* Aligned with base padding */
+  padding-top: calc(0.75rem - var(--border-width));
   padding-bottom: calc(1rem - var(--border-width));
 }
 
@@ -215,10 +214,11 @@ textarea.form-control {
     align-items: center;
     justify-content: center;
     cursor: var(--custom-cursor, pointer);
-    outline: none !important;
     color: var(--awe-palette-text-secondary);
     opacity: 0.7;
     font-size: 1.5rem;
+    transition: opacity 0.15s ease;
+    outline: none;
 
     &:hover,
     &:focus {

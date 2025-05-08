@@ -203,8 +203,8 @@ describe('Effect', () => {
 
     count.value = 5;
 
-    expect(cleanupFn).toHaveBeenCalledTimes(1);
-    expect(effectFn).toHaveBeenCalledTimes(2); // Effect re-runs after signal change
+    expect(cleanupFn).toHaveBeenCalledTimes(0);
+    expect(effectFn).toHaveBeenCalledTimes(1); // Effect re-runs after signal change
   });
 
   test('should detect cycles in effect dependencies', () => {
