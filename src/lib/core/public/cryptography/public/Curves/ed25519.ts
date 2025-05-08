@@ -1,4 +1,11 @@
-import { crypto_sign_detached, crypto_sign_keypair, crypto_sign_seed_keypair, crypto_sign_verify_detached } from "libsodium-wrappers";
+import {
+  crypto_sign_keypair,
+  crypto_sign_detached,
+  crypto_sign_verify_detached,
+  randombytes_buf,
+  crypto_sign_seed_keypair
+} from "libsodium-wrappers";
+import { CONSTANTS } from "../utils/cryptoUtils";
 
 
 /**
@@ -20,20 +27,6 @@ export class Ed25519 {
       publicKey: publicKey.subarray(0, 32),
       privateKey: privateKey.subarray(0, 32), // only the seed
     };
-  }
-
-  /**
-   * Derives the Ed25519 public key from a 32-byte private seed.
-   * @param privateKey 32-byte seed private key.
-   * @returns {PublicKey} Derived 32-byte public key.
-   */
-  static getPublicKey(privateKey: Uint8Array) {
-    if (privateKey.length !== 32) {
-      throw new TypeError('Invalid Ed25519 private key. Must be 32 bytes.');
-    }
-
-    const { publicKey } = crypto_sign_seed_keypair(privateKey);
-    return publicKey;
   }
 
   /**
@@ -76,5 +69,13 @@ export class Ed25519 {
     } catch {
       return false;
     }
+  }
+
+  /**
+   * Generates a random seed for key generation
+   * @returns 32-byte random seed
+   */
+  public static generateSeed(): Uint8Array {
+    return randombytes_buf(CONSTANTS.KEY_LENGTH);
   }
 }

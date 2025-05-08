@@ -1,93 +1,184 @@
-import {
-  crypto_aead_xchacha20poly1305_ietf_encrypt,
-  crypto_scalarmult,
-  memzero,
-  randombytes_buf
-} from "libsodium-wrappers";
-import { KeyBundle, PublicKeyBundle } from "../../interfaces";
+/**
+ * Implementation of the sending side of the X3DH (Extended Triple Diffie-Hellman) protocol.
+ * This module provides functionality for initiating secure communication channels by establishing
+ * shared secrets and sending initial encrypted messages.
+ *
+ * @module X3DH/sendInitialMessage
+ */
+
+import { memzero } from "libsodium-wrappers";
+import { KeyBundle, PublicKeyBundle, InitialMessage } from "../../interfaces";
 import { Ed25519 } from "../Curves/ed25519";
 import { X25519 } from "../Curves/x25519";
-import { encodePublicKey } from "./BundleManager";
-import { hkdf } from "@noble/hashes/hkdf";
-import { sha256 } from "@noble/hashes/sha2.js";
+import BundleManager from "./BundleManager";
+import {
+  CONSTANTS,
+  CryptoError,
+  computeDH,
+  deriveSharedSecret,
+  createAssociatedData,
+  encryptMessage
+} from "../utils/cryptoUtils";
 
+/** Result object returned after sending an initial message */
+interface SendInitialMessageResult {
+  /** The encrypted initial message to be sent to the recipient */
+  initialMessage: InitialMessage;
+  /** The derived shared secret to be used for subsequent communications */
+  sharedSecret: Uint8Array;
+}
+
+/** Options for customizing the initial message sending process */
+interface SendInitialMessageOptions {
+  /** Optional context info string for key derivation */
+  info?: string;
+  /** Optional index of the one-time prekey to use */
+  oneTimePrekeyIndex?: number;
+  /** Optional additional data for encryption */
+  additionalData?: { [key: string]: string };
+}
+
+function validateBundle(recipientBundle: PublicKeyBundle): void {
+  if (!recipientBundle.identityKeyX25519 ||
+    !recipientBundle.signedPrekey?.publicKey ||
+    recipientBundle.identityKeyX25519.length !== CONSTANTS.KEY_LENGTH ||
+    recipientBundle.signedPrekey.publicKey.length !== CONSTANTS.KEY_LENGTH) {
+    throw new CryptoError(
+      CONSTANTS.ERROR_CODES.INVALID_KEY_LENGTH,
+      "Invalid recipient bundle key lengths"
+    );
+  }
+}
+
+function verifySignedPrekey(
+  recipientBundle: PublicKeyBundle,
+  encodedSPK: Uint8Array
+): void {
+  const isValid = Ed25519.verify(
+    recipientBundle.signedPrekey.signature,
+    encodedSPK,
+    recipientBundle.identityKeyEd25519
+  );
+  if (!isValid) {
+    throw new CryptoError(
+      CONSTANTS.ERROR_CODES.INVALID_SIGNATURE,
+      "Invalid signed prekey signature"
+    );
+  }
+}
+
+function computeX3DHSecrets(
+  senderKeys: KeyBundle,
+  recipientBundle: PublicKeyBundle,
+  ephemeralKey: { privateKey: Uint8Array },
+  oneTimePrekeyIndex?: number
+): Uint8Array[] {
+  const dhSecrets: Uint8Array[] = [];
+
+  // DH1 = SignedPrekey * IKs
+  dhSecrets.push(computeDH(
+    senderKeys.identityKey.privateKey,
+    recipientBundle.signedPrekey.publicKey
+  ));
+
+  // DH2 = IKr * EKs
+  dhSecrets.push(computeDH(
+    ephemeralKey.privateKey,
+    recipientBundle.identityKeyX25519
+  ));
+
+  // DH3 = SPKr * EKs
+  dhSecrets.push(computeDH(
+    ephemeralKey.privateKey,
+    recipientBundle.signedPrekey.publicKey
+  ));
+
+  // DH4 = OPKr * EKs (if one-time prekey is used)
+  if (oneTimePrekeyIndex !== undefined &&
+    recipientBundle.oneTimePrekeys.length > oneTimePrekeyIndex) {
+    dhSecrets.push(computeDH(
+      ephemeralKey.privateKey,
+      recipientBundle.oneTimePrekeys[oneTimePrekeyIndex]
+    ));
+  }
+
+  return dhSecrets;
+}
+
+/**
+ * Sends an initial message using the X3DH protocol.
+ *
+ * This function implements the sending side of the X3DH protocol by:
+ * 1. Verifying the recipient's signed prekey
+ * 2. Generating an ephemeral key pair
+ * 3. Computing DH shared secrets
+ * 4. Deriving the shared secret key
+ * 5. Encrypting the message with associated data
+ *
+ * The function follows memory safety practices by securely wiping sensitive data after use.
+ *
+ * @param senderKeys - The sender's key bundle containing identity and signed prekeys
+ * @param recipientBundle - The recipient's public key bundle
+ * @param message - The plaintext message to encrypt
+ * @param options - Optional parameters for customizing the protocol
+ * @returns An object containing the initial message and derived shared secret
+ * @throws {Error} If the signed prekey verification fails
+ */
 export default function sendInitialMessage(
   senderKeys: KeyBundle,
   recipientBundle: PublicKeyBundle,
   message: string,
-  info = "X3DHProtocol"
-) {
-  const encodedSPK = encodePublicKey(recipientBundle.signedPrekey.publicKey);
-  const isValid = Ed25519.verify(
-    recipientBundle.signedPrekey.signature,
-    encodedSPK,
-    recipientBundle.identityKey
-  );
-  if (!isValid) throw new Error("Invalid signed prekey signature");
+  options: SendInitialMessageOptions = {}
+): SendInitialMessageResult {
+  const {
+    info = CONSTANTS.PROTOCOL_INFO,
+    oneTimePrekeyIndex,
+    additionalData
+  } = options;
 
+  // Validate recipient bundle
+  validateBundle(recipientBundle);
+
+  // Verify signed prekey
+  const encodedSPK = BundleManager.encodePublicKey(recipientBundle.signedPrekey.publicKey);
+  verifySignedPrekey(recipientBundle, encodedSPK);
+
+  // Generate ephemeral key
   const ephemeralKey = X25519.generateKeyPair();
 
-  const DH1 = crypto_scalarmult(
-    senderKeys.identityKey.privateKey,
-    recipientBundle.signedPrekey.publicKey
-  );
-  const DH2 = crypto_scalarmult(
-    ephemeralKey.privateKey,
-    recipientBundle.identityKey
-  );
-  const DH3 = crypto_scalarmult(
-    ephemeralKey.privateKey,
-    recipientBundle.signedPrekey.publicKey
-  );
 
-  let DH4: Uint8Array = new Uint8Array(0);
-  let oneTimePrekeyIndex: number | undefined;
-  if (recipientBundle.oneTimePrekeys.length > 0) {
-    oneTimePrekeyIndex = 0;
-    DH4 = crypto_scalarmult(
-      ephemeralKey.privateKey,
-      recipientBundle.oneTimePrekeys[oneTimePrekeyIndex]
-    );
-  }
 
-  const dhOutput = new Uint8Array(DH1.length + DH2.length + DH3.length + DH4.length);
-  dhOutput.set(DH1, 0);
-  dhOutput.set(DH2, DH1.length);
-  dhOutput.set(DH3, DH1.length + DH2.length);
-  if (DH4.length > 0) {
-    dhOutput.set(DH4, DH1.length + DH2.length + DH3.length);
-  }
+  // Derive shared secret
+  const SK = deriveSharedSecret(computeX3DHSecrets(
+    senderKeys,
+    recipientBundle,
+    ephemeralKey,
+    oneTimePrekeyIndex
+  ), info);
 
-  const salt = new Uint8Array(32).fill(0);
-  const SK = hkdf(sha256, dhOutput, salt, info, 32);
-
-  const senderIK = encodePublicKey(senderKeys.identityKey.publicKey);
-  const recipientIK = encodePublicKey(recipientBundle.identityKey);
-  const AD = new Uint8Array(senderIK.length + recipientIK.length);
-  AD.set(senderIK, 0);
-  AD.set(recipientIK, senderIK.length);
-
-  const nonce = randombytes_buf(24);
-  const ciphertext = crypto_aead_xchacha20poly1305_ietf_encrypt(
-    message,
-    AD,
-    null,
-    nonce,
-    SK
+  // Prepare Associated Data (AD)
+  const AD = createAssociatedData(
+    senderKeys.identityKey.publicKey,
+    recipientBundle.identityKeyX25519,
+    additionalData
   );
 
-  memzero(DH1);
-  memzero(DH2);
-  memzero(DH3);
-  memzero(DH4);
+  // Encrypt message
+  const { ciphertext, nonce } = encryptMessage(message, SK, AD);
+
+  // Clean up sensitive data
   memzero(ephemeralKey.privateKey);
+  memzero(SK);
 
   return {
     initialMessage: {
-      identityKey: senderIK,
-      ephemeralKey: new Uint8Array(ephemeralKey.publicKey),
-      usedPrekeys: { signedPrekey: true, oneTimePrekeyIndex },
-      ciphertext: new Uint8Array(ciphertext),
+      identityKey: senderKeys.identityKey.publicKey,
+      ephemeralKey: ephemeralKey.publicKey,
+      usedPrekeys: {
+        signedPrekey: true,
+        oneTimePrekeyIndex
+      },
+      ciphertext,
       nonce
     },
     sharedSecret: new Uint8Array(SK)

@@ -163,7 +163,6 @@ const TextArea: FC<OwnProps> = ({
         aria-invalid={!!error}
         aria-describedby={error ? errorId : success ? successId : undefined}
         autoComplete={autoComplete}
-
         wrap="hard"
         className="form-control text-area awe-scrollbar"
         dir="auto"

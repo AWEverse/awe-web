@@ -378,7 +378,7 @@ function addDependency(signal: Signal): SignalNode | undefined {
       signal._subscribe(node);
     }
 
-    if (DEBUG_MODE) {
+    if (evalContext && evalContext._flags & DEBUG_MODE) {
       const sourceName = signalRegistry.get(signal) || "anonymous";
       const targetPath = signalPaths.get(evalContext) || [];
       if (!targetPath.includes(sourceName)) {
@@ -808,25 +808,40 @@ Object.defineProperty(Signal.prototype, "value", {
  * @param name - Optional name for debugging purposes
  * @returns A new signal.
  */
-export function signal<T>(value: T): Signal<T>;
-export function signal<T = undefined>(): Signal<T | undefined>;
 export function signal<T>(
-  valueOrName?: T | string,
-  maybeNameOrUndefined?: string,
+  value: T,
+  options?: { name?: string; debug?: boolean },
+): Signal<T>;
+export function signal<T = undefined>(options?: {
+  name?: string;
+  debug?: boolean;
+}): Signal<T | undefined>;
+export function signal<T>(
+  valueOrOptions?: T | { name?: string; debug?: boolean },
+  maybeOptions?: { name?: string; debug?: boolean },
 ): Signal<T> {
   let initialValue: T | undefined;
   let name: string | undefined;
+  let debug: boolean = false;
 
-  if (typeof valueOrName === "string" && maybeNameOrUndefined === undefined) {
-    name = valueOrName as string;
+  if (
+    arguments.length === 1 &&
+    typeof valueOrOptions === "object" &&
+    !Array.isArray(valueOrOptions)
+  ) {
+    name = (valueOrOptions as { name?: string }).name;
+    debug =
+      (valueOrOptions as { name?: string; debug?: boolean }).debug || false;
     initialValue = undefined as unknown as T;
   } else {
-    // Called as signal(value) or signal(value, name)
-    initialValue = valueOrName as T;
-    name = maybeNameOrUndefined;
+    initialValue = valueOrOptions as T;
+    name = maybeOptions?.name;
+    debug = maybeOptions?.debug || false;
   }
 
-  return new Signal(initialValue, name);
+  const sig = new Signal(initialValue, name);
+  sig._debug = debug; // Set the debug flag
+  return sig;
 }
 
 /**
@@ -1028,8 +1043,16 @@ interface ReadonlySignal<T = any> {
  * @param fn The computation function.
  * @returns A new read-only signal.
  */
-function computed<T>(fn: () => T): ReadonlySignal<T> {
-  return new Computed(fn);
+function computed<T>(
+  fn: () => T,
+  options?: { name?: string; debug?: boolean },
+): ReadonlySignal<T> {
+  const comp = new Computed(fn, options?.name);
+
+  if (options?.debug) {
+    comp._flags |= DEBUG_MODE;
+  }
+  return comp;
 }
 
 /**
@@ -1199,8 +1222,15 @@ Effect.prototype._dispose = function () {
  * @param fn The effect callback.
  * @returns A function for disposing the effect.
  */
-function effect(fn: EffectFn): NoneToVoidFunction {
+function effect(
+  fn: EffectFn,
+  options?: { debug?: boolean },
+): NoneToVoidFunction {
   const effect = new Effect(fn);
+
+  if (options?.debug) {
+    effect._flags |= DEBUG_MODE;
+  }
 
   try {
     effect._callback();

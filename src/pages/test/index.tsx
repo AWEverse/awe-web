@@ -1,10 +1,6 @@
 import React, { useState } from "react";
 import useModalContext from "@/composers/modals/utils/hooks/useModalComposer";
-import {
-  computeReceiverSharedSecret,
-  computeSenderSharedSecret,
-  generateKeyBundle,
-} from "@/lib/core/public/cryptography/X3DHPQ";
+
 import {
   Crypto,
   State,
@@ -13,9 +9,16 @@ import {
   ratchetInitSender,
   ratchetInitReceiver,
 } from "@/lib/core/public/cryptography/DoubleRatchet";
-import sodium from "libsodium-wrappers";
+import sodium, { to_hex } from "libsodium-wrappers";
 import TimePicker from "@/entities/date-picker/public/ui/additional/TimePicker";
 import Image from "@/shared/ui/Image";
+import {
+  PublicKeyBundle,
+  KeyBundle,
+} from "@/lib/core/public/cryptography/interfaces";
+import BundleManager from "@/lib/core/public/cryptography/public/X3DH/BundleManager";
+import receiveInitialMessage from "@/lib/core/public/cryptography/public/X3DH/receiveInitialMessage";
+import sendInitialMessage from "@/lib/core/public/cryptography/public/X3DH/sendInitialMessage";
 
 // Utility to convert Uint8Array to hex string
 const toHex = (array: Uint8Array): string => {
@@ -61,104 +64,104 @@ const AdvancedEncryptionPage: React.FC = () => {
   );
 };
 
-// Test function
-async function testProtocol() {
+async function runX3DHExample() {
   try {
-    const aliceBundle = await generateKeyBundle();
-    const bobBundle = await generateKeyBundle();
-
-    console.log(aliceBundle);
-    console.log(bobBundle);
-
-    const { sharedSecret: aliceSecret, initialMessage } =
-      await computeSenderSharedSecret(aliceBundle, bobBundle);
-
-    const bobSecret = await computeReceiverSharedSecret(
-      bobBundle,
-      initialMessage,
+    // Generate keys for sender (Alice)
+    const aliceIdentityKey = BundleManager.generateIdentityKey();
+    const aliceSignedPrekey = BundleManager.generateSignedPrekey(
+      aliceIdentityKey.ed25519.privateKey,
     );
+    const aliceOneTimePrekeys = BundleManager.generateOneTimePrekeys(5);
+    const aliceKeyBundle: KeyBundle = {
+      identityKey: {
+        publicKey: aliceIdentityKey.x25519.publicKey,
+        privateKey: aliceIdentityKey.x25519.privateKey,
+      },
+      signedPrekey: {
+        keyPair: aliceSignedPrekey.keyPair,
+        signature: aliceSignedPrekey.signature,
+      },
+      oneTimePrekeys: aliceOneTimePrekeys.map((kp) => kp.publicKey),
+    };
 
-    console.log("Sender Secret:", toHex(aliceSecret));
-    console.log("Receiver Secret:", toHex(bobSecret));
-    console.log("Secrets match:", uint8ArrayEquals(aliceSecret, bobSecret));
+    // Generate keys for recipient (Bob)
+    const bobIdentityKey = BundleManager.generateIdentityKey();
+    const bobSignedPrekey = BundleManager.generateSignedPrekey(
+      bobIdentityKey.ed25519.privateKey,
+    );
+    const bobOneTimePrekeys = BundleManager.generateOneTimePrekeys(5);
+    const bobPublicBundle: PublicKeyBundle = BundleManager.createPublicBundle(
+      bobIdentityKey.ed25519.publicKey, // Pass Ed25519 public key
+      bobIdentityKey.x25519.publicKey,
+      bobSignedPrekey.keyPair.publicKey,
+      bobSignedPrekey.signature,
+      bobOneTimePrekeys.map((kp) => kp.publicKey),
+    );
+    const bobKeyBundle: KeyBundle = {
+      identityKey: {
+        publicKey: bobIdentityKey.x25519.publicKey,
+        privateKey: bobIdentityKey.x25519.privateKey,
+      },
+      signedPrekey: {
+        keyPair: bobSignedPrekey.keyPair,
+        signature: bobSignedPrekey.signature,
+      },
+      oneTimePrekeys: bobOneTimePrekeys.map((kp) => kp.privateKey),
+    };
+
+    // Alice sends an initial message to Bob
+    const message = "Hello, Bob! This is a secure message.";
+    const { initialMessage, sharedSecret: senderSharedSecret } =
+      sendInitialMessage(aliceKeyBundle, bobPublicBundle, message, {
+        info: "X3DHExample",
+        oneTimePrekeyIndex: 0,
+      });
+
+    console.log("Initial message sent:", {
+      identityKey: initialMessage.identityKey,
+      ephemeralKey: initialMessage.ephemeralKey,
+      usedPrekeys: initialMessage.usedPrekeys,
+      ciphertext: initialMessage.ciphertext,
+      nonce: initialMessage.nonce,
+    });
+
+    // Bob receives and decrypts the message
+    const {
+      decryptedMessage,
+      sharedSecret: receiverSharedSecret,
+      senderIdentityKey,
+    } = receiveInitialMessage(bobKeyBundle, initialMessage, {
+      info: "X3DHExample",
+    });
+
+    console.log("Decrypted message:", decryptedMessage);
+    console.log("Sender identity key:", to_hex(senderIdentityKey));
+
+    // Verify shared secrets match
+    const secretsMatch = senderSharedSecret.every(
+      (byte, i) => byte === receiverSharedSecret[i],
+    );
+    console.log("Shared secrets match:", secretsMatch);
+
+    // Clean up sensitive data
+    BundleManager.wipeKey(aliceIdentityKey.x25519.privateKey);
+    BundleManager.wipeKey(aliceIdentityKey.ed25519.privateKey);
+    BundleManager.wipeKey(aliceSignedPrekey.keyPair.privateKey);
+    aliceOneTimePrekeys.forEach((kp) => BundleManager.wipeKey(kp.privateKey));
+
+    BundleManager.wipeKey(bobIdentityKey.x25519.privateKey);
+    BundleManager.wipeKey(bobIdentityKey.ed25519.privateKey);
+    BundleManager.wipeKey(bobSignedPrekey.keyPair.privateKey);
+    bobOneTimePrekeys.forEach((kp) => BundleManager.wipeKey(kp.privateKey));
+
+    BundleManager.wipeKey(senderSharedSecret);
+    BundleManager.wipeKey(receiverSharedSecret);
   } catch (error) {
-    console.error("Test failed:", error);
+    console.error("Error in X3DH example:", error);
   }
 }
 
-// Detailed Performance and Speed Tests
-async function runAllTests(iterations: number = 10) {
-  console.log("🚀 Starting performance & integrity tests...");
-
-  const time = async <T,>(
-    label: string,
-    fn: () => Promise<T>,
-    statsArray?: number[],
-  ): Promise<T> => {
-    const start = performance.now();
-    const result = await fn();
-    const end = performance.now();
-    const duration = end - start;
-    console.log(`${label}: ${duration.toFixed(2)} ms`);
-    if (statsArray) statsArray.push(duration);
-    return result;
-  };
-
-  const stats = {
-    keyGen: [] as number[],
-    sender: [] as number[],
-    receiver: [] as number[],
-  };
-
-  for (let i = 0; i < iterations; i++) {
-    console.log(`\n--- Iteration ${i + 1} ---`);
-
-    const keyBundleA = await time(
-      "KeyBundle generation (Sender)",
-      () => generateKeyBundle(),
-      stats.keyGen,
-    );
-    const keyBundleB = await time(
-      "KeyBundle generation (Receiver)",
-      () => generateKeyBundle(),
-      stats.keyGen,
-    );
-
-    const { sharedSecret: secretA, initialMessage } = await time(
-      "Sender shared secret (Sender)",
-      () => computeSenderSharedSecret(keyBundleA, keyBundleB),
-      stats.sender,
-    );
-
-    const secretB = await time(
-      "Receiver shared secret (Receiver)",
-      () => computeReceiverSharedSecret(keyBundleB, initialMessage),
-      stats.receiver,
-    );
-
-    if (!uint8ArrayEquals(secretA, secretB)) {
-      throw new Error(`❌ Shared secret mismatch at iteration ${i + 1}`);
-    }
-  }
-
-  console.log(`\n✅ All ${iterations} iterations passed successfully`);
-
-  const average = (arr: number[]): string =>
-    (arr.reduce((a, b) => a + b, 0) / arr.length).toFixed(2);
-
-  console.log("\n📊 --- Average Timing Summary ---");
-  console.log(
-    `KeyBundle generation (avg per bundle): ${average(stats.keyGen)} ms`,
-  );
-  console.log(`Sender shared secret computation: ${average(stats.sender)} ms`);
-  console.log(
-    `Receiver shared secret computation: ${average(stats.receiver)} ms`,
-  );
-}
-
-// runAllTests();
-// testProtocol();
-testProtocol();
+runX3DHExample();
 
 export async function main() {
   // Initialization
@@ -390,6 +393,6 @@ export async function benchmark() {
   );
 }
 
-main();
-benchmark();
+// main();
+// benchmark();
 export default AdvancedEncryptionPage;

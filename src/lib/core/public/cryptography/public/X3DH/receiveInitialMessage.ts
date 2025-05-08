@@ -1,91 +1,158 @@
+import { memzero } from "libsodium-wrappers";
+import { KeyBundle, InitialMessage } from "../../interfaces";
 import {
-  crypto_aead_xchacha20poly1305_ietf_decrypt,
-  crypto_scalarmult,
-  memzero,
-  to_string
-} from "libsodium-wrappers";
-import { KeyBundle } from "../../interfaces";
-import { encodePublicKey } from "./BundleManager";
-import { hkdf } from "@noble/hashes/hkdf";
-import { sha256 } from "@noble/hashes/sha2.js";
+  CONSTANTS,
+  CryptoError,
+  computeDH,
+  deriveSharedSecret,
+  createAssociatedData,
+  decryptMessage,
+} from "../utils/cryptoUtils";
 
+interface ReceiveInitialMessageResult {
+  decryptedMessage: string;
+  sharedSecret: Uint8Array;
+  senderIdentityKey: Uint8Array;
+}
+
+interface ReceiveInitialMessageOptions {
+  info?: string;
+  additionalData?: { [key: string]: string };
+}
+
+function validateInitialMessage(initialMessage: InitialMessage): void {
+  const { identityKey, ephemeralKey, usedPrekeys } = initialMessage;
+
+  if (
+    !identityKey ||
+    !ephemeralKey ||
+    identityKey.length !== CONSTANTS.KEY_LENGTH ||
+    ephemeralKey.length !== CONSTANTS.KEY_LENGTH
+  ) {
+    throw new CryptoError(
+      CONSTANTS.ERROR_CODES.INVALID_KEY_LENGTH,
+      "Invalid key lengths in initial message",
+    );
+  }
+
+  if (!usedPrekeys.signedPrekey) {
+    throw new CryptoError(
+      CONSTANTS.ERROR_CODES.INVALID_PREKEY,
+      "Signed prekey is required",
+    );
+  }
+}
+
+function computeX3DHSecrets(
+  recipientKeys: KeyBundle,
+  initialMessage: InitialMessage,
+  OPK?: Uint8Array,
+): Uint8Array[] {
+  const { identityKey: senderIdentityKey, ephemeralKey } = initialMessage;
+  const dhSecrets: Uint8Array[] = [];
+
+  // DH1 = SignedPrekey * IKs
+  dhSecrets.push(
+    computeDH(recipientKeys.signedPrekey.keyPair.privateKey, senderIdentityKey),
+  );
+
+  // DH2 = IKr * EKs
+  dhSecrets.push(computeDH(recipientKeys.identityKey.privateKey, ephemeralKey));
+
+  // DH3 = SPKr * EKs
+  dhSecrets.push(
+    computeDH(recipientKeys.signedPrekey.keyPair.privateKey, ephemeralKey),
+  );
+
+  // DH4 = OPKr * EKs (if one-time prekey was used)
+  if (OPK) {
+    dhSecrets.push(computeDH(OPK, ephemeralKey));
+  }
+
+  return dhSecrets;
+}
+
+function getOneTimePrekey(
+  recipientKeys: KeyBundle,
+  oneTimePrekeyIndex?: number,
+): Uint8Array | undefined {
+  if (oneTimePrekeyIndex === undefined) {
+    return undefined;
+  }
+
+  if (
+    oneTimePrekeyIndex < 0 ||
+    oneTimePrekeyIndex >= recipientKeys.oneTimePrekeys.length
+  ) {
+    throw new CryptoError(
+      CONSTANTS.ERROR_CODES.INVALID_PREKEY,
+      "Invalid one-time prekey index",
+    );
+  }
+
+  return recipientKeys.oneTimePrekeys[oneTimePrekeyIndex];
+}
+
+/**
+ * Receives and processes an initial message using the X3DH protocol.
+ *
+ * This function implements the receiving side of the X3DH protocol by:
+ * 1. Validating the initial message format
+ * 2. Computing DH shared secrets
+ * 3. Deriving the shared secret key
+ * 4. Decrypting the message with associated data
+ *
+ * The function follows memory safety practices by securely wiping sensitive data after use.
+ *
+ * @param recipientKeys - The recipient's key bundle containing private keys
+ * @param initialMessage - The received initial message containing sender's keys and encrypted data
+ * @param options - Optional parameters for customizing the protocol
+ * @returns An object containing the decrypted message and derived shared secret
+ * @throws {CryptoError} If validation fails or decryption is unsuccessful
+ */
 export default function receiveInitialMessage(
   recipientKeys: KeyBundle,
-  initialMessage: {
-    identityKey: Uint8Array;
-    ephemeralKey: Uint8Array;
-    usedPrekeys: { signedPrekey: boolean; oneTimePrekeyIndex?: number };
-    ciphertext: Uint8Array;
-    nonce: Uint8Array;
-  },
-  info = "X3DHProtocol"
-) {
-  const { identityKey, ephemeralKey, usedPrekeys, ciphertext, nonce } = initialMessage;
+  initialMessage: InitialMessage,
+  options: ReceiveInitialMessageOptions = {},
+): ReceiveInitialMessageResult {
+  const { info = CONSTANTS.PROTOCOL_INFO, additionalData } = options;
 
-  if (identityKey.length !== 32 || ephemeralKey.length !== 32) {
-    throw new Error("Invalid key lengths in initial message");
-  }
-  if (!usedPrekeys.signedPrekey) {
-    throw new Error("Signed prekey is required");
-  }
+  // Validate initial message
+  validateInitialMessage(initialMessage);
 
-  const IK = recipientKeys.identityKey.privateKey;
-  const SPK = recipientKeys.signedPrekey.keyPair.privateKey;
-  let OPK: Uint8Array | undefined;
+  // Get one-time prekey if specified
+  const OPK = getOneTimePrekey(
+    recipientKeys,
+    initialMessage.usedPrekeys.oneTimePrekeyIndex,
+  );
 
-  if (usedPrekeys.oneTimePrekeyIndex !== undefined) {
-    const index = usedPrekeys.oneTimePrekeyIndex;
-    if (index < 0 || index >= recipientKeys.oneTimePrekeys.length) {
-      throw new Error("Invalid one-time prekey index");
-    }
-    OPK = recipientKeys.oneTimePrekeys[index];
-  }
+  // Derive shared secret
+  const SK = deriveSharedSecret(
+    computeX3DHSecrets(recipientKeys, initialMessage, OPK),
+    info,
+  );
 
-  const DH1 = crypto_scalarmult(IK, identityKey);       // IK_B * IK_A
-  const DH2 = crypto_scalarmult(SPK, ephemeralKey);     // SPK_B * EK_A
-  const DH3 = crypto_scalarmult(IK, ephemeralKey);       // IK_B * EK_A
-  let DH4: Uint8Array = new Uint8Array(0);
-  if (OPK) {
-    DH4 = crypto_scalarmult(OPK, ephemeralKey);          // OPK_B * EK_A
-  }
+  // Create Associated Data (AD)
+  const AD = createAssociatedData(
+    initialMessage.identityKey,
+    recipientKeys.identityKey.publicKey,
+    additionalData,
+  );
 
-  const dhOutput = new Uint8Array(DH1.length + DH2.length + DH3.length + DH4.length);
-  dhOutput.set(DH1, 0);
-  dhOutput.set(DH2, DH1.length);
-  dhOutput.set(DH3, DH1.length + DH2.length);
-  if (DH4.length > 0) {
-    dhOutput.set(DH4, DH1.length + DH2.length + DH3.length);
-  }
+  // Decrypt message
+  const decryptedMessage = decryptMessage(
+    initialMessage.ciphertext,
+    initialMessage.nonce,
+    SK,
+    AD,
+  );
 
-  const salt = new Uint8Array(32).fill(0);
-  const SK = hkdf(sha256, dhOutput, salt, info, 32);
+  // Clean up sensitive data
+  memzero(SK);
 
-  memzero(DH1);
-  memzero(DH2);
-  memzero(DH3);
-  memzero(DH4);
-
-  const senderIK = encodePublicKey(identityKey);
-  const recipientIK = encodePublicKey(recipientKeys.identityKey.publicKey);
-  const AD = new Uint8Array(senderIK.length + recipientIK.length);
-  AD.set(senderIK, 0);
-  AD.set(recipientIK, senderIK.length);
-
-  try {
-    const plaintext = crypto_aead_xchacha20poly1305_ietf_decrypt(
-      null,
-      ciphertext,
-      AD,
-      nonce,
-      SK
-    );
-    return {
-      decryptedMessage: to_string(plaintext),
-      sharedSecret: new Uint8Array(SK),
-      senderIdentityKey: new Uint8Array(identityKey)
-    };
-  } catch {
-    memzero(SK);
-    throw new Error("Decryption failed");
-  }
+  return {
+    decryptedMessage,
+    sharedSecret: new Uint8Array(SK),
+    senderIdentityKey: new Uint8Array(initialMessage.identityKey),
+  };
 }
