@@ -294,12 +294,14 @@ In the event of suspected key compromise:
 
 ### 6.1 Platform-Specific Storage
 
-| Platform | Secure Storage | Property Protection | Error Handling |
-|----------|----------------|---------------------|---------------|
-| Android | Android Keystore / StrongBox | `setUserAuthenticationRequired(true)` | KeyPermanentlyInvalidatedException |
-| iOS | Secure Enclave | `kSecAttrAccessibleWhenPasscodeSetThisDeviceOnly` | kSecError codes |
-| Windows | TPM / Windows Hello | `CRYPTOAPI_BLOB` with user authentication | HRESULT status codes |
-| Linux | TPM2.0 / PKCS#11 | Hardware token with PIN protection | PKCS#11 return codes |
+| Platform    | Secure Storage                             | Property Protection                                                        | Error Handling                                                                         |
+| ----------- | ------------------------------------------ | -------------------------------------------------------------------------- | -------------------------------------------------------------------------------------- |
+| Android     | Android Keystore / StrongBox               | `setUserAuthenticationRequired(true)`                                      | `KeyPermanentlyInvalidatedException`                                                   |
+| iOS         | Secure Enclave                             | `kSecAttrAccessibleWhenPasscodeSetThisDeviceOnly`                          | `kSecError` codes                                                                      |
+| Windows     | TPM / Windows Hello                        | `CRYPTOAPI_BLOB` with user authentication                                  | `HRESULT` status codes                                                                 |
+| Linux       | TPM 2.0 / PKCS#11                          | Hardware token with PIN protection                                         | PKCS#11 return codes                                                                   |
+| Browse | WebCrypto API / IndexedDB / Secure Context | Credential Management API, WebAuthn + user verification (e.g., biometrics) | DOMException / WebAuthn-specific errors (`NotAllowedError`, `InvalidStateError`, etc.) |
+
 
 ### 6.2 Canonical Encoding
 
