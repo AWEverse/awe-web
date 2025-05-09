@@ -122,9 +122,7 @@ For cryptographic operations, we use the following notation:
 
 The foundation of the protocol is an Ed25519 asymmetric key pair:
 
-$$
-(sk_{device}, pk_{device}) \leftarrow \operatorname{Ed25519{\text{-}}KeyGen}()
-$$
+$$ (sk_{device}, pk_{device}) \leftarrow \text{Ed25519}\text{-}\text{KeyGen}() $$
 
 **Security Requirements:**
 - Private key material **MUST** be stored in hardware-backed secure storage:
