@@ -123,7 +123,7 @@ For cryptographic operations, we use the following notation:
 The foundation of the protocol is an Ed25519 asymmetric key pair:
 
 $$
-(sk_{device}, pk_{device}) \leftarrow \text{Ed25519\_KeyGen}()
+(sk_{device}, pk_{device}) \leftarrow \operatorname{Ed25519{\text{-}}KeyGen}()
 $$
 
 **Security Requirements:**
