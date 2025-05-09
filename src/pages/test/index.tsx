@@ -293,29 +293,34 @@ export async function main() {
 }
 
 export async function benchmark() {
-  await sodium.ready;
-  console.log("Running Double Ratchet benchmarks...");
+  const iterations = 100;
+  const message = "Test message for benchmarking";
+  const AD = new TextEncoder().encode("BenchmarkData");
 
-  const iterations = 1000;
-  const messageSize = 1024; // 1KB
-  const message = "A".repeat(messageSize);
-  const AD = new TextEncoder().encode("AssociatedData");
-
-  // Setup
-  const aliceState: State = {} as State;
-  const bobState: State = {} as State;
+  // Generate fresh keys for each benchmark run
   const SK = sodium.randombytes_buf(32);
   const bobKeyPair = Crypto.generateDH();
 
+  // Initialize states
+  const aliceState: State = {} as State;
+  const bobState: State = {} as State;
+
+  // Set up initial states
   await ratchetInitSender(aliceState, SK, bobKeyPair.publicKey);
   await ratchetInitReceiver(bobState, SK, bobKeyPair);
 
   // Benchmark encryption
   console.log(`\nEncryption Benchmark (${iterations} iterations):`);
   const encryptStart = performance.now();
+  const headers: Uint8Array[] = [];
+  const ciphertexts: Uint8Array[] = [];
+
   for (let i = 0; i < iterations; i++) {
-    ratchetEncrypt(aliceState, message, AD);
+    const { header, ciphertext } = ratchetEncrypt(aliceState, message, AD);
+    headers.push(header);
+    ciphertexts.push(ciphertext);
   }
+
   const encryptEnd = performance.now();
   const encryptTime = encryptEnd - encryptStart;
   console.log(`Total time: ${encryptTime.toFixed(2)}ms`);
@@ -326,28 +331,26 @@ export async function benchmark() {
     `Operations per second: ${((1000 * iterations) / encryptTime).toFixed(2)}`,
   );
 
-  // Reset states
-  await ratchetInitSender(aliceState, SK, bobKeyPair.publicKey);
-  await ratchetInitReceiver(bobState, SK, bobKeyPair);
-
-  // Pre-generate messages for decryption benchmark
-  const headers: Uint8Array[] = [];
-  const ciphertexts: Uint8Array[] = [];
-  for (let i = 0; i < iterations; i++) {
-    const { header, ciphertext } = ratchetEncrypt(aliceState, message, AD);
-    headers.push(header);
-    ciphertexts.push(ciphertext);
-  }
-
-  // Reset Receiver's state
+  // Reset receiver's state completely
+  bobState.DHr = null;
+  bobState.CKr = null;
+  bobState.Nr = 0;
+  bobState.MKSKIPPED.clear();
   await ratchetInitReceiver(bobState, SK, bobKeyPair);
 
   // Benchmark decryption
   console.log(`\nDecryption Benchmark (${iterations} iterations):`);
   const decryptStart = performance.now();
-  for (let i = 0; i < iterations; i++) {
-    ratchetDecrypt(bobState, headers[i], ciphertexts[i], AD);
+
+  try {
+    for (let i = 0; i < iterations; i++) {
+      ratchetDecrypt(bobState, headers[i], ciphertexts[i], AD);
+    }
+  } catch (error) {
+    console.error("Decryption error:", error);
+    throw error;
   }
+
   const decryptEnd = performance.now();
   const decryptTime = decryptEnd - decryptStart;
   console.log(`Total time: ${decryptTime.toFixed(2)}ms`);
@@ -364,6 +367,7 @@ export async function benchmark() {
 
   const aliceStateDH: State = {} as State;
   const bobStateDH: State = {} as State;
+
   await ratchetInitSender(aliceStateDH, SK, bobKeyPair.publicKey);
   await ratchetInitReceiver(bobStateDH, SK, bobKeyPair);
 
@@ -385,14 +389,18 @@ export async function benchmark() {
     );
     ratchetDecrypt(aliceStateDH, h2, c2, AD);
   }
+
   const dhEnd = performance.now();
   const dhTime = dhEnd - dhStart;
   console.log(`Total time: ${dhTime.toFixed(2)}ms`);
   console.log(
-    `Average per DH ratchet: ${(dhTime / dhIterations).toFixed(2)}ms`,
+    `Average per operation: ${(dhTime / (2 * dhIterations)).toFixed(2)}ms`,
+  );
+  console.log(
+    `Operations per second: ${((1000 * 2 * dhIterations) / dhTime).toFixed(2)}`,
   );
 }
 
-// main();
-// benchmark();
+main();
+benchmark();
 export default AdvancedEncryptionPage;

@@ -2,12 +2,12 @@ import { memzero } from "libsodium-wrappers";
 import { KeyBundle, InitialMessage } from "../../interfaces";
 import {
   CONSTANTS,
-  CryptoError,
   computeDH,
   deriveSharedSecret,
   createAssociatedData,
   decryptMessage,
 } from "../utils/cryptoUtils";
+import NonThrowableError from "../utils/NonThrowableError";
 
 interface ReceiveInitialMessageResult {
   decryptedMessage: string;
@@ -29,14 +29,14 @@ function validateInitialMessage(initialMessage: InitialMessage): void {
     identityKey.length !== CONSTANTS.KEY_LENGTH ||
     ephemeralKey.length !== CONSTANTS.KEY_LENGTH
   ) {
-    throw new CryptoError(
+    throw new NonThrowableError(
       CONSTANTS.ERROR_CODES.INVALID_KEY_LENGTH,
       "Invalid key lengths in initial message",
     );
   }
 
   if (!usedPrekeys.signedPrekey) {
-    throw new CryptoError(
+    throw new NonThrowableError(
       CONSTANTS.ERROR_CODES.INVALID_PREKEY,
       "Signed prekey is required",
     );
@@ -84,7 +84,7 @@ function getOneTimePrekey(
     oneTimePrekeyIndex < 0 ||
     oneTimePrekeyIndex >= recipientKeys.oneTimePrekeys.length
   ) {
-    throw new CryptoError(
+    throw new NonThrowableError(
       CONSTANTS.ERROR_CODES.INVALID_PREKEY,
       "Invalid one-time prekey index",
     );
@@ -108,7 +108,7 @@ function getOneTimePrekey(
  * @param initialMessage - The received initial message containing sender's keys and encrypted data
  * @param options - Optional parameters for customizing the protocol
  * @returns An object containing the decrypted message and derived shared secret
- * @throws {CryptoError} If validation fails or decryption is unsuccessful
+ * @throws {NonThrowableError} If validation fails or decryption is unsuccessful
  */
 export default function receiveInitialMessage(
   recipientKeys: KeyBundle,

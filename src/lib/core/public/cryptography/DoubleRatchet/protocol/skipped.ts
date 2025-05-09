@@ -25,7 +25,7 @@ export function trySkippedMessageKeys(
   ).getUint32(0, false);
 
   // Create a key for the skipped message map
-  const key = `${bufferToHex(headerPublicKey)}:${messageNumber}`;
+  const key = `msg_key:${bufferToHex(headerPublicKey)}.msg_index:${messageNumber}`;
   const mk = state.MKSKIPPED.get(key);
 
   if (mk) {

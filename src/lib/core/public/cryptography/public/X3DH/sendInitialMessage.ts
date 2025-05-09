@@ -13,12 +13,12 @@ import { X25519 } from "../Curves/x25519";
 import BundleManager from "./BundleManager";
 import {
   CONSTANTS,
-  CryptoError,
   computeDH,
   deriveSharedSecret,
   createAssociatedData,
   encryptMessage
 } from "../utils/cryptoUtils";
+import NonThrowableError from "../utils/NonThrowableError";
 
 /** Result object returned after sending an initial message */
 interface SendInitialMessageResult {
@@ -43,7 +43,7 @@ function validateBundle(recipientBundle: PublicKeyBundle): void {
     !recipientBundle.signedPrekey?.publicKey ||
     recipientBundle.identityKeyX25519.length !== CONSTANTS.KEY_LENGTH ||
     recipientBundle.signedPrekey.publicKey.length !== CONSTANTS.KEY_LENGTH) {
-    throw new CryptoError(
+    throw new NonThrowableError(
       CONSTANTS.ERROR_CODES.INVALID_KEY_LENGTH,
       "Invalid recipient bundle key lengths"
     );
@@ -60,7 +60,7 @@ function verifySignedPrekey(
     recipientBundle.identityKeyEd25519
   );
   if (!isValid) {
-    throw new CryptoError(
+    throw new NonThrowableError(
       CONSTANTS.ERROR_CODES.INVALID_SIGNATURE,
       "Invalid signed prekey signature"
     );

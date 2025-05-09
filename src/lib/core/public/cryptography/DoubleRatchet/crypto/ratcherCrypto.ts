@@ -1,181 +1,225 @@
-import sodium from "libsodium-wrappers";
+import {
+  crypto_aead_xchacha20poly1305_ietf_decrypt,
+  crypto_aead_xchacha20poly1305_ietf_encrypt,
+  crypto_aead_xchacha20poly1305_ietf_NPUBBYTES,
+  crypto_box_keypair,
+  crypto_generichash,
+  crypto_scalarmult,
+  is_zero,
+  memzero,
+  randombytes_buf,
+} from "libsodium-wrappers";
 import { DHKeyPair } from "..";
 import hkdf from "./hkdf";
-import { INFO_RK, INFO_HEADER, CHAIN_CONSTANT_1, CHAIN_CONSTANT_2 } from "../config";
+import {
+  INFO_RK,
+  INFO_HEADER,
+  CHAIN_CONSTANT_1,
+  CHAIN_CONSTANT_2,
+} from "../config";
+
+// Reusable TextEncoder/Decoder instances for performance
+const encoder = new TextEncoder();
+const decoder = new TextDecoder();
 
 /**
  * Cryptographic operations for the Double Ratchet Protocol
- * Using libsodium for all primitive operations
+ * Optimized using libsodium for security and performance
  */
 export default {
   /**
-   * Generate a new X25519 DH key pair using libsodium's secure RNG
+   * Generate a new X25519 DH key pair
+   * @returns {DHKeyPair} Public and private key pair
    */
   generateDH(): DHKeyPair {
-    // Use X25519 for best security/performance
-    const keypair = sodium.crypto_box_keypair();
-    return {
-      publicKey: keypair.publicKey,
-      privateKey: keypair.privateKey,
-    };
+    return crypto_box_keypair();
   },
 
   /**
    * Perform X25519 Diffie-Hellman key agreement
-   * Returns 32-byte shared secret
+   * @param {DHKeyPair} dhPair - Local key pair
+   * @param {Uint8Array} publicKey - Remote public key
+   * @returns {Uint8Array} 32-byte shared secret
+   * @throws {Error} If inputs are invalid or DH fails
    */
   dh(dhPair: DHKeyPair, publicKey: Uint8Array): Uint8Array {
-    try {
-      // Constant-time implementation from libsodium
-      const sharedSecret = sodium.crypto_scalarmult(dhPair.privateKey, publicKey);
-
-      // Validate shared secret is not all zeros (invalid public key)
-      let isZero = true;
-      for (let i = 0; i < sharedSecret.length; i++) {
-        isZero = isZero && sharedSecret[i] === 0;
-      }
-      if (isZero) {
-        throw new Error("Invalid public key - shared secret is zero");
-      }
-
-      return sharedSecret;
-    } catch (e) {
-      if (e instanceof Error) {
-        throw new Error(`DH operation failed: ${e.message}`);
-      }
-      throw new Error("DH operation failed: Unknown error");
+    if (
+      !(dhPair.privateKey instanceof Uint8Array) ||
+      !(publicKey instanceof Uint8Array) ||
+      dhPair.privateKey.length !== 32 ||
+      publicKey.length !== 32
+    ) {
+      throw new Error("Invalid DH key lengths");
     }
+
+    const sharedSecret = crypto_scalarmult(dhPair.privateKey, publicKey);
+
+    if (is_zero(sharedSecret)) {
+      throw new Error("Invalid public key - shared secret is zero");
+    }
+
+    return sharedSecret;
   },
 
   /**
-   * Root Key derivation function using HKDF
-   * Returns [32-byte root key, 32-byte chain key]
+   * Derive root and chain keys using HKDF
+   * @param {Uint8Array} rk - Current root key
+   * @param {Uint8Array} dhOut - DH output
+   * @returns {[Uint8Array, Uint8Array]} New root key and chain key
    */
   kdfRK(rk: Uint8Array, dhOut: Uint8Array): [Uint8Array, Uint8Array] {
-    // Generate 64 bytes (32 for RK and 32 for CK) using HKDF
+    if (rk.length !== 32 || dhOut.length !== 32) {
+      throw new Error("Invalid key lengths for kdfRK");
+    }
     const okm = hkdf(rk, dhOut, INFO_RK, 64);
-
-    return [
-      okm.slice(0, 32), // New Root Key
-      okm.slice(32, 64), // Chain Key
-    ];
+    return [okm.slice(0, 32), okm.slice(32, 64)];
   },
 
   /**
-   * Chain Key derivation function using BLAKE2b
-   * More efficient than HMAC-based KDF for this purpose
-   * Returns [32-byte next chain key, 32-byte message key]
+   * Derive next chain key and message key using BLAKE2b
+   * @param {Uint8Array} ck - Current chain key
+   * @returns {[Uint8Array, Uint8Array]} Next chain key and message key
    */
   kdfCK(ck: Uint8Array): [Uint8Array, Uint8Array] {
-    // Use BLAKE2b with different constants for domain separation
-    const mk = sodium.crypto_generichash(32, CHAIN_CONSTANT_1, ck);
-    const nextCK = sodium.crypto_generichash(32, CHAIN_CONSTANT_2, ck);
+    if (ck.length !== 32) {
+      throw new Error("Invalid chain key length");
+    }
+    const mk = crypto_generichash(32, CHAIN_CONSTANT_1, ck);
+    const nextCK = crypto_generichash(32, CHAIN_CONSTANT_2, ck);
     return [nextCK, mk];
   },
 
   /**
-   * Encrypts plaintext with XChaCha20-Poly1305 AEAD
-   * Provides 192-bit security and defense against nonce reuse
+   * Encrypt plaintext with XChaCha20-Poly1305 AEAD
+   * @param {Uint8Array} mk - Message key
+   * @param {string} plaintext - Data to encrypt
+   * @param {Uint8Array} ad - Associated data
+   * @returns {Uint8Array} nonce || ciphertext
    */
   encrypt(mk: Uint8Array, plaintext: string, ad: Uint8Array): Uint8Array {
-    // Generate 192-bit nonce for XChaCha20
-    const nonce = sodium.randombytes_buf(sodium.crypto_aead_xchacha20poly1305_ietf_NPUBBYTES);
-
-    // Encrypt with associated data for authenticity
-    const ciphertext = sodium.crypto_aead_xchacha20poly1305_ietf_encrypt(
-      new TextEncoder().encode(plaintext),
+    if (mk.length !== 32) {
+      throw new Error("Invalid message key length");
+    }
+    const nonce = randombytes_buf(crypto_aead_xchacha20poly1305_ietf_NPUBBYTES);
+    const ciphertext = crypto_aead_xchacha20poly1305_ietf_encrypt(
+      encoder.encode(plaintext),
       ad,
-      null, // No additional secret data
+      null,
       nonce,
-      mk
+      mk,
     );
-
-    // Return nonce || ciphertext
     return new Uint8Array([...nonce, ...ciphertext]);
   },
 
   /**
-   * Decrypts ciphertext with XChaCha20-Poly1305 AEAD
-   * Verifies authenticity using Poly1305 MAC
+   * Decrypt ciphertext with XChaCha20-Poly1305 AEAD
+   * @param {Uint8Array} mk - Message key
+   * @param {Uint8Array} ciphertext - nonce || ciphertext
+   * @param {Uint8Array} ad - Associated data
+   * @returns {string} Decrypted plaintext
+   * @throws {Error} If decryption fails
    */
   decrypt(mk: Uint8Array, ciphertext: Uint8Array, ad: Uint8Array): string {
-    // Split nonce and ciphertext
-    const nonce = ciphertext.slice(0, sodium.crypto_aead_xchacha20poly1305_ietf_NPUBBYTES);
-    const encryptedData = ciphertext.slice(sodium.crypto_aead_xchacha20poly1305_ietf_NPUBBYTES);
-
-    try {
-      // Decrypt and verify MAC
-      const plaintext = sodium.crypto_aead_xchacha20poly1305_ietf_decrypt(
-        null,
-        encryptedData,
-        ad,
-        nonce,
-        mk
-      );
-      return new TextDecoder().decode(plaintext);
-    } catch (e) {
-      throw new Error("Decryption failed: Authentication check failed");
+    if (
+      mk.length !== 32 ||
+      ciphertext.length < crypto_aead_xchacha20poly1305_ietf_NPUBBYTES
+    ) {
+      throw new Error("Invalid key or ciphertext length");
     }
+    const nonce = ciphertext.slice(
+      0,
+      crypto_aead_xchacha20poly1305_ietf_NPUBBYTES,
+    );
+    const encryptedData = ciphertext.slice(
+      crypto_aead_xchacha20poly1305_ietf_NPUBBYTES,
+    );
+    const plaintext = crypto_aead_xchacha20poly1305_ietf_decrypt(
+      null,
+      encryptedData,
+      ad,
+      nonce,
+      mk,
+    );
+    return decoder.decode(plaintext);
   },
 
   /**
-   * Create a Double Ratchet message header
-   * Format: pubkey (32) || prevChainLen (4) || msgNum (4)
+   * Create a message header
+   * @param {DHKeyPair} dhPair - DH key pair
+   * @param {number} pn - Previous chain length
+   * @param {number} n - Message number
+   * @returns {Uint8Array} 40-byte header
    */
   header(dhPair: DHKeyPair, pn: number, n: number): Uint8Array {
     const header = new Uint8Array(40);
-
-    // Copy public key
     header.set(dhPair.publicKey, 0);
-
-    // Write chain lengths as big-endian uint32
     const view = new DataView(header.buffer);
-    view.setUint32(32, pn, false); // Previous chain length
-    view.setUint32(36, n, false); // Message number
-
+    view.setUint32(32, pn, false);
+    view.setUint32(36, n, false);
     return header;
   },
 
   /**
-   * Encrypts a message header to protect metadata
+   * Encrypt a message header
+   * @param {Uint8Array} headerKey - Header encryption key
+   * @param {Uint8Array} header - Header to encrypt
+   * @returns {Uint8Array} Encrypted header
    */
   encryptHeader(headerKey: Uint8Array, header: Uint8Array): Uint8Array {
-    const nonce = sodium.randombytes_buf(sodium.crypto_aead_xchacha20poly1305_ietf_NPUBBYTES);
-    const encHeader = sodium.crypto_aead_xchacha20poly1305_ietf_encrypt(
+    const nonce = randombytes_buf(crypto_aead_xchacha20poly1305_ietf_NPUBBYTES);
+    const encHeader = crypto_aead_xchacha20poly1305_ietf_encrypt(
       header,
       null,
       null,
       nonce,
-      headerKey
+      headerKey,
     );
     return this.concat(nonce, encHeader);
   },
 
   /**
-   * Decrypts an encrypted message header
+   * Decrypt an encrypted message header
+   * @param {Uint8Array} headerKey - Header encryption key
+   * @param {Uint8Array} encryptedHeader - Encrypted header
+   * @returns {Uint8Array} Decrypted header
    */
-  decryptHeader(headerKey: Uint8Array, encryptedHeader: Uint8Array): Uint8Array {
-    const nonce = encryptedHeader.slice(0, sodium.crypto_aead_xchacha20poly1305_ietf_NPUBBYTES);
-    const header = encryptedHeader.slice(sodium.crypto_aead_xchacha20poly1305_ietf_NPUBBYTES);
-
-    return sodium.crypto_aead_xchacha20poly1305_ietf_decrypt(
+  decryptHeader(
+    headerKey: Uint8Array,
+    encryptedHeader: Uint8Array,
+  ): Uint8Array {
+    const nonce = encryptedHeader.slice(
+      0,
+      crypto_aead_xchacha20poly1305_ietf_NPUBBYTES,
+    );
+    const header = encryptedHeader.slice(
+      crypto_aead_xchacha20poly1305_ietf_NPUBBYTES,
+    );
+    return crypto_aead_xchacha20poly1305_ietf_decrypt(
       null,
       header,
       null,
       nonce,
-      headerKey
+      headerKey,
     );
   },
 
   /**
-   * Derives a header encryption key from the root key
+   * Derive a header encryption key
+   * @param {Uint8Array} rk - Root key
+   * @returns {Uint8Array} 32-byte header key
    */
   deriveHeaderKey(rk: Uint8Array): Uint8Array {
+    if (rk.length !== 32) {
+      throw new Error("Invalid root key length");
+    }
     return hkdf(null, rk, INFO_HEADER, 32);
   },
 
   /**
-   * Concatenate Uint8Arrays efficiently using a single allocation
+   * Concatenate two Uint8Arrays
+   * @param {Uint8Array} a - First array
+   * @param {Uint8Array} b - Second array
+   * @returns {Uint8Array} Concatenated array
    */
   concat(a: Uint8Array, b: Uint8Array): Uint8Array {
     const result = new Uint8Array(a.length + b.length);
@@ -185,25 +229,12 @@ export default {
   },
 
   /**
-   * Securely wipe sensitive data from memory
-   * Uses libsodium's secure memory wiping function
+   * Securely wipe memory
+   * @param {Uint8Array} array - Data to wipe
    */
   wipeMemory(array: Uint8Array): void {
-    if (array && array.length > 0) {
-      try {
-        sodium.memzero(array);
-      } catch (e) {
-        // Fallback if sodium.memzero fails
-        array.fill(0);
-        // Additional passes with random data
-        for (let i = 0; i < 3; i++) {
-          array.set(sodium.randombytes_buf(array.length));
-        }
-        array.fill(0);
-      }
+    if (array?.length > 0) {
+      memzero(array);
     }
   },
 };
-
-
-

@@ -8,6 +8,7 @@ import {
 } from "libsodium-wrappers";
 import { hkdf } from "@noble/hashes/hkdf";
 import { sha256 } from "@noble/hashes/sha2.js";
+import NonThrowableError from "./NonThrowableError";
 
 export const CONSTANTS = {
   KEY_LENGTH: 32,
@@ -22,18 +23,11 @@ export const CONSTANTS = {
   }
 } as const;
 
-export class CryptoError extends Error {
-  constructor(code: string, message: string) {
-    super(`[${code}] ${message}`);
-    this.name = "CryptoError";
-  }
-}
-
 export function computeDH(privateKey: Uint8Array, publicKey: Uint8Array): Uint8Array {
   try {
     return crypto_scalarmult(privateKey, publicKey);
   } catch (error) {
-    throw new CryptoError(
+    throw new NonThrowableError(
       CONSTANTS.ERROR_CODES.INVALID_KEY_LENGTH,
       "Invalid key length for DH computation"
     );
@@ -109,7 +103,7 @@ export function encryptMessage(
     );
     return { ciphertext: new Uint8Array(ciphertext), nonce };
   } catch (error) {
-    throw new CryptoError(
+    throw new NonThrowableError(
       CONSTANTS.ERROR_CODES.ENCRYPTION_FAILED,
       "Message encryption failed"
     );
@@ -132,7 +126,7 @@ export function decryptMessage(
     );
     return to_string(plaintext);
   } catch (error) {
-    throw new CryptoError(
+    throw new NonThrowableError(
       CONSTANTS.ERROR_CODES.DECRYPTION_FAILED,
       "Message decryption failed"
     );

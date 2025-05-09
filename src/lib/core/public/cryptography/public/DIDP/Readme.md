@@ -1,10 +1,12 @@
-# 📄 Device ID Protocol v3.0 — Specification
+# 📄 Device ID Protocol v3.1 — Enhanced Specification
 
 ## Document Information
-- **Version**: 3.0
+- **Version**: 3.1
 - **Original Author**: Andrii Volynets (v1.0)
-- **Previous Revision**: AWE Industries (v2.0)
-- **Current Revision**: May 6, 2025
+- **Previous Revisions**:
+  - AWE Industries (v2.0)
+  - Anonymous Contributor (v3.0)
+- **Current Revision**: May 9, 2025
 
 ## 1. Executive Summary
 
@@ -20,6 +22,7 @@ The Device ID Protocol provides a **cross-platform**, **privacy-preserving**, an
 | **Security** | Strong protections against impersonation and device cloning |
 | **Auditability** | Complete lifecycle management with comprehensive event logs |
 | **Recovery** | Defined processes for key recovery and identifier restoration |
+| **Future-Proof** | Designed with post-quantum migration capabilities |
 
 ### 1.2 Target Use Cases
 
@@ -64,6 +67,9 @@ graph TD
     G -->|Send| H[Registration]
     H -->|Verify| I[Server Validation]
     I -->|Store| J[Device Registry]
+    J -->|On Failure| K[Error Handling]
+    K -->|Retry| H
+    K -->|Escalate| L[Human Intervention]
 ```
 
 ## 3. Cryptographic Foundations
@@ -83,6 +89,8 @@ For cryptographic operations, we use the following notation:
 - $AT$: Attestation Token
 - $C$: Context identifier
 - $DID_C$: Context-derived Device Identifier
+- $E_{hybrid}(m)$: Hybrid encryption of message $m$
+- $KDF(k, ctx, len)$: Key derivation function with key $k$, context $ctx$, and output length $len$
 
 ### 3.2 Core Functions
 
@@ -91,6 +99,7 @@ For cryptographic operations, we use the following notation:
 3. **Device ID Generation:** $DID = H(FP)$
 4. **Signature Generation:** $\sigma = S(sk_{device}, DID)$
 5. **Signature Verification:** $V(pk_{device}, DID, \sigma) \in \{true, false\}$
+6. **Error Handling:** $ErrorCode = ProcessError(ErrorCondition, ContextData)$
 
 ### 3.3 Cryptographic Primitives
 
@@ -101,8 +110,11 @@ For cryptographic operations, we use the following notation:
 | Alternative Hash | SHA-256 | FIPS 180-4 | 128-bit |
 | Data Encoding | JCS | RFC 8785 | N/A |
 | Alternative Encoding | CBOR | RFC 8949 | N/A |
-| Key Derivation | HKDF | RFC 5869 | 256-bit |
+| Key Derivation | HKDF-SHA256 | RFC 5869 | 256-bit |
+| Key Derivation (Alt) | HKDF-BLAKE3 | BLAKE3 Spec | 256-bit |
 | Post-Quantum Option | Dilithium | NIST PQC | 128-bit quantum |
+| Post-Quantum KEM | Kyber | NIST PQC | 128-bit quantum |
+| Post-Quantum Hash | SLH-DSA | NIST PQC | 128-bit quantum |
 
 ## 4. Protocol Components
 
@@ -122,6 +134,7 @@ $$
   - Linux: TPM 2.0 or HSM
 - Key usage **MUST** be gated by device authentication (biometric, PIN, or password)
 - Key **MUST NOT** be exportable from secure storage
+- Implementations **MUST** verify key generation completion successfully before proceeding
 
 ### 4.2 Device Fingerprint (FP)
 
@@ -141,8 +154,9 @@ A structured collection of device attributes that does not contain PII:
   "install_ts": "Integer",       // Installation timestamp (seconds since epoch)
   "random_salt": "ByteString",   // 32 bytes of cryptographically secure randomness
   "device_model": "String",      // Optional, for UI display only
-  "protocol_version": "3.0",     // Required field, updated for current version
-  "security_level": "String"     // e.g., "strongbox", "tee", "software"
+  "protocol_version": "3.1",     // Required field, updated for current version
+  "security_level": "String",    // e.g., "strongbox", "tee", "software"
+  "tpm_manufacturer": "String"   // Optional, for supply chain verification
 }
 ```
 
@@ -182,6 +196,11 @@ Platform-specific evidence of device authenticity:
 * **Windows:** TPM attestation or Windows Hello
 * **Custom Hardware:** Vendor-specific attestation mechanism
 
+**Attestation Verification Requirements:**
+- Implementations **MUST** validate attestation-specific signatures
+- Attestation verification **MUST** use constant-time comparison
+- Attestation failures **MUST** generate detailed error codes
+
 ## 5. Protocol Lifecycle
 
 ### 5.1 Initial Registration
@@ -203,6 +222,12 @@ sequenceDiagram
     Server->>Server: Verify AT with platform vendor
     Server->>Server: Store (DID, pk_device, metadata)
     Server->>Device: Registration confirmation
+
+    alt Registration Failure
+        Server->>Device: Error code and recovery steps
+        Device->>Device: Apply recovery strategy
+        Device->>Server: Retry with revised parameters
+    end
 ```
 
 ### 5.2 Authentication Flow
@@ -236,6 +261,11 @@ $$
 P(DID = DID') \approx 0 \text{ when } r \neq r'
 $$
 
+**Recommended Rotation Triggers:**
+- Time-based: Every 90 days (default)
+- Event-based: After OS updates, app reinstallation, or security incidents
+- Risk-based: More frequent rotation for high-risk devices/users
+
 ### 5.4 Key Rotation
 
 For enhanced security, the device key pair may be rotated:
@@ -246,16 +276,32 @@ For enhanced security, the device key pair may be rotated:
 3. **Device** sends $(DID, pk_{device}', \sigma_{link}, t_{rot})$ to server
 4. **Server** verifies $\sigma_{link}$ using $pk_{device}$ and updates to $pk_{device}'$
 
+**Recommended Key Rotation Frequency:**
+- Every 180-365 days for standard security applications
+- Every 90 days for high-security applications
+- Immediately upon suspected compromise
+
+### 5.5 Key Compromise Recovery
+
+In the event of suspected key compromise:
+
+1. **Device** or **Server** initiates emergency revocation:
+   $$\sigma_{revoke} = S(sk_{authority}, DID || t_{revoke} || \text{"REVOKE"})$$
+2. **Server** adds $DID$ to revocation list
+3. **Device** performs device attestation challenge
+4. If attestation succeeds, device re-registers with new key pair
+5. All recovery actions are logged with audit trail
+
 ## 6. Implementation Guidelines
 
 ### 6.1 Platform-Specific Storage
 
-| Platform | Secure Storage | Property Protection |
-|----------|----------------|---------------------|
-| Android | Android Keystore / StrongBox | `setUserAuthenticationRequired(true)` |
-| iOS | Secure Enclave | `kSecAttrAccessibleWhenPasscodeSetThisDeviceOnly` |
-| Windows | TPM / Windows Hello | `CRYPTOAPI_BLOB` with user authentication |
-| Linux | TPM2.0 / PKCS#11 | Hardware token with PIN protection |
+| Platform | Secure Storage | Property Protection | Error Handling |
+|----------|----------------|---------------------|---------------|
+| Android | Android Keystore / StrongBox | `setUserAuthenticationRequired(true)` | KeyPermanentlyInvalidatedException |
+| iOS | Secure Enclave | `kSecAttrAccessibleWhenPasscodeSetThisDeviceOnly` | kSecError codes |
+| Windows | TPM / Windows Hello | `CRYPTOAPI_BLOB` with user authentication | HRESULT status codes |
+| Linux | TPM2.0 / PKCS#11 | Hardware token with PIN protection | PKCS#11 return codes |
 
 ### 6.2 Canonical Encoding
 
@@ -281,19 +327,40 @@ $$
 
 For context, this is approximately 1 in 10^77, far lower than cosmic ray bit-flip probability.
 
+### 6.4 Performance Considerations
+
+| Operation | Expected Time (ms) | CPU Usage | Memory (KB) |
+|-----------|-------------------|-----------|------------|
+| Key Generation | 50-200 | Medium | 5-10 |
+| DID Computation | 5-15 | Low | 2-5 |
+| Signature Generation | 2-10 | Low | 1-2 |
+| Signature Verification | 2-10 | Low | 1-2 |
+| PQ Signature Generation | 50-200 | High | 20-50 |
+| PQ Signature Verification | 30-100 | Medium | 10-30 |
+
+**Benchmarking Guidelines:**
+- Measure all operations on target devices
+- Establish baseline performance metrics
+- Monitor for performance degradation
+- Set performance budgets for client operations
+
 ## 7. Security Analysis
 
 ### 7.1 Threat Model
 
-| Threat Vector | Description | Security Level |
-|---------------|-------------|---------------|
-| Network Snooping | Passive observation of DID traffic | **Strong** |
-| Device Cloning | Copying device identity to another device | **Strong** |
-| Key Extraction | Attempts to extract $sk_{device}$ | **Strong** (HW-backed) / **Moderate** (SW-only) |
-| Metadata Manipulation | Altering device properties to forge identity | **Strong** |
-| Attestation Forgery | Falsifying platform attestation | **Strong** (with attestation) / **Weak** (without) |
-| Replay Attacks | Reusing valid authentication messages | **Strong** (with nonce) |
-| Quantum Attacks | Future quantum computer threats | **Moderate** (need PQ extension) |
+| Threat Vector | Description | Security Level | Mitigation |
+|---------------|-------------|----------------|------------|
+| Network Snooping | Passive observation of DID traffic | **Strong** | All sensitive data encrypted |
+| Device Cloning | Copying device identity to another device | **Strong** | Hardware-backed keys + attestation |
+| Key Extraction | Attempts to extract $sk_{device}$ | **Strong** (HW-backed) / **Moderate** (SW-only) | Secure element protection |
+| Metadata Manipulation | Altering device properties to forge identity | **Strong** | Signed fingerprints |
+| Attestation Forgery | Falsifying platform attestation | **Strong** (with attestation) / **Weak** (without) | Vendor attestation verification |
+| Replay Attacks | Reusing valid authentication messages | **Strong** (with nonce) | Time-limited nonces |
+| Quantum Attacks | Future quantum computer threats | **Strong** (with PQ) / **Moderate** (without) | Hybrid cryptography approach |
+| Supply Chain Attacks | Compromised hardware or software components | **Moderate** | TPM manufacturer validation |
+| Side-Channel Attacks | Extracting keys via timing/power analysis | **Moderate** | Constant-time implementations |
+| Hardware Vulnerabilities | Exploitation of hardware design flaws | **Moderate** | Attestation + regular security updates |
+| Root/Jailbreak | Circumvention of OS security | **Moderate** | Root/jailbreak detection |
 
 ### 7.2 Security Proofs
 
@@ -302,6 +369,7 @@ Assuming secure primitives, the protocol achieves:
 1. **Unforgeability:** Without $sk_{device}$, an adversary cannot produce valid $\sigma$ for a given $DID$
 2. **Non-transferability:** $sk_{device}$ cannot be extracted from secure hardware
 3. **Unlinkability:** Different $DID$ values (after salt rotation) cannot be linked without server cooperation
+4. **Post-Quantum Security:** With hybrid approach, remains secure against quantum attacks
 
 ### 7.3 Defense-in-Depth Measures
 
@@ -310,6 +378,8 @@ Assuming secure primitives, the protocol achieves:
 3. **Anomaly detection** for unusual device behavior
 4. **Geo-fencing** to detect impossible travel patterns
 5. **Revocation lists** for compromised devices
+6. **Supply chain validation** for hardware components
+7. **Constant-time implementations** for all cryptographic operations
 
 ## 8. Privacy Considerations
 
@@ -334,14 +404,20 @@ This prevents long-term tracking across services if the same protocol is used in
 
 ### 8.3 Compliance
 
-The protocol supports compliance with:
+The protocol supports compliance with global privacy regulations:
 
-* GDPR (EU)
-* CCPA/CPRA (California)
-* LGPD (Brazil)
-* PIPL (China)
+| Regulation | Region | Key Requirements | Protocol Compliance |
+|------------|--------|------------------|---------------------|
+| GDPR | EU | Data minimization, Purpose limitation | Strong compliance via minimal data collection |
+| CCPA/CPRA | California | Right to delete, Right to opt-out | Supported via device revocation |
+| LGPD | Brazil | Consent, Purpose limitation | Aligned with minimal data collection approach |
+| PIPL | China | Data localization, Purpose limitation | Compatible with regional implementations |
+| Privacy Act | Australia | APP principles compliance | Supports via data minimization |
 
-Through its data minimization approach and support for right-to-be-forgotten via device revocation.
+**Certification Guidelines:**
+- ISO/IEC 27001 for information security management
+- SOC 2 Type II for service organization controls
+- FIPS 140-3 for cryptographic module validation
 
 ## 9. API Specifications
 
@@ -365,8 +441,9 @@ Content-Type: application/json
     "install_ts": 1715000000,
     "random_salt": "base64url(32B)",
     "device_model": "Pixel 7",
-    "protocol_version": "3.0",
-    "security_level": "strongbox"
+    "protocol_version": "3.1",
+    "security_level": "strongbox",
+    "tpm_manufacturer": "Acme Secure Corp"
   },
   "attestation_token": "JWT"
 }
@@ -378,6 +455,17 @@ Content-Type: application/json
   "status": "success",
   "registration_id": "uuid",
   "expiry": "ISO8601 timestamp"
+}
+```
+
+**Response (Error):**
+```json
+{
+  "status": "error",
+  "error_code": "E1001",
+  "error_message": "Invalid attestation token",
+  "recovery_action": "refresh_attestation",
+  "retry_after": 30
 }
 ```
 
@@ -407,6 +495,16 @@ Content-Type: application/json
 }
 ```
 
+**Response (Error):**
+```json
+{
+  "status": "error",
+  "error_code": "E2003",
+  "error_message": "Signature verification failed",
+  "recovery_action": "re_register"
+}
+```
+
 ### 9.3 Salt Rotation Endpoint
 
 ```http
@@ -427,8 +525,9 @@ Content-Type: application/json
     "install_ts": 1715000000,
     "random_salt": "base64url(new_32B)",
     "device_model": "Pixel 7",
-    "protocol_version": "3.0",
-    "security_level": "strongbox"
+    "protocol_version": "3.1",
+    "security_level": "strongbox",
+    "tpm_manufacturer": "Acme Secure Corp"
   },
   "rotation_timestamp": 1715090000
 }
@@ -459,11 +558,38 @@ Content-Type: application/json
 }
 ```
 
-## 10. Extensions
+### 9.5 Error Code Specification
 
-### 10.1 Post-Quantum Resistance
+| Error Code | Description | Recovery Action |
+|------------|-------------|----------------|
+| E1001 | Invalid attestation token | refresh_attestation |
+| E1002 | Device signature verification failed | retry_sign |
+| E1003 | Malformed request | check_request_format |
+| E2001 | Device not registered | register_device |
+| E2002 | Nonce reuse detected | request_new_nonce |
+| E2003 | Signature verification failed | re_register |
+| E3001 | Salt rotation failed | retry_with_new_salt |
+| E3002 | Invalid rotation timestamp | synchronize_time |
+| E4001 | Key rotation failed | retry_key_rotation |
+| E4002 | Invalid linking signature | re_register |
+| E5001 | Device revoked | contact_administrator |
+| E5002 | Protocol version unsupported | update_client |
 
-Hybrid signature approach combining classical and post-quantum algorithms:
+## 10. Post-Quantum Transition Strategy
+
+### 10.1 Transition Timeline
+
+| Phase | Timeline | Actions |
+|-------|----------|---------|
+| **Preparation** | Now - Q4 2025 | Deploy hybrid cryptography support |
+| **Hybrid Operation** | Q1 2026 - Q4 2027 | Dual classical/PQ signatures |
+| **Selective Migration** | Q1 2028 - Q4 2028 | High-security users migrate to PQ-only |
+| **General Migration** | Q1 2029 - Q4 2029 | All users migrate to PQ-only |
+| **Classical Deprecation** | Q1 2030 | Remove classical cryptography support |
+
+### 10.2 Hybrid Signature Approach
+
+Combine classical and post-quantum algorithms:
 
 $$
 \sigma_{hybrid} = (\sigma_{Ed25519}, \sigma_{Dilithium})
@@ -475,7 +601,36 @@ $$
 V_{hybrid}(pk, m, \sigma_{hybrid}) = V_{Ed25519}(pk_{Ed25519}, m, \sigma_{Ed25519}) \land V_{Dilithium}(pk_{Dilithium}, m, \sigma_{Dilithium})
 $$
 
-### 10.2 Multi-Device Federation
+### 10.3 Algorithm Deprecation Process
+
+1. **Warning Period (6 months):**
+   - Notify users of upcoming algorithm deprecation
+   - Add deprecation warnings in logs and responses
+
+2. **Grace Period (3 months):**
+   - Accept both old and new algorithms
+   - Automatically migrate devices when encountered
+
+3. **Enforcement Period:**
+   - Reject requests using deprecated algorithms
+   - Provide clear error messages with migration instructions
+
+### 10.4 Dual-Mode Operations
+
+During transition, support both classical and post-quantum modes:
+
+```json
+{
+  "cryptography_mode": "hybrid",
+  "classical_signature": "base64url(σ_Ed25519)",
+  "pq_signature": "base64url(σ_Dilithium)",
+  "pq_ready": true
+}
+```
+
+## 11. Extensions
+
+### 11.1 Multi-Device Federation
 
 Hierarchical identity structure where multiple devices can be linked:
 
@@ -489,7 +644,7 @@ $$
 \sigma_{link} = S(sk_{parent}, DID_{child} || t_{link})
 $$
 
-### 10.3 Offline Validation
+### 11.2 Offline Validation
 
 Distributed revocation lists using signed Merkle trees:
 
@@ -505,319 +660,22 @@ $$
 \sigma_{revlist} = S(sk_{server}, MerkleRoot || t_{issue})
 $$
 
-## 11. Reference Implementation
+### 11.3 Decentralized Identity Integration
 
-### 11.1 Client SDK (Pseudocode)
+Support for verifiable credentials and decentralized identifiers:
 
-```typescript
-class DeviceIdProtocol {
-  constructor(options: {
-    platform: string;
-    appVersion: {major: number, minor: number};
-    secureStorage: SecureStorageProvider;
-  }) {
-    this.options = options;
-    this.storage = options.secureStorage;
-  }
+1. Map $DID$ to W3C Decentralized Identifier
+2. Generate verifiable credentials using $sk_{device}$
+3. Enable zero-knowledge proofs for selective disclosure
 
-  async initialize(): Promise<void> {
-    // Check for existing key
-    let keyPair = await this.storage.getKeyPair('device_id_keypair');
+### 11.4 Cross-Platform Key Federation
 
-    if (!keyPair) {
-      // Generate new key pair
-      keyPair = await crypto.subtle.generateKey(
-        { name: 'Ed25519' },
-        false, // non-extractable
-        ['sign', 'verify']
-      );
+Mechanism for securely sharing keys across trusted devices:
 
-      await this.storage.storeKeyPair('device_id_keypair', keyPair);
-
-      // Generate random salt
-      const salt = crypto.getRandomValues(new Uint8Array(32));
-      await this.storage.storeBytes('device_id_salt', salt);
-
-      // Store installation timestamp
-      await this.storage.storeData('install_ts', Date.now() / 1000);
-    }
-  }
-
-  async generateDeviceId(): Promise<{
-    deviceId: string;
-    signature: string;
-    publicKey: string;
-    metadata: object;
-  }> {
-    const keyPair = await this.storage.getKeyPair('device_id_keypair');
-    const salt = await this.storage.getBytes('device_id_salt');
-    const installTs = await this.storage.getData('install_ts');
-
-    // Collect OS info
-    const osInfo = await getOsInfo();
-
-    // Create metadata object
-    const metadata = {
-      platform: this.options.platform,
-      os_version: {
-        major: osInfo.major,
-        minor: osInfo.minor
-      },
-      app_version: this.options.appVersion,
-      install_ts: installTs,
-      random_salt: arrayBufferToBase64Url(salt),
-      device_model: await getDeviceModel(),
-      protocol_version: "3.0",
-      security_level: await getSecurityLevel()
-    };
-
-    // Canonicalize and hash
-    const canonicalData = canonicalizeJson(metadata);
-    const fingerprint = new TextEncoder().encode(canonicalData);
-    const didRaw = await crypto.subtle.digest('SHA-256', fingerprint);
-
-    // Sign the DID
-    const signature = await crypto.subtle.sign(
-      'Ed25519',
-      keyPair.privateKey,
-      didRaw
-    );
-
-    // Export public key
-    const publicKeyRaw = await crypto.subtle.exportKey(
-      'raw',
-      keyPair.publicKey
-    );
-
-    return {
-      deviceId: arrayBufferToBase64Url(didRaw),
-      signature: arrayBufferToBase64Url(signature),
-      publicKey: arrayBufferToBase64Url(publicKeyRaw),
-      metadata
-    };
-  }
-
-  async authenticate(nonce: string): Promise<{
-    deviceId: string;
-    signature: string;
-    nonce: string;
-    timestamp: number;
-  }> {
-    const keyPair = await this.storage.getKeyPair('device_id_keypair');
-    const didRaw = await this.getDeviceIdRaw();
-
-    // Prepare data to sign (DID + nonce)
-    const dataToSign = new Uint8Array(didRaw.byteLength + nonce.length);
-    dataToSign.set(new Uint8Array(didRaw), 0);
-    dataToSign.set(new TextEncoder().encode(nonce), didRaw.byteLength);
-
-    // Sign the data
-    const signature = await crypto.subtle.sign(
-      'Ed25519',
-      keyPair.privateKey,
-      dataToSign
-    );
-
-    return {
-      deviceId: arrayBufferToBase64Url(didRaw),
-      signature: arrayBufferToBase64Url(signature),
-      nonce: nonce,
-      timestamp: Math.floor(Date.now() / 1000)
-    };
-  }
-
-  async rotateSalt(): Promise<{
-    oldDeviceId: string;
-    newDeviceId: string;
-    signature: string;
-    metadata: object;
-    rotationTimestamp: number;
-  }> {
-    const keyPair = await this.storage.getKeyPair('device_id_keypair');
-    const oldSalt = await this.storage.getBytes('device_id_salt');
-    const oldDidRaw = await this.getDeviceIdRaw();
-
-    // Generate new salt
-    const newSalt = crypto.getRandomValues(new Uint8Array(32));
-
-    // Create updated metadata
-    const metadata = await this.getMetadata();
-    metadata.random_salt = arrayBufferToBase64Url(newSalt);
-
-    // Compute new DID
-    const canonicalData = canonicalizeJson(metadata);
-    const fingerprint = new TextEncoder().encode(canonicalData);
-    const newDidRaw = await crypto.subtle.digest('SHA-256', fingerprint);
-
-    // Current timestamp
-    const timestamp = Math.floor(Date.now() / 1000);
-
-    // Prepare data to sign (new DID + timestamp)
-    const dataToSign = new Uint8Array(newDidRaw.byteLength + 8);
-    dataToSign.set(new Uint8Array(newDidRaw), 0);
-    new DataView(dataToSign.buffer).setBigUint64(newDidRaw.byteLength, BigInt(timestamp));
-
-    // Sign the data
-    const signature = await crypto.subtle.sign(
-      'Ed25519',
-      keyPair.privateKey,
-      dataToSign
-    );
-
-    // Store the new salt
-    await this.storage.storeBytes('device_id_salt', newSalt);
-
-    return {
-      oldDeviceId: arrayBufferToBase64Url(oldDidRaw),
-      newDeviceId: arrayBufferToBase64Url(newDidRaw),
-      signature: arrayBufferToBase64Url(signature),
-      metadata: metadata,
-      rotationTimestamp: timestamp
-    };
-  }
-
-  // Helper methods
-  private async getDeviceIdRaw(): Promise<ArrayBuffer> {
-    const metadata = await this.getMetadata();
-    const canonicalData = canonicalizeJson(metadata);
-    const fingerprint = new TextEncoder().encode(canonicalData);
-    return await crypto.subtle.digest('SHA-256', fingerprint);
-  }
-
-  private async getMetadata(): Promise<object> {
-    const salt = await this.storage.getBytes('device_id_salt');
-    const installTs = await this.storage.getData('install_ts');
-    const osInfo = await getOsInfo();
-
-    return {
-      platform: this.options.platform,
-      os_version: {
-        major: osInfo.major,
-        minor: osInfo.minor
-      },
-      app_version: this.options.appVersion,
-      install_ts: installTs,
-      random_salt: arrayBufferToBase64Url(salt),
-      device_model: await getDeviceModel(),
-      protocol_version: "3.0",
-      security_level: await getSecurityLevel()
-    };
-  }
-}
-```
-
-### 11.2 Server Verification (Pseudocode)
-
-```typescript
-async function verifyDeviceId(request) {
-  const {
-    device_id: deviceId,
-    signature,
-    device_key: publicKey,
-    metadata
-  } = request;
-
-  // Decode from base64url
-  const didRaw = base64UrlToArrayBuffer(deviceId);
-  const signatureRaw = base64UrlToArrayBuffer(signature);
-  const publicKeyRaw = base64UrlToArrayBuffer(publicKey);
-
-  // Import public key
-  const publicKeyObj = await crypto.subtle.importKey(
-    'raw',
-    publicKeyRaw,
-    { name: 'Ed25519' },
-    false,
-    ['verify']
-  );
-
-  // Verify signature
-  const isValid = await crypto.subtle.verify(
-    'Ed25519',
-    publicKeyObj,
-    signatureRaw,
-    didRaw
-  );
-
-  if (!isValid) {
-    throw new Error('Invalid signature');
-  }
-
-  // Verify DID matches metadata
-  const canonicalData = canonicalizeJson(metadata);
-  const fingerprint = new TextEncoder().encode(canonicalData);
-  const computedDid = await crypto.subtle.digest('SHA-256', fingerprint);
-
-  const computedDidBase64 = arrayBufferToBase64Url(computedDid);
-
-  if (computedDidBase64 !== deviceId) {
-    throw new Error('Device ID does not match metadata');
-  }
-
-  // Verify attestation if present
-  if (request.attestation_token) {
-    await verifyAttestation(request.attestation_token, metadata.platform);
-  }
-
-  return true;
-}
-
-async function verifyAuthentication(request, registeredDevice) {
-  const {
-    device_id: deviceId,
-    signature,
-    nonce,
-    timestamp
-  } = request;
-
-  // Validate timestamp is recent
-  const currentTime = Math.floor(Date.now() / 1000);
-  if (Math.abs(currentTime - timestamp) > 300) { // 5 minute window
-    throw new Error('Authentication timestamp expired');
-  }
-
-  // Verify nonce hasn't been used before
-  if (await isNonceReused(nonce)) {
-    throw new Error('Nonce reuse detected');
-  }
-
-  // Decode from base64url
-  const didRaw = base64UrlToArrayBuffer(deviceId);
-  const signatureRaw = base64UrlToArrayBuffer(signature);
-
-  // Prepare data that should have been signed
-  const dataToVerify = new Uint8Array(didRaw.byteLength + nonce.length);
-  dataToVerify.set(new Uint8Array(didRaw), 0);
-  dataToVerify.set(new TextEncoder().encode(nonce), didRaw.byteLength);
-
-  // Import public key from registered device
-  const publicKeyRaw = base64UrlToArrayBuffer(registeredDevice.publicKey);
-  const publicKeyObj = await crypto.subtle.importKey(
-    'raw',
-    publicKeyRaw,
-    { name: 'Ed25519' },
-    false,
-    ['verify']
-  );
-
-  // Verify signature
-  const isValid = await crypto.subtle.verify(
-    'Ed25519',
-    publicKeyObj,
-    signatureRaw,
-    dataToVerify
-  );
-
-  if (!isValid) {
-    throw new Error('Invalid signature');
-  }
-
-  // Mark nonce as used
-  await storeUsedNonce(nonce, timestamp);
-
-  return true;
-}
-```
+1. Establish secure channel between devices
+2. Derive shared transport key: $k_{transport} = KDF(ECDH(sk_A, pk_B), "transport", 256)$
+3. Encrypt keys for transport: $c = E_{hybrid}(sk_{device})$
+4. Authenticate key material with attestation on receiving device
 
 ## 12. Security Considerations
 
