@@ -11,7 +11,6 @@ import { useBodyClasses } from "@/shared/hooks/DOM/useBodyClass";
 import { IS_TOUCH_ENV } from "@/lib/core";
 import { usePageVisibility } from "@/lib/hooks/ui/usePageVisibility";
 
-import "@/lib/core/public/templates/linq";
 import useGlobalDragEventPrevention from "./lib/hooks/useGlobalDragEventPrevention";
 import ModalComposerProvider from "@/composers/modals/ModalComposer";
 import { ALLOW_DRAG_CLASS_NAME, ALLOW_DRAG_DATA_ATTR } from "@/lib/config";

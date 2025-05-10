@@ -21,7 +21,7 @@ export type ModalCommonProps = {
 type GetProps<T> = T extends React.ComponentType<infer P> ? P : never;
 
 export type ModalMap = {
-  [K in ModalType]: GetProps<(typeof modalRegistry)[K]> & ModalCommonProps;
+  [K in ModalType]: ReadonlyPartial<GetProps<(typeof modalRegistry)[K]> & ModalCommonProps>;
 };
 
 export type OpenModalFunction = <T extends ModalType>(

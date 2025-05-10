@@ -1,13 +1,9 @@
 import "@/styles/global.scss";
 import "@/styles/index.css";
 
-import initViewOptimizer from "./lib/utils/initViewOptimizer";
 import initAppServices from "./services/initAppServices";
 import initAppRoot from "./services/initAppRoot";
 import initApplicationRequirements from "./services/initApplicationRequirements ";
-import { setTaskErrorHandler } from "@/lib/modules/fastdom";
-import { enableStrict } from "@/lib/modules/fastdom/stricterdom";
-import { DEBUG } from "@/lib/config/dev";
 
 /**
  * Main application initialization sequence

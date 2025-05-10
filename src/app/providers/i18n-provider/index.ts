@@ -1,1 +1,1 @@
-export { default } from "./lib/init"
+export { default as initI18n } from "./lib/init"
