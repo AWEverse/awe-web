@@ -41,13 +41,13 @@ export const createAnimationVariants = (
             opacity: 0,
             y: -20,
             transition: { duration: 0.25, ease: "easeInOut" },
-          }
-          : {
-            x: animated === "RTL" ? "-100%" : "100%",
-            opacity: 0,
-            scale: 0.95,
-            transition: { duration: 0.2, ease: "easeInOut" },
-          },
+          }das
+        : {
+        x: animated === "RTL" ? "-100%" : "100%",
+        opacity: 0,
+        scale: 0.95,
+        transition: { duration: 0.2, ease: "easeInOut" },
+      },
     },
     zoom: {
       initial: { scale: 0.8, opacity: 0, y: 20 },

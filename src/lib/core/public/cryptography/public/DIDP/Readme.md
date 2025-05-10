@@ -1,12 +1,13 @@
-# 📄 Device ID Protocol v3.1 — Enhanced Specification
+# 📄 Device ID Protocol v3.1 — Enhanced Specification (Revised)
 
 ## Document Information
-- **Version**: 3.1
+- **Version**: 3.1.1
 - **Original Author**: Andrii Volynets (v1.0)
 - **Previous Revisions**:
   - AWE Industries (v2.0)
   - Anonymous Contributor (v3.0)
 - **Current Revision**: May 9, 2025
+- **Last Updated**: May 9, 2025
 
 ## 1. Executive Summary
 
@@ -100,6 +101,7 @@ For cryptographic operations, we use the following notation:
 4. **Signature Generation:** $\sigma = S(sk_{device}, DID)$
 5. **Signature Verification:** $V(pk_{device}, DID, \sigma) \in \{true, false\}$
 6. **Error Handling:** $ErrorCode = ProcessError(ErrorCondition, ContextData)$
+7. **Context-derived Device ID:** $DID_C = H(DID \mathbin\Vert C)$, where $C$ is a domain-specific context string
 
 ### 3.3 Cryptographic Primitives
 
@@ -112,9 +114,38 @@ For cryptographic operations, we use the following notation:
 | Alternative Encoding | CBOR | RFC 8949 | N/A |
 | Key Derivation | HKDF-SHA256 | RFC 5869 | 256-bit |
 | Key Derivation (Alt) | HKDF-BLAKE3 | BLAKE3 Spec | 256-bit |
-| Post-Quantum Option | Dilithium | NIST PQC | 128-bit quantum |
-| Post-Quantum KEM | Kyber | NIST PQC | 128-bit quantum |
-| Post-Quantum Hash | SLH-DSA | NIST PQC | 128-bit quantum |
+| Post-Quantum Option | Dilithium3/5 | NIST PQC | 128/256-bit quantum |
+| Post-Quantum KEM | Kyber768/1024 | NIST PQC | 128/256-bit quantum |
+| Post-Quantum Hash | SPHINCS+-SHAKE256 | NIST PQC | 128-bit quantum |
+| Post-Quantum Hash (Alt) | SLH-DSA | NIST PQC | 128-bit quantum |
+
+### 3.4 Post-Quantum Parameter Specifications
+
+#### Dilithium Parameters
+
+| Parameter Set | Security Level | Public Key Size | Signature Size | Application |
+|---------------|----------------|-----------------|----------------|-------------|
+| Dilithium3 | NIST Level 3 (128-bit PQ) | 1,952 bytes | 3,293 bytes | Standard security applications |
+| Dilithium5 | NIST Level 5 (256-bit PQ) | 2,592 bytes | 4,595 bytes | High security applications |
+
+Implementation guidelines:
+- Use Dilithium3 for most applications
+- Use Dilithium5 for high-security scenarios requiring long-term protection
+- Parameter selection must be explicitly recorded in protocol version field
+- Implementations **MUST** use the final NIST-standardized parameter sets
+
+#### SPHINCS+ Parameters (Offline Alternative)
+
+| Parameter Set | Security Level | Public Key Size | Signature Size | Application |
+|---------------|----------------|-----------------|----------------|-------------|
+| SPHINCS+-SHAKE256-128f | NIST Level 1 | 32 bytes | 17,088 bytes | Fast verification, offline use cases |
+| SPHINCS+-SHAKE256-128s | NIST Level 1 | 32 bytes | 7,856 bytes | Smaller signatures, slower verification |
+
+Implementation guidelines:
+- SPHINCS+ **MAY** be used as an alternative signature algorithm in offline scenarios
+- The "-f" (fast) variant is recommended for most applications
+- The "-s" (small) variant should be used when signature size is a critical constraint
+- SPHINCS+ requires no trusted setup and provides hash-based security foundation
 
 ## 4. Protocol Components
 
@@ -149,7 +180,7 @@ A structured collection of device attributes that does not contain PII:
     "major": "Integer",
     "minor": "Integer"
   },
-  "install_ts": "Integer",       // Installation timestamp (seconds since epoch)
+  "install_ts": "Integer",       // Installation timestamp (seconds since epoch) - OPTIONAL
   "random_salt": "ByteString",   // 32 bytes of cryptographically secure randomness
   "device_model": "String",      // Optional, for UI display only
   "protocol_version": "3.1",     // Required field, updated for current version
@@ -157,6 +188,33 @@ A structured collection of device attributes that does not contain PII:
   "tpm_manufacturer": "String"   // Optional, for supply chain verification
 }
 ```
+
+#### 4.2.1 Field Processing Requirements
+
+Each field in the device fingerprint must be processed according to the following rules:
+
+1. **Required Fields:**
+   - `platform`, `os_version`, `app_version`, `random_salt`, `protocol_version`, `security_level`
+   - These fields **MUST** be present and non-null in all fingerprints
+
+2. **Optional Fields:**
+   - `install_ts`, `device_model`, `tpm_manufacturer`
+   - These fields **MAY** be omitted or set to `null`
+   - When comparing fingerprints, optional fields that are absent or `null` **MUST** be treated as equivalent
+
+3. **Field Serialization:**
+   - All fields **MUST** be serialized according to JCS (RFC 8785) or canonical CBOR (RFC 8949)
+   - String fields **MUST** use UTF-8 encoding
+   - Numeric fields **MUST** be serialized as integers without leading zeros
+   - Boolean fields **MUST** be serialized as `true` or `false` literals
+   - Empty arrays **MUST** be serialized as `[]`
+   - Empty objects **MUST** be serialized as `{}`
+   - Null values **MUST** be serialized as `null`
+
+4. **Privacy-Preserving Processing:**
+   - `install_ts` **SHOULD** be rounded to the nearest day (86400 seconds) to reduce uniqueness
+   - Implementations **MAY** omit `install_ts` entirely for enhanced privacy
+   - `device_model` **SHOULD** include only generic model information, not unique identifiers
 
 ### 4.3 Device ID (DID)
 
@@ -171,7 +229,31 @@ $$
 
 Where $H$ is either SHA-256 or BLAKE3 hash function.
 
-### 4.4 Device Signature ($\sigma$)
+### 4.4 Context-derived Device ID (DID_C)
+
+To prevent tracking across different applications or domains, a context-derived Device ID is defined:
+
+$$
+DID\_C = H(DID\_{raw} \mathbin\Vert C)
+$$
+
+Where:
+- $DID\_{raw}$ is the raw device identifier
+- $C$ is a domain-specific context string (e.g., application package name, domain name)
+- $H$ is the same hash function used for $DID$ generation
+
+**Usage Guidelines:**
+- Each application or domain **SHOULD** use a unique context string $C$
+- Context strings **SHOULD** include namespace prefixes to prevent collisions
+- For multi-tenant applications, tenant identifiers **SHOULD** be included in $C$
+- Example context: `"com.example.app:tenant123"`
+
+**Security Properties:**
+- Different contexts produce cryptographically distinct $DID\_C$ values
+- Knowledge of one $DID\_C$ does not reveal other $DID\_C$ values without knowledge of the original $DID\_{raw}$
+- Server-side systems **MAY** store only $DID\_C$ values for enhanced privacy
+
+### 4.5 Device Signature ($\sigma$)
 
 Ed25519 signature over the raw device ID:
 
@@ -185,7 +267,7 @@ $$
 V(pk_{device}, DID_{raw}, \sigma) = true
 $$
 
-### 4.5 Attestation Token (AT)
+### 4.6 Attestation Token (AT)
 
 Platform-specific evidence of device authenticity:
 
@@ -198,6 +280,25 @@ Platform-specific evidence of device authenticity:
 - Implementations **MUST** validate attestation-specific signatures
 - Attestation verification **MUST** use constant-time comparison
 - Attestation failures **MUST** generate detailed error codes
+
+### 4.7 Trust Policy Metadata
+
+The `security_level` field defines the trust policy for a device. Servers **MUST** maintain a policy table mapping security levels to trust decisions:
+
+| Security Level | Description | Trust Policy |
+|----------------|-------------|--------------|
+| `"strongbox"` | Hardware-backed security with isolation | Highest trust - all operations permitted |
+| `"tee"` | Trusted Execution Environment | High trust - most operations permitted |
+| `"secure_element"` | Dedicated security chip | High trust - most operations permitted |
+| `"keystore"` | OS-provided key storage | Medium trust - standard operations permitted |
+| `"software"` | Software-only implementation | Low trust - limited operations permitted |
+| `"unverified"` | Unknown security level | Minimal trust - basic operations only |
+
+**Trust Policy Application:**
+- Servers **MUST** define minimum required security levels for sensitive operations
+- Implementations **MUST** accurately report their security capabilities
+- Security level downgrades (e.g., from `"strongbox"` to `"software"`) **MUST** trigger re-verification
+- All security level changes **MUST** be logged as security-relevant events
 
 ## 5. Protocol Lifecycle
 
@@ -230,17 +331,39 @@ sequenceDiagram
 
 ### 5.2 Authentication Flow
 
-1. **Device** retrieves stored $sk_{device}$ and computes:
+1. **Server** generates a unique nonce with expiration:
+   * $nonce = random(32)$
+   * $expiry = current\_time + validity\_period$
+
+2. **Server** sends $(nonce, expiry)$ to device
+
+3. **Device** retrieves stored $sk_{device}$ and computes:
    * $FP = Encode(metadata)$
    * $DID = H(FP)$
-   * $\sigma = S(sk_{device}, DID || nonce)$ where $nonce$ is server-provided
+   * $session\_binding = H(session\_id || client\_ip || user\_agent)$ (optional)
+   * $\sigma = S(sk_{device}, DID || nonce || expiry || session\_binding)$
 
-2. **Device** sends $(DID, \sigma, nonce)$ to server
+4. **Device** sends $(DID, \sigma, nonce, expiry)$ to server
 
-3. **Server** verifies:
-   * $V(pk_{device}, DID || nonce, \sigma) = true$
+5. **Server** verifies:
+   * Current time < $expiry$ (nonce not expired)
+   * $nonce$ exists in active nonce table and not reused
+   * $session\_binding$ matches expected value (if enabled)
+   * $V(pk_{device}, DID || nonce || expiry || session\_binding, \sigma) = true$
    * $DID$ matches a registered device
-   * $nonce$ is valid and not reused
+
+**Nonce Lifecycle Management:**
+- Nonces **MUST** have a defined validity period, typically 5-15 minutes
+- Expired nonces **MUST** be rejected
+- Used nonces **MUST** be marked as consumed to prevent replay
+- Nonce tables **SHOULD** be purged of expired entries periodically
+- Nonce length **MUST** be at least 16 bytes (128 bits) of cryptographically secure random data
+
+**Session Binding (Optional):**
+- When enabled, binds authentication to a specific session context
+- Prevents session hijacking attacks
+- Parameters **MAY** include: session identifier, client IP address, TLS channel binding tokens, user agent identifiers
+- Implementations **MUST** clearly document which parameters are included in session binding
 
 ### 5.3 Salt Rotation
 
@@ -290,6 +413,49 @@ In the event of suspected key compromise:
 4. If attestation succeeds, device re-registers with new key pair
 5. All recovery actions are logged with audit trail
 
+### 5.6 Recovery Flows
+
+#### 5.6.1 Missing Rotation Request Recovery
+
+If a device misses a scheduled rotation request:
+
+1. **Device** detects missed rotation during authentication attempt
+   * Server returns error code `E3003` (rotation required)
+2. **Device** initiates self-rotation:
+   * Generates new salt $r'$
+   * Computes $FP' = Encode(metadata, r')$
+   * Computes $DID' = H(FP')$
+   * Signs $\sigma' = S(sk_{device}, DID' || DID || current\_time)$
+3. **Device** sends $(DID, DID', \sigma', metadata, r')$ to rotation recovery endpoint
+4. **Server** verifies signature and updates records
+5. **Server** returns success and updated rotation schedule
+
+#### 5.6.2 Device Reinstallation Recovery
+
+When an application is reinstalled but device hardware remains the same:
+
+1. **Device** attempts to recover key material from secure hardware
+2. If successful, device proceeds with normal authentication
+3. If unsuccessful, device enters recovery mode:
+   * Generates attestation token $AT$ from platform
+   * Sends $(device\_hardware\_id, AT)$ to recovery endpoint
+4. **Server** verifies attestation and hardware identifier
+5. If verified, server provisions temporary access and requests new registration
+6. Device completes new registration process
+7. Server links new $DID$ to user account based on verified hardware identity
+
+#### 5.6.3 Device Replacement Recovery
+
+When a user moves to a new device:
+
+1. **User** initiates recovery through authenticated secondary channel (e.g., email verification, SMS)
+2. **Server** issues time-limited recovery token $t_{recovery}$
+3. **New Device** completes registration process
+4. **User** enters or scans recovery token on new device
+5. **New Device** includes $t_{recovery}$ in registration request
+6. **Server** verifies recovery token and links new $DID$ to user account
+7. **Server** revokes old device $DID$ if specified by policy
+
 ## 6. Implementation Guidelines
 
 ### 6.1 Platform-Specific Storage
@@ -316,6 +482,50 @@ metadata = {platform: "android", os_version: {major: 14, minor: 0}, ...}
 canonical = JCS_Encode(metadata)
 // Result: fixed byte representation regardless of field order
 ```
+
+#### 6.2.1 Unambiguous Serialization Rules
+
+To ensure consistent hashing across platforms, implementations **MUST** follow these serialization rules:
+
+1. **Field Order**:
+   - JSON fields **MUST** be lexicographically sorted by field name as specified in JCS (RFC 8785)
+   - CBOR fields **MUST** follow canonical CBOR encoding as specified in RFC 8949
+
+2. **String Encoding**:
+   - All strings **MUST** be encoded as UTF-8
+   - No BOM (Byte Order Mark) shall be included
+   - Control characters (U+0000 through U+001F) **MUST** be escaped using Unicode escape sequences
+
+3. **Numeric Values**:
+   - Integers **MUST** be represented without leading zeros or decimal points
+   - Floating-point values **MUST** use the shortest representation that preserves the exact value
+   - NaN, Infinity, and -Infinity **MUST NOT** be used
+
+4. **Optional Fields**:
+   - Absent optional fields **MUST** be omitted entirely, not set to `null`
+   - Empty strings, arrays, or objects **MUST** be included as `""`, `[]`, or `{}` respectively, not omitted
+   - When comparing fingerprints, fields absent in one fingerprint but present with `null` value in another **MUST** be treated as equivalent
+
+5. **Processing Algorithm for Optional Fields**:
+   ```
+   function processFingerprint(fp) {
+     // Create a copy of the fingerprint
+     let processed = {...fp};
+
+     // Define optional fields
+     const optionalFields = ["install_ts", "device_model", "tpm_manufacturer"];
+
+     // Process each optional field
+     for (const field of optionalFields) {
+       // Remove field if null or undefined
+       if (processed[field] === null || processed[field] === undefined) {
+         delete processed[field];
+       }
+     }
+
+     return processed;
+   }
+   ```
 
 ### 6.3 Collision Resistance
 
@@ -402,7 +612,36 @@ $$
 
 This prevents long-term tracking across services if the same protocol is used independently.
 
-### 8.3 Compliance
+### 8.3 Privacy Audit Recommendations
+
+To enhance privacy protection:
+
+1. **Installation Timestamp Anonymization**:
+   - The `install_ts` field **SHOULD** be rounded to the nearest day (86400 seconds)
+   - Implementations **MAY** omit this field entirely if not required
+   - Alternative approach: use time buckets (e.g., week or month of installation) instead of exact timestamps
+
+2. **Device Model Generalization**:
+   - The `device_model` field **SHOULD** include only generic model information
+   - Specific revision identifiers that could create unique fingerprints **SHOULD** be omitted
+   - Example: Use "Pixel 7" instead of "Pixel 7 Pro (GVU6C)"
+
+3. **Context Separation**:
+   - Always use domain-specific $DID_C$ values when communicating with external services
+   - Different applications **SHOULD NOT** share $DID$ values directly
+   - For multi-purpose applications, use different context strings for different functional areas
+
+4. **Data Retention**:
+   - Servers **SHOULD** establish and enforce retention policies for device metadata
+   - Expired or inactive device records **SHOULD** be purged according to policy
+   - Audit logs **SHOULD** be anonymized after their operational usefulness has passed
+
+5. **Optional Fields Usage**:
+   - Implement all optional fields as truly optional
+   - Only collect fields necessary for the specific use case
+   - Document the privacy implications of each optional field
+
+### 8.4 Compliance
 
 The protocol supports compliance with global privacy regulations:
 

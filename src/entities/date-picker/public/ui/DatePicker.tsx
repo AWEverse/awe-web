@@ -150,7 +150,7 @@ const DatePicker: FC<DatePickerProps> = ({
       const selectedDate = new Date(dateAttr);
       if (!isDateValid(selectedDate)) return;
 
-      const adjustedDay = selectedDate.getDate() + 1;
+      const adjustedDay = selectedDate.getDate();
       handleDateSelect(
         adjustedDay,
         selectedDate.getMonth(),

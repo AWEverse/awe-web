@@ -10,9 +10,9 @@ import { useStableCallback } from "@/shared/hooks/base";
 
 import "./ModalComposer.css";
 
-interface ModalComposerState {
-  type: ModalType;
-  props: ModalMap[ModalType];
+interface ModalComposerState<T extends ModalType = ModalType> {
+  type: T;
+  props: ModalMap[T];
   zIndex?: number;
 }
 
@@ -33,7 +33,10 @@ const ModalComposerProvider: React.FC<{ children?: ReactNode }> = ({
     ) => {
       setModalState({
         type,
-        props: props as ModalMap[T],
+        props: {
+          ...props,
+          onClose: closeModal,
+        },
         zIndex,
       });
     },
@@ -43,25 +46,32 @@ const ModalComposerProvider: React.FC<{ children?: ReactNode }> = ({
     <ModalContext.Provider value={{ openModal, closeModal }}>
       {children}
 
-      <Modal
-        className="ModalGlobalContainer"
-        isOpen={Boolean(modalState)}
-        onClose={closeModal}
-      >
-        <h2 id="modal-global-id" className="ModalGlobalTitle">
-          {modalState?.type.replace("-", " ")}
-        </h2>
+      {modalState && (
+        <Modal
+          isOpen
+          className="ModalGlobalContainer"
+          onClose={closeModal}
+          {...(modalState.zIndex
+            ? { style: { zIndex: modalState.zIndex } }
+            : {})}
+        >
+          <h2 id="modal-global-id" className="ModalGlobalTitle">
+            {modalState.type.replace(/-/g, " ")}
+          </h2>
 
-        <Suspense fallback={<div>Loading modal...</div>}>
-          {modalState?.type &&
-            ((ModalComponent) => (
-              <ModalComponent
-                {...(modalState.props as any)}
-                onClose={closeModal}
-              />
-            ))(modalRegistry[modalState.type])}
-        </Suspense>
-      </Modal>
+          <Suspense
+            fallback={<div className="ModalGlobalSkeleton">loading...</div>}
+          >
+            {modalState?.type &&
+              ((ModalComponent) => (
+                <ModalComponent
+                  {...(modalState.props as any)}
+                  onClose={closeModal}
+                />
+              ))(modalRegistry[modalState.type])}
+          </Suspense>
+        </Modal>
+      )}
     </ModalContext.Provider>
   );
 };
