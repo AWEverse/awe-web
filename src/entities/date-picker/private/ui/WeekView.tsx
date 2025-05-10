@@ -1,6 +1,6 @@
-import React, { memo, useMemo } from "react";
+import React, { useMemo } from "react";
 import buildClassName from "@/shared/lib/buildClassName";
-import { CalendarViewProps, EDatePickerView } from "../lib/types";
+import { CalendarViewProps } from "../lib/types";
 import { buildCalendarGrid } from "../lib/utils";
 
 const getIsoDate = (
