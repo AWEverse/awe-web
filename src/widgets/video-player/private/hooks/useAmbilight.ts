@@ -27,21 +27,29 @@ const useAmbilight = (
   const ctxRef = useRef<CanvasRenderingContext2D | null>(null);
   const lastTime = useRef(0);
   const isActive = useRef(!isDisabled);
-  const interval = 1000 / fps;
+  const interval = useRef(1000 / fps);
+  const lastVideoDims = useRef<{ w: number; h: number }>({ w: 0, h: 0 });
+
+  useEffect(() => {
+    interval.current = 1000 / fps;
+  }, [fps]);
 
   const updateDimensions = useCallback(() => {
     const video = videoRef.current;
     const canvas = canvasRef.current;
     if (!video || !canvas) return;
-
     const { clientWidth: w, clientHeight: h } = video;
+    if (lastVideoDims.current.w === w && lastVideoDims.current.h === h) return;
+    lastVideoDims.current = { w, h };
     const dpr = window.devicePixelRatio || 1;
     canvas.width = w * dpr;
     canvas.height = h * dpr;
     ctxRef.current = canvas.getContext("2d", { alpha: true });
+    ctxRef.current?.setTransform(1, 0, 0, 1, 0, 0); // Reset transform
     ctxRef.current?.scale(dpr, dpr);
   }, [videoRef, canvasRef]);
 
+  // Draw frame with requestAnimationFrame, throttle by interval
   const drawFrame = useCallback(
     (time: number) => {
       if (
@@ -54,17 +62,13 @@ const useAmbilight = (
       const video = videoRef.current;
       const canvas = canvasRef.current;
       const ctx = ctxRef.current;
-
-      if (time - lastTime.current < interval) {
+      if (time - lastTime.current < interval.current) {
         rafId.current = requestAnimationFrame(drawFrame);
         return;
       }
-
       lastTime.current = time;
-
       if (video.paused || video.readyState < EMediaReadyState.HAVE_CURRENT_DATA)
         return;
-
       ctx.globalAlpha = intensity;
       switch (drawMode) {
         case "full":
@@ -126,17 +130,10 @@ const useAmbilight = (
       }
       rafId.current = requestAnimationFrame(drawFrame);
     },
-    [
-      drawMode,
-      intensity,
-      blurRadius,
-      edgeThickness,
-      videoRef,
-      canvasRef,
-      interval,
-    ],
+    [drawMode, intensity, blurRadius, edgeThickness, videoRef, canvasRef],
   );
 
+  // Start/stop logic, avoids duplicate rAFs
   const start = useCallback(() => {
     if (rafId.current) cancelAnimationFrame(rafId.current);
     updateDimensions();
@@ -159,29 +156,26 @@ const useAmbilight = (
   useEffect(() => {
     const video = videoRef.current;
     if (!video) return;
-
     const handleState = () => {
       updateDimensions();
       if (video.paused || video.ended) stop();
       else if (video.readyState >= EMediaReadyState.HAVE_CURRENT_DATA) start();
     };
-
     video.addEventListener("play", start);
     video.addEventListener("pause", stop);
-    video.addEventListener("seeking", stop);
+    video.addEventListener("seeking", start); // <-- update on seeking
     video.addEventListener("seeked", handleState);
     video.addEventListener("waiting", stop);
     video.addEventListener("playing", start);
     document.addEventListener("visibilitychange", () =>
       document.hidden ? stop() : handleState(),
     );
-
     handleState();
     return () => {
       stop();
       video.removeEventListener("play", start);
       video.removeEventListener("pause", stop);
-      video.removeEventListener("seeking", stop);
+      video.removeEventListener("seeking", start); // <-- cleanup
       video.removeEventListener("seeked", handleState);
       video.removeEventListener("waiting", stop);
       video.removeEventListener("playing", start);

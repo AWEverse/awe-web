@@ -1,4 +1,44 @@
+.LayoutOutlet {
+  --layout-header-z-index: 10;
+  --layout-header-height-desktop: 56px;
+  --layout-header-height-tablet: 48px;
+  --layout-header-height-mobile: 44px;
+  --layout-max-width-desktop: 1332px;
+  --layout-max-width-tablet: 720px;
+  --layout-padding-desktop: 1rem;
+  --layout-padding-mobile: 4px;
+  --background-pattern: radial-gradient(transparent 1px, #0b1012 1px);
+  --blur-effect: blur(10rem);
+  --layout-header-height: var(--layout-header-height-desktop);
 
+  @media (max-width: 768px) {
+    --layout-header-height: var(--layout-header-height-tablet);
+  }
+  @media (max-width: 480px) {
+    --layout-header-height: var(--layout-header-height-mobile);
+  }
+
+  z-index: var(--layout-header-z-index);
+  overflow-y: auto;
+  min-height: 100dvh;
+  min-width: 100dvw;
+  max-height: 100dvh;
+  max-width: 100dvw;
+  will-change: scroll-position;
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch;
+
+  @media (max-width: 480px) {
+    scrollbar-width: thin;
+    &::-webkit-scrollbar {
+      width: 6px;
+    }
+    &::-webkit-scrollbar-thumb {
+      background-color: rgba(0, 0, 0, 0.3);
+      border-radius: 3px;
+    }
+  }
+}
 
 /* Header Component */
 .LayoutHeader {
@@ -14,11 +54,10 @@
   background-image: var(--background-pattern);
   background-size: 4px 4px;
 
-  /* Optimized backdrop filter */
   @supports (backdrop-filter: blur(0)) {
     backdrop-filter: var(--blur-effect);
     -webkit-backdrop-filter: var(--blur-effect);
-    background-color: rgba(0, 0, 0, 0.05); /* Fallback for better contrast */
+    background-color: rgba(0, 0, 0, 0.05);
   }
 }
 
@@ -32,72 +71,26 @@
   }
 }
 
- .LayoutHeader__SearchContainer {
+.LayoutHeader__SearchContainer {
   z-index: 20;
   transition: width 0.3s;
- }
-
-.LayoutOutlet {
-  --layout-header-z-index: 10;
-  --layout-header-height: 56px;
-  --background-pattern: radial-gradient(transparent 1px, #0b1012 1px);
-  --blur-effect: blur(10rem);
-
-  overflow-y: auto;
-  max-height: 100dvh;
-  max-width: 100dvw;
-  will-change: scroll-position;
-  scroll-behavior: smooth; /* Smooth scrolling */
-  -webkit-overflow-scrolling: touch; /* Improved iOS scrolling */
-}
-
-/* Tablets */
-@media (max-width: 768px) {
-  .LayoutOutlet {
-    --layout-header-height: 48px; /* Smaller header for tablets */
-  }
-}
-
-/* Mobile */
-@media (max-width: 480px) {
-  .LayoutOutlet {
-    --layout-header-height: 44px; /* Smaller header for mobile */
-    scrollbar-width: thin; /* Firefox: thinner scrollbar */
-  }
-
-  /* Chrome, Safari, Edge: thinner scrollbar */
-  .LayoutOutlet::-webkit-scrollbar {
-    width: 6px;
-  }
-
-  .LayoutOutlet::-webkit-scrollbar-thumb {
-    background-color: rgba(0, 0, 0, 0.3);
-    border-radius: 3px;
-  }
 }
 
 .LayoutBody {
   background-color: var(--awe-palette-background-default);
   width: 100%;
   margin: 0 auto;
+  padding: var(--layout-padding-desktop);
+  height: calc(100dvh - var(--layout-header-height));
 
-  padding: 1rem;
+  @media (max-width: 600px) {
+    padding: var(--layout-padding-mobile);
+  }
 
-  @media screen and (max-width: 600px) {
-    gap: 1rem;
-    padding: 4px;
+  @media (min-width: 768px) {
+    max-width: var(--layout-max-width-desktop);
+  }
+  @media (max-width: 768px) {
+    max-width: var(--layout-max-width-tablet);
   }
 }
-
-@media (min-width: 768px) {
-  .LayoutBody {
-    max-width: 1332px;
-  }
-}
-
-@media (max-width: 768px) {
-  .LayoutBody {
-    max-width: 720px;
-  }
-}
-

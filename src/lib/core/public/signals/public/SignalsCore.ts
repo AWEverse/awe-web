@@ -1304,7 +1304,8 @@ export function reactiveObject<T extends Record<string, unknown>>(
     if (!Object.prototype.hasOwnProperty.call(obj, key)) continue;
 
     const currentPath = [...path, key];
-    const value = obj[key]; const createSignal = <V>(val: V): Signal<V> => {
+    const value = obj[key];
+    const createSignal = <V>(val: V): Signal<V> => {
       const sig = signal(val);
       if (callback && matcher(currentPath)) {
         effect(() => callback(currentPath, sig.peek()));
@@ -1469,18 +1470,22 @@ export function monitorSignals(enable: boolean): void {
   if (!enable) {
     // Restore original methods if stored
     if (globalThis.__originalSignalSet) {
-      const descriptor = Object.getOwnPropertyDescriptor(Signal.prototype, "value")!;
+      const descriptor = Object.getOwnPropertyDescriptor(
+        Signal.prototype,
+        "value",
+      )!;
       const originalSet = globalThis.__originalSignalSet;
       Object.defineProperty(Signal.prototype, "value", {
         ...descriptor,
         set: originalSet,
-        configurable: true
+        configurable: true,
       });
       delete globalThis.__originalSignalSet;
     }
 
     if (globalThis.__originalComputedRefresh) {
-      const originalRefresh = globalThis.__originalComputedRefresh as () => boolean;
+      const originalRefresh =
+        globalThis.__originalComputedRefresh as () => boolean;
       Computed.prototype._refresh = originalRefresh;
       delete globalThis.__originalComputedRefresh;
     }
@@ -1489,7 +1494,10 @@ export function monitorSignals(enable: boolean): void {
 
   // Store original methods only if not already stored
   if (!globalThis.__originalSignalSet) {
-    const descriptor = Object.getOwnPropertyDescriptor(Signal.prototype, "value")!;
+    const descriptor = Object.getOwnPropertyDescriptor(
+      Signal.prototype,
+      "value",
+    )!;
     const originalSet = descriptor.set!;
     globalThis.__originalSignalSet = originalSet;
 
@@ -1501,7 +1509,7 @@ export function monitorSignals(enable: boolean): void {
         console.log(`Signal "${signalName}" updated:`, value);
         originalSet.call(this, value);
       },
-      configurable: true
+      configurable: true,
     });
   }
 
@@ -1518,16 +1526,65 @@ export function monitorSignals(enable: boolean): void {
   }
 }
 
+/**
+ * @module SignalsCore
+ * @description Reactive signals core implementation with batching, computed, and effect support.
+ * @exports computed, effect, batch, untracked, Signal, Computed, Effect, SIGNAL_SYMBOL, ReadonlySignal, Signalify, DeepReadonly
+ */
 export {
+  /**
+   * Create a computed signal that derives its value from other signals.
+   * @function
+   */
   computed,
+  /**
+   * Create an effect to run code in response to signal changes.
+   * @function
+   */
   effect,
+  /**
+   * Batch multiple signal updates into a single commit.
+   * @function
+   */
   batch,
+  /**
+   * Run a callback without tracking dependencies.
+   * @function
+   */
   untracked,
+  /**
+   * Signal class for reactive values.
+   * @class
+   */
   Signal,
+  /**
+   * Computed signal class.
+   * @class
+   */
   Computed,
+  /**
+   * Effect class for reactive side effects.
+   * @class
+   */
   Effect,
+  /**
+   * Symbol for signal branding.
+   * @const
+   */
   SIGNAL_SYMBOL,
+  /**
+   * Readonly signal type.
+   * @typedef
+   */
   type ReadonlySignal,
+  /**
+   * Utility type for signalifying objects.
+   * @typedef
+   */
   type Signalify,
+  /**
+   * Utility type for deep readonly objects.
+   * @typedef
+   */
   type DeepReadonly,
 };

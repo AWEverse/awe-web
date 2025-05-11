@@ -8,7 +8,6 @@ type TimeRange = [number, number];
 export const useTimeLine = (videoRef: React.RefObject<HTMLVideoElement | null>) => {
   const [currentTime, setCurrentTime] = useStateSignal(0);
   const [duration, setDuration] = useState(0);
-
   const [buffered, setBuffered] = useState<TimeRange[]>([]);
   const [playbackRate, setPlaybackRate] = useState(1);
 
@@ -17,8 +16,19 @@ export const useTimeLine = (videoRef: React.RefObject<HTMLVideoElement | null>) 
     if (!video) return;
 
     const updateDuration = () => setDuration(round(video.duration));
+    const updateCurrentTime = () => setCurrentTime(round(video.currentTime));
+
     video.addEventListener("loadedmetadata", updateDuration);
-    return () => video.removeEventListener("loadedmetadata", updateDuration);
+    video.addEventListener("durationchange", updateDuration);
+    video.addEventListener("loadedmetadata", updateCurrentTime);
+    video.addEventListener("seeked", updateCurrentTime);
+
+    return () => {
+      video.removeEventListener("loadedmetadata", updateDuration);
+      video.removeEventListener("durationchange", updateDuration);
+      video.removeEventListener("loadedmetadata", updateCurrentTime);
+      video.removeEventListener("seeked", updateCurrentTime);
+    };
   }, [videoRef]);
 
   useEffect(() => {
@@ -27,17 +37,10 @@ export const useTimeLine = (videoRef: React.RefObject<HTMLVideoElement | null>) 
 
     const handleTimeUpdate = () => {
       if (video.readyState < EMediaReadyState.HAVE_METADATA) return;
-
       const newTime = round(video.currentTime);
       const newDuration = round(video.duration);
-
-      if (duration !== newDuration) {
-        setDuration(newDuration);
-      }
-
-      if (currentTime.value !== newTime) {
-        setCurrentTime(newTime);
-      }
+      if (duration !== newDuration) setDuration(newDuration);
+      if (currentTime.value !== newTime) setCurrentTime(newTime);
     };
 
     video.addEventListener("timeupdate", handleTimeUpdate);
@@ -47,7 +50,6 @@ export const useTimeLine = (videoRef: React.RefObject<HTMLVideoElement | null>) 
   useEffect(() => {
     const video = videoRef.current;
     if (!video) return;
-
     const updateBuffered = () => {
       const ranges: TimeRange[] = [];
       for (let i = 0; i < video.buffered.length; i++) {
@@ -55,22 +57,22 @@ export const useTimeLine = (videoRef: React.RefObject<HTMLVideoElement | null>) 
       }
       setBuffered(ranges);
     };
-
     video.addEventListener("progress", updateBuffered);
     return () => video.removeEventListener("progress", updateBuffered);
   }, [videoRef]);
 
   useEffect(() => {
     const video = videoRef.current;
-    if (video) {
-      video.playbackRate = playbackRate;
-    }
+    if (!video) return;
+    video.playbackRate = playbackRate;
+    const handleRateChange = () => setPlaybackRate(video.playbackRate);
+    video.addEventListener("ratechange", handleRateChange);
+    return () => video.removeEventListener("ratechange", handleRateChange);
   }, [playbackRate, videoRef]);
 
   const handleSeek = useStableCallback((position: number) => {
     const video = videoRef.current;
     if (!video || !Number.isFinite(position)) return;
-
     try {
       const safePosition = clamp(position, 0, duration || video.duration);
       video.currentTime = safePosition;
@@ -81,12 +83,12 @@ export const useTimeLine = (videoRef: React.RefObject<HTMLVideoElement | null>) 
   });
 
   return {
-    currentTime,          // Signal object with .value property
-    duration,             // Total video duration (number)
-    buffered,             // Array of [start, end] buffered ranges
-    playbackRate,         // Current playback speed (e.g., 1, 1.5, 2)
-    setPlaybackRate,      // Function to set playback speed
-    handleSeek,           // Function to seek to a position
-    setCurrentTime,       // Setter for currentTime signal
+    currentTime,
+    duration,
+    buffered,
+    playbackRate,
+    setPlaybackRate,
+    handleSeek,
+    setCurrentTime,
   };
 };

@@ -1,6 +1,7 @@
 import { DEBUG } from "@/lib/config/dev";
-import { IS_IOS, IS_REQUEST_FULLSCREEN_SUPPORTED } from "@/lib/core";
+import { IS_IOS } from "@/lib/core";
 import { useStableCallback } from "@/shared/hooks/base";
+import { useScreenOrientationPolyfill } from "@/shared/polyfills/screenOrientationPolyfill";
 import React, { useState, useLayoutEffect, useCallback } from "react";
 
 type FullscreenControls = [boolean, () => Promise<void>];
@@ -25,7 +26,13 @@ const fullscreenProp = (() => {
 })();
 
 const isSupported =
-  Boolean(fullscreenProp || IS_IOS) && IS_REQUEST_FULLSCREEN_SUPPORTED;
+  typeof document !== "undefined" &&
+  !!(
+    document.fullscreenEnabled ||
+    (document as any).webkitFullscreenEnabled ||
+    (document as any).mozFullScreenEnabled ||
+    (document as any).msFullscreenEnabled
+  );
 
 export default function useFullscreen(
   elRef: React.RefObject<HTMLElement | null>,
@@ -36,18 +43,54 @@ export default function useFullscreen(
 ): FullscreenControls | [false] {
   const [isFullscreen, setIsFullscreen] = useState(() => checkIfFullscreen());
 
+  const lockOrientation = useStableCallback(async () => {
+    const orientation = screen.orientation as any;
+    if (orientation && typeof orientation.lock === "function") {
+      try {
+        await orientation.lock("landscape");
+      } catch (e) {
+        DEBUG && console.warn("Orientation lock failed", e);
+      }
+    }
+  });
+
+  const unlockOrientation = useStableCallback(async () => {
+    const orientation = screen.orientation as any;
+    if (orientation && typeof orientation.unlock === "function") {
+      try {
+        await orientation.unlock();
+      } catch (e) {
+        DEBUG && console.warn("Orientation unlock failed", e);
+      }
+    }
+  });
+
   const handleFullscreenChange = useStableCallback(async () => {
     const newState = checkIfFullscreen();
     setIsFullscreen(newState);
 
     if (newState) {
+      await lockOrientation();
       callbacks?.onEnter?.();
       if (elRef.current instanceof HTMLVideoElement) {
-        elRef.current.controls = false; // Force controls in fullscreen for Firefox
+        elRef.current.controls = false;
       }
     } else {
+      await unlockOrientation();
       callbacks?.onExit?.();
     }
+  });
+
+  useScreenOrientationPolyfill({
+    lockType: isFullscreen ? "any" : undefined,
+    onChange: (orientation) => {
+      if (isFullscreen && !orientation.startsWith("landscape")) {
+        setIsFullscreen(false);
+        unlockOrientation();
+        callbacks?.onExit?.();
+        requestExitFullscreen();
+      }
+    },
   });
 
   useLayoutEffect(() => {
@@ -56,8 +99,14 @@ export default function useFullscreen(
     const element = elRef.current;
     const handlers = {
       fullscreen: handleFullscreenChange,
-      iosStart: () => callbacks?.onEnter?.(),
-      iosEnd: () => callbacks?.onExit?.(),
+      iosStart: () => {
+        lockOrientation();
+        callbacks?.onEnter?.();
+      },
+      iosEnd: () => {
+        unlockOrientation();
+        callbacks?.onExit?.();
+      },
     };
 
     FULLSCREEN_EVENTS.forEach((event) => {
@@ -66,9 +115,26 @@ export default function useFullscreen(
 
     if (IS_IOS && element) {
       IOS_FULLSCREEN_EVENTS.forEach((event, idx) => {
-        element.addEventListener(event, [handlers.iosStart, handlers.iosEnd][idx]);
+        element.addEventListener(
+          event,
+          [handlers.iosStart, handlers.iosEnd][idx],
+        );
       });
     }
+
+    const orientationListener = () => {
+      if (
+        isFullscreen &&
+        screen.orientation &&
+        !screen.orientation.type.startsWith("landscape")
+      ) {
+        setIsFullscreen(false);
+        unlockOrientation();
+        callbacks?.onExit?.();
+        requestExitFullscreen();
+      }
+    };
+    window.addEventListener("orientationchange", orientationListener);
 
     return () => {
       FULLSCREEN_EVENTS.forEach((event) => {
@@ -77,11 +143,23 @@ export default function useFullscreen(
 
       if (IS_IOS && element) {
         IOS_FULLSCREEN_EVENTS.forEach((event, idx) => {
-          element.removeEventListener(event, [handlers.iosStart, handlers.iosEnd][idx]);
+          element.removeEventListener(
+            event,
+            [handlers.iosStart, handlers.iosEnd][idx],
+          );
         });
       }
+      window.removeEventListener("orientationchange", orientationListener);
     };
-  }, [elRef, callbacks?.onEnter, callbacks?.onExit, handleFullscreenChange]);
+  }, [
+    elRef,
+    callbacks?.onEnter,
+    callbacks?.onExit,
+    handleFullscreenChange,
+    lockOrientation,
+    unlockOrientation,
+    isFullscreen,
+  ]);
 
   const setFullscreen = useCallback(async () => {
     const element = elRef.current;
@@ -141,7 +219,9 @@ function checkIfFullscreen(): boolean {
   return isSupported && Boolean(document[fullscreenProp as keyof Document]);
 }
 
-async function requestFullscreen(element: PartialHTMLElementSupport): Promise<void> {
+async function requestFullscreen(
+  element: PartialHTMLElementSupport,
+): Promise<void> {
   try {
     if (element.requestFullscreen) {
       await element.requestFullscreen();

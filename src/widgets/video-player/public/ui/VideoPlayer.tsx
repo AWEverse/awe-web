@@ -13,7 +13,6 @@ import { useStableCallback } from "@/shared/hooks/base";
 import useFullscreen from "../../private/hooks/useFullScreen";
 import useUnsupportedMedia from "../../private/hooks/useSupportCheck";
 import useControlsSignal from "../../private/hooks/useControlsSignal";
-import stopEvent from "@/lib/utils/stopEvent";
 import useAmbilight from "../../private/hooks/useAmbilight";
 import {
   useIsIntersecting,
@@ -21,12 +20,9 @@ import {
 } from "@/shared/hooks/DOM/useIntersectionObserver";
 import VideoPlayerControls from "../../private/ui/VideoPlayerControls";
 import "./VideoPlayer.scss";
-import { ApiDimensions } from "@/@types/api/types/messages";
 import useAppLayout from "@/lib/hooks/ui/useAppLayout";
 import usePictureInPicture from "../../private/hooks/usePictureInPicture";
 import buildClassName from "@/shared/lib/buildClassName";
-import useStateSignal from "@/lib/hooks/signals/useStateSignal";
-import { DEBUG } from "@/lib/config/dev";
 import { useBooleanState, useTriggerReRender } from "@/shared/hooks/state";
 import parseMediaSources from "../../private/lib/source/parseMediaSources";
 import { useFastClick } from "@/shared/hooks/mouse/useFastClick";
@@ -37,31 +33,19 @@ import { useTimeLine } from "../../private/hooks/useTimeLine";
 import VideoPlayerContextMenu from "../../private/ui/context-menu/VideoPlayerContextMenu";
 import { useScrollProvider } from "@/shared/context";
 import useKeyHandler from "../../private/hooks/useKeyHandler";
-import { useThrottledFunction } from "@/shared/hooks/shedulers";
 import { useTouchControls } from "../../private/hooks/useTouchControls";
-import { useComponentDidMount } from "@/shared/hooks/effects/useLifecycle";
+import AmbientLight from "./AmbientLight";
 
 const TopPannel = lazy(() => import("../../private/ui/mobile/TopPannel"));
 
 type OwnProps = {
-  ref?: React.RefObject<HTMLVideoElement>;
-  closeOnMediaClick?: boolean;
-  disableClickActions?: boolean;
-  disablePreview?: boolean;
-  hidePlayButton?: boolean;
-  isAdsMessage?: boolean;
-  isViewerOpen?: boolean;
-  isGif?: boolean;
   mediaUrl?: string;
-  progressPercentage?: number;
   totalFileSize: number;
   playbackSpeed: number;
-  audioVolume: number;
+  isAdsMessage?: boolean;
+  isGif?: boolean;
   isAudioMuted: boolean;
-  isContentProtected?: boolean;
-  posterDimensions?: ApiDimensions;
   posterSource?: string;
-  allowFullscreen?: boolean;
   onAdsClick?: (triggeredFromMedia?: boolean) => void;
 };
 
@@ -70,9 +54,7 @@ const REWIND_STEP = 5;
 
 const VideoPlayer: React.FC<OwnProps> = ({
   mediaUrl = "/video_test/Интерстеллар.mp4",
-  playbackSpeed = 1,
   isAdsMessage,
-  disableClickActions,
   isGif,
   isAudioMuted,
   totalFileSize,
@@ -88,37 +70,25 @@ const VideoPlayer: React.FC<OwnProps> = ({
 
   const [reflows, forceReflow] = useTriggerReRender();
 
-  const {
-    observeIntersectionForReading,
-    observeIntersectionForLoading,
-    observeIntersectionForPlaying,
-  } = useScrollProvider();
+  const { observeIntersectionForReading, observeIntersectionForLoading } =
+    useScrollProvider();
 
   const getVideoElement = useStableCallback(() => {
     const videoElement = videoRef?.current;
-
     if (!videoElement) {
       if (reflows > 3) {
         throw new Error("Video element doesn't exist!");
       }
       forceReflow();
     }
-
     return videoElement!;
   });
 
   const [isAmbient, markAmbientOn, markAmbientOff] = useBooleanState(true);
-
-  const [waitingSignal, setWaiting] = useStateSignal(false);
-  const [controlsSignal, toggleControls, lockControls] = useControlsSignal();
-
+  const [controlsSignal, toggleControls] = useControlsSignal();
   const [isFullscreen, toggleFullscreen] = useFullscreen(containerRef);
 
-  const handleEnterFullscreen = useStableCallback(async () => {});
-  const handleLeaveFullscreen = useStableCallback(async () => {});
-
   const { currentTime, duration, handleSeek } = useTimeLine(videoRef);
-
   const isLooped = isGif || duration <= MAX_LOOP_DURATION;
 
   const {
@@ -135,10 +105,7 @@ const VideoPlayer: React.FC<OwnProps> = ({
   const {
     isSupported: isPictureInPictureSupported,
     enter: enterPictureInPicture,
-  } = usePictureInPicture(videoRef, {
-    onEnter: handleEnterFullscreen,
-    onLeave: handleLeaveFullscreen,
-  });
+  } = usePictureInPicture(videoRef, {});
 
   const isUnsupported = useUnsupportedMedia(videoRef);
   const isAmbilightDisabled = isAmbient && isFullscreen;
@@ -167,12 +134,10 @@ const VideoPlayer: React.FC<OwnProps> = ({
     toggleControls(isLooped);
   });
 
-  const handleVideoClick = useStableCallback(
-    async (e: React.MouseEvent<HTMLVideoElement, MouseEvent>) => {
-      if (isAdsMessage) onAdsClick?.(true);
-      if (!disableClickActions) await togglePlayState();
-    },
-  );
+  const handleVideoClick = useStableCallback(async () => {
+    if (isAdsMessage) onAdsClick?.(true);
+    await togglePlayState();
+  });
 
   useTouchControls(videoRef, {
     onLeftZone: () =>
@@ -200,17 +165,16 @@ const VideoPlayer: React.FC<OwnProps> = ({
   useEffect(() => {
     const videoElement = videoRef.current;
     if (!videoElement || isUnsupported) return;
-
-    const initializePlayback = async () => {
-      try {
-        await playMedia(videoElement);
-        pauseMedia(videoElement);
-      } catch (err) {
-        DEBUG && console.log(err);
-      }
-    };
-
-    if (mediaUrl && !IS_TOUCH_ENV) initializePlayback();
+    if (mediaUrl && !IS_TOUCH_ENV) {
+      (async () => {
+        try {
+          await playMedia(videoElement);
+          pauseMedia(videoElement);
+        } catch (err) {
+          // DEBUG && console.log(err);
+        }
+      })();
+    }
   }, [mediaUrl, isUnsupported]);
 
   useKeyHandler({
@@ -229,15 +193,6 @@ const VideoPlayer: React.FC<OwnProps> = ({
     KeyM: () => handleMuteClick(),
     KeyF: () => toggleFullscreen?.(),
   });
-
-  const handleVideoEnter = useStableCallback(() => toggleControls(true));
-  const handleVideoLeave = useStableCallback(() => toggleControls(!isPlaying));
-
-  const handleVideoMove = useStableCallback(() => {});
-
-  const handleSeekStart = useStableCallback(() => {});
-
-  const handleSeekEnd = useStableCallback(() => {});
 
   const {
     isContextMenuOpen,
@@ -258,34 +213,23 @@ const VideoPlayer: React.FC<OwnProps> = ({
       if (e.button === EMouseButton.Secondary) {
         handleBeforeContextMenu(e);
       }
-
       if (e.type === "mousedown" && e.button !== EMouseButton.Main) {
         return;
       }
     },
   );
 
-  const isIntersectingForLoading = useIsIntersecting(
-    containerRef,
-    observeIntersectionForLoading,
-    (entry) => {
-      const videoEl = getVideoElement();
-
-      if (isBetween(entry.intersectionRatio, 0.9, 1.0)) {
-        playMedia(videoEl);
-      } else {
-        pauseMedia(videoEl);
-      }
-    },
-  );
-
-  const isIntersectingForPlaying =
-    useIsIntersecting(containerRef, observeIntersectionForPlaying) &&
-    isIntersectingForLoading;
+  useIsIntersecting(containerRef, observeIntersectionForLoading, (entry) => {
+    const videoEl = getVideoElement();
+    if (isBetween(entry.intersectionRatio, 0.9, 1.0)) {
+      playMedia(videoEl);
+    } else {
+      pauseMedia(videoEl);
+    }
+  });
 
   useOnIntersect(readingRef, observeIntersectionForReading, (entry) => {
     const videoEl = getVideoElement();
-
     if (entry.isIntersecting && !videoEl.paused) {
       playMedia(videoEl);
     } else {
@@ -304,9 +248,6 @@ const VideoPlayer: React.FC<OwnProps> = ({
         ref={containerRef}
         onClick={handleClick}
         onMouseDown={handleMouseDown}
-        onMouseMove={!isMobile ? handleVideoMove : undefined}
-        onMouseOut={!isMobile ? handleVideoLeave : undefined}
-        onMouseOver={!isMobile ? handleVideoEnter : undefined}
       >
         {isMobile && <TopPannel />}
 
@@ -327,7 +268,6 @@ const VideoPlayer: React.FC<OwnProps> = ({
           role="video"
           preload="auto"
           autoPlay={false}
-          onWaiting={() => setWaiting(true)}
           onContextMenu={handleContextMenu}
           onEnded={handleEnded}
           onClick={!isMobile ? handleVideoClick : undefined}
@@ -360,9 +300,13 @@ const VideoPlayer: React.FC<OwnProps> = ({
           onToggleControls={toggleControls}
           onPlayPause={togglePlayState}
           onSeek={handleSeek}
-          onSeekStart={handleSeekStart}
-          onSeekEnd={handleSeekEnd}
           onAmbientModeClick={toggleAmbientLight}
+          onSeekStart={function (): void {
+            throw new Error("Function not implemented.");
+          }}
+          onSeekEnd={function (): void {
+            throw new Error("Function not implemented.");
+          }}
         />
 
         <AmbientLight canvasRef={canvasRef} disabled={isAmbilightDisabled} />
@@ -383,21 +327,5 @@ const VideoPlayer: React.FC<OwnProps> = ({
     </>
   );
 };
-
-const AmbientLight = memo(
-  ({
-    canvasRef,
-    disabled,
-  }: {
-    canvasRef: React.RefObject<HTMLCanvasElement | null>;
-    disabled?: boolean;
-  }) => (
-    <canvas
-      ref={canvasRef}
-      className="CinematicLight"
-      data-disabled={disabled}
-    />
-  ),
-);
 
 export default memo(VideoPlayer);
