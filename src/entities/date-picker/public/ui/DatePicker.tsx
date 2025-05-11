@@ -247,8 +247,8 @@ const DatePicker: FC<DatePickerProps> = ({
 
     return useGridSelection(
       {
-        start: Math.min(gridIndices.start, gridIndices.end),
-        end: Math.max(gridIndices.start, gridIndices.end),
+        start: Math.min(gridIndices.start, gridIndices.end - 1),
+        end: Math.max(gridIndices.start, gridIndices.end - 1),
       },
       defaultConfig,
     );
@@ -263,13 +263,14 @@ const DatePicker: FC<DatePickerProps> = ({
   const handleNextMonth = useStableCallback(() => changeMonth(NEXT_MONTH));
   const handleZoomToggle = useStableCallback(() => {
     setAnimated("zoom");
-    setZoomLevel(
-      [ZoomLevel.WEEK, ZoomLevel.MONTH, ZoomLevel.YEAR][
-        ([ZoomLevel.WEEK, ZoomLevel.MONTH, ZoomLevel.YEAR] as const).indexOf(
-          zoomLevel,
-        ) + 1
-      ] % 3,
-    );
+    const zoomLevels = [
+      ZoomLevel.WEEK,
+      ZoomLevel.MONTH,
+      ZoomLevel.YEAR,
+    ] as const;
+    const currentIndex = zoomLevels.indexOf(zoomLevel);
+    const nextIndex = (currentIndex + 1) % zoomLevels.length;
+    setZoomLevel(zoomLevels[nextIndex]);
   });
 
   const transitionKey = `${dateState.currentSystemDate.getMonth()}-${zoomLevel}`;

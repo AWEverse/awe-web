@@ -158,11 +158,4 @@ const WeekView: React.FC<CalendarViewProps> = ({ date }) => {
   );
 };
 
-export default React.memo(WeekView, (prevProps, nextProps) => {
-  return (
-    prevProps.date.currentSystemDate.getTime() ===
-      nextProps.date.currentSystemDate.getTime() &&
-    prevProps.date.userSelectedDate.getTime() ===
-      nextProps.date.userSelectedDate.getTime()
-  );
-});
+export default React.memo(WeekView);

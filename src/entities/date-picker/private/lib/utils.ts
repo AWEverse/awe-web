@@ -27,18 +27,18 @@ export function buildCalendarGrid(date: Date): CalendarGrid {
     prevMonthDaysCount > 0
       ? Array.from(
         { length: prevMonthDaysCount },
-        (_, i) => daysInPrevMonth - prevMonthDaysCount + i + 1,
+        (_, i) => daysInPrevMonth - prevMonthDaysCount + i,
       )
       : [];
 
   const currentMonthGrid = Array.from(
     { length: daysInCurrentMonth },
-    (_, i) => i + 1,
+    (_, i) => i,
   );
 
   const nextMonthGrid =
     nextMonthDaysCount > 0
-      ? Array.from({ length: nextMonthDaysCount }, (_, i) => i + 1)
+      ? Array.from({ length: nextMonthDaysCount }, (_, i) => i)
       : [];
 
   return { prevMonthGrid, currentMonthGrid, nextMonthGrid };

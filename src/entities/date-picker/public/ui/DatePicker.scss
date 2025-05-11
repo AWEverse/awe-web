@@ -111,7 +111,8 @@
   user-select: none;
   inset: 0px;
   pointer-events: none;
-
+  will-change: clip-path, background-color;
+  transition: path 0.25s ease, background-color 0.25s ease;
 }
 
 .dp-day--selected {
