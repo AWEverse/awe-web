@@ -1,60 +1,110 @@
-import { createBrowserRouter, RouterProvider } from "react-router";
-import { Suspense, lazy } from "react";
-
-// Lazy-loaded pages
-const TestPage = lazy(() => import("@/pages/test"));
-const OverviewPage = lazy(() => import("@/pages/d/subpages/overview"));
-const ThreadsPage = lazy(() => import("@/pages/threds"));
-const DisscusionsPage = lazy(() => import("@/pages/d/subpages/disscusions"));
-const CommunityPeoplePage = lazy(() => import("@/pages/d/subpages/people"));
-const ChatPage = lazy(() => import("@/pages/chat"));
-const ThreadPage = lazy(() => import("@/pages/thread"));
-const NotFoundPage = lazy(() => import("@/pages/not-found"));
-const RedditPage = lazy(() => import("@/pages/d"));
-const SubRedditPage = lazy(() => import("@/pages/d/subreddit"));
-const ProfilePage = lazy(() => import("@/pages/profile"));
-const VideoPage = lazy(() => import("@/pages/video"));
-
-import { SingleThread } from "@/pages/threds/";
+import { RouterFactory } from "@/shared/router/core/RouterFactory";
+import { RouteConfig } from "@/shared/router/types";
 import { ROUTES } from "./constants";
-import RouteFallback from "./ui/RouteFallback";
 import HomePage from "@/pages/home/ui/HomePage";
 import LayoutOutlet from "@/widgets/layout-outlet";
+import { SingleThread } from "@/pages/threds/";
 
 const { HOME, MAIN, USER_PROFILE, CHAT, DIALOGS, DISCUS, VIDEO } = ROUTES;
 
-const router = createBrowserRouter([
+const routes: RouteConfig[] = [
   {
     path: HOME.BASE,
     element: <LayoutOutlet />,
+    componentId: "layout",
     children: [
-      { index: true, element: <HomePage /> },
-      { path: MAIN, element: <ThreadPage /> },
-      { path: USER_PROFILE.BASE, element: <ProfilePage /> },
-      { path: DIALOGS.THREAD, element: <SingleThread /> },
+      {
+        index: true,
+        element: <HomePage />,
+        componentId: "home",
+      },
+      {
+        path: MAIN,
+        lazy: () => import("@/pages/thread"),
+        componentId: "thread",
+      },
+      {
+        path: USER_PROFILE.BASE,
+        lazy: () => import("@/pages/profile"),
+        componentId: "profile",
+      },
+      {
+        path: DIALOGS.THREAD,
+        element: <SingleThread />,
+        componentId: "single-thread",
+      },
       {
         path: DISCUS.BASE,
-        element: <RedditPage />,
+        lazy: () => import("@/pages/d"),
+        componentId: "reddit",
         children: [
-          { path: DISCUS.THREAD, element: <SubRedditPage /> },
-          { path: DISCUS.OVERVIEW, element: <OverviewPage /> },
-          { path: DISCUS.DISSCUSIONS, element: <DisscusionsPage /> },
-          { path: DISCUS.MEMBERS, element: <CommunityPeoplePage /> },
+          {
+            path: DISCUS.THREAD,
+            lazy: () => import("@/pages/d/subreddit"),
+            componentId: "subreddit",
+          },
+          {
+            path: DISCUS.OVERVIEW,
+            lazy: () => import("@/pages/d/subpages/overview"),
+            componentId: "overview",
+          },
+          {
+            path: DISCUS.DISSCUSIONS,
+            lazy: () => import("@/pages/d/subpages/disscusions"),
+            componentId: "discussions",
+          },
+          {
+            path: DISCUS.MEMBERS,
+            lazy: () => import("@/pages/d/subpages/people"),
+            componentId: "community-people",
+          },
         ],
       },
-      { path: DIALOGS.BASE, element: <ThreadsPage /> },
-      { path: VIDEO.BASE, element: <VideoPage /> },
-      { path: VIDEO.THREAD, element: <ThreadsPage /> },
-      { path: VIDEO.THREAD_ID, element: <SingleThread /> },
+      {
+        path: DIALOGS.BASE,
+        lazy: () => import("@/pages/threds"),
+        componentId: "threads",
+      },
+      {
+        path: VIDEO.BASE,
+        lazy: () => import("@/pages/video"),
+        componentId: "video",
+      },
+      {
+        path: VIDEO.THREAD,
+        lazy: () => import("@/pages/threds"),
+        componentId: "video-threads",
+      },
+      {
+        path: VIDEO.THREAD_ID,
+        element: <SingleThread />,
+        componentId: "video-single-thread",
+      },
     ],
   },
-  { path: CHAT.BASE, element: <ChatPage /> },
-  { path: "test", element: <TestPage /> },
-  { path: "*", element: <NotFoundPage /> },
-]);
+  {
+    path: CHAT.BASE,
+    lazy: () => import("@/pages/chat"),
+    componentId: "chat",
+  },
+  {
+    path: "test",
+    lazy: () => import("@/pages/test"),
+    componentId: "test",
+  },
+  {
+    path: "*",
+    lazy: () => import("@/pages/not-found"),
+    componentId: "404",
+  },
+];
 
 export const AWERoutesBrowserRouter = () => (
-  <Suspense fallback={<RouteFallback />}>
-    <RouterProvider router={router} />
-  </Suspense>
+  <RouterFactory
+    routes={routes}
+    preloadAll={process.env.NODE_ENV === "production"}
+    onRoutePreload={(loaded, total) => {
+      console.debug(`Route preloading progress: ${loaded}/${total}`);
+    }}
+  />
 );

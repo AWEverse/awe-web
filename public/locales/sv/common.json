@@ -1,0 +1,66 @@
+{
+  "confirm": {
+    "action": "Är du säker på att du vill {action}?"
+  },
+  "time": {
+    "periods": {
+      "morning": "morgon",
+      "afternoon": "eftermiddag",
+      "evening": "kväll",
+      "night": "natt"
+    },
+    "relative": {
+      "today": "Idag",
+      "yesterday": "Igår",
+      "tomorrow": "Imorgon"
+    },
+    "weekdays": [
+      "Måndag",
+      "Tisdag",
+      "Onsdag",
+      "Torsdag",
+      "Fredag",
+      "Lördag",
+      "Söndag"
+    ],
+    "months": [
+      "Januari",
+      "Februari",
+      "Mars",
+      "April",
+      "Maj",
+      "Juni",
+      "Juli",
+      "Augusti",
+      "September",
+      "Oktober",
+      "November",
+      "December"
+    ]
+  },
+  "search": {
+    "placeholder": "Sök"
+  },
+  "left": {
+    "tabs": {
+      "all": "Alla",
+      "chats": "Chattar",
+      "contacts": "Kontakter",
+      "calls": "Samtal"
+    },
+    "menu": "Meny",
+    "settings": {
+      "account": {
+        "label": "Konto",
+        "description": "• Kontoinställningar\n  • Lösenord\n  • E-post\n  • Telefon\n  • Aviseringar\n  • Sekretess och säkerhet\n  • Innehåll\n  • Chattar\n  • Anpassning"
+      },
+      "chats": "Chattar",
+      "content": "Innehåll",
+      "exitAccount": "Logga ut",
+      "exitAccountDialog": "Är du säker på att du vill logga ut?",
+      "notifications": "Aviseringar",
+      "personalization": "Anpassning",
+      "privacy": "Sekretess och säkerhet"
+    }
+  }
+}

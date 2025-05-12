@@ -1,0 +1,66 @@
+{
+  "confirm": {
+    "action": "¿Está seguro de que desea {action}?"
+  },
+  "time": {
+    "periods": {
+      "morning": "mañana",
+      "afternoon": "tarde",
+      "evening": "noche",
+      "night": "noche"
+    },
+    "relative": {
+      "today": "Hoy",
+      "yesterday": "Ayer",
+      "tomorrow": "Mañana"
+    },
+    "weekdays": [
+      "Lunes",
+      "Martes",
+      "Miércoles",
+      "Jueves",
+      "Viernes",
+      "Sábado",
+      "Domingo"
+    ],
+    "months": [
+      "Enero",
+      "Febrero",
+      "Marzo",
+      "Abril",
+      "Mayo",
+      "Junio",
+      "Julio",
+      "Agosto",
+      "Septiembre",
+      "Octubre",
+      "Noviembre",
+      "Diciembre"
+    ]
+  },
+  "search": {
+    "placeholder": "Buscar"
+  },
+  "left": {
+    "tabs": {
+      "all": "Todo",
+      "chats": "Chats",
+      "contacts": "Contactos",
+      "calls": "Llamadas"
+    },
+    "menu": "Menú",
+    "settings": {
+      "account": {
+        "label": "Cuenta",
+        "description": "• Ajustes de cuenta\n  • Contraseña\n  • Correo electrónico\n  • Teléfono\n  • Notificaciones\n  • Confidencialidad y seguridad\n  • Contenido\n  • Chats\n  • Personalización"
+      },
+      "chats": "Chats",
+      "content": "Contenido",
+      "exitAccount": "Cerrar sesión",
+      "exitAccountDialog": "¿Está seguro de que desea cerrar la sesión?",
+      "notifications": "Notificaciones",
+      "personalization": "Personalización",
+      "privacy": "Confidencialidad y seguridad"
+    }
+  }
+}

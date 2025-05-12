@@ -17,7 +17,7 @@ function useDocumentTitle(title: string) {
       } else {
         prevTitle.current = "";
       }
-    })
+    });
   }, [title]);
 }
 

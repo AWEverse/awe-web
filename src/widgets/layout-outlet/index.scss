@@ -11,13 +11,6 @@
   --blur-effect: blur(10rem);
   --layout-header-height: var(--layout-header-height-desktop);
 
-  @media (max-width: 768px) {
-    --layout-header-height: var(--layout-header-height-tablet);
-  }
-  @media (max-width: 480px) {
-    --layout-header-height: var(--layout-header-height-mobile);
-  }
-
   z-index: var(--layout-header-z-index);
   overflow-y: auto;
   min-height: 100dvh;
@@ -27,6 +20,13 @@
   will-change: scroll-position;
   scroll-behavior: smooth;
   -webkit-overflow-scrolling: touch;
+
+  @media (max-width: 768px) {
+    --layout-header-height: var(--layout-header-height-tablet);
+  }
+  @media (max-width: 480px) {
+    --layout-header-height: var(--layout-header-height-mobile);
+  }
 
   @media (max-width: 480px) {
     scrollbar-width: thin;

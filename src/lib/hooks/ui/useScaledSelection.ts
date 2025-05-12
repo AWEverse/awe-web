@@ -1,5 +1,5 @@
-import { useState, useRef } from 'react';
-import { throttle } from '@/lib/core';
+import { useState, useRef } from "react";
+import { throttle } from "@/lib/core";
 
 interface IDimensions {
   width: number;
@@ -15,10 +15,18 @@ const initialState: IDimensions = {
   y: 0,
 };
 
-const defaultCompare = (newDimensions: IDimensions, dimensions: IDimensions) => {
+const defaultCompare = (
+  newDimensions: IDimensions,
+  dimensions: IDimensions,
+) => {
   if (!newDimensions || !dimensions) return !!newDimensions;
 
-  const { width: newWidth, height: newHeight, x: newX, y: newY } = newDimensions;
+  const {
+    width: newWidth,
+    height: newHeight,
+    x: newX,
+    y: newY,
+  } = newDimensions;
   const { width, height, x, y } = dimensions;
 
   return newWidth === width && newHeight === height && newX === x && newY === y;
@@ -26,10 +34,13 @@ const defaultCompare = (newDimensions: IDimensions, dimensions: IDimensions) => 
 
 const shouldDefault = () => false;
 
-const sizePattern = (n: number) => (n === 0 ? '100%' : `${n}px`);
+const sizePattern = (n: number) => (n === 0 ? "100%" : `${n}px`);
 
 interface OwnProps {
-  shallowDimensions?: (newDimensions: IDimensions, currentDimensions: IDimensions) => boolean;
+  shallowDimensions?: (
+    newDimensions: IDimensions,
+    currentDimensions: IDimensions,
+  ) => boolean;
   shouldSkipNode?: (target: HTMLElement) => boolean;
   skipRoot?: boolean;
   initialDimensions?: IDimensions;
@@ -60,7 +71,9 @@ const useScaledSelection = <T extends HTMLElement>({
     };
 
     const skipReasons =
-      !root || shallowDimensions(newDimensions, dimensions) || shouldSkipNode(target);
+      !root ||
+      shallowDimensions(newDimensions, dimensions) ||
+      shouldSkipNode(target);
 
     if (!skipReasons) {
       setDimensions(newDimensions);

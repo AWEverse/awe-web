@@ -1,0 +1,66 @@
+{
+  "confirm": {
+    "action": "Sind Sie sicher, dass Sie {action} möchten?"
+  },
+  "time": {
+    "periods": {
+      "morning": "Morgen",
+      "afternoon": "Nachmittag",
+      "evening": "Abend",
+      "night": "Nacht"
+    },
+    "relative": {
+      "today": "Heute",
+      "yesterday": "Gestern",
+      "tomorrow": "Morgen"
+    },
+    "weekdays": [
+      "Montag",
+      "Dienstag",
+      "Mittwoch",
+      "Donnerstag",
+      "Freitag",
+      "Samstag",
+      "Sonntag"
+    ],
+    "months": [
+      "Januar",
+      "Februar",
+      "März",
+      "April",
+      "Mai",
+      "Juni",
+      "Juli",
+      "August",
+      "September",
+      "Oktober",
+      "November",
+      "Dezember"
+    ]
+  },
+  "search": {
+    "placeholder": "Suchen"
+  },
+  "left": {
+    "tabs": {
+      "all": "Alle",
+      "chats": "Chats",
+      "contacts": "Kontakte",
+      "calls": "Anrufe"
+    },
+    "menu": "Menü",
+    "settings": {
+      "account": {
+        "label": "Konto",
+        "description": "• Kontoeinstellungen\n  • Passwort\n  • E-Mail\n  • Telefon\n  • Benachrichtigungen\n  • Vertraulichkeit & Sicherheit\n  • Inhalt\n  • Chats\n  • Personalisierung"
+      },
+      "chats": "Chats",
+      "content": "Inhalt",
+      "exitAccount": "Konto verlassen",
+      "exitAccountDialog": "Möchten Sie sich wirklich abmelden?",
+      "notifications": "Benachrichtigungen",
+      "personalization": "Personalisierung",
+      "privacy": "Vertraulichkeit & Sicherheit"
+    }
+  }
+}

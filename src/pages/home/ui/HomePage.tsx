@@ -5,9 +5,7 @@ import ActionCard from "./ActionCard";
 import IconButton from "@/shared/ui/IconButton";
 import { ArrowDownward } from "@mui/icons-material";
 
-interface OwnProps {
-  children: ReactNode;
-}
+interface OwnProps {}
 
 interface StateProps {}
 

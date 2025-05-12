@@ -37,12 +37,13 @@ export function useLocale() {
     if (i18next.language !== locale) {
       i18next.changeLanguage(locale);
     }
+  }, [locale]);
 
+  useEffect(() => {
     if (typeof window !== "undefined") {
       localStorage.setItem(STORAGE_KEY, locale);
     }
   }, [locale]);
-
 
   const setLocale = useStableCallback((lng: string) => {
     if (SUPPORTED_LANGS.includes(lng)) {
