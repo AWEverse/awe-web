@@ -14,6 +14,12 @@
   overflow: hidden;
   position: relative;
   padding-top: 24px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.18);
+  min-width: 90px;
+  max-width: 120px;
+  padding-top: 28px;
+  margin: 0 auto;
+  border: 1px solid rgba(255, 255, 255, 0.08);
 
   &::before {
     content: "Time";
@@ -44,6 +50,10 @@
   scroll-snap-type: y mandatory;
   scroll-behavior: smooth;
   overflow-y: auto;
+  border-radius: 8px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.02) 0%, rgba(0, 0, 0, 0.12) 100%);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  margin-bottom: 8px;
 
   &::-webkit-scrollbar {
     display: none;
@@ -59,15 +69,24 @@
   transition: all 0.125s ease;
   cursor: pointer;
   scroll-snap-align: start;
+  min-height: 28px;
+  border-radius: 6px;
+  margin: 2px 0;
+  letter-spacing: 0.02em;
+  user-select: none;
 
   & > span {
     padding-inline: 0.25rem;
     border-radius: 1rem;
+    padding: 0.15rem 0.5rem;
+    font-variant-numeric: tabular-nums;
+    background: transparent;
+    transition: background 0.2s, color 0.2s;
   }
 
   &:hover:not(.selected) {
-    color: var(--time-color);
-    background-color: var(--item-hover-bg);
+    color: #fff;
+    background: linear-gradient(90deg, rgba(0, 122, 255, 0.08) 0%, rgba(255, 255, 255, 0.08) 100%);
   }
 }
 
@@ -77,10 +96,13 @@
   transform: scale(var(--selected-scale));
   transition: all 0.3s ease;
   animation: pulse 0.5s ease-in-out;
+  box-shadow: 0 0 0 2px var(--awe-palette-primary-main, #007aff);
+  z-index: 1;
 
   & > span {
     color: var(--awe-palette-primary-main);
-    background-color: rgba(var(--awe-palette-primary-mainChannel) / 0.375);
+    background-color: rgba(var(--awe-palette-primary-mainChannel, 0, 122, 255), 0.18);
+    font-weight: 700;
   }
 }
 
@@ -99,7 +121,6 @@
   }
 }
 
-
 .shiftContainer {
   display: flex;
   align-items: center;
@@ -108,15 +129,22 @@
   font-weight: bold;
   border-radius: 8px;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  background: rgba(255, 255, 255, 0.04);
+  margin-top: 8px;
+  padding: 2px;
+  gap: 1px;
 }
 
 .arrow {
   cursor: pointer;
   transition: transform 0.2s ease;
   font-size: 14px;
+  border-radius: 50%;
+  background: transparent;
 
   &:hover {
     transform: scale(1.2);
+    background: rgba(0, 122, 255, 0.12);
     color: #007aff;
   }
 }
@@ -124,4 +152,10 @@
 .number {
   font-size: 14px;
   text-align: center;
+  min-width: 28px;
+  font-weight: 600;
+  color: #fff;
+  background: rgba(0, 0, 0, 0.12);
+  border-radius: 6px;
+  padding: 2px 0;
 }
