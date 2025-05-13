@@ -19,6 +19,8 @@ import {
 import BundleManager from "@/lib/core/public/cryptography/public/X3DH/BundleManager";
 import receiveInitialMessage from "@/lib/core/public/cryptography/public/X3DH/receiveInitialMessage";
 import sendInitialMessage from "@/lib/core/public/cryptography/public/X3DH/sendInitialMessage";
+import withTooltip from "@/shared/hocs/withTooltip";
+import ActionButton from "@/shared/ui/ActionButton";
 
 // Utility to convert Uint8Array to hex string
 const toHex = (array: Uint8Array): string => {
@@ -33,14 +35,23 @@ const uint8ArrayEquals = (a: Uint8Array, b: Uint8Array): boolean => {
   return a.every((val, i) => val === b[i]);
 };
 
+const Button = withTooltip(ActionButton, {
+  content: "Click me!",
+  position: "top",
+  color: "#333",
+  delay: 125,
+  arrow: true,
+});
+
 const AdvancedEncryptionPage: React.FC = () => {
   const { openModal, closeModal } = useModalContext();
 
   return (
     <>
-      <button onClick={() => openModal("calendar", {}, 0)}>
+      <Button onClick={() => openModal("calendar", {}, 0)}>
         Open Calendar
-      </button>
+      </Button>
+
       <TimePicker />
 
       <Image
