@@ -1,34 +1,37 @@
-import { useColorScheme, IconButton, Typography } from '@mui/material';
-import React, { useEffect, useState } from 'react';
-import DarkModeRounded from '@mui/icons-material/DarkModeRounded';
-import LightModeRounded from '@mui/icons-material/LightModeRounded';
+import React from "react";
+import { IconButton, Typography } from "@mui/material";
+import DarkModeRounded from "@mui/icons-material/DarkModeRounded";
+import LightModeRounded from "@mui/icons-material/LightModeRounded";
+import { useTheme } from "@/shared/themes/ThemeContext";
 
 interface ColorSchemeToggleProps {
-  title: string;
+  title?: string;
 }
 
 const ColorSchemeToggle: React.FC<ColorSchemeToggleProps> = ({ title }) => {
-  const { mode, setMode } = useColorScheme();
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
-
-  if (!mounted) {
-    return <IconButton color="primary" size="sm" variant="outlined" />;
-  }
+  const { mode, toggleTheme } = useTheme();
 
   return (
     <IconButton
-      color="neutral"
       id="toggle-mode"
-      size="sm"
-      sx={{ alignSelf: 'center', zIndex: 10, px: 1, m: -1 }}
-      onClick={() => setMode(mode === 'light' ? 'dark' : 'light')}
+      onClick={toggleTheme}
+      sx={(theme) => ({
+        alignSelf: "center",
+        zIndex: 10,
+        px: 1,
+        m: -1,
+        color: theme.palette.text.primary,
+        "&:hover": {
+          backgroundColor: theme.palette.action.hover,
+        },
+      })}
     >
-      {mode === 'light' ? <DarkModeRounded /> : <LightModeRounded />}
-      <Typography sx={{ ml: 0.5 }}>{title}</Typography>
+      {mode === "light" ? <DarkModeRounded /> : <LightModeRounded />}
+      {title && (
+        <Typography variant="body2" sx={{ ml: 1 }}>
+          {title}
+        </Typography>
+      )}
     </IconButton>
   );
 };

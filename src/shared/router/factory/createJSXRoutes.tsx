@@ -6,7 +6,7 @@ import {
   ComponentType,
 } from "react";
 import { Route } from "react-router";
-import { RouteConfig } from "./types";
+import { RouteConfig } from "../types";
 import { RouterErrorBoundary } from "./RouterErrorBoundary";
 
 const componentCache = new Map<string, ComponentType>();

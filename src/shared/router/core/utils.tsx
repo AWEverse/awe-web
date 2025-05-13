@@ -1,11 +1,12 @@
-import React, { ReactElement, ComponentType } from 'react';
-import { ROUTER_DEFAULTS } from './constants';
-import { RouterErrorBoundary } from '../RouterErrorBoundary';
-import { componentCache } from './cache';
+import React, { ReactElement, ComponentType } from "react";
+import { ROUTER_DEFAULTS } from "./constants";
+import { RouterErrorBoundary } from "../factory/RouterErrorBoundary";
+import { componentCache } from "./cache";
+import { RouteConfigArray, RouteConfig } from "../types";
 
 export async function preloadLazyComponent(
   lazyImport: () => Promise<{ default: ComponentType<any> }>,
-  cacheKey: string
+  cacheKey: string,
 ): Promise<void> {
   if (!componentCache.has(cacheKey)) {
     try {
@@ -14,7 +15,7 @@ export async function preloadLazyComponent(
       const loadTime = performance.now() - startTime;
 
       const component = module.default;
-      if (typeof component === 'function') {
+      if (typeof component === "function") {
         componentCache.set(cacheKey, component, loadTime);
       }
     } catch (error) {
@@ -27,36 +28,35 @@ export async function preloadLazyComponent(
 export function wrapInSuspense(
   element: ReactElement,
   fallback?: ReactElement,
-  errorElement?: ReactElement
+  errorElement?: ReactElement,
 ): ReactElement {
   if (!React.isValidElement(element)) {
-    console.error('Invalid element provided to suspense wrapper');
+    console.error("Invalid element provided to suspense wrapper");
     return errorElement || ROUTER_DEFAULTS.ERROR_FALLBACK;
   }
 
   const suspenseElement = (
-    <React.Suspense fallback= { fallback || ROUTER_DEFAULTS.LOADING_FALLBACK
-}>
-  { element }
-  </React.Suspense>
+    <React.Suspense fallback={fallback || ROUTER_DEFAULTS.LOADING_FALLBACK}>
+      {element}
+    </React.Suspense>
   );
 
-return errorElement ? (
-  <RouterErrorBoundary>{ suspenseElement } </RouterErrorBoundary>
-) : (
-  suspenseElement
-);
+  return errorElement ? (
+    <RouterErrorBoundary>{suspenseElement} </RouterErrorBoundary>
+  ) : (
+    suspenseElement
+  );
 }
 
 export function createGuardChain(
   element: ReactElement,
   guards: Array<(el: ReactElement) => ReactElement>,
-  errorHandler?: (error: Error) => ReactElement
+  errorHandler?: (error: Error) => ReactElement,
 ): ReactElement {
   try {
     return guards.reduce((el, guard) => guard(el), element);
   } catch (error) {
-    console.error('Guard chain execution failed:', error);
+    console.error("Guard chain execution failed:", error);
     return errorHandler?.(error as Error) || ROUTER_DEFAULTS.ACCESS_DENIED;
   }
 }
@@ -66,7 +66,7 @@ export async function preloadRoutes(
   options: {
     parallel?: boolean;
     onProgress?: (loaded: number) => void;
-  } = {}
+  } = {},
 ): Promise<void> {
   const { parallel = true, onProgress } = options;
   let loaded = 0;

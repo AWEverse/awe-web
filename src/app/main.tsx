@@ -31,6 +31,7 @@ async function loadErrorModule(error: unknown) {
 async function initializeApp() {
   try {
     await initAppServices();
+
     initApplicationRequirements();
     initAppRoot();
   } catch (error) {

@@ -1,6 +1,6 @@
 import React, { Suspense, ReactElement, lazy } from "react";
 import { RouteObject } from "react-router";
-import { RouteConfig } from "./types";
+import { RouteConfig } from "../types";
 
 const componentCache = new Map<string, React.ComponentType>();
 

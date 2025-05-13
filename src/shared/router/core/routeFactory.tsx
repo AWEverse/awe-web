@@ -1,6 +1,6 @@
 import { ReactElement, lazy } from "react";
 import { RouteObject } from "react-router";
-import type { RouteConfig, RouteConfigArray } from "../types";
+import type { RouteConfigArray } from "../types";
 import { componentCache } from "./cache";
 import { wrapInSuspense, createGuardChain } from "./utils";
 

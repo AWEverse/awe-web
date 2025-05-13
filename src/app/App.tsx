@@ -1,9 +1,10 @@
 import { FC, useEffect, useRef, useState } from "react";
-import { ThemeProvider } from "@mui/material/styles";
+import { ThemeProvider as MUIThemeProvider } from "@mui/material/styles";
 import CssBaseline from "@mui/material/CssBaseline";
 
 import theme from "@/app/providers/theme-provider";
 import { AWERoutesBrowserRouter } from "@/app/providers/router-provider";
+import { ThemeProvider } from "@/shared/themes/ThemeContext";
 import windowSize from "@/lib/utils/windowSize";
 import { ThemeKey } from "@/shared/themes/config";
 import { useComponentDidMount } from "@/shared/hooks/effects/useLifecycle";
@@ -86,17 +87,19 @@ const App: FC<StateProps> = ({ themeKey = "dark" }) => {
   useGlobalDragEventPrevention([ALLOW_DRAG_CLASS_NAME, ALLOW_DRAG_DATA_ATTR]);
 
   return (
-    <ThemeProvider
-      defaultMode={themeKey}
-      theme={theme}
-      disableTransitionOnChange
-    >
-      <CssBaseline enableColorScheme />
+    <ThemeProvider>
+      <MUIThemeProvider
+        defaultMode={themeKey}
+        theme={theme}
+        disableTransitionOnChange
+      >
+        <CssBaseline enableColorScheme />
 
-      <ModalComposerProvider>
-        <AWERoutesBrowserRouter />
-      </ModalComposerProvider>
-      <FPS />
+        <ModalComposerProvider>
+          <AWERoutesBrowserRouter />
+        </ModalComposerProvider>
+        <FPS />
+      </MUIThemeProvider>
     </ThemeProvider>
   );
 };

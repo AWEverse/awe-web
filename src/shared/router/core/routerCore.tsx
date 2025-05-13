@@ -1,22 +1,25 @@
-import { ComponentType, ReactElement, Suspense, isValidElement } from 'react';
-import { RouterErrorBoundary } from '../RouterErrorBoundary';
-import { RouteConfig, RouteConfigArray } from '../types';
+import { ComponentType, ReactElement, Suspense, isValidElement } from "react";
+import { RouterErrorBoundary } from "../factory/RouterErrorBoundary";
+import { RouteConfig, RouteConfigArray } from "../types";
 
 /**
  * Shared cache for lazy-loaded components with performance metrics
  */
 class RouterComponentCache {
-  private cache = new Map<string, {
-    component: ComponentType<any>;
-    loadTime?: number;
-    lastAccessed?: number;
-  }>();
+  private cache = new Map<
+    string,
+    {
+      component: ComponentType<any>;
+      loadTime?: number;
+      lastAccessed?: number;
+    }
+  >();
 
   set(key: string, component: ComponentType<any>, loadTime?: number) {
     this.cache.set(key, {
       component,
       loadTime,
-      lastAccessed: Date.now()
+      lastAccessed: Date.now(),
     });
   }
 
@@ -46,10 +49,10 @@ export const componentCache = new RouterComponentCache();
 export const generateRouteKey = (
   path: string | undefined,
   index: number,
-  isIndex: boolean
+  isIndex: boolean,
 ): string => {
   const base = path || `route-${index}`;
-  const type = isIndex ? 'index' : 'route';
+  const type = isIndex ? "index" : "route";
   return `${base}-${type}`;
 };
 
@@ -58,7 +61,7 @@ export const generateRouteKey = (
  */
 export const preloadLazyComponent = async (
   lazyImport: () => Promise<{ default: ComponentType<any> }>,
-  cacheKey: string
+  cacheKey: string,
 ): Promise<void> => {
   if (!componentCache.has(cacheKey)) {
     try {
@@ -67,7 +70,7 @@ export const preloadLazyComponent = async (
       const loadTime = performance.now() - startTime;
 
       const component = module.default ?? module;
-      if (typeof component === 'function') {
+      if (typeof component === "function") {
         componentCache.set(cacheKey, component, loadTime);
       } else {
         console.warn(`Invalid component format for ${cacheKey}`);
@@ -85,31 +88,28 @@ export const preloadLazyComponent = async (
 export const wrapInSuspense = (
   element: ReactElement,
   fallback?: ReactElement,
-  errorElement?: ReactElement
+  errorElement?: ReactElement,
 ): ReactElement => {
-  // Validate element
   if (!isValidElement(element)) {
-    console.error('Invalid element provided to suspense wrapper');
+    console.error("Invalid element provided to suspense wrapper");
     return errorElement || <div>Invalid route element </div>;
   }
 
   const defaultFallback = (
-    <div className= "loading" role = "status" aria-live="polite" >
+    <div className="loading" role="status" aria-live="polite">
       Loading...
-  </div>
+    </div>
   );
 
-const suspenseElement = (
-  <Suspense fallback= { fallback || defaultFallback}>
-    { element }
-    </Suspense>
+  const suspenseElement = (
+    <Suspense fallback={fallback || defaultFallback}>{element}</Suspense>
   );
 
-return errorElement ? (
-  <RouterErrorBoundary>{ suspenseElement } </RouterErrorBoundary>
-) : (
-  suspenseElement
-);
+  return errorElement ? (
+    <RouterErrorBoundary>{suspenseElement} </RouterErrorBoundary>
+  ) : (
+    suspenseElement
+  );
 };
 
 /**
@@ -120,7 +120,7 @@ export const preloadRoutes = async (
   options: {
     parallel?: boolean;
     onProgress?: (loaded: number, total: number) => void;
-  } = {}
+  } = {},
 ): Promise<void> => {
   const { parallel = true, onProgress } = options;
   const total = routes.length;
@@ -152,13 +152,12 @@ export const preloadRoutes = async (
 export const createGuardChain = (
   element: ReactElement,
   guards: Array<(el: ReactElement) => ReactElement>,
-  errorHandler?: (error: Error) => ReactElement
+  errorHandler?: (error: Error) => ReactElement,
 ): ReactElement => {
   try {
     return guards.reduce((el, guard) => guard(el), element);
   } catch (error) {
-    console.error('Guard chain execution failed:', error);
-    return errorHandler?.(error as Error) ||
-      <div>Route access denied </div>;
+    console.error("Guard chain execution failed:", error);
+    return errorHandler?.(error as Error) || <div>Route access denied </div>;
   }
 };

@@ -1,5 +1,5 @@
 import { createTheme } from '@mui/material/styles';
-import { DarkPallete, LightPallete } from '@/shared/themes/palettes/winterfall';
+import { DarkPalette, LightPalette } from '@/shared/themes/palettes/spring';
 
 // Extending MUI's theme types to support custom color properties
 declare module '@mui/material/styles' {
@@ -15,10 +15,10 @@ const theme = createTheme({
   cssVariables: { cssVarPrefix: 'awe', colorSchemeSelector: '.mode-%s' },
   colorSchemes: {
     light: {
-      palette: LightPallete,
+      palette: LightPalette,
     },
     dark: {
-      palette: DarkPallete,
+      palette: DarkPalette,
     },
   },
 });
