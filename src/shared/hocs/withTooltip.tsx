@@ -1,4 +1,11 @@
-import React, { useState, useRef, useEffect, memo, useMemo } from "react";
+import React, {
+  useState,
+  useRef,
+  useEffect,
+  memo,
+  useMemo,
+  useLayoutEffect,
+} from "react";
 import {
   motion,
   AnimatePresence,
@@ -8,6 +15,7 @@ import {
 import { useStableCallback } from "@/shared/hooks/base";
 import { requestMeasure } from "@/lib/modules/fastdom";
 import Portal from "@/shared/ui/Portal";
+import { IS_MOBILE } from "@/lib/core";
 
 interface TooltipProps {
   content?: React.ReactNode;
@@ -43,9 +51,9 @@ interface Position {
 }
 
 const DEFAULT_ANIMATION = {
-  initial: { opacity: 0, scale: 0.8 },
+  initial: { opacity: 0, scale: 0.85 },
   animate: { opacity: 1, scale: 1 },
-  exit: { opacity: 0, scale: 0.8 },
+  exit: { opacity: 0, scale: 0.85 },
   transition: { duration: 0.125 },
 } as const;
 
@@ -92,7 +100,7 @@ const getComponentProps = <
   return {
     ...originalProps,
     ref,
-    ...(touchable
+    ...(touchable && IS_MOBILE
       ? {
           onClick: (e: React.MouseEvent) => {
             onShowTooltip();
@@ -349,7 +357,7 @@ const withTooltip = <P extends object>(
       touchable,
     );
 
-    React.useLayoutEffect(() => {
+    useLayoutEffect(() => {
       if (visible) updateTooltipPosition();
     }, [visible, updateTooltipPosition]);
 
@@ -395,15 +403,19 @@ const withTooltip = <P extends object>(
                 style={{
                   position: "fixed",
                   backgroundColor: color,
-                  padding: "5px 10px",
                   borderRadius: borderRadius,
-                  color: "white",
-                  whiteSpace: "nowrap",
-                  pointerEvents: "none",
                   zIndex: 1000,
                   top: position.top,
                   left: position.left,
                   ...style,
+                  transformOrigin:
+                    position.actualPosition === "top"
+                      ? "bottom center"
+                      : position.actualPosition === "bottom"
+                        ? "top center"
+                        : position.actualPosition === "left"
+                          ? "center right"
+                          : "center left",
                 }}
                 className={className}
               >
