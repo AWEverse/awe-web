@@ -118,7 +118,7 @@ const ChatMessage: FC<OwnProps & StateProps> = ({ isOwn, message }) => {
   } = useScrollProvider();
 
   const renderContent = (): ReactNode => {
-    return <MessageText>{markdownContent}</MessageText>;
+    return <MessageText content={markdownContent} />;
   };
 
   const renderAvatar = () => {
@@ -130,7 +130,7 @@ const ChatMessage: FC<OwnProps & StateProps> = ({ isOwn, message }) => {
   };
 
   const renderMessageText = () => {
-    return <MessageText>{markdownContent}</MessageText>;
+    return <MessageText content={markdownContent} />;
   };
 
   const isLoading = useIsIntersecting(

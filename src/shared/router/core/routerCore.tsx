@@ -1,47 +1,9 @@
 import { ComponentType, ReactElement, Suspense, isValidElement } from "react";
 import { RouterErrorBoundary } from "../factory/RouterErrorBoundary";
 import { RouteConfig, RouteConfigArray } from "../types";
+import { RouterCache } from "./cache";
 
-/**
- * Shared cache for lazy-loaded components with performance metrics
- */
-class RouterComponentCache {
-  private cache = new Map<
-    string,
-    {
-      component: ComponentType<any>;
-      loadTime?: number;
-      lastAccessed?: number;
-    }
-  >();
-
-  set(key: string, component: ComponentType<any>, loadTime?: number) {
-    this.cache.set(key, {
-      component,
-      loadTime,
-      lastAccessed: Date.now(),
-    });
-  }
-
-  get(key: string): ComponentType<any> | undefined {
-    const entry = this.cache.get(key);
-    if (entry) {
-      entry.lastAccessed = Date.now();
-      return entry.component;
-    }
-    return undefined;
-  }
-
-  has(key: string): boolean {
-    return this.cache.has(key);
-  }
-
-  getMetrics(key: string) {
-    return this.cache.get(key);
-  }
-}
-
-export const componentCache = new RouterComponentCache();
+export const componentCache = new RouterCache();
 
 /**
  * Generates a unique and consistent key for route identification

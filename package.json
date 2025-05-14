@@ -57,6 +57,7 @@
     "libsodium-wrappers": "^0.7.15",
     "linkify-it": "^5.0.0",
     "lru-cache": "^11.1.0",
+    "markdown-it": "^14.1.0",
     "marked": "^15.0.11",
     "memoizee": "^0.4.17",
     "motion": "^12.10.5",
@@ -68,6 +69,7 @@
     "react-router": "^7.6.0",
     "react-toastify": "^11.0.5",
     "react-window": "^1.8.11",
+    "sanitize-html": "^2.17.0",
     "zustand": "^5.0.4"
   },
   "devDependencies": {
@@ -87,6 +89,7 @@
     "@types/bcrypt": "^5.0.2",
     "@types/jest": "^29.5.14",
     "@types/libsodium-wrappers": "^0.7.14",
+    "@types/markdown-it": "^14.1.2",
     "@types/memoizee": "^0.4.11",
     "@types/mocha": "^10.0.10",
     "@types/node": "^22.15.2",
@@ -94,6 +97,7 @@
     "@types/react": "^19.0.1",
     "@types/react-dom": "^19.1.2",
     "@types/react-window": "^1.8.8",
+    "@types/sanitize-html": "^2.16.0",
     "@typescript-eslint/eslint-plugin": "^8.31.0",
     "@typescript-eslint/parser": "^8.31.0",
     "@vitejs/plugin-basic-ssl": "^2.0.0",
