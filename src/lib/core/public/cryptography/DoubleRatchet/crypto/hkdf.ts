@@ -1,13 +1,14 @@
 import sodium from "libsodium-wrappers";
 
 const HASH_LEN = 32;
+const MAX_OUTPUT_LENGTH = 255 * HASH_LEN;
 
 /**
- * Optimized HKDF (RFC 5869) combining extract and expand phases
- * @param salt - Non-secret random value (defaults to zero-filled array if empty)
- * @param ikm - Input key material (non-empty)
+ * Optimized HKDF (RFC 5869) implementation with performance and security improvements
+ * @param salt - Optional non-secret random value (defaults to zero-filled array)
+ * @param ikm - Input key material (must be non-empty Uint8Array)
  * @param info - Context/application-specific info
- * @param length - Desired output key length
+ * @param length - Desired output key length (must be ≤ 255*HASH_LEN)
  * @returns Output keying material
  * @throws Error if inputs are invalid or output length is too long
  */
@@ -23,53 +24,52 @@ export default function hkdf(
   if (!(info instanceof Uint8Array)) {
     throw new Error("HKDF: info must be a Uint8Array");
   }
-  if (!Number.isInteger(length) || length <= 0) {
-    throw new Error("HKDF: length must be a positive integer");
+  if (!Number.isInteger(length) || length <= 0 || length > MAX_OUTPUT_LENGTH) {
+    throw new Error(
+      `HKDF: length must be a positive integer ≤ ${MAX_OUTPUT_LENGTH}`,
+    );
   }
-  if (length > 255 * HASH_LEN) {
-    throw new Error("HKDF: output length exceeds 255 * hash length");
-  }
-
-  // Handle salt: default to zero-filled array if null or empty
-  const effectiveSalt = salt instanceof Uint8Array && salt.length > 0
-    ? salt
-    : new Uint8Array(HASH_LEN);
-
-  // Extract: Derive pseudorandom key (PRK)
-  // Uses crypto_generichash (BLAKE2b) with HASH_LEN = 32
-  const prk = sodium.crypto_generichash(HASH_LEN, ikm, effectiveSalt);
 
   const okm = new Uint8Array(length);
+
+  const prk = sodium.crypto_generichash(
+    HASH_LEN,
+    ikm,
+    salt instanceof Uint8Array && salt.length > 0
+      ? salt
+      : new Uint8Array(HASH_LEN),
+  );
+
+  const hashInput = new Uint8Array(HASH_LEN + info.length + 1);
+  hashInput.set(info, HASH_LEN);
+
+  let prevBlock = new Uint8Array(0);
+  let remaining = length;
   let offset = 0;
-  let T: Uint8Array = new Uint8Array(HASH_LEN);
-  let T_prev = new Uint8Array(0);
 
-  for (let i = 1; offset < length; i++) {
-    // Prepare input: T_prev || info || counter
-    const input: Uint8Array = new Uint8Array(T_prev.length + info.length + 1);
-    input.set(T_prev, 0);
-    input.set(info, T_prev.length);
-    input[T_prev.length + info.length] = i;
+  for (let i = 1; remaining > 0; i++) {
+    hashInput.set(prevBlock, 0);
+    hashInput[HASH_LEN + info.length] = i;
 
-    // Compute T = HMAC(PRK, T_prev || info || i)
-    T = sodium.crypto_generichash(HASH_LEN, input, prk);
+    const block = sodium.crypto_generichash(
+      HASH_LEN,
+      hashInput.subarray(0, prevBlock.length + info.length + 1),
+      prk,
+    ) as Uint8Array<ArrayBuffer>;
 
-    const toCopy = Math.min(HASH_LEN, length - offset);
-    okm.set(T.subarray(0, toCopy), offset);
-    offset += toCopy;
+    const copyLength = Math.min(HASH_LEN, remaining);
+    okm.set(block.subarray(0, copyLength), offset);
+    offset += copyLength;
+    remaining -= copyLength;
 
-    T_prev = T.slice();
+    prevBlock = block;
   }
 
   try {
     sodium.memzero?.(prk);
-    sodium.memzero?.(T);
-    sodium.memzero?.(T_prev);
-  } catch (e) {
-    prk.fill(0);
-    T.fill(0);
-    T_prev.fill(0);
-  }
+    sodium.memzero?.(hashInput);
+    sodium.memzero?.(prevBlock);
+  } catch (e) { }
 
   return okm;
 }

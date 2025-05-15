@@ -1,5 +1,30 @@
 .MiddleInput {
-  padding: 16px var(--chat-padding-x);
+  padding: 0.2rem var(--chat-padding-x, 0.125rem);
   transition: transform var(--transition-standard-in, 0.3s ease-in);
+  display: flex;
+  align-items: center;
+  position: relative;
+}
 
+.MiddleInputInputField {
+  width: 100%;
+}
+
+.MiddleInputActions {
+  position: relative;
+  padding: 0 0.5rem;
+
+}
+
+.MiddleInputActionsWrapper {
+  position: absolute;
+  max-height: 30dvh;
+  overflow-y: scroll;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.2rem;
 }

@@ -1,4 +1,4 @@
-import DarkPallete from './darkPalette';
-import LightPallete from './lightPalette';
+import DarkPalette from './darkPalette';
+import LightPalette from './lightPalette';
 
-export { DarkPallete, LightPallete };
+export { DarkPalette, LightPalette };

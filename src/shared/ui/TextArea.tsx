@@ -7,14 +7,14 @@ import {
   useRef,
   useCallback,
   KeyboardEvent,
+  useState,
 } from "react";
 import buildClassName from "../lib/buildClassName";
 import { useRefInstead } from "@/shared/hooks/base";
-import { requestMutation, requestNextMutation } from "@/lib/modules/fastdom";
+import { requestMutation } from "@/lib/modules/fastdom";
 import useUniqueId from "@/lib/hooks/utilities/useUniqueId";
 import "./TextArea.scss";
 import { useThrottledFunction } from "../hooks/shedulers";
-import { noop } from "@/lib/utils/listener";
 
 type TextAreaProps = React.DetailedHTMLProps<
   React.TextareaHTMLAttributes<HTMLTextAreaElement>,
@@ -32,6 +32,11 @@ type OwnProps = {
   replaceNewlines?: boolean;
 } & Omit<TextAreaProps, "maxLength">;
 
+const LINE_HEIGHT = 1.3125; // Matches CSS line-height
+const DEFAULT_MAX_LINES = 5;
+const BASE_LINE_HEIGHT = 21; // px (1.3125rem)
+const VERTICAL_PADDING = 24; // px (10px top + 14px bottom from CSS)
+
 const TextArea: FC<OwnProps> = ({
   ref,
   id,
@@ -48,7 +53,7 @@ const TextArea: FC<OwnProps> = ({
   maxLengthCount,
   maxLengthIndicator,
   tabIndex,
-  maxLines = 5,
+  maxLines = DEFAULT_MAX_LINES,
   onChange,
   replaceNewlines = false,
   ...rest
@@ -56,82 +61,78 @@ const TextArea: FC<OwnProps> = ({
   const uuid = useUniqueId("text-area", id);
   const textareaRef = useRefInstead<HTMLTextAreaElement>(ref);
   const indicatorRef = useRef<HTMLDivElement>(null);
-  const resizerCallbackRef = useRef<NoneToVoidFunction>(noop);
-
-  const lang = navigator.language;
+  const [isTouched, setIsTouched] = useState(false);
+  const lineHeightRef = useRef(BASE_LINE_HEIGHT);
 
   const fullClassName = buildClassName(
     "input-group",
-    error ? "error" : success && "success",
+    error && "error",
+    success && "success",
     (disabled || readOnly) && "disabled",
     label && "with-label",
+    isTouched && "touched",
     className,
   );
 
   const errorId = `${uuid}-error`;
   const successId = `${uuid}-success`;
 
+  // Height calculation logic
+  const updateHeight = useCallback(() => {
+    const textarea = textareaRef.current;
+    if (!textarea) return;
+
+    requestMutation(() => {
+      textarea.style.height = "auto";
+
+      console.log(textarea.scrollHeight);
+
+      const contentHeight = textarea.scrollHeight - VERTICAL_PADDING;
+      const maxHeight = lineHeightRef.current * maxLines;
+      const newHeight = Math.min(contentHeight, maxHeight) + VERTICAL_PADDING;
+
+      requestMutation(() => {
+        textarea.style.height = `${newHeight}px`;
+        textarea.style.overflow = contentHeight > maxHeight ? "auto" : "hidden";
+      });
+    });
+  }, [maxLines, textareaRef]);
+
+  // Initial setup and value changes
   useLayoutEffect(() => {
     const textarea = textareaRef.current;
     if (!textarea) return;
 
-    resizerCallbackRef.current = createResizeHeightUpdater(textarea);
+    // Set initial height for one line
+    textarea.style.height = `${BASE_LINE_HEIGHT + VERTICAL_PADDING}px`;
 
-    requestNextMutation(() => {
-      const scrollHeight = textarea.scrollHeight;
+    // Setup ResizeObserver
+    const observer = new ResizeObserver(updateHeight);
+    observer.observe(textarea);
 
-      return () => {
-        textarea.style.maxHeight = `${scrollHeight * maxLines}px`;
-        resizerCallbackRef.current?.();
-      };
-    });
+    // Initial update
+    updateHeight();
 
     return () => {
-      textarea.style.maxHeight = "";
-      textarea.value = "";
+      observer.disconnect();
+      textarea.style.height = "";
+      textarea.style.overflow = "";
     };
-  }, [maxLines, textareaRef]);
+  }, [textareaRef, updateHeight]);
 
-  const resizeHeight = useThrottledFunction(
-    () => {
-      requestMutation(() => resizerCallbackRef.current());
-    },
-    250,
-    true,
-  );
+  const handleChange = (e: ChangeEvent<HTMLTextAreaElement>) => {
+    const value = e.target.value;
+    setIsTouched(value.trim().length > 0);
 
-  const handleChange = useCallback(
-    (e: ChangeEvent<HTMLTextAreaElement>) => {
-      const target = e.currentTarget;
-      const updatedValue = target.value;
-      const valueLength = updatedValue.length;
+    if (maxLengthIndicator && indicatorRef.current && maxLengthCount) {
+      const remaining = maxLengthCount - value.length;
+      indicatorRef.current.textContent =
+        remaining >= 0 ? `Remaining: ${remaining}` : "Over limit";
+    }
 
-      if (maxLengthIndicator && indicatorRef.current && maxLengthCount) {
-        indicatorRef.current.textContent =
-          valueLength > 0
-            ? `Characters remaining: ${maxLengthCount - valueLength}`
-            : "";
-      }
-
-      const valueLengthTrimmed = updatedValue.trim().length;
-
-      if (1 >= valueLengthTrimmed) {
-        requestMutation(() => {
-          if (textareaRef.current) {
-            textareaRef.current.classList.toggle(
-              "touched",
-              valueLengthTrimmed > 0,
-            );
-          }
-        });
-      }
-
-      resizeHeight();
-
-      onChange?.(e);
-    },
-    [maxLengthCount, maxLengthIndicator, onChange, resizeHeight],
-  );
+    onChange?.(e);
+    updateHeight();
+  };
 
   const handleKeyDown = useCallback(
     (e: KeyboardEvent<HTMLTextAreaElement>) => {
@@ -139,27 +140,30 @@ const TextArea: FC<OwnProps> = ({
         e.preventDefault();
         const target = e.currentTarget;
         const newValue = target.value + " ";
-        onChange?.({
-          ...e,
-          target: { ...target, value: newValue },
-          currentTarget: { ...target, value: newValue },
-        });
+        target.value = newValue;
+        onChange?.(e as unknown as ChangeEvent<HTMLTextAreaElement>);
+        updateHeight();
       }
     },
-    [replaceNewlines, onChange],
+    [replaceNewlines, onChange, updateHeight],
   );
 
   return (
-    <div className={fullClassName} dir={lang === "ar" ? "rtl" : undefined}>
+    <div
+      className={fullClassName}
+      dir={navigator.language === "ar" ? "rtl" : undefined}
+    >
       {label && <label htmlFor={uuid}>{label}</label>}
 
       <textarea
         id={uuid}
+        rows={1}
         ref={textareaRef}
         aria-label={label}
         aria-invalid={!!error}
         aria-describedby={error ? errorId : success ? successId : undefined}
         autoComplete={autoComplete}
+        wrap="hard"
         className="form-control text-area awe-scrollbar"
         dir="auto"
         disabled={disabled}
@@ -168,11 +172,13 @@ const TextArea: FC<OwnProps> = ({
         placeholder={placeholder}
         readOnly={readOnly}
         tabIndex={tabIndex}
-        value={value || undefined}
+        value={value}
         onChange={handleChange}
         onKeyDown={handleKeyDown}
         {...rest}
-      />
+      >
+        <span>•</span>
+      </textarea>
 
       {error && (
         <div id={errorId} className="validation-message error">
@@ -192,32 +198,5 @@ const TextArea: FC<OwnProps> = ({
     </div>
   );
 };
-
-function createResizeHeightUpdater(element: HTMLTextAreaElement) {
-  const computedStyle = window.getComputedStyle(element);
-  const isBorderBox = computedStyle.boxSizing === "border-box";
-  const borderTop = parseFloat(computedStyle.borderTopWidth);
-  const borderBottom = parseFloat(computedStyle.borderBottomWidth);
-  const paddingTop = parseFloat(computedStyle.paddingTop);
-  const paddingBottom = parseFloat(computedStyle.paddingBottom);
-
-  return () => {
-    element.style.height = "0";
-
-    requestNextMutation(() => {
-      const maxHeight = parseFloat(element.style.maxHeight) || 0;
-      const { scrollHeight } = element;
-
-      return () => {
-        const newHeight = isBorderBox
-          ? scrollHeight + borderTop + borderBottom
-          : scrollHeight - paddingTop - paddingBottom;
-
-        element.style.height = `${newHeight}px`;
-        element.style.overflow = newHeight > maxHeight ? "auto" : "hidden";
-      };
-    });
-  };
-}
 
 export default memo(TextArea);

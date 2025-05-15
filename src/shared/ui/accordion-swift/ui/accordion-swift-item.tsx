@@ -1,10 +1,11 @@
-import React from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { useReducedMotion, motion, AnimatePresence } from "motion/react";
 import { FC, memo, JSX, useCallback, useMemo } from "react";
 import buildClassName from "@/shared/lib/buildClassName";
 import { useAccordionContext } from "../lib/accordion-context";
-import { createItemProps, createContentProps } from "../lib/accordion-variants";
+import { contentVariants, createItemProps } from "../lib/accordion-variants";
 import "./accordion-swift-item.scss";
+import { requestNextMutation } from "@/lib/modules/fastdom";
 
 export type AccordionItemProps = {
   as?: React.ElementType;
@@ -26,35 +27,54 @@ export const AccordionSwiftItem: FC<AccordionItemProps> = memo(
     className,
   }): JSX.Element => {
     const shouldReduceMotion = useReducedMotion();
-
     const { openIndexes, toggleIndex, childCount, allowMultiple } =
       useAccordionContext();
-
     const isOpen = propIsOpen ?? openIndexes.includes(index);
+    const contentRef = useRef<HTMLDivElement>(null);
+    const [contentHeight, setContentHeight] = useState(0);
+    const resizeObserverRef = useRef<ResizeObserver | null>(null);
+
+    useEffect(() => {
+      if (contentRef.current) {
+        resizeObserverRef.current = new ResizeObserver((entries) => {
+          const height = entries[0]?.contentRect.height ?? 0;
+          if (isOpen) {
+            setContentHeight(height);
+          }
+        });
+
+        resizeObserverRef.current.observe(contentRef.current);
+      }
+
+      return () => {
+        resizeObserverRef.current?.disconnect();
+      };
+    }, [isOpen]);
+
+    useEffect(() => {
+      if (!isOpen) {
+        setContentHeight(0);
+      } else if (contentRef.current) {
+        requestNextMutation(() => {
+          const height = contentRef.current!.scrollHeight;
+          return () => setContentHeight(height);
+        });
+      }
+    }, [isOpen, children]);
 
     const positionProps = useMemo(() => {
+      const openIndexSet = new Set(openIndexes);
       const isFirstChild = index === 0;
       const isLastChild = index === childCount - 1;
       const isSingleChild = childCount === 1;
 
-      let isPrevChild = false;
-      let isNextChild = false;
+      const isPrevChild = allowMultiple
+        ? openIndexSet.has(index + 1)
+        : openIndexes[0] === index + 1;
 
-      if (!allowMultiple) {
-        const currentOpenIndex = openIndexes.length > 0 ? openIndexes[0] : -1;
-        isPrevChild = currentOpenIndex !== -1 && index === currentOpenIndex - 1;
-        isNextChild = currentOpenIndex !== -1 && index === currentOpenIndex + 1;
-      } else {
-        for (let i = 0, len = openIndexes.length; i < len; ++i) {
-          if (index === openIndexes[i] - 1) {
-            isPrevChild = true;
-          }
-
-          if (index === openIndexes[i] + 1) {
-            isNextChild = true;
-          }
-        }
-      }
+      const isNextChild = allowMultiple
+        ? openIndexSet.has(index - 1)
+        : openIndexes[0] === index - 1;
 
       return {
         isFirstChild,
@@ -65,13 +85,18 @@ export const AccordionSwiftItem: FC<AccordionItemProps> = memo(
       };
     }, [index, childCount, openIndexes, allowMultiple]);
 
-    const handleToggle = useCallback(() => {
-      if (propOnToggle) {
-        propOnToggle(index);
-      } else {
-        toggleIndex(index);
-      }
-    }, [index, propOnToggle, toggleIndex]);
+    const handleToggle = useCallback(
+      (e: React.MouseEvent<HTMLButtonElement>) => {
+        e.stopPropagation();
+
+        if (propOnToggle) {
+          propOnToggle(index);
+        } else {
+          toggleIndex(index);
+        }
+      },
+      [index, propOnToggle, toggleIndex],
+    );
 
     const [titleContent, bodyContent] = useMemo(() => {
       if (title) {
@@ -116,9 +141,22 @@ export const AccordionSwiftItem: FC<AccordionItemProps> = memo(
               key="content"
               role="region"
               aria-labelledby={headerId}
-              {...createContentProps(!!shouldReduceMotion)}
+              initial="hidden"
+              animate="visible"
+              exit="hidden"
+              variants={contentVariants(contentHeight, !!shouldReduceMotion)}
             >
-              <div className="accordion-body">{bodyContent}</div>
+              <div className="accordion-body" ref={contentRef}>
+                {Array.isArray(bodyContent)
+                  ? bodyContent.map((child, i) =>
+                      React.isValidElement(child) ? (
+                        React.cloneElement(child, { key: i })
+                      ) : (
+                        <React.Fragment key={i}>{child}</React.Fragment>
+                      ),
+                    )
+                  : bodyContent}
+              </div>
             </motion.div>
           )}
         </AnimatePresence>

@@ -11,7 +11,6 @@
   flex-direction: column;
   gap: var(--video-container-gap);
   position: relative;
-  overflow: hidden;
   touch-action: pan-y;
   -webkit-overflow-scrolling: touch;
   z-index: 1;

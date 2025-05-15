@@ -1,28 +1,22 @@
-import { useState } from "react";
-import { cleanupMidnightScheduler, getMidnightScheduler } from "../helpers/midnightScheduler";
-import { useStableCallback } from "@/shared/hooks/base";
-import { useComponentDidMount } from "@/shared/hooks/effects/useLifecycle";
+import { useCallback, useEffect, useState } from "react";
+import { getMidnightScheduler } from "../helpers/midnightScheduler";
 
 const useMidnightCron = (onTick?: (tick: number) => void): number => {
   const scheduler = getMidnightScheduler();
   const [tick, setTick] = useState(scheduler.getTick());
-  const stableTickHandler = useStableCallback(onTick);
 
-  useComponentDidMount(() => {
-    scheduler.initIfNeeded();
+  const handleTick = useCallback((newTick: number) => {
+    setTick(newTick);
+    onTick?.(newTick);
+  }, [onTick]);
 
-    const handler = (newTick: number) => {
-      setTick(newTick);
-      stableTickHandler?.(newTick);
-    };
-
-    scheduler.on("tick", handler);
+  useEffect(() => {
+    scheduler.on("tick", handleTick);
 
     return () => {
-      scheduler.off("tick", handler);
-      cleanupMidnightScheduler();
+      scheduler.off("tick", handleTick);
     };
-  });
+  }, [handleTick, scheduler]);
 
   return tick;
 };

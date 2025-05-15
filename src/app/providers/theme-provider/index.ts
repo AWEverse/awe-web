@@ -1,24 +1,14 @@
 import { createTheme } from '@mui/material/styles';
-import { DarkPallete, LightPallete } from '@/shared/themes/palettes/winterfall';
-
-// Extending MUI's theme types to support custom color properties
-declare module '@mui/material/styles' {
-  interface TypeBackground {
-    level1?: string;
-    level2?: string;
-    level3?: string;
-    surface?: string;
-  }
-}
+import { DarkPalette, LightPalette } from '@/shared/themes/palettes/hallowen';
 
 const theme = createTheme({
   cssVariables: { cssVarPrefix: 'awe', colorSchemeSelector: '.mode-%s' },
   colorSchemes: {
     light: {
-      palette: LightPallete,
+      palette: LightPalette,
     },
     dark: {
-      palette: DarkPallete,
+      palette: DarkPalette,
     },
   },
 });

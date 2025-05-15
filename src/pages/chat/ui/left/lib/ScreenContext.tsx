@@ -38,65 +38,88 @@ export const LeftScreenNavigationProvider: React.FC<{
 }> = ({ children }) => {
   const [navigationState, setNavigationState] = useState<NavigationState>({
     currentScreen: FALLBACK_SCREEN,
-    direction: "right",
+    direction: "left",
     stack: [],
   });
 
-  const goTo = useStableCallback((screen: Screen) => {
-    if (screen === navigationState.currentScreen) return;
+  const goTo = useStableCallback((nextScreen: Screen) => {
+    const { currentScreen } = navigationState;
 
-    try {
-      if (!transitionCache[navigationState.currentScreen]?.has(screen)) {
-        throw new Error(
-          `Invalid transition: ${navigationState.currentScreen} -> ${screen}`,
+    if (nextScreen === currentScreen) return;
+
+    // Validate transition
+    if (!transitionCache[currentScreen]?.has(nextScreen)) {
+      DEBUG &&
+        console.warn(
+          `Invalid transition blocked: ${currentScreen} → ${nextScreen}`,
         );
+      return;
+    }
+
+    setNavigationState((prev) => {
+      const newStack = [...prev.stack];
+
+      // Only add to stack if transition is valid
+      newStack.push(prev.currentScreen);
+      if (newStack.length > MAX_HISTORY_SIZE) {
+        newStack.shift(); // Keep history bounded
       }
 
-      setNavigationState((prev) => {
-        const newStack = [...prev.stack];
-        newStack.push(prev.currentScreen);
-        if (newStack.length > MAX_HISTORY_SIZE) newStack.shift();
-
-        return {
-          currentScreen: transition(prev.currentScreen, screen),
-          direction: "right",
-          stack: newStack,
-        };
-      });
-    } catch (error) {
-      DEBUG && console.error(`Navigation error: ${error}`);
-    }
+      return {
+        currentScreen: transition(prev.currentScreen, nextScreen),
+        direction: "right",
+        stack: newStack,
+      };
+    });
   });
 
   const goBack = useStableCallback(() => {
     setNavigationState((prev) => {
-      const newStack = [...prev.stack];
-      let attempts = newStack.length;
-      let current = prev.currentScreen;
+      const { stack, currentScreen } = prev;
 
-      while (newStack.length > 0 && attempts-- > 0) {
-        const previousScreen = newStack.pop()!;
-        if (transitionCache[current]?.has(previousScreen)) {
-          return {
-            currentScreen: transition(current, previousScreen),
-            direction: "left",
-            stack: newStack,
-          };
-        } else {
-          DEBUG &&
-            console.warn(
-              `Invalid back transition: ${current} -> ${previousScreen}`,
-            );
-          current = previousScreen; // пробуем откатиться дальше
-        }
+      if (stack.length === 0) {
+        DEBUG && console.warn("No screen to go back to; returning to fallback");
+        return {
+          currentScreen: FALLBACK_SCREEN,
+          direction: "left",
+          stack: [],
+        };
       }
 
-      DEBUG &&
-        console.warn("No valid back transition found, fallback to default");
+      // Pop last valid screen from stack
+      const previousScreen = stack.pop()!;
+
+      // Ensure transition is allowed before proceeding
+      if (!transitionCache[currentScreen]?.has(previousScreen)) {
+        DEBUG &&
+          console.warn(
+            `Invalid back transition blocked: ${currentScreen} → ${previousScreen}`,
+          );
+
+        // Optionally continue popping until valid screen found
+        while (stack.length > 0) {
+          const candidate = stack.pop()!;
+          if (transitionCache[currentScreen]?.has(candidate)) {
+            return {
+              currentScreen: transition(currentScreen, candidate),
+              direction: "left",
+              stack,
+            };
+          }
+        }
+
+        // If none found, fallback
+        return {
+          currentScreen: FALLBACK_SCREEN,
+          direction: "left",
+          stack: [],
+        };
+      }
+
       return {
-        currentScreen: FALLBACK_SCREEN,
+        currentScreen: transition(currentScreen, previousScreen),
         direction: "left",
-        stack: [],
+        stack,
       };
     });
   });

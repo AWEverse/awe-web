@@ -1,65 +1,56 @@
-const CRON_DATE_FORMAT = '59 23 31 12 9999'; // Длина: 19 символов
 
 export type CronDateRegex =
-  '^([0-5]?d)s([01]?d|2[0-3])s([01]?d|2[0-9]|3[01])s([1-9]|1[0-2])s([0-7])$';
+  '^([0-5]?[0-9])\\s([01]?[0-9]|2[0-3])\\s([0-2]?[0-9]|3[0-1])\\s([1-9]|1[0-2])\\s(\\d{4})$';
 
-// * * * * * выполняемая команда
-// - - - - -
-// | | | | |
-// | | | | ----- день недели (0—7) (воскресенье = 0 или 7)
-// | | | ------- месяц (1—12)
-// | | --------- день месяца (1—31)
-// | ----------- час (0—23)
-// ------------- минута (0—59)
-export const parseDateCommand = (cmnd: string) => {
-  if (CRON_DATE_FORMAT.length < cmnd.length) throw new Error('Cron expression is too long.');
-  if (!cmnd) throw new Error('Cron expression is required.');
+const validateCronFormat = (cmnd: string): boolean => {
+  const regex = /^([0-5]?[0-9])\s([01]?[0-9]|2[0-3])\s([0-2]?[0-9]|3[0-1])\s([1-9]|1[0-2])\s(\d{4})$/;
+  return regex.test(cmnd);
+};
 
-  const [minutes, hours, days, months, years] = cmnd.split(' ');
+const isInRange = (value: string, min: number, max: number): boolean => {
+  const num = parseInt(value, 10);
+  return !isNaN(num) && num >= min && num <= max;
+};
 
-  // Helper function to check if a field is '*' (wildcard)
-  const isWildcard = (value: string) => value === '*';
+const isValidDay = (year: number, month: number, day: number): boolean => {
+  const date = new Date(year, month, day);
+  return date.getMonth() === month && date.getDate() === day;
+};
 
-  const isInRange = (value: string, min: number, max: number): boolean => {
-    const num = +value;
-    return /^\d+$/.test(value) && num >= min && num <= max;
-  };
-
-  if (!isWildcard(minutes) && !isInRange(minutes, 0, 59)) {
-    throw new Error("Invalid minute value. Must be between 0 and 59 or '*'.");
+export const parseDateCommand = (cmnd: string): Date => {
+  if (!cmnd || cmnd.length > 19) {
+    throw new Error('Invalid cron expression format or length exceeds 19 characters.');
   }
 
-  if (!isWildcard(hours) && !isInRange(hours, 0, 23)) {
-    throw new Error("Invalid hour value. Must be between 0 and 23 or '*'.");
+  if (!validateCronFormat(cmnd)) {
+    throw new Error('Cron expression format is invalid. Expected: "minutes hours days months years"');
   }
 
-  if (!isWildcard(months) && !isInRange(months, 1, 12)) {
-    throw new Error("Invalid month value. Must be between 1 and 12 or '*'.");
+  const [minutes, hours, days, months, years] = cmnd.split(' ').map(Number);
+
+  if (!isInRange(minutes.toString(), 0, 59)) {
+    throw new Error(`Invalid minute value: ${minutes}. Must be between 0-59.`);
   }
 
-  if (!isWildcard(days) && !isInRange(days, 1, 31)) {
-    throw new Error("Invalid day value. Must be between 1 and 31 or '*'.");
+  if (!isInRange(hours.toString(), 0, 23)) {
+    throw new Error(`Invalid hour value: ${hours}. Must be between 0-23.`);
   }
 
-  if (!/^\d{4}$/.test(years) || +years < 1000) {
-    throw new Error('Invalid year value. Must be a valid 4-digit year.');
+  if (!isInRange(months.toString(), 1, 12)) {
+    throw new Error(`Invalid month value: ${months}. Must be between 1-12.`);
   }
 
-  if (!isWildcard(days)) {
-    const monthIndex = +months - 1;
-    const day = +days;
-    const date = new Date(+years, monthIndex, day);
-
-    if (date.getMonth() !== monthIndex || date.getDate() !== day) {
-      throw new Error(`Invalid day for the given month/year: ${days}-${months}-${years}.`);
-    }
+  if (!isInRange(days.toString(), 1, 31)) {
+    throw new Error(`Invalid day value: ${days}. Must be between 1-31.`);
   }
 
-  const finalMinutes = isWildcard(minutes) ? 0 : +minutes;
-  const finalHours = isWildcard(hours) ? 0 : +hours;
-  const finalDays = isWildcard(days) ? 1 : +days;
-  const finalMonths = isWildcard(months) ? 0 : +months - 1;
-  const finalYears = +years;
+  if (!isInRange(years.toString(), 1000, 9999)) {
+    throw new Error(`Invalid year value: ${years}. Must be a 4-digit year between 1000-9999.`);
+  }
 
-  return new Date(finalYears, finalMonths, finalDays, finalHours, finalMinutes);
+  if (!isValidDay(years, months - 1, days)) {
+    throw new Error(`Invalid date: ${days}-${months}-${years}.`);
+  }
+
+  return new Date(years, months - 1, days, hours, minutes);
 };

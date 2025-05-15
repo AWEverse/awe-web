@@ -1,31 +1,61 @@
-import { useEffect, useState } from 'react';
-import { TLangCode } from '@/shared/config/i18n/types';
-import English from '@/shared/config/lang/en.json';
+import { useEffect, useState } from "react";
+import i18next from "i18next";
+import { useStableCallback } from "@/shared/hooks/base";
 
-const useLocale = () => {
-  const [locale, setLocale] = useState<TLangCode>('en');
-  const [messages, setMessages] = useState(English);
+const SUPPORTED_LANGS = [
+  "en",
+  "de",
+  "es",
+  "fr",
+  "it",
+  "ja",
+  "ko",
+  "pl",
+  "pt",
+  "ru",
+  "sv",
+  "uk",
+  "zh",
+];
+const DEFAULT_LANG = "en";
+const STORAGE_KEY = "i18nextLng";
+
+function detectInitialLocale() {
+  const stored =
+    typeof window !== "undefined" && localStorage.getItem(STORAGE_KEY);
+  if (stored && SUPPORTED_LANGS.includes(stored)) return stored;
+  const navLang =
+    typeof navigator !== "undefined" && navigator.language?.split("-")[0];
+  if (navLang && SUPPORTED_LANGS.includes(navLang)) return navLang;
+  return DEFAULT_LANG;
+}
+
+export function useLocale() {
+  const [locale, setLocaleState] = useState(() => detectInitialLocale());
 
   useEffect(() => {
-    if (locale === 'en') {
-      setMessages(English);
-      return;
+    if (i18next.language !== locale) {
+      i18next.changeLanguage(locale);
     }
 
-    async function loadMessages() {
-      try {
-        const loadedMessages = await import(`@/shared/config/lang/${locale}.json`);
-        setMessages(loadedMessages.default);
-      } catch (error) {
-        console.error(`Error loading ${locale} translations, falling back to English.`, error);
-        setMessages(English);
-      }
+    if (typeof window !== "undefined") {
+      localStorage.setItem(STORAGE_KEY, locale);
     }
-
-    loadMessages();
   }, [locale]);
 
-  return { locale, setLocale, messages };
-};
+
+  const setLocale = useStableCallback((lng: string) => {
+    if (SUPPORTED_LANGS.includes(lng)) {
+      setLocaleState(lng);
+    }
+  });
+
+  return {
+    locale,
+    setLocale,
+    supportedLocales: SUPPORTED_LANGS,
+    isSupported: (lng: string) => SUPPORTED_LANGS.includes(lng),
+  };
+}
 
 export default useLocale;

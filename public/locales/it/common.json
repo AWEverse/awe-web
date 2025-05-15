@@ -1,0 +1,66 @@
+{
+  "confirm": {
+    "action": "Sei sicuro di voler {action}?"
+  },
+  "time": {
+    "periods": {
+      "morning": "mattina",
+      "afternoon": "pomeriggio",
+      "evening": "sera",
+      "night": "notte"
+    },
+    "relative": {
+      "today": "Oggi",
+      "yesterday": "Ieri",
+      "tomorrow": "Domani"
+    },
+    "weekdays": [
+      "Lunedì",
+      "Martedì",
+      "Mercoledì",
+      "Giovedì",
+      "Venerdì",
+      "Sabato",
+      "Domenica"
+    ],
+    "months": [
+      "Gennaio",
+      "Febbraio",
+      "Marzo",
+      "Aprile",
+      "Maggio",
+      "Giugno",
+      "Luglio",
+      "Agosto",
+      "Settembre",
+      "Ottobre",
+      "Novembre",
+      "Dicembre"
+    ]
+  },
+  "search": {
+    "placeholder": "Cerca"
+  },
+  "left": {
+    "tabs": {
+      "all": "Tutto",
+      "chats": "Chat",
+      "contacts": "Contatti",
+      "calls": "Chiamate"
+    },
+    "menu": "Menu",
+    "settings": {
+      "account": {
+        "label": "Account",
+        "description": "• Impostazioni account\n  • Password\n  • Email\n  • Telefono\n  • Notifiche\n  • Riservatezza e sicurezza\n  • Contenuto\n  • Chat\n  • Personalizzazione"
+      },
+      "chats": "Chat",
+      "content": "Contenuto",
+      "exitAccount": "Esci dall'account",
+      "exitAccountDialog": "Sei sicuro di voler uscire dall'account?",
+      "notifications": "Notifiche",
+      "personalization": "Personalizzazione",
+      "privacy": "Riservatezza e sicurezza"
+    }
+  }
+}

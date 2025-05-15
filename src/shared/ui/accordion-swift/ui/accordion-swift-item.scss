@@ -1,29 +1,34 @@
-/* Container for each accordion item */
-.accordion-swift-item {
-  border: 1px solid #ddd;
-  overflow: hidden;
-  padding: var(--padding-y) 0;
-}
 
-.accordion-swift-item[data-state="open"] {
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-}
+  .accordion-swift-item {
+    border-bottom: 1px solid var(--border);
+    background-color: var(--bg);
+    overflow: hidden;
+    padding: 0;
 
-.accordion-header {
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  border: none;
-  width: 100%;
-  text-align: left;
-  font-size: 16px;
-  font-weight: 500;
-  padding-inline: var(--padding-x);
-  position: relative;
-}
+    .accordion-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      width: 100%;
+      padding: var(--padding-y) var(--padding-x);
+      background: var(--bg);
+      color: var(--fg);
+      font-size: 16px;
+      font-weight: 500;
+      cursor: pointer;
+      border: none;
 
-.accordion-body {
-  padding-inline: var(--padding-x);
-  line-height: 1.5;
-}
+      &:hover {
+        background: var(--border);
+        outline: 2px solid var(--accent);
+        outline-offset: 2px;
+      }
+    }
+
+    .accordion-body {
+      overflow: hidden;
+      padding: 0 var(--padding-x);
+      color: var(--fg-secondary);
+      line-height: 1.5;
+    }
+  }

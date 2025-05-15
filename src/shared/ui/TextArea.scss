@@ -1,4 +1,5 @@
 .text-area {
+  resize: none !important;
   transform-origin: top;
   transition: transform 0.15s ease-in-out;
 }

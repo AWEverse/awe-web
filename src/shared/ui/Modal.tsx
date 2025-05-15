@@ -14,7 +14,6 @@ import Portal from "./Portal";
 import trapFocus from "@/lib/utils/trapFocus";
 import captureKeyboardListeners from "@/lib/utils/captureKeyboardListeners";
 import { useStableCallback } from "@/shared/hooks/base";
-import { useEffectWithPreviousDeps } from "../hooks/effects/useEffectWithPreviousDependencies";
 import buildClassName from "../lib/buildClassName";
 import useUniqueId from "@/lib/hooks/utilities/useUniqueId";
 import useBodyClass from "../hooks/DOM/useBodyClass";

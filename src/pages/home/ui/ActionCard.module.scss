@@ -1,0 +1,69 @@
+.actionCard {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  padding: 1.25rem;
+  border-radius: 0.75rem;
+  background-color: var(--awe-palette-secondary-main);
+  color: var(--awe-palette-text-primary);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  position: relative;
+  min-width: 280px;
+  max-width: 100%;
+  box-sizing: border-box;
+
+  transition: transform 0.2s, box-shadow 0.2s;
+  cursor: pointer;
+
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.2);
+  }
+}
+
+.title {
+  margin: 0 0 8px 0;
+  font-size: 1.25rem;
+  font-weight: 600;
+  text-align: center;
+}
+
+.description {
+  margin: 0 0 16px 0;
+  font-size: 1rem;
+  text-align: center;
+  color: var(--awe-palette-text-secondary, #666);
+}
+
+.actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 16px;
+  justify-content: center;
+}
+
+.closeButton {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  background: transparent;
+  border: none;
+  padding: 4px;
+  cursor: pointer;
+  z-index: 2;
+  border-radius: 50%;
+  transition: background 0.15s;
+
+  &:hover {
+    background: rgba(0, 0, 0, 0.06);
+  }
+}
+
+.closeIcon {
+  font-size: 1.25rem;
+  line-height: 1;
+  color: var(--awe-palette-text-secondary, #888);
+  pointer-events: none;
+}
+

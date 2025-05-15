@@ -1,44 +1,42 @@
 import "@/styles/global.scss";
 import "@/styles/index.css";
 
-import initViewOptimizer from "./lib/utils/initViewOptimizer";
 import initAppServices from "./services/initAppServices";
 import initAppRoot from "./services/initAppRoot";
 import initApplicationRequirements from "./services/initApplicationRequirements ";
-import { setTaskErrorHandler } from "@/lib/modules/fastdom";
-import { enableStrict } from "@/lib/modules/fastdom/stricterdom";
-import { DEBUG } from "@/lib/config/dev";
 
 /**
- * Main application initialization sequence
- * Organizes initialization steps to optimize loading performance
+ * Loads error fallback module and displays error
  */
-(async () => {
+async function loadErrorModule(error: unknown) {
+  try {
+    const { default: displayErrorFallback } = await import(
+      "./services/displayErrorFallback"
+    );
+    displayErrorFallback(error, {
+      showErrorDetails: true,
+      supportEmail: "awe.supports@gmail.com",
+      supportUrl: "https://awe.support.com",
+      applicationName: "Application initialization",
+      allowRestart: true,
+    });
+  } catch (importError) {
+    console.error("Failed to load error fallback:", importError);
+  }
+}
+
+/**
+ * Initializes the application
+ */
+async function initializeApp() {
   try {
     await initAppServices();
 
     initApplicationRequirements();
-    initViewOptimizer();
-
     initAppRoot();
   } catch (error) {
-    try {
-      await loadErrorModule(error);
-    } catch (importError) {
-      console.error("Failed to load error fallback:", importError);
-    }
+    await loadErrorModule(error);
   }
-})();
-
-async function loadErrorModule(error: unknown) {
-  const module = await import("./services/displayErrorFallback");
-  const displayErrorFallback = module.default;
-
-  displayErrorFallback(error, {
-    showErrorDetails: true,
-    supportEmail: "awe.supports@gmail.com",
-    supportUrl: "https://awe.support.com",
-    applicationName: "Application initialization",
-    allowRestart: true,
-  });
 }
+
+initializeApp();

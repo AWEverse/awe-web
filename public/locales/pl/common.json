@@ -1,0 +1,66 @@
+{
+  "confirm": {
+    "action": "Czy na pewno chcesz {action}?"
+  },
+  "time": {
+    "periods": {
+      "morning": "rano",
+      "afternoon": "popołudnie",
+      "evening": "wieczór",
+      "night": "noc"
+    },
+    "relative": {
+      "today": "Dzisiaj",
+      "yesterday": "Wczoraj",
+      "tomorrow": "Jutro"
+    },
+    "weekdays": [
+      "Poniedziałek",
+      "Wtorek",
+      "Środa",
+      "Czwartek",
+      "Piątek",
+      "Sobota",
+      "Niedziela"
+    ],
+    "months": [
+      "Styczeń",
+      "Luty",
+      "Marzec",
+      "Kwiecień",
+      "Maj",
+      "Czerwiec",
+      "Lipiec",
+      "Sierpień",
+      "Wrzesień",
+      "Październik",
+      "Listopad",
+      "Grudzień"
+    ]
+  },
+  "search": {
+    "placeholder": "Szukaj"
+  },
+  "left": {
+    "tabs": {
+      "all": "Wszystko",
+      "chats": "Czaty",
+      "contacts": "Kontakty",
+      "calls": "Połączenia"
+    },
+    "menu": "Menu",
+    "settings": {
+      "account": {
+        "label": "Konto",
+        "description": "• Ustawienia konta\n  • Hasło\n  • E-mail\n  • Telefon\n  • Powiadomienia\n  • Prywatność i bezpieczeństwo\n  • Zawartość\n  • Czaty\n  • Personalizacja"
+      },
+      "chats": "Czaty",
+      "content": "Zawartość",
+      "exitAccount": "Wyloguj się",
+      "exitAccountDialog": "Czy na pewno chcesz się wylogować?",
+      "notifications": "Powiadomienia",
+      "personalization": "Personalizacja",
+      "privacy": "Prywatność i bezpieczeństwo"
+    }
+  }
+}

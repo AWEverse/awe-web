@@ -1,0 +1,66 @@
+{
+  "confirm": {
+    "action": "{action}하시겠습니까?"
+  },
+  "time": {
+    "periods": {
+      "morning": "아침",
+      "afternoon": "오후",
+      "evening": "저녁",
+      "night": "밤"
+    },
+    "relative": {
+      "today": "오늘",
+      "yesterday": "어제",
+      "tomorrow": "내일"
+    },
+    "weekdays": [
+      "월요일",
+      "화요일",
+      "수요일",
+      "목요일",
+      "금요일",
+      "토요일",
+      "일요일"
+    ],
+    "months": [
+      "1월",
+      "2월",
+      "3월",
+      "4월",
+      "5월",
+      "6월",
+      "7월",
+      "8월",
+      "9월",
+      "10월",
+      "11월",
+      "12월"
+    ]
+  },
+  "search": {
+    "placeholder": "검색"
+  },
+  "left": {
+    "tabs": {
+      "all": "전체",
+      "chats": "채팅",
+      "contacts": "연락처",
+      "calls": "통화"
+    },
+    "menu": "메뉴",
+    "settings": {
+      "account": {
+        "label": "계정",
+        "description": "• 계정 설정\n  • 비밀번호\n  • 이메일\n  • 전화번호\n  • 알림\n  • 개인정보 및 보안\n  • 콘텐츠\n  • 채팅\n  • 개인화"
+      },
+      "chats": "채팅",
+      "content": "콘텐츠",
+      "exitAccount": "로그아웃",
+      "exitAccountDialog": "로그아웃하시겠습니까?",
+      "notifications": "알림",
+      "personalization": "개인화",
+      "privacy": "개인정보 및 보안"
+    }
+  }
+}

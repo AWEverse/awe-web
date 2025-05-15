@@ -1,0 +1,66 @@
+{
+  "confirm": {
+    "action": "您确定要{action}吗？"
+  },
+  "time": {
+    "periods": {
+      "morning": "早上",
+      "afternoon": "下午",
+      "evening": "晚上",
+      "night": "夜晚"
+    },
+    "relative": {
+      "today": "今天",
+      "yesterday": "昨天",
+      "tomorrow": "明天"
+    },
+    "weekdays": [
+      "星期一",
+      "星期二",
+      "星期三",
+      "星期四",
+      "星期五",
+      "星期六",
+      "星期日"
+    ],
+    "months": [
+      "一月",
+      "二月",
+      "三月",
+      "四月",
+      "五月",
+      "六月",
+      "七月",
+      "八月",
+      "九月",
+      "十月",
+      "十一月",
+      "十二月"
+    ]
+  },
+  "search": {
+    "placeholder": "搜索"
+  },
+  "left": {
+    "tabs": {
+      "all": "全部",
+      "chats": "聊天",
+      "contacts": "联系人",
+      "calls": "通话"
+    },
+    "menu": "菜单",
+    "settings": {
+      "account": {
+        "label": "账户",
+        "description": "• 账户设置\n  • 密码\n  • 电子邮件\n  • 电话\n  • 通知\n  • 隐私与安全\n  • 内容\n  • 聊天\n  • 个性化"
+      },
+      "chats": "聊天",
+      "content": "内容",
+      "exitAccount": "退出账户",
+      "exitAccountDialog": "您确定要退出账户吗？",
+      "notifications": "通知",
+      "personalization": "个性化",
+      "privacy": "隐私与安全"
+    }
+  }
+}

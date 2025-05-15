@@ -1,0 +1,66 @@
+{
+  "confirm": {
+    "action": "{action}してもよろしいですか？"
+  },
+  "time": {
+    "periods": {
+      "morning": "朝",
+      "afternoon": "午後",
+      "evening": "夕方",
+      "night": "夜"
+    },
+    "relative": {
+      "today": "今日",
+      "yesterday": "昨日",
+      "tomorrow": "明日"
+    },
+    "weekdays": [
+      "月曜日",
+      "火曜日",
+      "水曜日",
+      "木曜日",
+      "金曜日",
+      "土曜日",
+      "日曜日"
+    ],
+    "months": [
+      "1月",
+      "2月",
+      "3月",
+      "4月",
+      "5月",
+      "6月",
+      "7月",
+      "8月",
+      "9月",
+      "10月",
+      "11月",
+      "12月"
+    ]
+  },
+  "search": {
+    "placeholder": "検索"
+  },
+  "left": {
+    "tabs": {
+      "all": "すべて",
+      "chats": "チャット",
+      "contacts": "連絡先",
+      "calls": "通話"
+    },
+    "menu": "メニュー",
+    "settings": {
+      "account": {
+        "label": "アカウント",
+        "description": "• アカウント設定\n  • パスワード\n  • メール\n  • 電話番号\n  • 通知\n  • プライバシーとセキュリティ\n  • コンテンツ\n  • チャット\n  • カスタマイズ"
+      },
+      "chats": "チャット",
+      "content": "コンテンツ",
+      "exitAccount": "ログアウト",
+      "exitAccountDialog": "ログアウトしてもよろしいですか？",
+      "notifications": "通知",
+      "personalization": "カスタマイズ",
+      "privacy": "プライバシーとセキュリティ"
+    }
+  }
+}

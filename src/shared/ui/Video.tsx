@@ -1,8 +1,6 @@
+import { BufferingProvider } from "@/lib/hooks/ui/useBufferingObserver";
 import { useRefInstead, useStableCallback } from "@/shared/hooks/base";
-import useBuffering, {
-  BufferingPair,
-  HTMLMediaBufferedEvent,
-} from "@/lib/hooks/ui/useBuffering";
+import useBuffering from "@/lib/hooks/ui/useBuffering";
 import { useRef, useMemo, memo } from "react";
 import useEffectSync from "../hooks/effects/useEffectSync";
 import useVideoCleanup from "../hooks/DOM/useVideoCleanup";
@@ -17,8 +15,9 @@ type OwnProps = {
   isPriority?: boolean;
   canPlay: boolean;
   children?: React.ReactNode;
-  onReady?: NoneToVoidFunction;
-  onBroken?: NoneToVoidFunction;
+  onReady?: () => void;
+  onBroken?: (errMessage?: string) => void;
+  onTimeUpdate?: (e: React.SyntheticEvent<HTMLVideoElement, Event>) => void;
 } & VideoProps;
 
 const defaultVideoStyles: React.CSSProperties = {
@@ -59,7 +58,6 @@ function Video({
   const videoRef = useRefInstead<HTMLVideoElement>(ref);
   const isReadyRef = useRef(false);
 
-  // Merge default styles with user-provided styles
   const mergedStyle = useMemo(
     () => ({
       ...defaultVideoStyles,
@@ -75,13 +73,20 @@ function Video({
     }
   });
 
-  const { isBuffered, bufferingHandlers } = useBuffering(
-    true,
-    onTimeUpdate,
+  const {
+    isBuffered,
+    bufferingHandlers: {
+      onPlaying: handlePlayingForBuffering,
+      ...otherBufferingHandlers
+    },
+  } = useBuffering({
+    mediaRef: videoRef,
+    noInitiallyBuffered: true,
+    onTimeUpdate: onTimeUpdate
+      ? (e) => onTimeUpdate(e as React.SyntheticEvent<HTMLVideoElement, Event>)
+      : undefined,
     onBroken,
-  );
-  const { onPlaying: handlePlayingForBuffering, ...otherBufferingHandlers } =
-    bufferingHandlers;
+  });
 
   useEffectSync(
     ([prevIsBuffered]) => {
@@ -93,7 +98,7 @@ function Video({
 
   const handlePlaying = useStableCallback(
     (e: React.SyntheticEvent<HTMLVideoElement>) => {
-      handlePlayingForBuffering(e);
+      handlePlayingForBuffering?.(e);
       handleReady();
       restProps.onPlaying?.(e);
     },
@@ -105,36 +110,54 @@ function Video({
     },
   );
 
-  const mergedOtherBufferingHandlers = useMemo(() => {
-    const handlers: BufferingPair = {};
+  const buffHandlers = useMemo(() => {
+    const handlers: Record<
+      string,
+      (e: React.SyntheticEvent<HTMLVideoElement>) => void
+    > = {};
 
-    Object.keys(otherBufferingHandlers).forEach((keyString) => {
-      const key = keyString as keyof typeof otherBufferingHandlers;
-
-      handlers[key] = (e: HTMLMediaBufferedEvent) => {
-        restProps[key as keyof typeof restProps]?.(e);
-        otherBufferingHandlers[key]?.(e);
+    Object.entries(otherBufferingHandlers).forEach(([key, handler]) => {
+      handlers[key] = (e: React.SyntheticEvent<HTMLVideoElement>) => {
+        (restProps[key as keyof typeof restProps] as any)?.(e);
+        handler(e);
       };
     });
 
     return handlers;
   }, [otherBufferingHandlers, restProps]);
 
-  useVideoCleanup(videoRef, mergedOtherBufferingHandlers);
+  useVideoCleanup(videoRef, buffHandlers);
+
+  // Convert onTimeUpdate for BufferingProvider
+  const handleTimeUpdate = useStableCallback(() => {
+    if (videoRef.current) {
+      const event = new Event(
+        "timeupdate",
+      ) as unknown as React.SyntheticEvent<HTMLVideoElement>;
+      event.currentTarget = videoRef.current;
+      onTimeUpdate?.(event);
+    }
+  });
 
   return (
-    <video
-      ref={videoRef}
-      onPlay={handlePlay}
-      onPlaying={handlePlaying}
-      style={mergedStyle}
-      playsInline
-      preload="auto"
-      {...mergedOtherBufferingHandlers}
-      {...restProps}
+    <BufferingProvider
+      mediaRef={videoRef}
+      onTimeUpdate={handleTimeUpdate}
+      onBroken={onBroken}
     >
-      {children}
-    </video>
+      <video
+        ref={videoRef}
+        onPlay={handlePlay}
+        onPlaying={handlePlaying}
+        style={mergedStyle}
+        playsInline
+        preload="auto"
+        {...buffHandlers}
+        {...restProps}
+      >
+        {children}
+      </video>
+    </BufferingProvider>
   );
 }
 

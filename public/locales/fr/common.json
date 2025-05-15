@@ -1,0 +1,66 @@
+{
+  "confirm": {
+    "action": "Êtes-vous sûr de vouloir {action} ?"
+  },
+  "time": {
+    "periods": {
+      "morning": "matin",
+      "afternoon": "après-midi",
+      "evening": "soir",
+      "night": "nuit"
+    },
+    "relative": {
+      "today": "Aujourd'hui",
+      "yesterday": "Hier",
+      "tomorrow": "Demain"
+    },
+    "weekdays": [
+      "Lundi",
+      "Mardi",
+      "Mercredi",
+      "Jeudi",
+      "Vendredi",
+      "Samedi",
+      "Dimanche"
+    ],
+    "months": [
+      "Janvier",
+      "Février",
+      "Mars",
+      "Avril",
+      "Mai",
+      "Juin",
+      "Juillet",
+      "Août",
+      "Septembre",
+      "Octobre",
+      "Novembre",
+      "Décembre"
+    ]
+  },
+  "search": {
+    "placeholder": "Rechercher"
+  },
+  "left": {
+    "tabs": {
+      "all": "Tout",
+      "chats": "Discussions",
+      "contacts": "Contacts",
+      "calls": "Appels"
+    },
+    "menu": "Menu",
+    "settings": {
+      "account": {
+        "label": "Compte",
+        "description": "• Paramètres du compte\n  • Mot de passe\n  • E-mail\n  • Téléphone\n  • Notifications\n  • Confidentialité et sécurité\n  • Contenu\n  • Discussions\n  • Personnalisation"
+      },
+      "chats": "Discussions",
+      "content": "Contenu",
+      "exitAccount": "Déconnexion",
+      "exitAccountDialog": "Êtes-vous sûr de vouloir vous déconnecter ?",
+      "notifications": "Notifications",
+      "personalization": "Personnalisation",
+      "privacy": "Confidentialité et sécurité"
+    }
+  }
+}

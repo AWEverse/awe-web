@@ -14,7 +14,12 @@ const CommunityHeader: React.FC<CommunityHeaderProps> = ({
   communityName = "TechInnovators",
   description = "A community for discussing anything related to the React UI framework and its ecosystem. Join the Reactiflux Discord (reactiflux.com) for additional React discussion and help.",
 }) => (
-  <header className="community-header community__background" role="banner">
+  <header className="community-header" role="banner">
+    <img
+      src="https://edc-cdn.net/assets/images/default-user-bg.svg"
+      className="community-header__background"
+      data-bg="https://edc-cdn.net/assets/images/default-user-bg.svg"
+    ></img>
     <div className="community-header__container">
       <Avatar
         src={avatarUrl}

@@ -1,20 +1,4 @@
-/**
- * A public key represented as a branded Uint8Array.
- * Used in cryptographic operations like key exchange (X25519, ML-KEM) or signature verification (Ed25519).
- * @remarks
- * - Must be validated for correct length and format by the specific algorithm (e.g., 32 bytes for X25519).
- * - Should be shared publicly but never stored insecurely.
- */
-export type PublicKey = Brand<Uint8Array, "CryptoPublicKey">;
-
-/**
- * A private key represented as a branded Uint8Array.
- * Used in cryptographic operations like signing (Ed25519), key exchange (X25519), or decapsulation (ML-KEM).
- * @remarks
- * - Must be kept secret and erased securely after use (e.g., using `secureErase`).
- * - Typically larger than public keys for ML-KEM (e.g., ~1632 bytes for ML-KEM-512).
- */
-export type PrivateKey = Brand<Uint8Array, "CryptoPrivateKey">;
+import PQXDHParamsManager from "../public/X3DHPQ/PQXDHParamsManager";
 
 /**
  * A cryptographic key pair consisting of a public key and a private key.
@@ -24,17 +8,50 @@ export type PrivateKey = Brand<Uint8Array, "CryptoPrivateKey">;
  * - The private key must remain secret, stored securely, and erased after use (e.g., via `secureErase`).
  * - Ensure the key pair is generated for a specific algorithm to avoid misuse (e.g., X25519 vs. Ed25519).
  */
-export interface CryptoKeyPair {
-  /** The public key, safe to share but must be validated (e.g., 32 bytes for X25519). */
-  publicKey: PublicKey;
-  /** The private key, must be kept secret and securely erased after use. */
-  privateKey: PrivateKey;
+export interface KeyPair {
+  publicKey: Uint8Array;
+  privateKey: Uint8Array;
 }
 
 export type CurveHex = string | Uint8Array<ArrayBufferLike>;
 
-
-export interface EncapsulatePair {
+export type PqEncapsulation = {
+  ciphertext: Uint8Array;
   sharedSecret: Uint8Array;
-  cipherText: Uint8Array;
-}
+};
+
+
+export type InitialMessage = {
+  senderIdentityKeyX25519: Uint8Array;
+  ephemeralKeyEC: Uint8Array;
+  pqEncapsulations: {
+    identity: Uint8Array; // Ciphertext from IK_A → IK_B
+    signedPreKey: Uint8Array; // Ciphertext from EK_A → SPK_B
+    oneTimePreKey?: Uint8Array | null; // Optional OPK_B encapsulation
+  };
+};
+
+export type SenderKeyBundle = {
+  identityKey: CryptoKeyPair;
+};
+
+export type ReceiverPreKeyBundle = {
+  identityKey: KeyPair;
+  pqIdentityPublicKey: Uint8Array;
+  signedPreKey: KeyPair;
+  pqSignedPreKeyPublicKey: Uint8Array;
+  oneTimePreKey?: KeyPair | null;
+  pqOneTimePreKeyPublicKey?: Uint8Array | null;
+};
+
+
+export type KeyBundle = {
+  identityKeyX25519: KeyPair;
+  pqIdentityKey: KeyPair;
+  signedPreKey: { keyPair: KeyPair };
+  pqSignedPreKey: KeyPair;
+  oneTimePreKey?: KeyPair | null;
+  pqOneTimePreKey?: KeyPair | null;
+};
+
+

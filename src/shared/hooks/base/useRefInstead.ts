@@ -12,7 +12,7 @@ import { RefObject, useRef } from "react";
  *
  * @template T - The type of the referenced element.
  */
-export default function <T>(ref?: RefObject<T>): RefObject<T | null> {
+export default function <T>(ref?: RefObject<T | null>): RefObject<T | null> {
   // Create an internal ref if no ref is provided
   const internalRef = useRef<T>(null);
 

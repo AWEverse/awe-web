@@ -1,41 +1,84 @@
-import { WithDecorators } from '@/types/props';
-import buildClassName from '@/shared/lib/buildClassName';
-
-import s from './CategoryTitle.module.scss';
-import { FC } from 'react';
-import { Chip } from '@mui/material';
-import formatLargeNumber from '@/lib/utils/helpers/number/formatLargeNumber';
+import { WithDecorators } from "@/types/props";
+import buildClassName from "@/shared/lib/buildClassName";
+import s from "./CategoryTitle.module.scss";
+import { FC, useState } from "react";
+import formatLargeNumber from "@/lib/utils/helpers/number/formatLargeNumber";
+import IconExpand from "@/shared/ui/IconExpand";
+import { SearchRounded, CloseRounded } from "@mui/icons-material";
+import { AnimatePresence, motion } from "framer-motion";
+import SearchInput from "@/shared/ui/SearchInput";
+import { useDebouncedFunction } from "@/shared/hooks/shedulers";
+import { SLIDE_BOTTOM, SLIDE_TOP } from "@/shared/animations/slideInVariant";
+import IconButton from "@/shared/ui/IconButton";
 
 interface OwnProps {
   name: string;
   desc: string;
   posts?: number | string;
   className?: string;
-  onClick?: () => void;
+  onSearch?: (query: string) => void;
 }
 
-const CategoryTitle: FC<OwnProps & WithDecorators> = props => {
-  const { name, desc, posts, startDecorator, endDecorator, className, onClick } = props;
+const CategoryTitle: FC<OwnProps & WithDecorators> = (props) => {
+  const { name, desc, posts, className, onSearch } = props;
+  const [activeSlide, setActiveSlide] = useState(0);
+  const [searchQuery, setSearchQuery] = useState("");
 
-  const classNames = buildClassName(s.CategoryTitle, className);
+  const classNames = buildClassName(s.CategoryTitleWrapper, className, {
+    [s.searchActive]: activeSlide === 1,
+  });
+
+  const handleSearch = useDebouncedFunction(() => {
+    onSearch?.(searchQuery);
+    setSearchQuery("");
+    setActiveSlide(0);
+  }, 250);
 
   return (
-    <div className={classNames} onClick={onClick}>
-      {startDecorator}
-      <div className={s.title}>
-        <h1>
-          <span>{name}</span>
-          <Chip
-            className={s.postCount}
-            color="primary"
-            label={formatLargeNumber(Number(posts))}
-            size="small"
-            variant="outlined"
-          />
-        </h1>
-        <p>{desc}</p>
-      </div>
-      {endDecorator}
+    <div className={classNames}>
+      <AnimatePresence initial={false} mode="wait">
+        <motion.div
+          key={activeSlide}
+          className={s.CategoryTitle}
+          variants={activeSlide ? SLIDE_BOTTOM : SLIDE_TOP}
+          initial={"hidden"}
+          animate={"visible"}
+          exit={"exit"}
+        >
+          {activeSlide === 0 ? (
+            <>
+              <div className={s.title}>
+                <h1>
+                  {name}
+                  <span className={s.postCount}>
+                    ({formatLargeNumber(Number(posts))})
+                  </span>
+                </h1>
+                <p>{desc}</p>
+              </div>
+              <IconButton className={s.controls}>
+                <SearchRounded
+                  fontSize="small"
+                  onClick={() => setActiveSlide(1)}
+                />
+              </IconButton>
+            </>
+          ) : (
+            <>
+              <SearchInput
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Search in category..."
+                autoFocus
+              />
+              <CloseRounded
+                className={s.closeIcon}
+                onClick={() => setActiveSlide(0)}
+              />
+            </>
+          )}
+        </motion.div>
+      </AnimatePresence>
     </div>
   );
 };

@@ -1,5 +1,6 @@
 import { DEBUG } from "@/lib/config/dev";
 import { requestIdleExecution } from "@/lib/core";
+import queueMicrotask from "@/lib/core/public/polyfill/queueMicrotasks";
 import DOMPurify from "dompurify";
 
 // Flag to prevent multiple initializations
@@ -19,7 +20,7 @@ export default async function initializeSecurityAsync(): Promise<void> {
     );
   }
 
-  return new Promise<void>((resolve) => {
+  return new Promise<void>((resolve, reject) => {
     requestIdleExecution(() => {
       try {
         // First stage: Set up critical security controls immediately
@@ -27,22 +28,32 @@ export default async function initializeSecurityAsync(): Promise<void> {
 
         // Second stage: Set up detailed configuration in a microtask
         queueMicrotask(() => {
-          applyDetailedSecurityConfiguration();
-          isInitialized = true;
-          resolve();
-          if (DEBUG)
-            console.info(
-              ">>> APPLICATION INIT: initializeSecurityAsync - success",
+          try {
+            applyDetailedSecurityConfiguration();
+            isInitialized = true;
+            resolve();
+            if (DEBUG)
+              console.info(
+                ">>> APPLICATION INIT: initializeSecurityAsync - success",
+              );
+          } catch (error) {
+            isInitialized = true;
+            console.error(
+              "Failed to apply detailed DOMPurify security configuration:",
+              error,
             );
+            applyFallbackConfiguration();
+            reject(error);
+          }
         });
       } catch (error) {
+        isInitialized = true;
         console.error(
           "Failed to initialize DOMPurify security configuration:",
           error,
         );
         applyFallbackConfiguration();
-        isInitialized = true;
-        resolve();
+        reject(error);
       }
     }, 1000); // Ensure it runs within 1 second even if browser is busy
   });

@@ -64,7 +64,7 @@ const Tab: FC<OwnProps> = ({
   };
 
   const renderBadge = useMemo(() => {
-    if (badgeCount === undefined) return null;
+    if (badgeCount === undefined || badgeCount === 0) return null;
 
     const displayCount =
       badgeMax && badgeCount > badgeMax ? `${badgeMax}+` : badgeCount;

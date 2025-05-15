@@ -1,5 +1,3 @@
-
-
 export const MAX_SAFE_DATE = 8640000000000000;
 export const MIN_SAFE_DATE = -8640000000000000;
 export const COLUMNS = 7;

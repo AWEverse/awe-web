@@ -27,7 +27,7 @@ const execTask = (task: TaskFunction) => safeExecDOM(task);
 
 const processTasks = <T>(
   queue: UnrolledTaskQueue<T>,
-  handler: (task: T) => void
+  handler: (task: T) => void,
 ) => {
   if (queue.length === 0) return;
 
@@ -58,7 +58,9 @@ const runUpdatePass = throttleWithRafFallback(async () => {
     queueMicrotask(() => {
       if (++microtaskDepth > MAX_MICROTASK_DEPTH) {
         handleError(
-          new Error("Exceeded max microtask depth. Possible infinite microtask loop.")
+          new Error(
+            "Exceeded max microtask depth. Possible infinite microtask loop.",
+          ),
         );
         return;
       }
@@ -76,7 +78,10 @@ const runUpdatePass = throttleWithRafFallback(async () => {
 
             safeExecDOM(() => {
               const result = task();
-              if (typeof result === "function") followUp.push(result);
+
+              if (typeof result === "function" && result !== undefined) {
+                followUp.push(result);
+              }
             });
 
             if (followUp.length > 0) {
@@ -104,7 +109,7 @@ const runUpdatePass = throttleWithRafFallback(async () => {
 function schedule<T extends TaskFunction | ReflowTaskFunction>(
   queue: UnrolledTaskQueue<T>,
   task: T,
-  signal?: AbortSignal
+  signal?: AbortSignal,
 ) {
   if (!task) return;
   if (signal?.aborted) return;
@@ -125,14 +130,16 @@ export function requestMutation(fn: TaskFunction, signal?: AbortSignal) {
   schedule(mutationTasks, fn, signal);
 }
 
-export function requestNextMutation(fn: ReflowTaskFunction, signal?: AbortSignal) {
+export function requestNextMutation(
+  fn: ReflowTaskFunction,
+  signal?: AbortSignal,
+) {
   schedule(reflowTasks, fn, signal);
 }
 
 export function setTaskErrorHandler(handler: ErrorHandler) {
   handleError = handler;
 }
-
 
 export const __internal = {
   runUpdatePass,

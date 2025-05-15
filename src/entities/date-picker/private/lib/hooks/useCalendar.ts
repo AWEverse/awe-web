@@ -7,8 +7,15 @@ import {
   unpackDate,
   isDateValid,
   getMonthDifference,
-  syncSystemDate,
 } from "../utils";
+
+const toTimestamp = (year: number, month: number, day: number) =>
+  new Date(year, month, day).getTime();
+
+const timestampToPacked = (timestamp: number | Date) => {
+  const date = new Date(timestamp);
+  return packDate(date.getFullYear(), date.getMonth(), date.getDate());
+};
 
 interface CalendarState {
   currentSystemDate: number;
@@ -20,41 +27,45 @@ interface CalendarState {
 type CalendarMode = "basic" | "select";
 
 const useCalendar = (initialDate: Date, minAt?: Date, maxAt?: Date) => {
-  const initialPacked = packDate(
-    initialDate.getFullYear(),
-    initialDate.getMonth(),
-    initialDate.getDate(),
+  const initialTimestamp = useMemo(
+    () =>
+      toTimestamp(
+        initialDate.getFullYear(),
+        initialDate.getMonth(),
+        initialDate.getDate(),
+      ),
+    [initialDate],
   );
-  const minPacked = minAt
-    ? packDate(minAt.getFullYear(), minAt.getMonth(), minAt.getDate())
-    : undefined;
-  const maxPacked = maxAt
-    ? packDate(maxAt.getFullYear(), maxAt.getMonth(), maxAt.getDate())
-    : undefined;
 
-  const [state, setState] = useState<CalendarState>({
-    currentSystemDate: initialPacked,
-    userSelectedDate: initialPacked,
+  const [state, setState] = useState<CalendarState>(() => ({
+    currentSystemDate: initialTimestamp,
+    userSelectedDate: initialTimestamp,
     history: [],
     future: [],
-  });
-
+  }));
   const [animated, setAnimated] = useState<CalendarAnimationType>("LTR");
 
-  // Month change (← / →)
   const changeMonth = useCallback((increment: number) => {
     setAnimated(increment < 0 ? "LTR" : "RTL");
-
     setState((prev) => {
-      const newPacked = createNewMonthDate(prev.currentSystemDate, increment);
+      const prevPacked = timestampToPacked(prev.currentSystemDate);
+      const newPacked = createNewMonthDate(prevPacked, increment);
+      const newPackedObj = unpackDate(newPacked);
+      const prevPackedObj = unpackDate(prevPacked);
       if (
-        unpackDate(prev.currentSystemDate).month === unpackDate(newPacked).month
-      )
+        prevPackedObj.month === newPackedObj.month &&
+        prevPackedObj.year === newPackedObj.year
+      ) {
         return prev;
-
+      }
+      const newTimestamp = toTimestamp(
+        newPackedObj.year,
+        newPackedObj.month,
+        newPackedObj.day,
+      );
       return {
         ...prev,
-        currentSystemDate: newPacked,
+        currentSystemDate: newTimestamp,
         history: [prev.currentSystemDate, ...prev.history].slice(
           0,
           HISTORY_LIMIT,
@@ -66,31 +77,40 @@ const useCalendar = (initialDate: Date, minAt?: Date, maxAt?: Date) => {
 
   const handleDateSelect = useCallback(
     (day: number, month: number, year: number) => {
-      const newPacked = packDate(year, month, day);
-      if (!isDateValid(newPacked, minPacked, maxPacked)) return;
-
-      const monthDiff = getMonthDifference(newPacked, state.currentSystemDate);
-      setAnimated(monthDiff < 0 ? "LTR" : "RTL");
-
-      setState((prev) => ({
-        ...prev,
-        userSelectedDate: newPacked,
-        currentSystemDate: syncSystemDate(newPacked),
-        history: [prev.userSelectedDate, ...prev.history].slice(
-          0,
-          HISTORY_LIMIT,
-        ),
-        future: [],
-      }));
+      const newTimestamp = toTimestamp(year, month, day);
+      const packedDate = packDate(year, month, day);
+      const packedMin = minAt
+        ? packDate(minAt.getFullYear(), minAt.getMonth(), minAt.getDate())
+        : undefined;
+      const packedMax = maxAt
+        ? packDate(maxAt.getFullYear(), maxAt.getMonth(), maxAt.getDate())
+        : undefined;
+      if (!isDateValid(packedDate, packedMin, packedMax)) return;
+      setState((prev) => {
+        const monthDiff = getMonthDifference(
+          timestampToPacked(newTimestamp),
+          timestampToPacked(prev.currentSystemDate),
+        );
+        setAnimated(monthDiff < 0 ? "LTR" : "RTL");
+        return {
+          ...prev,
+          userSelectedDate: newTimestamp,
+          currentSystemDate: newTimestamp,
+          history: [prev.userSelectedDate, ...prev.history].slice(
+            0,
+            HISTORY_LIMIT,
+          ),
+          future: [],
+        };
+      });
     },
-    [minPacked, maxPacked, state.currentSystemDate],
+    [minAt, maxAt],
   );
 
   const handleUndo = useCallback(() => {
     setState((prev) => {
       if (!prev.history.length) return prev;
       const [last, ...rest] = prev.history;
-
       return {
         ...prev,
         currentSystemDate: last,
@@ -105,7 +125,6 @@ const useCalendar = (initialDate: Date, minAt?: Date, maxAt?: Date) => {
     setState((prev) => {
       if (!prev.future.length) return prev;
       const [next, ...rest] = prev.future;
-
       return {
         ...prev,
         currentSystemDate: next,
@@ -119,14 +138,13 @@ const useCalendar = (initialDate: Date, minAt?: Date, maxAt?: Date) => {
     });
   }, []);
 
-  const dateState = useMemo(() => {
-    const current = unpackDate(state.currentSystemDate);
-    const selected = unpackDate(state.userSelectedDate);
-    return {
-      currentSystemDate: new Date(current.year, current.month, current.day),
-      userSelectedDate: new Date(selected.year, selected.month, selected.day),
-    };
-  }, [state.currentSystemDate, state.userSelectedDate]);
+  const dateState = useMemo(
+    () => ({
+      currentSystemDate: new Date(state.currentSystemDate),
+      userSelectedDate: new Date(state.userSelectedDate),
+    }),
+    [state.currentSystemDate, state.userSelectedDate],
+  );
 
   return useMemo(
     () => ({

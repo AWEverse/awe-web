@@ -1,6 +1,15 @@
 $section-border-radius: calc(var(--section-border-radius) - var(--section-padding));
 $section-sub-border-radius: calc($section-border-radius / 2);
 
+.circle {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  background-color: #28a745;
+  border-radius: 50%;
+  margin-right: 0.25rem;
+}
+
 .topicItem {
   display: grid;
   grid-template-columns: 1fr 0.5fr;
@@ -40,41 +49,69 @@ $section-sub-border-radius: calc($section-border-radius / 2);
     box-shadow: 0 0 0 0.2rem var(--awe-palette-background-soft);
   }
 
-  @media (max-width: 600px) {
-  }
-
   @media (max-width: 768px) {
     grid-template-columns: 1fr;
   }
+}
 
-  @media (max-width: 1024px) {
+.topicContent {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.topicInfo {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.topicTitle {
+  font-weight: 700;
+  font-size: var(--font-size-title);
+}
+
+.topicDesc {
+  font-size: medium;
+  color: var(--awe-palette-text-secondary);
+}
+
+.topicList {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  max-width: 75%;
+  margin-top: 0.25rem;
+
+  > *:not(:last-child) {
+    margin-right: 0.25rem;
   }
+}
 
-  .topicInfo {
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-  }
+.publisherWrapper {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
 
-  .topicTitle {
-    font-weight: 700;
-    font-size: var(--font-size-title);
-  }
+.publisher {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
 
-  .topicDesc {
-    font-size: medium;
-    color: var(--awe-palette-text-secondary);
-  }
+.info {
+  display: flex;
+  flex-direction: column;
+  padding-inline-start: 3.5rem;
+}
 
-  .topicList {
-    display: flex;
-    flex-direction: row;
-    flex-wrap: wrap;
-    max-width: 75%;
-    margin-top: 0.25rem;
+.publisherName {
+  font-weight: 600;
+}
 
-    > *:not(:last-child) {
-      margin-right: 0.5rem;
-    }
-  }
+.date {
+  font-size: small;
+  color: var(--awe-palette-text-secondary);
 }

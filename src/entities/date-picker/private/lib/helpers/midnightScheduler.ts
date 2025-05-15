@@ -3,36 +3,53 @@ import { EventEmitter } from "events";
 class MidnightScheduler extends EventEmitter {
   private tick = 0;
   private interval: NodeJS.Timeout | null = null;
-  private initialized = false;
+  private lastCalculatedTime: number = Date.now();
+
+  constructor() {
+    super();
+    this.scheduleNextTick();
+  }
 
   private calculateMsToMidnight(): number {
     const now = new Date();
-    const tomorrow = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
+    const lastTime = this.lastCalculatedTime;
+    this.lastCalculatedTime = now.getTime();
+
+    if (now.getTime() < lastTime) {
+      console.warn("Время на устройстве было изменено назад. Пересчитываем время.");
+    }
+
+    const tomorrow = new Date(now);
+    tomorrow.setDate(now.getDate() + 1);
+    tomorrow.setHours(0, 0, 0, 0);
+
     return tomorrow.getTime() - now.getTime();
   }
 
-  private scheduleTick() {
+  private scheduleNextTick(): void {
+    if (this.interval) {
+      clearInterval(this.interval);
+      this.interval = null;
+    }
+
     const msToMidnight = this.calculateMsToMidnight();
-    setTimeout(() => {
+
+    this.interval = setTimeout(() => {
+      this.tick++;
+      this.emit("tick", this.tick);
+
       this.interval = setInterval(() => {
         this.tick++;
         this.emit("tick", this.tick);
-      }, 24 * 60 * 60 * 1000); // 24 hours
+      }, 24 * 60 * 60 * 1000);
     }, msToMidnight);
   }
 
-  public initIfNeeded() {
-    if (!this.initialized) {
-      this.initialized = true;
-      this.scheduleTick();
-    }
-  }
-
-  public getTick() {
+  public getTick(): number {
     return this.tick;
   }
 
-  public stop() {
+  public stop(): void {
     if (this.interval) {
       clearInterval(this.interval);
       this.interval = null;
@@ -40,25 +57,18 @@ class MidnightScheduler extends EventEmitter {
   }
 }
 
+
 let instance: MidnightScheduler | null = null;
-let instanceCount = 0;
 
 export const getMidnightScheduler = (): MidnightScheduler => {
   if (!instance) {
     instance = new MidnightScheduler();
   }
-
-  instanceCount++;
-
   return instance;
 };
 
 export const cleanupMidnightScheduler = () => {
-  if (instanceCount > 0) {
-    instanceCount--;
-  }
-
-  if (instanceCount === 0 && instance) {
+  if (instance) {
     instance.stop();
     instance = null;
   }
