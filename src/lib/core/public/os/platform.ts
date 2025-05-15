@@ -92,3 +92,87 @@ export const IS_FIREFOX = userAgent.includes('firefox') || userAgent.includes('i
  * For example, "macOS" becomes "macos".
  */
 export const PLATFORM_ENV_NORMALIZED = PLATFORM_ENV?.toLowerCase().replace(' ', '-') || '';
+
+/**
+ * Returns true if the current environment is Electron.
+ */
+export function isElectron(): boolean {
+  return IS_BROWSER && typeof window !== 'undefined' &&
+    (window as any).process?.type === 'renderer';
+}
+
+export function isNode(): boolean {
+  return typeof process !== 'undefined' && !!process.versions?.node && !isElectron();
+}
+
+/**
+ * Returns true if the current environment is a Progressive Web App (PWA).
+ */
+export function isPWA(): boolean {
+  return IS_BROWSER && (window.matchMedia('(display-mode: standalone)').matches || (navigator as any).standalone === true);
+}
+
+/**
+ * Returns true if the device supports touch events.
+ */
+export function isTouchDevice(): boolean {
+  return IS_BROWSER && ('ontouchstart' in window || navigator.maxTouchPoints > 0);
+}
+
+/**
+ * Returns true if the device supports pointer events and has a coarse pointer (touch).
+ */
+export function isCoarsePointer(): boolean {
+  return IS_BROWSER && window.matchMedia('(pointer: coarse)').matches;
+}
+
+/**
+ * Returns a detailed platform info object.
+ */
+export function getPlatformInfo(key?: string | string[]): boolean | {
+  platform: typeof PLATFORM_ENV,
+  normalized: typeof PLATFORM_ENV_NORMALIZED,
+  isMac: typeof IS_MAC_OS,
+  isWindows: typeof IS_WINDOWS,
+  isLinux: typeof IS_LINUX,
+  isIOS: typeof IS_IOS,
+  isAndroid: typeof IS_ANDROID,
+  isMobile: typeof IS_MOBILE,
+  isSafari: typeof IS_SAFARI,
+  isFirefox: typeof IS_FIREFOX,
+  isYandex: typeof IS_YA_BROWSER,
+  chromiumVersion: typeof CHROMIUM_VERSION,
+  isElectron: boolean,
+  isNode: boolean,
+  isPWA: boolean,
+  isTouchDevice: boolean,
+  isCoarsePointer: boolean,
+  userAgent: string,
+} {
+  const info = {
+    platform: PLATFORM_ENV,
+    normalized: PLATFORM_ENV_NORMALIZED,
+    isMac: IS_MAC_OS,
+    isWindows: IS_WINDOWS,
+    isLinux: IS_LINUX,
+    isIOS: IS_IOS,
+    isAndroid: IS_ANDROID,
+    isMobile: IS_MOBILE,
+    isSafari: IS_SAFARI,
+    isFirefox: IS_FIREFOX,
+    isYandex: IS_YA_BROWSER,
+    chromiumVersion: CHROMIUM_VERSION,
+    isElectron: isElectron(),
+    isNode: isNode(),
+    isPWA: isPWA(),
+    isTouchDevice: isTouchDevice(),
+    isCoarsePointer: isCoarsePointer(),
+    userAgent: userAgent,
+  };
+
+  if (key) {
+    return Boolean(info[key as keyof typeof info]);
+  }
+
+  return info;
+}

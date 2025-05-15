@@ -14,6 +14,7 @@ import { requestMutation, requestNextMutation } from "@/lib/modules/fastdom";
 import { useStableCallback } from "@/shared/hooks/base";
 import buildClassName from "@/shared/lib/buildClassName";
 import useMarkdownInput from "../hooks/useMarkdownInput";
+import Placeholder from "@/shared/ui/Placeholder";
 
 export interface MarkdownInputProps {
   value?: string;
@@ -92,23 +93,17 @@ const MarkdownInput = forwardRef<HTMLDivElement, MarkdownInputProps>(
       onSubmit,
     });
 
-    useImperativeHandle(ref, () => editorRef.current as HTMLDivElement, []);
+    const [isFocused, setIsFocused] = React.useState(false);
 
     useEffect(() => {
-      if (autoFocus && editorRef.current && !disabled) {
-        editorRef.current.focus();
-      }
-    }, [autoFocus, disabled]);
-
-    useEffect(() => {
-      if (editorRef.current && editorRef.current.nodeValue !== text) {
-        editorRef.current.nodeValue = text;
+      if (editorRef.current && editorRef.current.textContent !== text) {
+        editorRef.current.textContent = text;
       }
     }, [text]);
 
     const onInput = useCallback(
       (e: React.FormEvent<HTMLDivElement>) => {
-        handleTextChange(e.currentTarget.nodeValue || "");
+        handleTextChange(e.currentTarget.textContent || "");
       },
       [handleTextChange],
     );
@@ -219,10 +214,18 @@ const MarkdownInput = forwardRef<HTMLDivElement, MarkdownInputProps>(
         }}
         data-error={!!error}
       >
+        <Placeholder
+          className={s.placeholder}
+          showText={!isFocused && text.length === 0}
+        >
+          {placeholder}
+        </Placeholder>
+
         <div
           id={id}
           ref={editorRef}
           role="textbox"
+          data-focused={isFocused}
           contentEditable={!disabled}
           suppressContentEditableWarning
           spellCheck
@@ -231,12 +234,17 @@ const MarkdownInput = forwardRef<HTMLDivElement, MarkdownInputProps>(
           aria-invalid={!!error}
           aria-multiline="true"
           aria-describedby={error ? "error-message" : undefined}
+          aria-placeholder={placeholder}
+          data-disabled={disabled}
+          data-id={id}
+          data-aria-label={ariaLabel}
           data-name={name}
           className={buildClassName(!isStylesRemoved && s.editor, className)}
           onInput={onInput}
           onKeyDown={onKeyDown}
           onPaste={onPaste}
           onFocus={() => {
+            setIsFocused(true);
             if (editorRef.current) {
               requestMutation(() => {
                 editorRef.current?.classList.add(s.focused);
@@ -244,6 +252,7 @@ const MarkdownInput = forwardRef<HTMLDivElement, MarkdownInputProps>(
             }
           }}
           onBlur={() => {
+            setIsFocused(false);
             if (editorRef.current) {
               requestMutation(() => {
                 editorRef.current?.classList.remove(s.focused);
@@ -274,7 +283,10 @@ const MarkdownInput = forwardRef<HTMLDivElement, MarkdownInputProps>(
         )}
 
         {showCharCount && maxLength !== undefined && (
-          <div className={buildClassName(!isStylesRemoved && s.charCount)}>
+          <div
+            aria-live="polite"
+            className={buildClassName(!isStylesRemoved && s.charCount)}
+          >
             {maxLength - text.length} characters remaining
           </div>
         )}
