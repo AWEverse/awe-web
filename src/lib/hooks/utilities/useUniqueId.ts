@@ -1,113 +1,108 @@
-import { useRef } from "react";
-import sodium from "libsodium-wrappers";
+import { useRef, useMemo } from "react";
 
-export type UUIDTypes = string | Uint8Array;
-export type Options = {
-  random?: Uint8Array;
-  rng?: () => Uint8Array;
-};
+const HEX_CHARS = Array.from({ length: 256 }).map((_, i) => (i + 0x100).toString(16).substring(1).toLowerCase());
+const UUID_TEMPLATE = "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx";
 
-function rng() {
-  return sodium.randombytes_buf(16);
-}
-
-const byteToHex = new Array<string>(256);
-for (let i = 0; i < 256; i++) {
-  byteToHex[i] = (i + 0x100).toString(16).substring(1).toLowerCase();
-}
-
-export function unsafeStringify(arr: Uint8Array, offset = 0): string {
-  return [
-    byteToHex[arr[offset]],
-    byteToHex[arr[offset + 1]],
-    byteToHex[arr[offset + 2]],
-    byteToHex[arr[offset + 3]],
-    "-",
-    byteToHex[arr[offset + 4]],
-    byteToHex[arr[offset + 5]],
-    "-",
-    byteToHex[arr[offset + 6]],
-    byteToHex[arr[offset + 7]],
-    "-",
-    byteToHex[arr[offset + 8]],
-    byteToHex[arr[offset + 9]],
-    "-",
-    byteToHex[arr[offset + 10]],
-    byteToHex[arr[offset + 11]],
-    byteToHex[arr[offset + 12]],
-    byteToHex[arr[offset + 13]],
-    byteToHex[arr[offset + 14]],
-    byteToHex[arr[offset + 15]],
-  ].join("");
-}
-
-function generateUUID(options?: Options, buf?: Uint8Array, offset?: number): UUIDTypes {
-
-  const rnds = options?.random ?? options?.rng?.() ?? rng();
-
-  if (rnds.length < 16) {
-    throw new Error("Random bytes length must be >= 16");
+function getRandomBytes(length: number): Uint8Array {
+  if (typeof crypto !== 'undefined' && crypto.getRandomValues) {
+    return crypto.getRandomValues(new Uint8Array(length));
   }
+  if (typeof window !== 'undefined') {
+    try {
+      const sodium = require('libsodium-wrappers');
+      return sodium.randombytes_buf(length);
+    } catch {
+      const result = new Uint8Array(length);
+      for (let i = 0; i < length; i++) result[i] = Math.floor(Math.random() * 256);
+      return result;
+    }
+  }
+  try {
+    const crypto = require('crypto');
+    return new Uint8Array(crypto.randomBytes(length));
+  } catch {
+    throw new Error('No secure random source available');
+  }
+}
 
+export function generateUUID(): string {
+  const rnds = getRandomBytes(16);
   rnds[6] = (rnds[6] & 0x0f) | 0x40;
   rnds[8] = (rnds[8] & 0x3f) | 0x80;
+  return UUID_TEMPLATE.replace(/[xy]/g, (c, i) => {
+    const r = rnds[i >> 1];
+    const v = c === 'x' ? r : (r & 0x3 | 0x8);
+    return HEX_CHARS[v];
+  });
+}
 
-  if (buf) {
-    offset = offset || 0;
-    if (offset < 0 || offset + 16 > buf.length) {
-      throw new RangeError(`UUID byte range ${offset}:${offset + 15} is out of buffer bounds`);
-    }
-    buf.set(rnds.subarray(0, 16), offset);
-    return buf;
-  }
-
-  return unsafeStringify(rnds);
+export function generateBinaryUUID(): Uint8Array {
+  const bytes = getRandomBytes(16);
+  bytes[6] = (bytes[6] & 0x0f) | 0x40;
+  bytes[8] = (bytes[8] & 0x3f) | 0x80;
+  return bytes;
 }
 
 const ALPHANUMERIC_CHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
 const CHAR_LENGTH = ALPHANUMERIC_CHARS.length;
 
 function generateRandomAlphanumeric(length: number): string {
-
-  const bytes = sodium.randombytes_buf(length);
-  const result = new Array<string>(length);
-
+  const bytes = getRandomBytes(length);
+  let result = '';
   for (let i = 0; i < length; i++) {
-    result[i] = ALPHANUMERIC_CHARS[bytes[i] % CHAR_LENGTH];
+    result += ALPHANUMERIC_CHARS[bytes[i] % CHAR_LENGTH];
   }
-
-  return result.join("");
+  return result;
 }
 
-function generateUniqueId(prefix = "", suffix = "", length = 16): string {
-  const timestamp = Date.now().toString(36);
+const timestampCache = { value: '', expiry: 0 };
+
+function getCachedTimestamp(): string {
+  const now = Date.now();
+  if (now - timestampCache.expiry > 5) {
+    timestampCache.value = now.toString(36);
+    timestampCache.expiry = now;
+  }
+  return timestampCache.value;
+}
+
+export function generateUniqueId(prefix = "", suffix = "", length = 16): string {
+  const timestamp = getCachedTimestamp();
   const subMs = typeof performance !== "undefined"
-    ? Math.floor(performance.now() * 1000).toString(36)
-    : sodium.randombytes_uniform(1000000).toString(36).substring(0, 6);
-
-  const fixedParts = [prefix, timestamp, subMs, suffix].filter(Boolean);
-  const fixedLength = fixedParts.reduce((sum, part) => sum + part.length, 0) + Math.max(fixedParts.length - 1, 0);
-  const randomLength = Math.max(length - fixedLength, 1);
-
+    ? ((performance.now() * 1000) | 0).toString(36)
+    : (getRandomBytes(2)[0] << 8 | getRandomBytes(2)[1]).toString(36);
+  const prefixLen = prefix ? prefix.length + 1 : 0;
+  const suffixLen = suffix ? suffix.length + 1 : 0;
+  const timestampLen = timestamp.length;
+  const subMsLen = subMs.length;
+  const randomLength = Math.max(length - prefixLen - timestampLen - subMsLen - suffixLen, 1);
   const randomPart = generateRandomAlphanumeric(randomLength);
-  return [prefix, timestamp, subMs, randomPart, suffix].filter(Boolean).join("-").substring(0, length);
+  let result = prefix ? prefix + "-" : "";
+  result += timestamp;
+  result += "-" + subMs;
+  result += "-" + randomPart;
+  result += suffix ? "-" + suffix : "";
+  return result.length > length ? result.substring(0, length) : result;
 }
 
-function useUniqueId(prefix = "", suffix = "", length = 16): string {
-  const idRef = useRef<string>(generateUniqueId(prefix, suffix, length));
+export function useUniqueId(prefix = "", suffix = "", length = 16): string {
   const depsRef = useRef<[string, string, number]>([prefix, suffix, length]);
-
-  if (
-    depsRef.current[0] !== prefix ||
-    depsRef.current[1] !== suffix ||
-    depsRef.current[2] !== length
-  ) {
-    idRef.current = generateUniqueId(prefix, suffix, length);
-    depsRef.current = [prefix, suffix, length];
-  }
-
-  return idRef.current;
+  const idRef = useRef<string>("");
+  const id = useMemo(() => {
+    const [prevPrefix, prevSuffix, prevLength] = depsRef.current;
+    if (
+      prevPrefix !== prefix ||
+      prevSuffix !== suffix ||
+      prevLength !== length
+    ) {
+      depsRef.current = [prefix, suffix, length];
+      idRef.current = generateUniqueId(prefix, suffix, length);
+    } else if (!idRef.current) {
+      idRef.current = generateUniqueId(prefix, suffix, length);
+    }
+    return idRef.current!;
+  }, [prefix, suffix, length]);
+  return id;
 }
 
 export default useUniqueId;
-export { generateUniqueId, generateUUID };

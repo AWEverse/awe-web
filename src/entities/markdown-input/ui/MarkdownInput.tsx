@@ -6,101 +6,14 @@ import React, {
   useImperativeHandle,
   useMemo,
   useRef,
-  useState,
 } from "react";
 import { marked } from "marked";
 import DOMPurify from "dompurify";
 import s from "./MarkdownInput.module.scss";
-
-function useMarkdownInput({
-  value = "",
-  sanitizeFn,
-  validate,
-  maxLength,
-  clearOnSubmit,
-  submitOnCtrlEnter,
-  submitKey,
-  onChange,
-  onSubmit,
-}: Partial<{
-  value: string;
-  sanitizeFn: (v: string) => string;
-  validate: (v: string) => boolean | string;
-  maxLength: number;
-  clearOnSubmit: boolean;
-  submitOnCtrlEnter: boolean;
-  submitKey: string;
-  onChange: (v: string) => void;
-  onSubmit: (v: string) => void;
-}>) {
-  const [text, setText] = useState(value);
-  const [error, setError] = useState<string | null>(null);
-  const lastValue = useRef(value);
-
-  const sanitize = useCallback(
-    (raw: string) => {
-      const norm = raw.replace(/\r\n/g, "\n");
-      return sanitizeFn ? sanitizeFn(norm) : norm;
-    },
-    [sanitizeFn],
-  );
-
-  const validateInput = useCallback(
-    (v: string) => {
-      if (!validate) return true;
-      const result = validate(v);
-      if (typeof result === "string") {
-        setError(result);
-        return false;
-      }
-      if (!result) {
-        setError("Invalid input");
-        return false;
-      }
-      setError(null);
-      return true;
-    },
-    [validate],
-  );
-
-  useEffect(() => {
-    const sanitized = sanitize(value);
-    setText(sanitized);
-    lastValue.current = sanitized;
-  }, [value, sanitize]);
-
-  const handleTextChange = useCallback(
-    (newText: string) => {
-      const sanitized = sanitize(newText);
-      if (maxLength && sanitized.length > maxLength) {
-        const truncated = sanitized.slice(0, maxLength);
-        setText(truncated);
-        onChange?.(truncated);
-        lastValue.current = truncated;
-        return;
-      }
-      setText(sanitized);
-      if (sanitized !== lastValue.current) {
-        onChange?.(sanitized);
-        lastValue.current = sanitized;
-      }
-      validateInput(sanitized);
-    },
-    [sanitize, maxLength, onChange, validateInput],
-  );
-
-  const handleSubmit = useCallback(() => {
-    if (validateInput(text)) {
-      onSubmit?.(text);
-      if (clearOnSubmit) {
-        setText("");
-        lastValue.current = "";
-      }
-    }
-  }, [text, validateInput, onSubmit, clearOnSubmit]);
-
-  return { text, error, handleTextChange, handleSubmit };
-}
+import { requestMutation, requestNextMutation } from "@/lib/modules/fastdom";
+import { useStableCallback } from "@/shared/hooks/base";
+import buildClassName from "@/shared/lib/buildClassName";
+import useMarkdownInput from "../hooks/useMarkdownInput";
 
 export interface MarkdownInputProps {
   value?: string;
@@ -108,6 +21,7 @@ export interface MarkdownInputProps {
   disabled?: boolean;
   onChange?: (value: string) => void;
   onSubmit?: (value: string) => void;
+  onSelectionChange?: (value: string) => void;
   className?: string;
   maxLength?: number;
   autoFocus?: boolean;
@@ -129,6 +43,7 @@ export interface MarkdownInputProps {
   required?: boolean;
   enableTabCharacter?: boolean;
   tabSize?: number;
+  isStylesRemoved?: boolean;
 }
 
 const MarkdownInput = forwardRef<HTMLDivElement, MarkdownInputProps>(
@@ -160,6 +75,7 @@ const MarkdownInput = forwardRef<HTMLDivElement, MarkdownInputProps>(
       required = false,
       enableTabCharacter = true,
       tabSize = 2,
+      isStylesRemoved = false,
     },
     ref,
   ) => {
@@ -184,20 +100,34 @@ const MarkdownInput = forwardRef<HTMLDivElement, MarkdownInputProps>(
       }
     }, [autoFocus, disabled]);
 
+    useEffect(() => {
+      if (editorRef.current && editorRef.current.nodeValue !== text) {
+        editorRef.current.nodeValue = text;
+      }
+    }, [text]);
+
     const onInput = useCallback(
       (e: React.FormEvent<HTMLDivElement>) => {
-        handleTextChange(e.currentTarget.innerText || "");
+        handleTextChange(e.currentTarget.nodeValue || "");
       },
       [handleTextChange],
     );
 
     const onKeyDown = useCallback(
       (e: React.KeyboardEvent<HTMLDivElement>) => {
-        const isEnter = e.key === "Enter";
-        const submitCondition =
-          isEnter &&
-          ((submitOnCtrlEnter && (e.ctrlKey || e.metaKey)) ||
-            (!submitOnCtrlEnter && !e.shiftKey));
+        const key = e.key;
+        const isSubmitKey = key === (submitKey || "Enter");
+        let submitCondition = false;
+
+        if (submitOnCtrlEnter) {
+          submitCondition = isSubmitKey && (e.ctrlKey || e.metaKey);
+        } else {
+          if (submitKey && submitKey !== "Enter") {
+            submitCondition = isSubmitKey;
+          } else {
+            submitCondition = isSubmitKey && !e.shiftKey;
+          }
+        }
 
         if (submitCondition) {
           e.preventDefault();
@@ -206,25 +136,70 @@ const MarkdownInput = forwardRef<HTMLDivElement, MarkdownInputProps>(
 
         if (e.key === "Tab" && enableTabCharacter) {
           e.preventDefault();
+
+          requestNextMutation(() => {
+            const selection = window.getSelection();
+
+            if (selection && selection.rangeCount > 0) {
+              return () => {
+                const range = selection.getRangeAt(0);
+                range.deleteContents();
+                range.insertNode(document.createTextNode(" ".repeat(tabSize)));
+                range.collapse(false);
+                selection.removeAllRanges();
+                selection.addRange(range);
+              };
+            }
+          });
+        }
+      },
+      [submitOnCtrlEnter, submitKey, handleSubmit, enableTabCharacter, tabSize],
+    );
+
+    const onPaste = useStableCallback(
+      (e: React.ClipboardEvent<HTMLDivElement>) => {
+        e.preventDefault();
+
+        requestNextMutation(() => {
+          const pastedText = e.clipboardData.getData("text/plain");
           const selection = window.getSelection();
-          if (selection && selection.rangeCount > 0) {
-            const range = selection.getRangeAt(0);
+
+          if (!selection || selection.rangeCount === 0) {
+            return undefined;
+          }
+
+          const range = selection.getRangeAt(0);
+
+          return () => {
             range.deleteContents();
-            range.insertNode(document.createTextNode(" ".repeat(tabSize)));
+            range.insertNode(document.createTextNode(pastedText));
             range.collapse(false);
             selection.removeAllRanges();
             selection.addRange(range);
-          }
-        }
+          };
+        });
       },
-      [submitOnCtrlEnter, handleSubmit, enableTabCharacter, tabSize],
     );
 
     const previewHTML = useMemo(
       () =>
         renderMarkdown
           ? DOMPurify.sanitize(marked.parseInline(text) as string, {
-              ALLOWED_TAGS: ["strong", "em", "code", "a", "span", "br"],
+              ALLOWED_TAGS: [
+                "strong",
+                "em",
+                "code",
+                "a",
+                "span",
+                "br",
+                "h1",
+                "h2",
+                "h3",
+                "h4",
+                "h5",
+                "h6",
+              ],
+              ALLOWED_URI_REGEXP: /^(?:(?:https?|mailto|tel):|[^#&?]+#)/i,
               ALLOWED_ATTR: ["href", "target", "rel"],
               FORCE_BODY: true,
             })
@@ -234,7 +209,7 @@ const MarkdownInput = forwardRef<HTMLDivElement, MarkdownInputProps>(
 
     return (
       <div
-        className={`${s.container} ${className || ""}`}
+        className={buildClassName(!isStylesRemoved && s.container, className)}
         style={{
           borderRadius: 20,
           padding: 0,
@@ -254,10 +229,27 @@ const MarkdownInput = forwardRef<HTMLDivElement, MarkdownInputProps>(
           aria-label={ariaLabel}
           aria-required={required}
           aria-invalid={!!error}
+          aria-multiline="true"
+          aria-describedby={error ? "error-message" : undefined}
           data-name={name}
-          className={`${s.editor} ${error ? s.error : ""}`}
+          className={buildClassName(!isStylesRemoved && s.editor, className)}
           onInput={onInput}
           onKeyDown={onKeyDown}
+          onPaste={onPaste}
+          onFocus={() => {
+            if (editorRef.current) {
+              requestMutation(() => {
+                editorRef.current?.classList.add(s.focused);
+              });
+            }
+          }}
+          onBlur={() => {
+            if (editorRef.current) {
+              requestMutation(() => {
+                editorRef.current?.classList.remove(s.focused);
+              });
+            }
+          }}
           style={{
             minHeight,
             maxHeight,
@@ -272,19 +264,30 @@ const MarkdownInput = forwardRef<HTMLDivElement, MarkdownInputProps>(
           data-placeholder={placeholder}
         />
 
-        {error && <div className={s.errorMessage}>{error}</div>}
+        {error && (
+          <div
+            id="error-message"
+            className={buildClassName(!isStylesRemoved && s.errorMessage)}
+          >
+            {error}
+          </div>
+        )}
 
         {showCharCount && maxLength !== undefined && (
-          <div className={s.charCount}>
+          <div className={buildClassName(!isStylesRemoved && s.charCount)}>
             {maxLength - text.length} characters remaining
           </div>
         )}
 
-        {actions && <div className={s.actions}>{actions}</div>}
+        {actions && (
+          <div className={buildClassName(!isStylesRemoved && s.actions)}>
+            {actions}
+          </div>
+        )}
 
         {renderMarkdown && text && (
           <div
-            className={s.markdownPreview}
+            className={buildClassName(!isStylesRemoved && s.markdownPreview)}
             dangerouslySetInnerHTML={{ __html: previewHTML }}
           />
         )}

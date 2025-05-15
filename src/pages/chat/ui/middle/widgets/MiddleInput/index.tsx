@@ -2,11 +2,18 @@ import { FC, useState } from "react";
 
 import "./index.scss";
 import { useStableCallback } from "@/shared/hooks/base";
-import MarkdownInput from "@/entities/markdown-input/MarkdownInput";
+import MarkdownInput from "@/entities/markdown-input/ui/MarkdownInput";
 
 interface OwnProps {}
 
 interface StateProps {}
+
+const validate = (v: string) => {
+  if (v.length > 1000) {
+    return "Message is too long";
+  }
+  return true;
+};
 
 const MiddleInput: FC<OwnProps & StateProps> = () => {
   const [value, setValue] = useState("");
@@ -25,6 +32,7 @@ const MiddleInput: FC<OwnProps & StateProps> = () => {
       <MarkdownInput
         value={value}
         onChange={handleChange}
+        validate={validate}
         onSubmit={handleSubmit}
         maxLength={1000}
         clearOnSubmit={true}
@@ -35,6 +43,7 @@ const MiddleInput: FC<OwnProps & StateProps> = () => {
         containerStyle={{}}
         inputStyle={{}}
         actions={null}
+        renderMarkdown
       />
     </div>
   );

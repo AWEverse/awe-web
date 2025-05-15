@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useStableCallback } from "../base";
-import { processMarkdownWorker, MarkdownResult } from "@/lib/markdown/MarkdownWorkerManager";
+import { processMarkdownWorker, MarkdownResult } from "@/lib/workers/markdown.worker.client";
 
 export function useMarkdownProcessor() {
   const [isLoading, setIsLoading] = useState<boolean>(false);
