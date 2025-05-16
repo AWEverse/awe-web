@@ -1,8 +1,6 @@
-import { FC } from 'react';
-import Placeholder from './Placeholder';
-import s from './EmptyChat.module.scss';
-
-const { Root, Header, Content } = Placeholder;
+import { FC } from "react";
+import { Root, Header, Content } from "./Placeholder";
+import s from "./EmptyChat.module.scss";
 
 const PendingAcceptance: FC = () => {
   return (

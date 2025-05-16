@@ -5,6 +5,7 @@ import { useStableCallback } from "@/shared/hooks/base";
 import MarkdownInput from "@/entities/markdown-input/ui/MarkdownInput";
 import IconButton from "@/shared/ui/IconButton";
 import { SendRounded } from "@mui/icons-material";
+import { MarkdownOutput } from "@/entities/markdown-input";
 
 interface OwnProps {}
 
@@ -34,7 +35,7 @@ const MiddleInput: FC<OwnProps & StateProps> = () => {
     setValue(value);
   });
 
-  const handleSubmit = useStableCallback(() => {
+  const handleSubmit = useStableCallback((value: string | MarkdownOutput) => {
     console.log("submit", value);
   });
 
@@ -50,7 +51,7 @@ const MiddleInput: FC<OwnProps & StateProps> = () => {
         onChange={handleChange}
         validate={validate}
         onSubmit={handleSubmit}
-        maxLength={1000}
+        maxLength={4096 + 1000} // 4096 is the max length for messages, plus 1000 for additional characters
         clearOnSubmit={true}
         placeholder="Type your message here..."
         autoFocus={false}

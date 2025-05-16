@@ -7,7 +7,7 @@ import React, {
   useMemo,
   useRef,
 } from "react";
-import { marked } from "marked";
+import MarkdownIt from "markdown-it";
 import DOMPurify from "dompurify";
 import s from "./MarkdownInput.module.scss";
 import { requestMutation, requestNextMutation } from "@/lib/modules/fastdom";
@@ -15,13 +15,16 @@ import { useStableCallback } from "@/shared/hooks/base";
 import buildClassName from "@/shared/lib/buildClassName";
 import useMarkdownInput from "../hooks/useMarkdownInput";
 import Placeholder from "@/shared/ui/Placeholder";
+import handleMarkdownInputKeyDown from "../handlers/handleMarkdownInputKeyDown";
+import { parseMarkdownToOutput } from "../lib/parseMarkdownToEntities";
+import type { MarkdownOutput } from "../lib/markdownInput.types";
 
 export interface MarkdownInputProps {
   value?: string;
   placeholder?: string;
   disabled?: boolean;
   onChange?: (value: string) => void;
-  onSubmit?: (value: string) => void;
+  onSubmit?: (value: string | MarkdownOutput) => void;
   onSelectionChange?: (value: string) => void;
   className?: string;
   maxLength?: number;
@@ -57,7 +60,6 @@ const MarkdownInput = forwardRef<HTMLDivElement, MarkdownInputProps>(
       onSubmit,
       className,
       maxLength,
-      autoFocus = false,
       minHeight = 40,
       maxHeight = 200,
       containerStyle = {},
@@ -72,7 +74,6 @@ const MarkdownInput = forwardRef<HTMLDivElement, MarkdownInputProps>(
       validate,
       id,
       ariaLabel = "Markdown text input",
-      name,
       required = false,
       enableTabCharacter = true,
       tabSize = 2,
@@ -81,6 +82,9 @@ const MarkdownInput = forwardRef<HTMLDivElement, MarkdownInputProps>(
     ref,
   ) => {
     const editorRef = useRef<HTMLDivElement>(null);
+
+    useImperativeHandle(ref, () => editorRef.current as HTMLDivElement, []);
+
     const { text, error, handleTextChange, handleSubmit } = useMarkdownInput({
       value,
       sanitizeFn,
@@ -90,7 +94,14 @@ const MarkdownInput = forwardRef<HTMLDivElement, MarkdownInputProps>(
       submitOnCtrlEnter,
       submitKey,
       onChange,
-      onSubmit,
+      onSubmit: onSubmit
+        ? (v) => {
+            (async () => {
+              const parsed = await parseMarkdownToOutput(v);
+              onSubmit(parsed);
+            })();
+          }
+        : undefined,
     });
 
     const [isFocused, setIsFocused] = React.useState(false);
@@ -110,43 +121,13 @@ const MarkdownInput = forwardRef<HTMLDivElement, MarkdownInputProps>(
 
     const onKeyDown = useCallback(
       (e: React.KeyboardEvent<HTMLDivElement>) => {
-        const key = e.key;
-        const isSubmitKey = key === (submitKey || "Enter");
-        let submitCondition = false;
-
-        if (submitOnCtrlEnter) {
-          submitCondition = isSubmitKey && (e.ctrlKey || e.metaKey);
-        } else {
-          if (submitKey && submitKey !== "Enter") {
-            submitCondition = isSubmitKey;
-          } else {
-            submitCondition = isSubmitKey && !e.shiftKey;
-          }
-        }
-
-        if (submitCondition) {
-          e.preventDefault();
-          handleSubmit();
-        }
-
-        if (e.key === "Tab" && enableTabCharacter) {
-          e.preventDefault();
-
-          requestNextMutation(() => {
-            const selection = window.getSelection();
-
-            if (selection && selection.rangeCount > 0) {
-              return () => {
-                const range = selection.getRangeAt(0);
-                range.deleteContents();
-                range.insertNode(document.createTextNode(" ".repeat(tabSize)));
-                range.collapse(false);
-                selection.removeAllRanges();
-                selection.addRange(range);
-              };
-            }
-          });
-        }
+        handleMarkdownInputKeyDown(e, {
+          submitKey,
+          submitOnCtrlEnter,
+          handleSubmit,
+          enableTabCharacter,
+          tabSize,
+        });
       },
       [submitOnCtrlEnter, submitKey, handleSubmit, enableTabCharacter, tabSize],
     );
@@ -154,32 +135,35 @@ const MarkdownInput = forwardRef<HTMLDivElement, MarkdownInputProps>(
     const onPaste = useStableCallback(
       (e: React.ClipboardEvent<HTMLDivElement>) => {
         e.preventDefault();
+        const pastedText = e.clipboardData.getData("text/plain");
 
-        requestNextMutation(() => {
-          const pastedText = e.clipboardData.getData("text/plain");
-          const selection = window.getSelection();
+        const selection = window.getSelection();
+        if (!selection || selection.rangeCount === 0) return;
 
-          if (!selection || selection.rangeCount === 0) {
-            return undefined;
-          }
+        const range = selection.getRangeAt(0);
+        range.deleteContents();
 
-          const range = selection.getRangeAt(0);
+        const textNode = document.createTextNode(pastedText);
 
-          return () => {
-            range.deleteContents();
-            range.insertNode(document.createTextNode(pastedText));
-            range.collapse(false);
-            selection.removeAllRanges();
-            selection.addRange(range);
-          };
-        });
+        range.insertNode(textNode);
+        range.setStartAfter(textNode);
+        range.collapse(true);
+
+        selection.removeAllRanges();
+        selection.addRange(range);
       },
     );
+
+    const md = new MarkdownIt({
+      html: false,
+      linkify: true,
+      typographer: true,
+    });
 
     const previewHTML = useMemo(
       () =>
         renderMarkdown
-          ? DOMPurify.sanitize(marked.parseInline(text) as string, {
+          ? DOMPurify.sanitize(md.renderInline(text), {
               ALLOWED_TAGS: [
                 "strong",
                 "em",
@@ -234,11 +218,7 @@ const MarkdownInput = forwardRef<HTMLDivElement, MarkdownInputProps>(
           aria-invalid={!!error}
           aria-multiline="true"
           aria-describedby={error ? "error-message" : undefined}
-          aria-placeholder={placeholder}
           data-disabled={disabled}
-          data-id={id}
-          data-aria-label={ariaLabel}
-          data-name={name}
           className={buildClassName(!isStylesRemoved && s.editor, className)}
           onInput={onInput}
           onKeyDown={onKeyDown}

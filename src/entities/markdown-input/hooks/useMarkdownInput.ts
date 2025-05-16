@@ -17,7 +17,7 @@ export default function useMarkdownInput({
   submitOnCtrlEnter: boolean;
   submitKey: string;
   onChange: (v: string) => void;
-  onSubmit: (v: string) => void;
+  onSubmit: (v: string) => void | ((v: string) => void);
 }>) {
   const [text, setText] = useState(value);
   const [error, setError] = useState<string | null>(null);

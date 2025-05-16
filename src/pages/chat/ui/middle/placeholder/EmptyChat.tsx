@@ -1,8 +1,6 @@
-import { FC } from 'react';
-import Placeholder from './Placeholder';
-import s from './EmptyChat.module.scss';
-
-const { Root, Header, Content } = Placeholder;
+import { FC } from "react";
+import { Root, Header, Content } from "./Placeholder";
+import s from "./EmptyChat.module.scss";
 
 interface OwnProps {
   username?: string;
@@ -11,10 +9,12 @@ interface OwnProps {
 
 const isUsername = (username?: string) => username && username.length > 0;
 
-const EmptyChat: FC<OwnProps> = ({ username = 'Альбінчік', className }) => {
+const EmptyChat: FC<OwnProps> = ({ username = "Альбінчік", className }) => {
   return (
     <Root className={className}>
-      <Header title={`Welcome to Chat${isUsername(username) ? ` with ${username}` : '!'}`}>
+      <Header
+        title={`Welcome to Chat${isUsername(username) ? ` with ${username}` : "!"}`}
+      >
         <p>It's time to start a new conversation!</p>
       </Header>
       <Content
@@ -24,7 +24,9 @@ const EmptyChat: FC<OwnProps> = ({ username = 'Альбінчік', className })
         message="Feeling a bit shy? No worries, just say 'Hi' 🙂 and let's get started!"
       >
         <section>
-          <blockquote>"Every great conversation starts with a simple 'Hi 🙂'.</blockquote>
+          <blockquote>
+            "Every great conversation starts with a simple 'Hi 🙂'.
+          </blockquote>
         </section>
       </Content>
     </Root>
