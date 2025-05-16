@@ -16,8 +16,8 @@ import buildClassName from "@/shared/lib/buildClassName";
 import useMarkdownInput from "../hooks/useMarkdownInput";
 import Placeholder from "@/shared/ui/Placeholder";
 import handleMarkdownInputKeyDown from "../handlers/handleMarkdownInputKeyDown";
-import { parseMarkdownToOutput } from "../lib/parseMarkdownToEntities";
 import type { MarkdownOutput } from "../lib/markdownInput.types";
+import { parseMarkdownToOutput } from "../lib/engine/parser/parseMarkdownToOutput";
 
 export interface MarkdownInputProps {
   value?: string;

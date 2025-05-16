@@ -13,6 +13,7 @@ export type MarkdownElementType =
   | 'list'
   | 'listItem'
   | 'table'
+  | 'tableHeader'
   | 'tableRow'
   | 'tableCell'
   | 'horizontalRule'
