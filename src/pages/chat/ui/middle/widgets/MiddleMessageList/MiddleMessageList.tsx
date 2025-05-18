@@ -76,7 +76,9 @@ const MiddleMessageList: FC<OwnProps & StateProps> = () => {
           ref={containerRef}
           id="chat-scroll-area"
           data-scrolled="true"
-          className={"MiddleMessageList allow-space-right-column-messages"}
+          className={
+            "MiddleMessageList allow-space-right-column-messages right-column-transition-transform"
+          }
           onClick={handleClick}
           onMouseDown={handleMouseDown}
           onContextMenu={handleContextMenu}

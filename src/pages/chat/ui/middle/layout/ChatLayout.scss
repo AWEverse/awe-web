@@ -5,6 +5,7 @@
   --chat-input-size: 3.375rem;
   --chat-input-padding: 0.8125rem;
   --chat-input-inner-padding: 0.5rem;
+  --chat-right-column-transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 
   position: relative;
   display: flex;
@@ -15,23 +16,22 @@
   overflow: hidden;
 
   @media (min-width: 1276px) {
-    --chat-padding-x: calc(var(--right-column-width) / 2 + 2 * var(--chat-input-padding));
+    --chat-padding-x: calc(
+      var(--right-column-width) / 2 + 2 * var(--chat-input-padding)
+    );
   }
 
   @media (min-width: 1025px) and (max-width: 1275px) {
-    --chat-padding-x: calc(var(--right-column-width) / 6 + 2 * var(--chat-input-padding));
+    --chat-padding-x: calc(
+      var(--right-column-width) / 6 + 2 * var(--chat-input-padding)
+    );
   }
 
   @media (min-width: 768px) and (max-width: 1024px) {
     --chat-padding-x: var(--chat-input-padding);
   }
 
-
   @media (min-width: 1276px) {
-    // The !important here is ensuring that the transform value is applied,
-    // preventing other conflicting transform
-    // styles that might have been applied earlier in the cascade once as default only.
-    // ANOTHER USES OF this keyword not allowed
     &.is-right-column-active {
       .allow-space-right-column-header {
         transform: translate3d(
@@ -54,12 +54,16 @@
           0
         ) !important;
       }
-
-      // .allow-space-right-column-messages {
-      //   max-width: calc(100% - var(--right-column-width, 320px)) !important;
-      // }
     }
   }
+}
+
+.right-column-transition-transform {
+  transition: transform var(--chat-right-column-transition);
+}
+
+.right-column-transition-max-width {
+  transition: max-width var(--chat-right-column-transition);
 }
 
 .ChatLayoutMiddleWrapper {

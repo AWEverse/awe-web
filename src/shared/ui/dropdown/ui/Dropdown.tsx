@@ -6,7 +6,6 @@ import { useRefInstead } from "@/shared/hooks/base";
 import s from "./Dropdown.module.scss";
 import useBodyClass from "@/shared/hooks/DOM/useBodyClass";
 import { useBoundaryCheck } from "@/shared/hooks/mouse/useBoundaryCheck";
-import { useEffectWithPreviousDeps } from "@/shared/hooks/effects/useEffectWithPreviousDependencies";
 import useKeyboardListeners from "@/lib/hooks/events/useKeyboardListeners";
 import trapFocus from "@/lib/utils/trapFocus";
 import { useClickAway } from "@/lib/hooks/events/useClick";
@@ -28,6 +27,7 @@ interface OwnProps {
   triggerButton?: FC<OwnTriggerProps>;
   isOpen?: boolean;
   shouldClose?: boolean;
+  leaveOnOver?: boolean;
   onOpen?: () => void;
   onClose?: () => void;
   onHide?: () => void;
@@ -49,6 +49,7 @@ const DropdownMenu: FC<OwnProps & OwnSharedProps> = ({
   triggerButton: TriggerButton,
   position = "top-right",
   shouldClose,
+  leaveOnOver = true,
   onOpen,
   onClose,
   onEnter,
@@ -80,10 +81,15 @@ const DropdownMenu: FC<OwnProps & OwnSharedProps> = ({
     [shouldReduceMotion],
   );
 
-  useKeyboardListeners({
-    bindings: { onEsc: onClose, onEnter },
-    rules: { preventDefault: true },
-  });
+  useKeyboardListeners(
+    {
+      bindings: {
+        onEsc: handleClose,
+        onEnter,
+      },
+    },
+    isOpen,
+  );
 
   useBodyClass("has-open-dialog", isOpen);
 
@@ -91,7 +97,7 @@ const DropdownMenu: FC<OwnProps & OwnSharedProps> = ({
 
   useBoundaryCheck({
     elementRef: dropdownRef,
-    isActive: isOpen,
+    isActive: isOpen && leaveOnOver,
     onExit: handleClose,
     options: { outboxSize: 60, throttleInterval: 250 },
   });

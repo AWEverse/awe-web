@@ -21,6 +21,7 @@ import receiveInitialMessage from "@/lib/core/public/cryptography/public/X3DH/re
 import sendInitialMessage from "@/lib/core/public/cryptography/public/X3DH/sendInitialMessage";
 import withTooltip from "@/shared/hocs/withTooltip";
 import ActionButton from "@/shared/ui/ActionButton";
+import RadialPatternCanvas from "@/shared/ui/RadialPatternCanvas";
 
 // Utility to convert Uint8Array to hex string
 const toHex = (array: Uint8Array): string => {
@@ -51,9 +52,7 @@ const AdvancedEncryptionPage: React.FC = () => {
       <Button onClick={() => openModal("calendar", {}, 0)}>
         Open Calendar
       </Button>
-
       <TimePicker />
-
       <Image
         src="/img/primary-background.jpg"
         alt="Sunset over mountain range"
@@ -71,6 +70,32 @@ const AdvancedEncryptionPage: React.FC = () => {
         onError={() => console.error("Image failed")}
         onRetry={(attempt) => console.log(`Attempt ${attempt}`)}
       />
+      <RadialPatternCanvas
+        drawPattern={(params) => {
+          const { context, centerX, centerY, radius, width, height } = params;
+          const steps = 200;
+          for (let i = 0; i < steps; i++) {
+            const angle = i * 0.05 * Math.PI;
+            const r = (i / steps) * radius;
+            context.beginPath();
+            context.moveTo(centerX, centerY);
+            context.lineTo(
+              centerX + r * Math.cos(angle),
+              centerY + r * Math.sin(angle),
+            );
+            context.stroke();
+          }
+        }}
+      />
+
+      <div>
+        <h1>SVG Path Rendering</h1>
+        <RadialPatternCanvas
+          svgPaths={[
+            "M 10,30 A 20,20 0,0,1 50,30 A 20,20 0,0,1 90,30 Q 90,60 50,90 Q 10,60 10,30 z",
+          ]}
+        />
+      </div>
     </>
   );
 };

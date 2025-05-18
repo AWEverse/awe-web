@@ -15,9 +15,11 @@ import { useStableCallback } from "@/shared/hooks/base";
 import buildClassName from "@/shared/lib/buildClassName";
 import useMarkdownInput from "../hooks/useMarkdownInput";
 import Placeholder from "@/shared/ui/Placeholder";
-import handleMarkdownInputKeyDown from "../handlers/handleMarkdownInputKeyDown";
 import type { MarkdownOutput } from "../lib/markdownInput.types";
 import { parseMarkdownToOutput } from "../lib/engine/parser/parseMarkdownToOutput";
+import handlePaste from "./handlers/handlePaste";
+import handleKeyDown from "./handlers/handleKeyDown";
+import handleSelect from "./handlers/handleSelect";
 
 export interface MarkdownInputProps {
   value?: string;
@@ -26,6 +28,8 @@ export interface MarkdownInputProps {
   onChange?: (value: string) => void;
   onSubmit?: (value: string | MarkdownOutput) => void;
   onSelectionChange?: (value: string) => void;
+  onSelect?: (value: string) => void;
+  onSelectionEnd?: (value: string) => void;
   className?: string;
   maxLength?: number;
   autoFocus?: boolean;
@@ -58,8 +62,12 @@ const MarkdownInput = forwardRef<HTMLDivElement, MarkdownInputProps>(
       disabled = false,
       onChange,
       onSubmit,
+      onSelect,
+      onSelectionEnd,
+      onSelectionChange,
       className,
       maxLength,
+      autoFocus = false,
       minHeight = 40,
       maxHeight = 200,
       containerStyle = {},
@@ -71,7 +79,7 @@ const MarkdownInput = forwardRef<HTMLDivElement, MarkdownInputProps>(
       submitOnCtrlEnter = false,
       submitKey = "Enter",
       showCharCount = false,
-      validate,
+      validate = (val) => val.length > 0, // Default validation
       id,
       ariaLabel = "Markdown text input",
       required = false,
@@ -87,7 +95,7 @@ const MarkdownInput = forwardRef<HTMLDivElement, MarkdownInputProps>(
 
     const { text, error, handleTextChange, handleSubmit } = useMarkdownInput({
       value,
-      sanitizeFn,
+      sanitizeFn: sanitizeFn || ((val) => DOMPurify.sanitize(val)),
       validate,
       maxLength,
       clearOnSubmit,
@@ -108,9 +116,19 @@ const MarkdownInput = forwardRef<HTMLDivElement, MarkdownInputProps>(
 
     useEffect(() => {
       if (editorRef.current && editorRef.current.textContent !== text) {
-        editorRef.current.textContent = text;
+        requestMutation(() => {
+          if (editorRef.current) editorRef.current.textContent = text;
+        });
       }
     }, [text]);
+
+    useEffect(() => {
+      if (autoFocus && editorRef.current && !disabled) {
+        requestMutation(() => {
+          editorRef.current?.focus();
+        });
+      }
+    }, [autoFocus, disabled]);
 
     const onInput = useCallback(
       (e: React.FormEvent<HTMLDivElement>) => {
@@ -119,9 +137,9 @@ const MarkdownInput = forwardRef<HTMLDivElement, MarkdownInputProps>(
       [handleTextChange],
     );
 
-    const onKeyDown = useCallback(
+    const onKeyDown = useStableCallback(
       (e: React.KeyboardEvent<HTMLDivElement>) => {
-        handleMarkdownInputKeyDown(e, {
+        handleKeyDown(e, {
           submitKey,
           submitOnCtrlEnter,
           handleSubmit,
@@ -129,71 +147,54 @@ const MarkdownInput = forwardRef<HTMLDivElement, MarkdownInputProps>(
           tabSize,
         });
       },
-      [submitOnCtrlEnter, submitKey, handleSubmit, enableTabCharacter, tabSize],
     );
 
     const onPaste = useStableCallback(
       (e: React.ClipboardEvent<HTMLDivElement>) => {
-        e.preventDefault();
-        const pastedText = e.clipboardData.getData("text/plain");
-
-        const selection = window.getSelection();
-        if (!selection || selection.rangeCount === 0) return;
-
-        const range = selection.getRangeAt(0);
-        range.deleteContents();
-
-        const textNode = document.createTextNode(pastedText);
-
-        range.insertNode(textNode);
-        range.setStartAfter(textNode);
-        range.collapse(true);
-
-        selection.removeAllRanges();
-        selection.addRange(range);
+        handlePaste(e);
+        handleTextChange(editorRef.current?.textContent || "");
       },
     );
 
-    const md = new MarkdownIt({
-      html: false,
-      linkify: true,
-      typographer: true,
-    });
+    const handleSelected = useStableCallback(
+      (e: React.MouseEvent<HTMLDivElement>) => {
+        handleSelect(e, {
+          onSelect: onSelect || (() => {}),
+          enableSelection: true,
+        });
+        if (onSelectionChange) {
+          onSelectionChange(editorRef.current?.textContent || "");
+        }
+      },
+    );
+
+    const md = useMemo(
+      () =>
+        new MarkdownIt({
+          html: false,
+          linkify: true,
+          typographer: true,
+        }),
+      [],
+    );
 
     const previewHTML = useMemo(
       () =>
-        renderMarkdown
+        renderMarkdown && text
           ? DOMPurify.sanitize(md.renderInline(text), {
-              ALLOWED_TAGS: [
-                "strong",
-                "em",
-                "code",
-                "a",
-                "span",
-                "br",
-                "h1",
-                "h2",
-                "h3",
-                "h4",
-                "h5",
-                "h6",
-              ],
-              ALLOWED_URI_REGEXP: /^(?:(?:https?|mailto|tel):|[^#&?]+#)/i,
-              ALLOWED_ATTR: ["href", "target", "rel"],
+              ALLOWED_TAGS: ["strong", "em", "code", "a", "br"],
+              ALLOWED_ATTR: ["href"],
+              FORBID_TAGS: ["script", "iframe"],
               FORCE_BODY: true,
             })
           : "",
-      [renderMarkdown, text],
+      [renderMarkdown, text, md],
     );
 
     return (
       <div
         className={buildClassName(!isStylesRemoved && s.container, className)}
         style={{
-          borderRadius: 20,
-          padding: 0,
-          borderWidth: 1,
-          position: "relative",
           ...containerStyle,
         }}
         data-error={!!error}
@@ -223,21 +224,25 @@ const MarkdownInput = forwardRef<HTMLDivElement, MarkdownInputProps>(
           onInput={onInput}
           onKeyDown={onKeyDown}
           onPaste={onPaste}
-          onFocus={() => {
-            setIsFocused(true);
-            if (editorRef.current) {
-              requestMutation(() => {
-                editorRef.current?.classList.add(s.focused);
+          onSelect={handleSelected}
+          onMouseUp={useCallback(() => {
+            if (onSelectionEnd) {
+              requestNextMutation(() => {
+                onSelectionEnd(editorRef.current?.textContent || "");
               });
             }
+          }, [onSelectionEnd])}
+          onFocus={() => {
+            setIsFocused(true);
+            requestMutation(() => {
+              editorRef.current?.classList.add(s.focused);
+            });
           }}
           onBlur={() => {
             setIsFocused(false);
-            if (editorRef.current) {
-              requestMutation(() => {
-                editorRef.current?.classList.remove(s.focused);
-              });
-            }
+            requestMutation(() => {
+              editorRef.current?.classList.remove(s.focused);
+            });
           }}
           style={{
             minHeight,

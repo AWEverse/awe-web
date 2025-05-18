@@ -21,11 +21,13 @@ const RedditPage = () => {
         className="community__navigation"
         activeTab={activeTabIndex}
         tabs={[
-          { id: 1, title: "Overview", href: "/d/overview" },
-          { id: 2, title: "Topic's", href: "/d/disscusions" },
-          { id: 3, title: "Team's" },
-          { id: 4, title: "People's", href: "/d/members" },
-          { id: 4, title: "Settings" },
+          { id: 0, title: "Home", href: "/d/home" },
+          { id: 1, title: "Chat", href: "/chat" },
+          { id: 2, title: "Overview", href: "/d/overview" },
+          { id: 3, title: "Topic's", href: "/d/disscusions" },
+          { id: 4, title: "Team's" },
+          { id: 5, title: "People's", href: "/d/members" },
+          { id: 6, title: "Settings" },
         ]}
         onSwitchTab={handleTabChange}
       />

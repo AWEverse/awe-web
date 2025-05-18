@@ -9,7 +9,7 @@
 
   // will-change: max-width;
   max-width: 100%;
-  transition: transform var(--transition-standard-in, 0.3s ease-in);
+
   padding: 0 clamp(4px, var(--chat-padding-x), var(--chat-padding-x));
 }
 

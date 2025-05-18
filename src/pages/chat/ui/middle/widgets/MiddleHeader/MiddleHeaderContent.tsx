@@ -58,14 +58,14 @@ export const HeaderContent: React.FC<HeaderContentProps> = ({
       <>
         <div
           onClick={openProfileColumn}
-          className="UserDetails allow-width-right-column-header"
+          className="UserDetails allow-width-right-column-header right-column-transition-max-width"
         >
           <p>{senderName}</p>
           <span>
             Was online <time>a one hours ago</time>
           </span>
         </div>
-        <div className="MiddleHeaderActions allow-space-right-column-header">
+        <div className="MiddleHeaderActions allow-space-right-column-header right-column-transition-transform">
           {!lessTablet && (
             <PinnedMessageButton
               activeIndex={0}

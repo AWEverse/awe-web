@@ -34,8 +34,19 @@ export function useBoundaryCheck({
     if (!isActive || IS_MOBILE || !elementRef.current) return;
 
     const element = elementRef.current;
-    const { width, height } = windowSize.dimensions;
     const rect = element.getBoundingClientRect();
+    const width = rect.width || element.offsetWidth;
+    const height = rect.height || element.offsetHeight;
+    const viewport = windowSize.dimensions;
+
+    console.log("useBoundaryCheck",
+      position,
+      outboxSize,
+      extraPaddingX,
+      rect,
+      width,
+      height,
+      viewport)
 
     const boundaries = position
       ? calculateAdjustedBoundaries(
@@ -45,8 +56,15 @@ export function useBoundaryCheck({
         rect,
         width,
         height,
+        viewport.width,
+        viewport.height,
       )
-      : calculateDefaultBoundaries(rect, outboxSize, width, height);
+      : calculateDefaultBoundaries(
+        rect,
+        outboxSize,
+        viewport.width,
+        viewport.height,
+      );
 
     const handleMove = throttle((e: MouseEvent | TouchEvent) => {
       const clientX = "touches" in e ? e.touches[0].clientX : e.clientX;
@@ -91,49 +109,58 @@ function calculateAdjustedBoundaries(
   position: { x: number; y: number },
   outboxSize: number,
   paddingX: number,
-  rect: DOMRect,
-  width: number,
-  height: number,
+  _rect: DOMRect, // unused, for signature compatibility
+  menuWidth: number,
+  menuHeight: number,
+  viewportWidth: number,
+  viewportHeight: number,
 ) {
-  const spaceRight = width - position.x;
+  const spaceRight = viewportWidth - position.x;
   const spaceLeft = position.x;
-  const spaceBottom = height - position.y;
+  const spaceBottom = viewportHeight - position.y;
   const spaceTop = position.y;
 
-  const adjustedX = (() => {
-    if (rect.width + paddingX <= spaceRight) return position.x + paddingX;
-    if (rect.width + paddingX <= spaceLeft)
-      return position.x - rect.width - paddingX;
-    return spaceRight > spaceLeft ? width - rect.width : 0;
-  })();
+  // Take into account menu size (with scale, transforms, etc)
+  let adjustedX = position.x + paddingX;
+  let adjustedY = position.y;
 
-  const adjustedY = (() => {
-    if (rect.height <= spaceBottom) return position.y;
-    if (rect.height <= spaceTop) return position.y - rect.height;
-    return spaceBottom > spaceTop ? height - rect.height : 0;
-  })();
+  // Prefer to show right/bottom, fallback to left/top if not enough space
+  if (menuWidth + paddingX > spaceRight && menuWidth + paddingX <= spaceLeft) {
+    adjustedX = position.x - menuWidth - paddingX;
+  } else if (menuWidth + paddingX > spaceRight && menuWidth + paddingX > spaceLeft) {
+    // Not enough space either side, clamp to viewport
+    adjustedX = Math.max(0, viewportWidth - menuWidth);
+  }
 
-  const clampedX = clamp(adjustedX, 0, width - rect.width);
-  const clampedY = clamp(adjustedY, 0, height - rect.height);
+  if (menuHeight > spaceBottom && menuHeight <= spaceTop) {
+    adjustedY = position.y - menuHeight;
+  } else if (menuHeight > spaceBottom && menuHeight > spaceTop) {
+    // Not enough space either above or below, clamp to viewport
+    adjustedY = Math.max(0, viewportHeight - menuHeight);
+  }
+
+  const clampedX = clamp(adjustedX, 0, viewportWidth - menuWidth);
+  const clampedY = clamp(adjustedY, 0, viewportHeight - menuHeight);
 
   return {
     left: Math.max(clampedX - outboxSize, 0),
-    right: Math.min(clampedX + rect.width + outboxSize, width),
+    right: Math.min(clampedX + menuWidth + outboxSize, viewportWidth),
     top: Math.max(clampedY - outboxSize, 0),
-    bottom: Math.min(clampedY + rect.height + outboxSize, height),
+    bottom: Math.min(clampedY + menuHeight + outboxSize, viewportHeight),
   };
 }
 
 function calculateDefaultBoundaries(
   rect: DOMRect,
   outboxSize: number,
-  width: number,
-  height: number,
+  viewportWidth: number,
+  viewportHeight: number,
 ) {
+  // Use actual rect (with scale, transforms, etc)
   return {
     left: Math.max(rect.left - outboxSize, 0),
-    right: Math.min(rect.right + outboxSize, width),
+    right: Math.min(rect.right + outboxSize, viewportWidth),
     top: Math.max(rect.top - outboxSize, 0),
-    bottom: Math.min(rect.bottom + outboxSize, height),
+    bottom: Math.min(rect.bottom + outboxSize, viewportHeight),
   };
 }

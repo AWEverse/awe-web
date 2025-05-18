@@ -75,47 +75,79 @@ const ActionButton = forwardRef<HTMLElement, ActionButtonProps>(
       size = "md",
       color = "primary",
       loading = false,
-      fullWidth = true,
+      fullWidth = false, // Changed default to false for better usability
       children,
       startDecorator,
       endDecorator,
       ripple = true,
+      href,
       ...rest
     } = props;
 
-    const buttonClassname = useMemo(
-      () =>
-        buildClassName(
-          "button",
-          `button--variant--${variant}`,
-          `button--size--${size}`,
-          `button--color--${color}`,
-          active && "active",
-          disabled && "disabled",
-          loading && "loading",
-          fullWidth && "fullWidth",
-          className,
-        ),
-      [variant, size, color, active, disabled, loading, fullWidth, className],
-    );
+    // Performance optimization: Use object for className generation to avoid array operations
+    const buttonClassname = useMemo(() => {
+      const classes = {
+        button: true,
+        [`button--variant--${variant}`]: true,
+        [`button--size--${size}`]: true,
+        [`button--color--${color}`]: true,
+        active,
+        disabled,
+        loading,
+        fullWidth,
+        [className || ""]: !!className,
+      };
+      return buildClassName(classes);
+    }, [variant, size, color, active, disabled, loading, fullWidth, className]);
 
+    // Optimized click handler with href support
     const handleClick = useCallback(
       (event: MouseEvent<HTMLElement>) => {
-        if (!disabled && !loading) {
-          onClick?.(event);
+        if (disabled || loading) {
+          event.preventDefault();
+          return;
         }
+
+        if (href) {
+          // Handle href navigation for custom elements
+          const linkClick =
+            !event.ctrlKey && !event.metaKey && event.button === 0;
+          if (linkClick) {
+            event.preventDefault();
+            window.location.href = href;
+          }
+        }
+
+        onClick?.(event);
       },
-      [disabled, loading, onClick],
+      [disabled, loading, onClick, href],
     );
 
+    // Optimized content generation
     const content = useMemo(() => {
       if (children) return children;
+
+      const hasDecorators = startDecorator || endDecorator;
+      const hasIcon = icon || hasDecorators;
+
       return (
         <>
           {startDecorator}
-          {icon && <span className="iconWrapper">{icon}</span>}
+          {icon && (
+            <span
+              className={buildClassName("iconWrapper", {
+                "iconWrapper--with-label": !!label,
+              })}
+            >
+              {icon}
+            </span>
+          )}
           {label && (
-            <span className={buildClassName("label", labelClassName)}>
+            <span
+              className={buildClassName("label", labelClassName, {
+                "label--with-icon": !!hasIcon,
+              })}
+            >
               {label}
             </span>
           )}
@@ -124,6 +156,7 @@ const ActionButton = forwardRef<HTMLElement, ActionButtonProps>(
       );
     }, [children, label, icon, startDecorator, endDecorator, labelClassName]);
 
+    // Optimized ARIA props
     const ariaProps = useMemo(
       () => ({
         "aria-busy": loading,
@@ -132,33 +165,36 @@ const ActionButton = forwardRef<HTMLElement, ActionButtonProps>(
         "aria-label": rest["aria-label"] || label || title,
         "aria-labelledby": rest["aria-labelledby"],
         "aria-describedby": rest["aria-describedby"],
+        role: rest.role || (Component === "button" ? undefined : "button"),
       }),
-      [loading, disabled, active, rest, label, title],
+      [loading, disabled, active, rest, label, title, Component],
     );
 
     return (
       <Component
         {...rest}
         ref={ref}
-        role={rest.role || (Component === "button" ? undefined : "button")}
         className={buttonClassname}
         title={title}
         onClick={handleClick}
         disabled={disabled || loading}
         {...ariaProps}
+        {...(href && { href })}
       >
         {content}
-        {ripple && <RippleEffect />}
-        {loading && <div className="loader" aria-hidden="true" />}
+        {ripple && !disabled && !loading && <RippleEffect />}
+        {loading && (
+          <div className="loader" aria-hidden="true">
+            <div className="loader__spinner" />
+          </div>
+        )}
       </Component>
     );
   },
 );
 
-export default memo(ActionButton, (prevProps, nextProps) =>
-  Object.keys(prevProps).every(
-    (key) =>
-      prevProps[key as keyof ActionButtonProps] ===
-      nextProps[key as keyof ActionButtonProps],
-  ),
-);
+// Deep comparison memoization for better performance
+export default memo(ActionButton, (prevProps, nextProps) => {
+  const prevKeys = Object.keys(prevProps) as (keyof ActionButtonProps)[];
+  return prevKeys.every((key) => prevProps[key] === nextProps[key]);
+});

@@ -1,15 +1,12 @@
-import React, { memo, useCallback, useRef, useState } from "react";
+import React, { memo, useRef, useState } from "react";
 import { Avatar } from "@mui/material";
 import ArrowBackRoundedIcon from "@mui/icons-material/ArrowBackRounded";
 import "./index.scss";
-import MiddleHeaderActions from "./MiddleHeaderActions";
 import PinnedMessageButton from "../../common/PinnedMessageButton";
-import { CalendarMonthRounded, CloseRounded } from "@mui/icons-material";
 import IconButton from "@/shared/ui/IconButton";
 import { useStableCallback } from "@/shared/hooks/base";
 import Modal from "@/shared/ui/Modal";
 import captureKeyboardListeners from "@/lib/utils/captureKeyboardListeners";
-import MiddleHeaderSearch from "./MiddleHeaderSearch";
 import buildClassName from "@/shared/lib/buildClassName";
 import { DatePicker } from "@/entities/date-picker";
 import { useComponentDidMount } from "@/shared/hooks/effects/useLifecycle";
