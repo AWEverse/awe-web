@@ -5,7 +5,6 @@ import React, { useRef, useEffect } from "react";
  * Converts SVG path data into canvas drawing commands
  */
 
-// Defines the different types of SVG path commands
 type CommandType =
   | "M"
   | "m" // MoveTo
@@ -107,6 +106,15 @@ const renderPathToCanvas = (
   offsetY = 0,
   scale = 1,
 ): void => {
+  // Convert commands back to pathData for optimization
+  const pathData = commands
+    .map((cmd) => `${cmd.type} ${cmd.values.join(" ")}`)
+    .join(" ");
+  const optimizedPathData = optimizeSvgPath(pathData, scale);
+
+  // Parse the optimized path back into commands
+  const optimizedCommands = parseSvgPath(optimizedPathData);
+
   ctx.beginPath();
 
   let currentX = 0;
@@ -118,7 +126,7 @@ const renderPathToCanvas = (
   let lastControlX: number | null = null;
   let lastControlY: number | null = null;
 
-  commands.forEach((cmd) => {
+  optimizedCommands.forEach((cmd) => {
     const { type, values, isRelative } = cmd;
 
     switch (type.toUpperCase()) {
@@ -671,6 +679,15 @@ const RadialPatternCanvas: React.FC<RadialPatternCanvasProps> = ({
 }) => {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
 
+  const saveCanvasAsImage = () => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const link = document.createElement("a");
+    link.download = "canvas-image.png";
+    link.href = canvas.toDataURL("image/png");
+    link.click();
+  };
+
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -720,8 +737,7 @@ const RadialPatternCanvas: React.FC<RadialPatternCanvasProps> = ({
       const animateFrame = (timestamp: number) => {
         if (!startTime) startTime = timestamp;
         const elapsed = timestamp - startTime;
-        const progress = Math.min(elapsed / 2000, 1); // Example duration: 2000ms
-
+        const progress = Math.min(elapsed / 2000, 1);
         context.clearRect(0, 0, canvas.width, canvas.height);
         context.fillStyle = backgroundColor;
         context.fillRect(0, 0, canvas.width, canvas.height);
@@ -758,6 +774,142 @@ const RadialPatternCanvas: React.FC<RadialPatternCanvasProps> = ({
   ]);
 
   return (
+    <div style={{ position: "relative" }}>
+      <canvas
+        ref={canvasRef}
+        style={{
+          border: "1px solid white",
+          borderRadius: "4px",
+          boxShadow: "0 0 10px rgba(255, 255, 255, 0.2)",
+        }}
+      />
+      <button
+        onClick={saveCanvasAsImage}
+        style={{
+          position: "absolute",
+          top: "10px",
+          right: "10px",
+          backgroundColor: "white",
+          color: "black",
+          border: "none",
+          padding: "5px 10px",
+          cursor: "pointer",
+        }}
+      >
+        Save as Image
+      </button>
+    </div>
+  );
+};
+
+interface RadialShapesCanvasProps {
+  width?: number;
+  height?: number;
+  shapeSize?: number;
+  shapeCount?: number;
+  shapeRadius?: number;
+  strokeColor?: string;
+  strokeWidth?: number; // Added stroke width property
+  applyRotation?: boolean; // Optional rotation for shapes
+  fillColor?: string;
+  backgroundColor?: string;
+  svgPath?: string;
+}
+
+const optimizeSvgPath = (pathData: string, scale: number): string => {
+  if (scale < 0.5) {
+    return pathData.replace(/\d+\.\d+/g, (num) =>
+      (parseFloat(num) * 0.5).toFixed(1),
+    );
+  } else if (scale > 2) {
+    return pathData.replace(/\d+\.\d+/g, (num) =>
+      (parseFloat(num) * 1.5).toFixed(2),
+    );
+  }
+  return pathData;
+};
+
+const RadialShapesCanvas: React.FC<RadialShapesCanvasProps> = ({
+  width = 400,
+  height = 400,
+  shapeSize = 20,
+  shapeCount = 12,
+  shapeRadius = 100,
+  strokeColor = "white",
+  strokeWidth = 1, // Default stroke width
+  applyRotation = true, // Optional rotation for shapes
+  fillColor = "transparent",
+  backgroundColor = "black",
+  svgPath,
+}) => {
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    const context = canvas.getContext("2d");
+    if (!context) return;
+
+    canvas.width = width;
+    canvas.height = height;
+    context.fillStyle = backgroundColor;
+    context.fillRect(0, 0, canvas.width, canvas.height);
+
+    const centerX = canvas.width / 2 - shapeSize; // Add 0.5 for subpixel rendering
+    const centerY = canvas.height / 2 - shapeSize; // Add 0.5 for subpixel rendering
+
+    for (let i = 0; i < shapeCount; i++) {
+      const angle = (i * 2 * Math.PI) / shapeCount;
+      const x = centerX + shapeRadius * Math.cos(angle);
+      const y = centerY + shapeRadius * Math.sin(angle);
+
+      context.save();
+      context.translate(x, y);
+      if (applyRotation) context.rotate(angle);
+
+      if (svgPath) {
+        // Optimize SVG path based on shape size
+        const commands = parseSvgPath(svgPath);
+        renderPathToCanvas(
+          context,
+          commands,
+          -shapeSize / 2,
+          -shapeSize / 2,
+          shapeSize / 100,
+        );
+        context.fillStyle = fillColor;
+        context.fill();
+        context.strokeStyle = strokeColor;
+        context.lineWidth = strokeWidth; // Apply stroke width
+        context.stroke();
+      } else {
+        // Render default circle shape
+        context.beginPath();
+        context.arc(0, 0, shapeSize / 2, 0, 2 * Math.PI);
+        context.fillStyle = fillColor;
+        context.fill();
+        context.strokeStyle = strokeColor;
+        context.lineWidth = strokeWidth; // Apply stroke width
+        context.stroke();
+      }
+
+      context.restore();
+    }
+  }, [
+    width,
+    height,
+    shapeSize,
+    shapeCount,
+    shapeRadius,
+    strokeColor,
+    strokeWidth,
+    fillColor,
+    backgroundColor,
+    svgPath,
+  ]);
+
+  return (
     <canvas
       ref={canvasRef}
       style={{
@@ -769,12 +921,6 @@ const RadialPatternCanvas: React.FC<RadialPatternCanvasProps> = ({
   );
 };
 
-export {
-  parseSvgPath,
-  renderPathToCanvas,
-  SvgPathRenderer,
-  RadialPatternCanvas,
-};
 export type {
   SvgPathRendererProps,
   RadialPatternCanvasProps,
@@ -783,4 +929,11 @@ export type {
 export type { CommandType, PathCommand };
 export type { CubicCurve };
 export type { DrawPatternParams as RadialPatternDrawParams };
+export {
+  parseSvgPath,
+  renderPathToCanvas,
+  SvgPathRenderer,
+  RadialPatternCanvas,
+  RadialShapesCanvas,
+};
 export default RadialPatternCanvas;

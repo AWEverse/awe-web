@@ -37,6 +37,7 @@ import Dropdown, { TriggerProps } from "@/shared/ui/dropdown";
 
 import Picker from "@emoji-mart/react";
 import data from "@emoji-mart/data";
+import EmotionPicker from "./EmotionPickers";
 
 // Validation helper for message length
 const validateMessage = (text: string): true | string =>
@@ -97,18 +98,6 @@ const reducer = (state: State, action: Partial<State>): State => ({
   ...state,
   ...action,
 });
-
-const TriggerEmojiButton: FC<TriggerProps> = ({ isOpen, onTrigger }) => (
-  <IconButton
-    active={isOpen}
-    className="MiddleInputEmojiButton"
-    onClick={onTrigger}
-    size="small"
-    aria-label="Insert Emoji"
-  >
-    <AddReactionTwoTone />
-  </IconButton>
-);
 
 const MiddleInput: FC = () => {
   const [{ value, hasSelection, readyToModify }, dispatch] = useReducer(
@@ -198,22 +187,8 @@ const MiddleInput: FC = () => {
       </div>
 
       <section className="MiddleInputComposer">
-        {/* TODO: Fix weird bug with emoji picker position */}
-        <Dropdown
-          position="bottom-left"
-          triggerButton={TriggerEmojiButton}
-          leaveOnOver={false}
-        >
-          <Suspense fallback={<div>Loading emojis...</div>}>
-            <Picker
-              data={data}
-              previewPosition="none"
-              theme="dark"
-              emojiSize={32}
-              perLine={9}
-            />
-          </Suspense>
-        </Dropdown>
+        <EmotionPicker />
+
         <MarkdownInput
           className="MiddleInputInputField"
           value={value}

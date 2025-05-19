@@ -3,6 +3,7 @@ import {
   memo,
   useCallback,
   useEffect,
+  useLayoutEffect,
   useMemo,
   useRef,
   useState,
@@ -19,54 +20,31 @@ type PlaceholderType = "blur" | "shimmer" | "color";
 type FetchPriority = "high" | "low" | "auto";
 
 interface OwnProps {
-  // Basic image props
   src: string;
   alt: string;
   className?: string;
   title?: string;
-  width: number;
-  height?: number;
+  width: number | string;
+  height?: number | string;
   aspectRatio?: number;
-
-  // Loading behavior
   loading?: "lazy" | "eager";
   decoding?: "async" | "auto" | "sync";
   fetchPriority?: FetchPriority;
   observeIntersectionForLoading?: ObserveFn;
-
-  // Visual enhancements
   placeholderType?: PlaceholderType;
   placeholderColor?: string;
   placeholderBlur?: string;
   borderRadius?: string;
-
-  // Fallbacks
   fallbackSrc?: string;
   retryLimit?: number;
-
-  // Responsive
   srcSet?: string;
   sizes?: string;
-
-  // Events
   onError?: () => void;
   onLoad?: () => void;
   onRetry?: (attempt: number) => void;
-
-  // Accessibility
   decorative?: boolean;
 }
 
-/**
- * Production-ready image component with advanced lazy loading,
- * accessibility features, and visual enhancements
- * 📈 Performance Tips
- * - Always specify width and height or aspectRatio
- * - Use fetchPriority="high" for critical above-the-fold images
- * - Leverage srcSet for responsive design
- * - Set loading="lazy" for below-the-fold content
- * - Avoid large placeholder elements
- */
 const Image: FC<OwnProps> = ({
   src,
   alt,
@@ -74,7 +52,7 @@ const Image: FC<OwnProps> = ({
   title,
   width,
   height = width,
-  aspectRatio = width / height,
+  aspectRatio,
   loading = "lazy",
   decoding = "async",
   fetchPriority = "auto",
@@ -92,17 +70,43 @@ const Image: FC<OwnProps> = ({
   onRetry,
   decorative = false,
 }) => {
+  const imageRef = useRef<HTMLImageElement | null>(null);
   const [imgSrc, setImgSrc] = useState<string>(
     !observeIntersectionForLoading ? src : "",
   );
   const [isLoaded, setIsLoaded] = useState<boolean>(false);
   const [retryCount, setRetryCount] = useState<number>(0);
-  const imageRef = useRef<HTMLImageElement | null>(null);
+  const [hasTriedFallback, setHasTriedFallback] = useState<boolean>(false);
 
-  useEffect(() => {
-    setIsLoaded(false);
-    setImgSrc(!observeIntersectionForLoading ? src : "");
+  const computedAspectRatio = useMemo(() => {
+    if (aspectRatio) return aspectRatio;
+    if (
+      typeof width === "number" &&
+      typeof height === "number" &&
+      width &&
+      height
+    ) {
+      return width / height;
+    }
+    return 1;
+  }, [aspectRatio, width, height]);
+
+  const widthStyle = typeof width === "number" ? `${width}px` : width;
+  const heightStyle = typeof height === "number" ? `${height}px` : height;
+
+  useLayoutEffect(() => {
+    if (imageRef.current?.complete && imageRef.current.naturalWidth !== 0) {
+      setIsLoaded(true);
+    } else {
+      setIsLoaded(false);
+    }
+
+    if (!observeIntersectionForLoading) {
+      setImgSrc(src);
+    }
+
     setRetryCount(0);
+    setHasTriedFallback(false);
   }, [src, observeIntersectionForLoading]);
 
   const handleImageLoad = useStableCallback(() => {
@@ -111,36 +115,61 @@ const Image: FC<OwnProps> = ({
   });
 
   const handleError = useCallback(() => {
-    if (retryCount < retryLimit) {
+    if (!hasTriedFallback && retryCount >= retryLimit) {
+      setImgSrc(fallbackSrc);
+      setHasTriedFallback(true);
+    } else if (retryCount < retryLimit) {
       setRetryCount((prev) => prev + 1);
       onRetry?.(retryCount + 1);
       setImgSrc(src);
-    } else {
-      setImgSrc(fallbackSrc);
     }
     onError?.();
-  }, [retryCount, retryLimit, src, fallbackSrc, onError, onRetry]);
+  }, [
+    retryCount,
+    retryLimit,
+    src,
+    fallbackSrc,
+    onError,
+    onRetry,
+    hasTriedFallback,
+  ]);
 
   const onIntersect = useCallback(
     (entry: IntersectionObserverEntry) => {
-      if (entry.isIntersecting) {
+      if (entry.isIntersecting && !imgSrc) {
         setImgSrc(src);
       }
     },
-    [src],
+    [src, imgSrc],
   );
 
-  useOnIntersect(imageRef, observeIntersectionForLoading, onIntersect);
+  useOnIntersect(
+    imageRef,
+    observeIntersectionForLoading,
+    observeIntersectionForLoading ? onIntersect : undefined,
+  );
 
   const containerStyle = useMemo(
     () => ({
       position: "relative" as const,
-      width: `${width}px`,
-      aspectRatio: `${aspectRatio}`,
-      backgroundColor: placeholderColor,
+      width: widthStyle,
+      height: heightStyle,
+      aspectRatio:
+        typeof width === "number" && typeof height === "number"
+          ? `${computedAspectRatio}`
+          : undefined,
       borderRadius,
+      overflow: "hidden",
     }),
-    [width, aspectRatio, placeholderColor, borderRadius],
+    [
+      widthStyle,
+      heightStyle,
+      computedAspectRatio,
+      placeholderColor,
+      borderRadius,
+      width,
+      height,
+    ],
   );
 
   const placeholderStyle = useMemo(
@@ -151,12 +180,25 @@ const Image: FC<OwnProps> = ({
     [isLoaded],
   );
 
+  const jsonLd = useMemo(() => {
+    if (!title) return null;
+    return {
+      __html: JSON.stringify({
+        "@context": "https://schema.org",
+        "@type": "ImageObject",
+        url: imgSrc,
+        name: title,
+        description: alt,
+      }),
+    };
+  }, [imgSrc, title, alt]);
+
   return (
     <div
       className={buildClassName("ImageContainer", className)}
       style={containerStyle}
+      aria-busy={!isLoaded}
     >
-      {/* Skeleton/Placeholder */}
       {!isLoaded && (
         <div
           className={buildClassName(
@@ -185,8 +227,6 @@ const Image: FC<OwnProps> = ({
         sizes={sizes}
         decoding={decoding}
         loading={loading}
-        width={width}
-        height={height}
         fetchPriority={fetchPriority}
         onLoad={handleImageLoad}
         onError={handleError}
@@ -197,50 +237,16 @@ const Image: FC<OwnProps> = ({
           borderRadius,
           willChange: "opacity, transform",
           transition: "opacity 0.3s ease, transform 0.3s ease",
+          width: typeof width === "string" ? width : "100%",
+          height: typeof height === "string" ? height : "100%",
+          objectFit: "cover",
         }}
       />
-
-      {title && (
-        <script type="application/ld+json">
-          {`
-            {
-              "@context": "https://schema.org",
-              "@type": "ImageObject",
-              "url": "${imgSrc}",
-              "name": "${title}",
-              "description": "${alt}"
-            }
-          `}
-        </script>
+      {jsonLd && (
+        <script type="application/ld+json" dangerouslySetInnerHTML={jsonLd} />
       )}
     </div>
   );
 };
 
 export default memo(Image);
-
-{
-  /*
-<Image
-  src="/hero.jpg"
-  alt="Sunset over mountain range"
-  title="Mountain Landscape"
-  width={800}
-  height={600}
-  aspectRatio={4 / 3}
-  loading="eager"
-  fetchPriority="high"
-  placeholderType="shimmer"
-  placeholderColor="#ddd"
-  borderRadius="8px"
-  srcSet="
-    /hero-small.jpg 480w,
-    /hero-medium.jpg 800w,
-    /hero-large.jpg 1200w
-  "
-  sizes="(max-width: 768px) 100vw, 800px"
-  onError={() => console.error("Image failed")}
-  onRetry={(attempt) => console.log(`Attempt ${attempt}`)}
-/>;
-*/
-}

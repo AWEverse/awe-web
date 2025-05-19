@@ -1,0 +1,6 @@
+.StickerPicker {
+  --esg-sticker-size: 120px;
+  gap: 2px;
+  display: grid;
+  grid-template-columns: repeat(3, var(--esg-sticker-size));
+}

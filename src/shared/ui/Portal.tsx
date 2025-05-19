@@ -13,25 +13,39 @@ const Portal: FC<OwnProps> = ({
   className,
   children,
 }) => {
-  const container = useMemo(
-    () => document.getElementById(containerId),
-    [containerId],
-  );
+  const container = useMemo(() => {
+    let el = document.getElementById(containerId);
 
-  useEffect(() => {
-    if (container && className) {
+    if (!el) {
       requestMutation(() => {
-        container.classList.add(className);
+        el = document.createElement("div");
+        el.id = containerId;
+        document.body.appendChild(el);
       });
+    }
 
+    return el;
+  }, [containerId]);
+
+  // Only update className if it actually changes
+  useEffect(() => {
+    if (!container) return;
+    if (className) {
+      requestMutation(() => {
+        if (!container.classList.contains(className)) {
+          container.classList.add(className);
+        }
+      });
       return () => {
         requestMutation(() => {
           container.classList.remove(className);
         });
       };
     }
+    return;
   }, [container, className]);
 
+  // Avoid rendering until container is available
   if (!container) return null;
 
   return createPortal(children, container);

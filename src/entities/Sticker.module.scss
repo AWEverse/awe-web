@@ -1,0 +1,13 @@
+.Sticker {
+  display: inline-block;
+  overflow: hidden;
+  position: relative;
+
+  &:hover {
+    cursor: pointer;
+  }
+}
+
+.StickerShadow {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
