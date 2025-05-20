@@ -1,6 +1,26 @@
 declare const APP_VERSION: string;
 declare const APP_REVISION: string;
 declare const process: NodeJS.Process;
+declare const __DEV__: boolean;
+declare const __PROD__: boolean;
+declare const __TEST__: boolean;
+
+declare namespace React {
+  namespace JSX {
+    interface IntrinsicElements {
+      "em-emoji": {
+        id?: string;
+        shortcodes?: string;
+        native?: string;
+        skin?: 1 | 2 | 3 | 4 | 5 | 6;
+        size?: number | string;
+        set?: 'native' | 'apple' | 'facebook' | 'google' | 'twitter';
+        fallback?: string;
+      };
+    }
+  }
+}
+
 
 /** CSS module classes */
 type CSSModuleClasses = { readonly [key: string]: string };

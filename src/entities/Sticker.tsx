@@ -28,22 +28,24 @@ const Sticker: FC<StickerProps> = ({
   aspectRatio = 1,
 }) => {
   return (
-    <Image
-      src={src}
-      alt={alt}
-      width={size}
-      height={size}
-      aspectRatio={aspectRatio}
-      className={buildClassName(
-        s.Sticker,
-        { [s.StickerShadow]: shadow },
-        className,
-      )}
-      borderRadius={borderRadius}
-      loading={loading}
-      placeholderType={placeholderType}
-      decorative={alt === ""}
-    />
+    <div className={s.StickerContainer}>
+      <Image
+        src={src}
+        alt={alt}
+        width={size}
+        height={size}
+        aspectRatio={aspectRatio}
+        className={buildClassName(
+          s.Sticker,
+          { [s.StickerShadow]: shadow },
+          className,
+        )}
+        borderRadius={borderRadius}
+        loading={loading}
+        placeholderType={placeholderType}
+        decorative={alt === ""}
+      />
+    </div>
   );
 };
 

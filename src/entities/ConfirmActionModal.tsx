@@ -1,9 +1,9 @@
-import { FC, memo, ReactNode, useCallback, useRef } from 'react';
-import buildClassName from '@/shared/lib/buildClassName';
-import Modal, { ModalProps } from '@/shared/ui/Modal';
-import { Button } from '@mui/material';
+import { FC, memo, ReactNode, useCallback, useRef } from "react";
+import buildClassName from "@/shared/lib/buildClassName";
+import Modal, { ModalProps } from "@/shared/ui/Modal";
+import { Button } from "@mui/material";
 
-import s from './ConfirmActionModal.module.scss';
+import s from "./ConfirmActionModal.module.scss";
 
 type OwnProps = {
   action?: string;
@@ -30,7 +30,7 @@ const ConfirmActionModal: FC<OwnProps> = ({
   action,
   text,
   textParts,
-  confirmLabel = 'Confirm',
+  confirmLabel = "Confirm",
   confirmIsDestructive,
   isConfirmDisabled,
   isOnlyConfirm,
@@ -40,7 +40,6 @@ const ConfirmActionModal: FC<OwnProps> = ({
   backdropBlur,
   onConfirm,
   onClose,
-  onCloseAnimationEnd,
 }) => {
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -53,7 +52,7 @@ const ConfirmActionModal: FC<OwnProps> = ({
 
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent<HTMLDivElement>) => {
-      if (e.key === 'Enter') {
+      if (e.key === "Enter") {
         handleSelectWithEnter(-1);
       }
     },
@@ -63,10 +62,9 @@ const ConfirmActionModal: FC<OwnProps> = ({
   return (
     <Modal
       backdropBlur={backdropBlur}
-      className={buildClassName('Confirm', s.ConfirmActionPopup, className)}
+      className={buildClassName("Confirm", s.ConfirmActionPopup, className)}
       isOpen={isOpen}
       onClose={onClose}
-      onCloseAnimationEnd={onCloseAnimationEnd}
     >
       <h1 className={s.ConfirmPopupTitle}>{action}</h1>
 
@@ -75,20 +73,28 @@ const ConfirmActionModal: FC<OwnProps> = ({
 
       <div
         ref={containerRef}
-        className={buildClassName(s.PopupButtons, areButtonsInColumn ? s.dialogButtonsColumn : s.dialogButtons)}
+        className={buildClassName(
+          s.PopupButtons,
+          areButtonsInColumn ? s.dialogButtonsColumn : s.dialogButtons,
+        )}
         onKeyDown={handleKeyDown}
       >
         <Button
           className="Button"
-          color={confirmIsDestructive ? 'danger' : 'success'}
+          color={confirmIsDestructive ? "danger" : "success"}
           disabled={isConfirmDisabled}
-          variant={confirmIsDestructive ? 'soft' : 'solid'}
+          variant={confirmIsDestructive ? "soft" : "solid"}
           onClick={onConfirm}
         >
           {confirmLabel}
         </Button>
         {!isOnlyConfirm && (
-          <Button className="Button" color="success" variant="plain" onClick={onClose}>
+          <Button
+            className="Button"
+            color="success"
+            variant="plain"
+            onClick={onClose}
+          >
             Cancel
           </Button>
         )}

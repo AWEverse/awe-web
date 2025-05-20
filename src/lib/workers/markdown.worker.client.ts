@@ -60,9 +60,10 @@ function initWorker(): void {
   if (typeof window === "undefined" || workerSingleton) return;
 
   try {
-    workerSingleton = new Worker("/src/lib/workers/markdown.worker.js", {
-      type: "module",
-    });
+    workerSingleton = new Worker(
+      new URL("./markdown.worker.ts", import.meta.url),
+      { type: "module" }
+    );
 
     workerSingleton.onmessage = handleWorkerMessage;
     workerSingleton.onerror = handleWorkerError;
