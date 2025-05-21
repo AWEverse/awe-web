@@ -9,7 +9,9 @@
   "description": "Client side of the project",
   "engines": {
     "node": "^20 || ^22",
-    "npm": "^9 || ^10"
+    "npm": "^9 || ^10",
+    "yarn": "^1.22 || ^2 || ^3",
+    "pnpm": "^8 || ^9 || ^10"
   },
   "repository": {
     "type": "git",
@@ -22,7 +24,11 @@
     "fsd",
     "frontend",
     "react",
-    "typescript"
+    "typescript",
+    "awe",
+    "aweverse",
+    "awe-web",
+    "awe-client"
   ],
   "scripts": {
     "dev": "vite",
@@ -43,7 +49,10 @@
   },
   "pnpm": {
     "peerDependencyRules": {
-      "ignoreMissing": ["react", "react-dom"]
+      "ignoreMissing": [
+        "react",
+        "react-dom"
+      ]
     }
   },
   "dependencies": {
@@ -55,9 +64,9 @@
     "@mui/material": "^7.1.0",
     "@noble/hashes": "^1.8.0",
     "@noble/post-quantum": "^0.4.1",
+    "@reduxjs/toolkit": "^2.8.2",
     "dompurify": "^3.2.5",
     "emoji-mart": "^5.6.0",
-    "emoji-picker-react": "^4.12.2",
     "framer-motion": "^12.10.5",
     "i18next": "^25.1.2",
     "i18next-browser-languagedetector": "^8.1.0",
@@ -67,16 +76,14 @@
     "lottie-react": "^2.4.1",
     "lru-cache": "^11.1.0",
     "markdown-it": "^14.1.0",
-    "marked": "^15.0.11",
     "memoizee": "^0.4.17",
     "motion": "^12.10.5",
     "pako": "^2.1.0",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
-    "react-error-boundary": "^6.0.0",
     "react-i18next": "^15.5.1",
+    "react-redux": "^9.2.0",
     "react-router": "^7.6.0",
-    "react-toastify": "^11.0.5",
     "react-window": "^1.8.11",
     "sanitize-html": "^2.17.0",
     "zustand": "^5.0.4"

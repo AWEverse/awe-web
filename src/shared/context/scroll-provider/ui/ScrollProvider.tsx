@@ -13,40 +13,48 @@ interface OwnProps {
   children: ReactNode;
 }
 
+interface Options {
+  rootRef: React.RefObject<HTMLElement | null>;
+  throttleMs?: number;
+  margin?: number;
+}
+
+const createOptions = (
+  containerRef: React.RefObject<HTMLElement | null>,
+  extra?: Partial<Options>,
+): Options => ({
+  rootRef: containerRef,
+  ...extra,
+});
+
 const ScrollProvider = ({ children, containerRef }: OwnProps) => {
   const readingOptions = useMemo(
-    () => ({
-      rootRef: containerRef,
-    }),
-    [],
+    () => createOptions(containerRef),
+    [containerRef],
+  );
+  const loadingOptions = useMemo(
+    () =>
+      createOptions(containerRef, {
+        throttleMs: INTERSECTION_THROTTLE_FOR_MEDIA,
+        margin: INTERSECTION_MARGIN_FOR_LOADING,
+      }),
+    [containerRef],
+  );
+  const playingOptions = useMemo(
+    () =>
+      createOptions(containerRef, {
+        throttleMs: INTERSECTION_THROTTLE_FOR_MEDIA,
+      }),
+    [containerRef],
   );
 
   const { observe: observeIntersectionForReading } =
     useIntersectionObserver(readingOptions);
-
-  const loadingOptions = useMemo(
-    () => ({
-      rootRef: containerRef,
-      throttleMs: INTERSECTION_THROTTLE_FOR_MEDIA,
-      margin: INTERSECTION_MARGIN_FOR_LOADING,
-    }),
-    [],
-  );
-
   const {
     observe: observeIntersectionForLoading,
     freeze,
     unfreeze,
   } = useIntersectionObserver(loadingOptions);
-
-  const playingOptions = useMemo(
-    () => ({
-      rootRef: containerRef,
-      throttleMs: INTERSECTION_THROTTLE_FOR_MEDIA,
-    }),
-    [],
-  );
-
   const { observe: observeIntersectionForPlaying } =
     useIntersectionObserver(playingOptions);
 

@@ -1,43 +1,30 @@
-import React, { FC, memo, useMemo } from "react";
-import { marked, MarkedOptions } from "marked";
+import { FC, memo, useMemo } from "react";
 import DOMPurify from "dompurify";
+import MarkedIt from "markdown-it";
 
-export interface MarkdownRendererProps {
-	/** Markdown text to render */
-	markdown?: string;
-	/** Optional CSS class name */
-	className?: string;
-	/** Optionally, you can pass marked options */
-	markedOptions?: MarkedOptions;
+export interface LinkifyProps {
+  /** Text to linkify (plain text, not markdown) */
+  text?: string;
+  /** Optional CSS class name */
+  className?: string;
 }
 
 /**
- * MarkdownRenderer renders Markdown as sanitized HTML using marked and DOMPurify.
- * It disables code highlighting by not setting a highlight option.
+ * Linkify renders plain text as sanitized HTML with clickable links using marked-it and DOMPurify.
  */
-const MarkdownRenderer: FC<MarkdownRendererProps> = ({
-	markdown = "",
-	className = "",
-	markedOptions = {},
-}) => {
-	const htmlContent = useMemo(() => {
-		const options: MarkedOptions = {
-			gfm: true,
-			breaks: true,
-			...markedOptions,
-		};
+const Linkify: FC<LinkifyProps> = ({ text = "", className = "" }) => {
+  const htmlContent = useMemo(() => {
+    const markedIt = new MarkedIt();
+    const result = markedIt.render(text);
+    return DOMPurify.sanitize(result);
+  }, [text]);
 
-		marked.setOptions(options);
-		const rawHtml = marked.parse(markdown) as string;
-		return DOMPurify.sanitize(rawHtml);
-	}, [markdown, markedOptions]);
-
-	return (
-		<div
-			className={className}
-			dangerouslySetInnerHTML={{ __html: htmlContent }}
-		/>
-	);
+  return (
+    <span
+      className={className}
+      dangerouslySetInnerHTML={{ __html: htmlContent }}
+    />
+  );
 };
 
-export default memo(MarkdownRenderer);
+export default memo(Linkify);

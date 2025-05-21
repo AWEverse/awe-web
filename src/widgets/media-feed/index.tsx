@@ -2,7 +2,24 @@ import MediaPost, { MediaPostProps } from "@/entities/MediaPost";
 import { FC, useState, useRef, useEffect, useCallback } from "react";
 import "./index.scss";
 
-const MediaFeed: FC = () => {
+const DEFAULT_POSTS_PER_PAGE = 6;
+
+// Skeleton loader for posts
+const SkeletonPost: FC = () => (
+  <div
+    className="MediaFeed__post-wrapper MediaFeed__post-skeleton"
+    aria-hidden="true"
+  >
+    <div className="MediaFeed__skeleton-avatar" />
+    <div className="MediaFeed__skeleton-header" />
+    <div className="MediaFeed__skeleton-image" />
+    <div className="MediaFeed__skeleton-actions" />
+  </div>
+);
+
+const MediaFeed: FC<{ postsPerPage?: number }> = ({
+  postsPerPage = DEFAULT_POSTS_PER_PAGE,
+}) => {
   const [posts, setPosts] = useState<MediaPostProps[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [hasMore, setHasMore] = useState(true);
@@ -15,7 +32,7 @@ const MediaFeed: FC = () => {
 
   // Cache control
   const cache = useRef<Map<number, MediaPostProps[]>>(new Map());
-  const POSTS_PER_PAGE = 6;
+  const POSTS_PER_PAGE = postsPerPage;
 
   // Debounce function to prevent multiple rapid fetch calls
   const debounce = (func: Function, delay: number) => {
@@ -234,8 +251,15 @@ const MediaFeed: FC = () => {
         tabIndex={-1}
       >
         {posts.length === 0 && isLoading ? (
-          <div className="MediaFeed__loading-initial">
-            <p>Loading posts...</p>
+          <div
+            className="MediaFeed__loading-initial"
+            role="status"
+            aria-live="polite"
+          >
+            {[...Array(postsPerPage)].map((_, i) => (
+              <SkeletonPost key={i} />
+            ))}
+            <p className="visually-hidden">Loading posts...</p>
           </div>
         ) : (
           <>
@@ -244,26 +268,42 @@ const MediaFeed: FC = () => {
                 key={post.id}
                 ref={index === posts.length - 1 ? lastPostRef : null}
                 className="MediaFeed__post-wrapper"
+                tabIndex={0}
+                aria-posinset={index + 1}
+                aria-setsize={posts.length}
               >
                 <MediaPost {...post} />
               </div>
             ))}
 
             {error && (
-              <div className="MediaFeed__error">
+              <div
+                className="MediaFeed__error"
+                role="alert"
+                aria-live="assertive"
+              >
                 <p>{error}</p>
-                <button onClick={fetchPosts}>Try Again</button>
+                <button onClick={fetchPosts} className="MediaFeed__retry-btn">
+                  Try Again
+                </button>
               </div>
             )}
 
-            {isLoading && (
-              <div className="MediaFeed__loading">
-                <p>Loading more posts...</p>
+            {isLoading && posts.length > 0 && (
+              <div
+                className="MediaFeed__loading"
+                role="status"
+                aria-live="polite"
+              >
+                {[...Array(Math.min(3, postsPerPage))].map((_, i) => (
+                  <SkeletonPost key={i} />
+                ))}
+                <p className="visually-hidden">Loading more posts...</p>
               </div>
             )}
 
             {!hasMore && posts.length > 0 && (
-              <div className="MediaFeed__end">
+              <div className="MediaFeed__end" role="status" aria-live="polite">
                 <p>You've reached the end of the feed</p>
               </div>
             )}

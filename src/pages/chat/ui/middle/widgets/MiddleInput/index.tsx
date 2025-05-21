@@ -187,20 +187,23 @@ const MiddleInput: FC = () => {
       </div>
 
       <section className="MiddleInputComposer">
-        <EmotionPicker />
+        <div className="MiddleInputComposerHelper">lsaflasfl</div>
+        <div className="MiddleInputComposerField">
+          <EmotionPicker />
 
-        <MarkdownInput
-          className="MiddleInputInputField"
-          value={value}
-          onChange={onChange}
-          onSubmit={onSubmit}
-          onSelect={onSelect}
-          validate={validateMessage}
-          placeholder="Type your message..."
-          autoFocus
-          minHeight={40}
-          maxHeight={200}
-        />
+          <MarkdownInput
+            className="MiddleInputInputField"
+            value={value}
+            onChange={onChange}
+            onSubmit={onSubmit}
+            onSelect={onSelect}
+            validate={validateMessage}
+            placeholder="Type your message..."
+            autoFocus
+            minHeight={40}
+            maxHeight={200}
+          />
+        </div>
       </section>
       <div className="MiddleInputActions">
         <IconButton

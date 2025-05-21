@@ -5,89 +5,96 @@ import { createCallbackManager } from "@/lib/utils/callbacks";
 const backgroundCallbacks = createCallbackManager();
 const foregroundCallbacks = createCallbackManager();
 
-let isFocused = typeof document !== "undefined" && document.hasFocus();
-let isVisible =
-  typeof document !== "undefined" && document.visibilityState === "visible";
-let isBackground = !isVisible || !isFocused;
+// SSR-safe state tracking
+let isFocused = false;
+let isVisible = true;
+let isBackground = false;
+
+if (typeof document !== "undefined") {
+  isFocused = document.hasFocus();
+  isVisible = document.visibilityState === "visible";
+  isBackground = !isFocused || !isVisible;
+}
 
 const updateBackgroundState = () => {
-  const wasBackground = isBackground;
+  const prevIsBackground = isBackground;
 
   isFocused = document.hasFocus();
   isVisible = document.visibilityState === "visible";
-  isBackground = !isVisible || !isFocused;
+  isBackground = !isFocused || !isVisible;
 
-  if (wasBackground && !isBackground) {
-    foregroundCallbacks.runCallbacks();
-  } else if (!wasBackground && isBackground) {
-    backgroundCallbacks.runCallbacks();
+  if (prevIsBackground !== isBackground) {
+    if (isBackground) {
+      backgroundCallbacks.runCallbacks();
+    } else {
+      foregroundCallbacks.runCallbacks();
+    }
   }
 };
 
-const handleWindowBlur = () => updateBackgroundState();
-const handleWindowFocus = () => updateBackgroundState();
-const handleVisibilityChange = () => updateBackgroundState();
-
-if (typeof window !== "undefined" && typeof document !== "undefined") {
-  window.removeEventListener("blur", handleWindowBlur);
-  window.removeEventListener("focus", handleWindowFocus);
-  document.removeEventListener("visibilitychange", handleVisibilityChange);
-
-  window.addEventListener("blur", handleWindowBlur, { passive: true });
-  window.addEventListener("focus", handleWindowFocus, { passive: true });
-  document.addEventListener("visibilitychange", handleVisibilityChange, {
+if (typeof window !== "undefined") {
+  window.addEventListener("blur", updateBackgroundState, { passive: true });
+  window.addEventListener("focus", updateBackgroundState, { passive: true });
+  document.addEventListener("visibilitychange", updateBackgroundState, {
     passive: true,
   });
 }
 
+/**
+ * useBackgroundMode
+ * @param onForeground - called when app becomes active (foreground)
+ * @param onBackground - called when app becomes inactive (background)
+ * @param isDisabled - disables the effect if true
+ * @param mode - 'focus' | 'visibility' | 'both'
+ */
 export default function useBackgroundMode(
-  onForeground?: NoneToVoidFunction,
-  onBackground?: NoneToVoidFunction,
+  onForeground?: () => void,
+  onBackground?: () => void,
   isDisabled: boolean = false,
-  mode = "both",
+  mode: "focus" | "visibility" | "both" = "both",
 ) {
-  const lastOnBackground = useStableCallback(onBackground);
-  const lastOnForeground = useStableCallback(onForeground);
+  const stableOnBackground = useStableCallback(onBackground);
+  const stableOnForeground = useStableCallback(onForeground);
 
   useEffect(() => {
     if (isDisabled) return;
 
-    const getIsBackground = () => {
-      if (mode === "focus") return !isFocused;
-      if (mode === "visibility") return !isVisible;
-      return !isVisible || !isFocused;
-    };
-
-    const currentIsBackground = getIsBackground();
-    if (currentIsBackground) {
-      lastOnBackground?.();
+    if (isBackgroundModeActive(mode)) {
+      stableOnBackground?.();
     }
 
-    const wrappedOnBackground = () => {
-      if (getIsBackground()) {
-        lastOnBackground?.();
-      }
-    };
-    const wrappedOnForeground = () => {
-      if (!getIsBackground()) {
-        lastOnForeground?.();
-      }
-    };
+    const removeBackground = backgroundCallbacks.addCallback(() => {
+      if (isBackgroundModeActive(mode)) stableOnBackground?.();
+    });
 
-    const removeBackground =
-      backgroundCallbacks.addCallback(wrappedOnBackground);
-    const removeForeground =
-      foregroundCallbacks.addCallback(wrappedOnForeground);
+    const removeForeground = foregroundCallbacks.addCallback(() => {
+      if (!isBackgroundModeActive(mode)) stableOnForeground?.();
+    });
 
     return () => {
       removeBackground();
       removeForeground();
     };
-  }, [isDisabled, lastOnBackground, lastOnForeground, mode]);
+  }, [isDisabled, stableOnBackground, stableOnForeground, mode]);
 }
 
-export function isBackgroundModeActive(mode = "both") {
-  if (mode === "focus") return !isFocused;
-  if (mode === "visibility") return !isVisible;
-  return !isVisible || !isFocused;
+/**
+ * Returns whether the current mode is considered background
+ * @param mode - 'focus' | 'visibility' | 'both'
+ */
+export function isBackgroundModeActive(
+  mode: "focus" | "visibility" | "both" = "both",
+): boolean {
+  !isVisible;
+
+  switch (mode) {
+    case "focus":
+      return !isFocused;
+    case "visibility":
+      return !isVisible;
+    case "both":
+      return !isFocused || !isVisible;
+    default:
+      return false;
+  }
 }

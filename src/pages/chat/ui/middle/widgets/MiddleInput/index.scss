@@ -1,23 +1,26 @@
-.MiddleInput {
+.MiddleInput,
+.MiddleInputPortal {
   padding: 0.2rem var(--chat-padding-x, 0.125rem);
-  transition: transform var(--transition-standard-in, 0.3s ease-in);
+}
+
+.MiddleInput {
   display: flex;
-  align-items: center;
+  align-items: flex-end;
   position: relative;
   gap: 0.25rem;
+  transition: transform var(--transition-standard-in, 0.3s ease-in);
 }
 
 .MiddleInputPortal {
-  padding: 0.2rem var(--chat-padding-x, 0.125rem);
   position: absolute;
-  top: -110%;
-  z-index: 1000;
+  bottom: 100%;
   left: 0;
   right: 0;
   display: flex;
-  justify-content: center;
+  align-items: center;
   overflow: hidden;
-  flex-direction: column-reverse;
+  flex-direction: column;
+  z-index: 1000;
 }
 
 .MiddleInputPortalWrapper {
@@ -25,22 +28,31 @@
   align-items: center;
   overflow-x: auto;
   width: fit-content;
-  background-color: var(--awe-palette-background-paper);
+  background: var(--awe-palette-background-paper);
   box-shadow: var(--awe-shadow-elevation-2, 0 2px 4px rgba(0, 0, 0, 0.1));
   padding: 0.5rem;
+  border-radius: 0.5rem;
   max-width: 100%;
   gap: 0.25rem;
   transform-origin: bottom center;
 }
 
 .MiddleInputComposer {
-  background-color: var(--awe-palette-secondary-main);
+  background: var(--awe-palette-secondary-main);
   border: 2px solid var(--awe-palette-divider);
   border-radius: 1.5rem;
   flex: 1 1 0%;
   min-width: 0;
   display: flex;
+  flex-direction: column;
+  padding: 0.25rem 0;
+}
+
+.MiddleInputComposerHelper,
+.MiddleInputComposerField {
+  display: flex;
   align-items: center;
+  gap: 0.5rem;
   padding: 0.1rem 0.5rem;
 }
 
@@ -60,7 +72,7 @@
   width: 2px;
   height: 100%;
   border-radius: 2px;
-  background-color: var(--awe-palette-divider, #e0e0e0);
+  background: var(--awe-palette-divider, #e0e0e0);
 }
 
 .MiddleInputActionsWrapper {
