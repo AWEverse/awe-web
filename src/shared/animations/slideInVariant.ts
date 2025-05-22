@@ -22,7 +22,6 @@ export default function slideInVariant({
   direction = "left",
   distance = "100%",
   reducedMotion = false,
-
   enterDuration = 0.125, // Shorter enter duration
   exitDuration = 0.125, // Shorter exit duration
   delay = 0,
@@ -126,3 +125,59 @@ export const SLIDE_BOTTOM = slideInVariant({
   enterDuration: 0.125,
   exitDuration: 0.125,
 });
+
+export const SLIDE_VERTICAL: Variants = {
+  hidden: (direction: number) => ({
+    opacity: 0,
+    y: direction > 0 ? "100%" : "-100%",
+    x: 0,
+  }),
+  visible: {
+    opacity: 1,
+    y: 0,
+    x: 0,
+    transition: {
+      type: "tween",
+      duration: 0.125,
+      ease: "linear",
+    },
+  },
+  exit: (direction: number) => ({
+    opacity: 0,
+    y: direction > 0 ? "-100%" : "100%",
+    x: 0,
+    transition: {
+      type: "tween",
+      duration: 0.125,
+      ease: "linear",
+    },
+  }),
+};
+
+export const SLIDE_HORIZONTAL: Variants = {
+  hidden: (direction: number) => ({
+    opacity: 0,
+    x: direction > 0 ? "100%" : "-100%",
+    y: 0,
+  }),
+  visible: {
+    opacity: 1,
+    x: 0,
+    y: 0,
+    transition: {
+      type: "tween",
+      duration: 0.125,
+      ease: "linear",
+    },
+  },
+  exit: (direction: number) => ({
+    opacity: 0,
+    x: direction > 0 ? "-100%" : "100%",
+    y: 0,
+    transition: {
+      type: "tween",
+      duration: 0.125,
+      ease: "linear",
+    },
+  }),
+};

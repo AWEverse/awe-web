@@ -8,7 +8,7 @@ import { DEBUG } from "@/lib/config/dev";
  * The base reducers for the Redux store. Extend this object to add static reducers.
  * Dynamic reducers can be injected at runtime.
  */
-const baseReducers = {
+const baseReducers: Record<string, any> = {
   dummy: dummyReducer,
 };
 

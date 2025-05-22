@@ -55,12 +55,9 @@ $transition-easing: cubic-bezier(0.4, 0, 0.2, 1);
 
 .roller {
   position: absolute;
-  top: 0;
   left: 0;
   width: $roll-width;
-  height: 100%;
   border-radius: 8px;
-  padding: 3px 0;
   margin-left: $margin-left;
   z-index: 1;
   transform: scaleY(-1);

@@ -38,6 +38,7 @@ import Dropdown, { TriggerProps } from "@/shared/ui/dropdown";
 import Picker from "@emoji-mart/react";
 import data from "@emoji-mart/data";
 import EmotionPicker from "./EmotionPickers";
+import PinnedMessageButton from "../../common/PinnedMessageButton";
 
 // Validation helper for message length
 const validateMessage = (text: string): true | string =>
@@ -187,7 +188,9 @@ const MiddleInput: FC = () => {
       </div>
 
       <section className="MiddleInputComposer">
-        <div className="MiddleInputComposerHelper">lsaflasfl</div>
+        <div className="MiddleInputComposerHelper">
+          <PinnedMessageButton activeIndex={0} />
+        </div>
         <div className="MiddleInputComposerField">
           <EmotionPicker />
 

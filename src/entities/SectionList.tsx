@@ -1,4 +1,4 @@
-import { ReactNode, Fragment, useCallback } from 'react';
+import { ReactNode, Fragment, useCallback } from "react";
 
 export interface Section<THeader, TSection> {
   header: THeader;
@@ -30,7 +30,9 @@ interface SectionListProps<THeader, TSection> {
  * @param {SectionListProps<T>} props The props for the SectionList component.
  * @returns {ReactNode} The rendered SectionList component.
  */
-const SectionList = <THeader, TSection>(props: SectionListProps<THeader, TSection>): ReactNode => {
+const SectionList = <THeader, TSection>(
+  props: SectionListProps<THeader, TSection>,
+): ReactNode => {
   const {
     sections,
     keyExtractor,
@@ -66,7 +68,8 @@ const SectionList = <THeader, TSection>(props: SectionListProps<THeader, TSectio
 
   return sections.map((section, sectionIndex) => {
     const { header, data } = section;
-    const SectionSeparator = sectionIndex < sections.length - 1 && SectionSeparatorComponent;
+    const SectionSeparator =
+      sectionIndex < sections.length - 1 && SectionSeparatorComponent;
 
     return (
       <div key={`${header}-${sectionIndex}`} className={wrapperClassName}>

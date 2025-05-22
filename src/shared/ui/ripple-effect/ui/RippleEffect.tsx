@@ -37,6 +37,7 @@ const Ripple = ({
 
   return (
     <div
+      inert
       className={buildClassName("ripple-wave", className)}
       style={{
         left: `${x}px`,
