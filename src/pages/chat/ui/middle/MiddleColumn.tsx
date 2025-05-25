@@ -13,10 +13,10 @@ interface StateProps {}
 const MiddleColumn: FC<OwnProps & StateProps> = () => {
   return (
     <ChatLayout.MainContainer>
-      <MiddleHeader />
+      {/* <MiddleHeader /> */}
       <MessagesBackdrop />
-      <MiddleMessageList />
-      <MiddleInput />
+      {/* <MiddleMessageList /> */}
+      {/* <MiddleInput /> */}
     </ChatLayout.MainContainer>
   );
 };

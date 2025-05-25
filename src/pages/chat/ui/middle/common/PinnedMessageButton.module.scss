@@ -7,6 +7,7 @@ $margin-left: $roll-width;
 $transition-duration: 0.3s;
 $transition-easing: cubic-bezier(0.4, 0, 0.2, 1);
 
+
 .pinnedMessageWrapper {
   position: relative;
   display: flex;
@@ -29,11 +30,15 @@ $transition-easing: cubic-bezier(0.4, 0, 0.2, 1);
 .pinnedMessageAvatar {
   width: 36px;
   height: 36px;
-  border-radius: 50%;
+  border-radius: 0.25rem;
   object-fit: cover;
+
+  &.userAvatar {
+    border-radius: 50%;
+  }
 }
 
-.pinnedAditionalInfo,
+.pinnedAdditionalInfo,
 .pinnedMessageText {
   display: -webkit-box;
   -webkit-box-orient: vertical;
@@ -45,10 +50,9 @@ $transition-easing: cubic-bezier(0.4, 0, 0.2, 1);
   word-break: break-word;
 }
 
-.pinnedAditionalInfo {
+.pinnedAdditionalInfo {
   color: var(--awe-palette-primary-500);
   font-weight: var(--awe-typography-fontWeight-regular);
-  margin-top: 0;
   align-items: center;
   gap: 4px;
 }

@@ -7,57 +7,44 @@ import {
   ApiTopic,
   ApiTypingStatus,
 } from "@/@types/api/types/chats";
-import {
-  ApiMessage,
-  ApiMessageOutgoingStatus,
-} from "@/@types/api/types/messages";
+
 import { ApiUser, ApiUserStatus } from "@/@types/api/types/user";
-import { ObserveFn } from "@/shared/hooks/DOM/useIntersectionObserver";
-import { ChatAnimationTypes } from "./hooks/useChatAnimationType";
+
 import { memo } from "react";
 import RippleEffect from "@/shared/ui/ripple-effect";
 import { CollectionsBookmarkRounded } from "@mui/icons-material";
+import { ApiChatFolderItem, ApiChatType } from "@/shared/api";
 
 type OwnProps = {
-  chatId: string;
-  folderId?: number;
-  orderDiff: number;
-  animation: ChatAnimationTypes;
-  pinned?: boolean;
-  offsetTop?: number;
-  savedDialog?: boolean;
-  preview?: boolean;
-  previewMsgId?: number;
   className?: string;
   onClick?: () => void;
-  observe?: ObserveFn;
   onDragEnter?: (chatId: string) => void;
 };
 
-type StateProps = {
-  chat?: ApiChat;
-  muted?: boolean;
-  user?: ApiUser;
-  status?: ApiUserStatus;
-  targetUserIds?: string[];
-  targetMessage?: ApiMessage;
-  targetChatId?: string;
-  lastSender?: ApiPeer;
-  outgoingStatus?: ApiMessageOutgoingStatus;
-  selected?: boolean;
-  forumSelected?: boolean;
-  forumOpen?: boolean;
-  canScroll?: boolean;
-  canChangeFolder?: boolean;
-  lastTopic?: ApiTopic;
-  typing?: ApiTypingStatus;
-  animations?: boolean;
-  lastMsgId?: number;
-  lastMsg?: ApiMessage;
-  currentUserId: string;
-};
+type StateProps = Partial<ApiChatFolderItem>;
 
-const LeftChatListItem: React.FC<OwnProps & StateProps> = () => {
+const LeftChatListItem: React.FC<OwnProps & StateProps> = ({
+  id,
+  chatId,
+  folderId,
+  position,
+  addedAt,
+  chat,
+}) => {
+  const {
+    id: peerId = "1",
+    type = ApiChatType.PRIVATE,
+    title = "Chat Title",
+    description = "Chat Description",
+    avatarUrl = "https://picsum.photos/200",
+    flags = 0,
+    memberCount = 2,
+    lastMessageAt = new Date(),
+    lastMessageText = "Last message text",
+    createdAt = new Date(),
+    createdBy,
+  } = chat!;
+
   const classNames = buildClassName(
     "awe-user",
     "awe-user-actions",
@@ -68,19 +55,35 @@ const LeftChatListItem: React.FC<OwnProps & StateProps> = () => {
     <a
       className={classNames}
       draggable={false}
-      href="#-124434303"
+      href={`#`}
       role="button"
       tabIndex={0}
       onClick={() => {}}
+      title={
+        description ||
+        title +
+          " Chat was created by " +
+          createdBy?.username +
+          " at " +
+          createdAt.toLocaleString()
+      }
     >
       <Avatar className={s.Avatar} src={"https://picsum.photos/200"} />
       <section className={"awe-title"}>
-        <h3 className={"awe-overflow-ellipsis"}>Albinchik</h3>
-        <span className={s.TopActions}>14:33</span>
+        <h3 className={"awe-overflow-ellipsis"}>{title}</h3>
+        <span className={s.TopActions}>
+          {lastMessageAt ? formatTgDate(lastMessageAt) : ""}
+        </span>
       </section>
       <section className={"awe-subtitle"}>
         <p className={"awe-overflow-ellipsis"}>
-          Hi, how are you? <span className={s.Emoji}>😀</span>
+          {lastMessageText || "There are no messages yet."}
+
+          {type !== ApiChatType.PRIVATE && memberCount !== undefined && (
+            <span className={s.MemberCount}>
+              {memberCount} {memberCount === 1 ? "member" : "members"}
+            </span>
+          )}
         </p>
         <span className={s.BottomActions}>
           <CollectionsBookmarkRounded />
@@ -92,3 +95,30 @@ const LeftChatListItem: React.FC<OwnProps & StateProps> = () => {
 };
 
 export default memo(LeftChatListItem);
+
+function formatTgDate(lastMessageAt: Date): string {
+  const now = new Date();
+  const diff = now.getTime() - lastMessageAt.getTime();
+  const minutes = Math.floor(diff / (1000 * 60));
+  const hours = Math.floor(minutes / 60);
+  const days = Math.floor(hours / 24);
+  const weeks = Math.floor(days / 7);
+  const months = Math.floor(days / 30);
+  const years = Math.floor(days / 365);
+
+  if (years > 0) {
+    return `${years} year${years > 1 ? "s" : ""} ago`;
+  } else if (months > 0) {
+    return `${months} month${months > 1 ? "s" : ""} ago`;
+  } else if (weeks > 0) {
+    return `${weeks} week${weeks > 1 ? "s" : ""} ago`;
+  } else if (days > 0) {
+    return `${days} day${days > 1 ? "s" : ""} ago`;
+  } else if (hours > 0) {
+    return `${hours} hour${hours > 1 ? "s" : ""} ago`;
+  } else if (minutes > 0) {
+    return `${minutes} minute${minutes > 1 ? "s" : ""} ago`;
+  } else {
+    return "just now";
+  }
+}

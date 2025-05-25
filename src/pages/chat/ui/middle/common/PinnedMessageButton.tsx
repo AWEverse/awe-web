@@ -1,57 +1,65 @@
-import { usePrevious, useStableCallback } from "@/shared/hooks/base";
+import { useStableCallback } from "@/shared/hooks/base";
 import RippleEffect from "@/shared/ui/ripple-effect";
-import { FC, useState, useMemo, memo } from "react";
+import { FC, useState, memo, ReactNode } from "react";
 
 import s from "./PinnedMessageButton.module.scss";
 import buildClassName from "@/shared/lib/buildClassName";
 import TrackNavigation from "@/shared/ui/TrackNavigation";
 import { AnimatePresence, motion } from "framer-motion";
-import { SLIDE_TOP, SLIDE_VERTICAL } from "@/shared/animations/slideInVariant";
+import { SLIDE_VERTICAL } from "@/shared/animations/slideInVariant";
+import { useSequenceDirection } from "@/lib/hooks/utilities/useSequenceDirection";
 
 interface OwnProps {
-  nodeRef?: React.Ref<HTMLDivElement>;
   className?: string;
-  children?: React.ReactNode;
-  segmentCount?: number;
+  children?: ReactNode;
   style?: React.CSSProperties;
   onClick?: (index: number) => void;
 }
 
-interface StateProps {
-  activeIndex: number;
+interface PinnedMessageStateProps {
+  /** URL for the avatar image */
+  avatarUrl?: string;
+  /** Index of the currently active segment */
+  activeIndex?: number;
+  /** If true, avatar is rounded as user */
+  isUser?: boolean;
+  /** Number of segments for navigation */
+  segmentCount?: number;
 }
 
-const PinnedMessageButton: FC<OwnProps & StateProps> = (props) => {
-  const {
-    nodeRef,
-    className,
-    children,
-    segmentCount = 3,
-    style,
-    onClick,
-  } = props;
+type PinnedMessageButtonProps = OwnProps & PinnedMessageStateProps;
 
-  const [activeIndex, setActiveIndex] = useState(0);
-  const prevIndex = usePrevious(activeIndex) || 0;
+const SIZE = 36;
 
-  const isFirstMount = activeIndex === 0 && prevIndex === 0;
-  const diff = (activeIndex - prevIndex + segmentCount) % segmentCount;
-  const direction = isFirstMount
-    ? 1
-    : diff === 0
-      ? 0
-      : diff < segmentCount / 2
-        ? 1
-        : -1;
+const PinnedMessageButton: FC<PinnedMessageButtonProps> = ({
+  avatarUrl = "https://i.pravatar.cc/300",
+  activeIndex: stateActiveIndex = 0,
+  isUser = false,
+  className,
+  children,
+  segmentCount = 3,
+  style,
+  onClick,
+}) => {
+  const [activeIndex, setActiveIndex] = useState(stateActiveIndex);
+
+  const direction = useSequenceDirection({
+    activeIndex,
+    segmentCount,
+  });
 
   const handleClick = useStableCallback(() => {
-    setActiveIndex((prev) => (prev + 1) % segmentCount);
-    onClick?.(activeIndex);
+    setActiveIndex((prev) => {
+      const next = (prev + 1) % segmentCount;
+      onClick?.(next);
+      return next;
+    });
   });
 
   return (
     <section
-      ref={nodeRef}
+      data-active={activeIndex >= 0 ? "true" : undefined}
+      data-size={SIZE}
       aria-pressed={activeIndex >= 0}
       className={buildClassName(s.pinnedMessageWrapper, className)}
       role="button"
@@ -62,37 +70,38 @@ const PinnedMessageButton: FC<OwnProps & StateProps> = (props) => {
         <TrackNavigation
           index={activeIndex}
           count={segmentCount}
-          height={36}
+          height={SIZE}
           width={3}
         />
       </div>
 
       <img
-        width={36}
-        height={36}
+        width={SIZE}
+        height={SIZE}
+        className={buildClassName(
+          s.pinnedMessageAvatar,
+          isUser && s.userAvatar,
+        )}
         alt={`Pinned message avatar #${activeIndex + 1}`}
-        src="https://i.pravatar.cc/300"
+        src={avatarUrl}
+        loading="lazy"
+        decoding="async"
       />
 
-      <AnimatePresence initial={false} mode={"wait"}>
+      <AnimatePresence initial={false} mode="wait">
         <motion.div
           key={activeIndex}
           className={s.pinnedMessage}
-          data-active={activeIndex >= 0}
+          data-active={activeIndex >= 0 ? "true" : undefined}
           variants={SLIDE_VERTICAL}
           custom={direction}
-          initial={"hidden"}
-          animate={"visible"}
-          exit={"exit"}
+          initial="hidden"
+          animate="visible"
+          exit="exit"
         >
-          <h5 className={s.pinnedAdditionalInfo}>
-            Pinned message #{activeIndex + 1}
-          </h5>
-          <p className={s.pinnedMessageText}>This is a pinned message</p>
+          {children}
         </motion.div>
       </AnimatePresence>
-
-      {children}
       <RippleEffect />
     </section>
   );

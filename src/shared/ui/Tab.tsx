@@ -5,7 +5,7 @@ import { Link } from "react-router";
 import "./Tab.scss";
 import { capitalize } from "@/lib/utils/helpers/string/stringFormaters";
 
-type TabVariant = "folders" | "panels" | "fill";
+type TabVariant = "folders" | "pannels" | "fill";
 
 type OwnProps = {
   layoutId: string;

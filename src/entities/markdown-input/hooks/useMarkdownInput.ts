@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback, useEffect } from "react";
+import { useState, useRef, useCallback, useEffect, useMemo } from "react";
 
 export default function useMarkdownInput({
   value = "",
@@ -23,8 +23,9 @@ export default function useMarkdownInput({
   const [error, setError] = useState<string | null>(null);
   const lastValue = useRef(value);
 
-  const sanitize = useCallback(
-    (raw: string) => {
+  // Memoize sanitize function to prevent unnecessary re-renders
+  const sanitize = useMemo(
+    () => (raw: string) => {
       const norm = raw.replace(/\r\n/g, "\n");
       return sanitizeFn ? sanitizeFn(norm) : norm;
     },
@@ -49,27 +50,37 @@ export default function useMarkdownInput({
     [validate],
   );
 
+  // Only update when external value changes
   useEffect(() => {
-    const sanitized = sanitize(value);
-    setText(sanitized);
-    lastValue.current = sanitized;
+    if (value !== lastValue.current) {
+      const sanitized = sanitize(value);
+      setText(sanitized);
+      lastValue.current = value; // Store original value, not sanitized
+    }
   }, [value, sanitize]);
 
   const handleTextChange = useCallback(
     (newText: string) => {
       const sanitized = sanitize(newText);
+
+      // Handle max length constraint
       if (maxLength && sanitized.length > maxLength) {
         const truncated = sanitized.slice(0, maxLength);
         setText(truncated);
         onChange?.(truncated);
         lastValue.current = truncated;
+        setError(`Maximum ${maxLength} characters allowed`);
         return;
       }
+
       setText(sanitized);
+
+      // Only call onChange if value actually changed
       if (sanitized !== lastValue.current) {
         onChange?.(sanitized);
         lastValue.current = sanitized;
       }
+
       validateInput(sanitized);
     },
     [sanitize, maxLength, onChange, validateInput],
@@ -81,6 +92,7 @@ export default function useMarkdownInput({
       if (clearOnSubmit) {
         setText("");
         lastValue.current = "";
+        setError(null);
       }
     }
   }, [text, validateInput, onSubmit, clearOnSubmit]);

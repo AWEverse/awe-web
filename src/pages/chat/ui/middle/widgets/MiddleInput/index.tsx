@@ -1,5 +1,5 @@
 import { motion, AnimatePresence } from "framer-motion";
-import React, { FC, useReducer, useMemo, JSX, lazy, Suspense } from "react";
+import React, { FC, useReducer, useMemo, JSX, useCallback } from "react";
 import "./index.scss";
 import { useStableCallback } from "@/shared/hooks/base";
 import {
@@ -13,7 +13,6 @@ import {
   AlternateEmail,
   Code,
   EmojiEmotions,
-  FormatBold,
   FormatItalic,
   FormatQuote,
   HorizontalRule,
@@ -21,30 +20,19 @@ import {
   List,
   SendRounded,
   Tag,
-  TextFields,
   Title,
   Image,
   TableChartOutlined,
-  EmojiPeopleRounded,
-  AddReaction,
-  AddReactionTwoTone,
-  SendOutlined,
   MicRounded,
+  ViewHeadline,
 } from "@mui/icons-material";
-
-import "./index.scss";
-import Dropdown, { TriggerProps } from "@/shared/ui/dropdown";
-
-import Picker from "@emoji-mart/react";
-import data from "@emoji-mart/data";
 import EmotionPicker from "./EmotionPickers";
 import PinnedMessageButton from "../../common/PinnedMessageButton";
+import { parseMarkdownToOutput } from "@/entities/markdown-input/lib/engine/parser/parseMarkdownToOutput";
 
-// Validation helper for message length
 const validateMessage = (text: string): true | string =>
   text.length <= 2000 || "Message is too long";
 
-// Animation variants for toolbar icons
 const toolbarAnimation = {
   initial: { opacity: 0, y: 10, scale: 0.95 },
   animate: { opacity: 1, y: 0, scale: 1 },
@@ -52,20 +40,14 @@ const toolbarAnimation = {
   transition: { duration: 0.075, ease: "easeInOut" },
 };
 
-// Define mapping for markdown element groups
 const markdownIcons: Record<
   string,
   { icon: JSX.Element; elements: MarkdownElementType[] }
 > = {
-  text: { icon: <TextFields />, elements: ["plain", "paragraph"] },
+  text: { icon: <ViewHeadline />, elements: ["plain", "paragraph"] },
   heading: { icon: <Title />, elements: ["heading"] },
   formatting: {
-    icon: (
-      <>
-        <FormatBold />
-        <FormatItalic />
-      </>
-    ),
+    icon: <FormatItalic />,
     elements: ["bold", "italic"],
   },
   code: { icon: <Code />, elements: ["code"] },
@@ -120,24 +102,41 @@ const MiddleInput: FC = () => {
   const onSelect = useStableCallback((selected: string) => {
     const isSel = Boolean(selected);
     dispatch({ hasSelection: isSel });
-    // Show toolbar when selection and allow modification toggle
     if (!isSel) dispatch({ readyToModify: false });
   });
 
-  // Memoize toolbar items for performance
+  const markdownInputRef = React.useRef<any>(null);
+  const [injector, setInjector] = React.useState<
+    ((type: MarkdownElementType, value?: string) => void) | null
+  >(null);
+
   const toolbarItems = useMemo(
     () =>
-      Object.entries(markdownIcons).map(([key, { icon }]) => (
-        <IconButton key={key} size="small">
+      Object.entries(markdownIcons).map(([key, { icon, elements }]) => (
+        <IconButton
+          key={key}
+          size="small"
+          onClick={() => {
+            if (injector && elements && elements.length > 0) {
+              injector(elements[0]);
+            }
+          }}
+        >
           {icon}
         </IconButton>
       )),
-    [],
+    [injector],
   );
 
   const handleReadyClick = useStableCallback(() => {
     dispatch({ readyToModify: !readyToModify });
   });
+
+  const handleSubmit = useCallback(async () => {
+    if (!value.trim()) return;
+    const parsed = await parseMarkdownToOutput(value);
+    onSubmit(parsed);
+  }, [value, onSubmit]);
 
   return (
     <div className="MiddleInput allow-space-right-column-messages">
@@ -165,23 +164,24 @@ const MiddleInput: FC = () => {
           {hasSelection && readyToModify && (
             <motion.div
               key={"toolbar-items"}
-              className="MiddleInputPortalWrapper"
               initial="initial"
               animate="animate"
               exit="exit"
               variants={toolbarAnimation}
             >
-              <ActionButton
-                className="MiddleInputReadyButton"
-                onClick={handleReadyClick}
-                size="sm"
-              >
-                <span className="MiddleInputReadyButtonText">{"Done"}</span>
-              </ActionButton>
+              <div className="MiddleInputPortalWrapper">
+                <ActionButton
+                  className="MiddleInputReadyButton"
+                  onClick={handleReadyClick}
+                  size="sm"
+                >
+                  <span className="MiddleInputReadyButtonText">{"Done"}</span>
+                </ActionButton>
 
-              <div className="MiddleInputToolbarSeparator">&nbsp;</div>
+                <div className="MiddleInputToolbarSeparator"> </div>
 
-              {toolbarItems}
+                {toolbarItems}
+              </div>
             </motion.div>
           )}
         </AnimatePresence>
@@ -195,6 +195,7 @@ const MiddleInput: FC = () => {
           <EmotionPicker />
 
           <MarkdownInput
+            ref={markdownInputRef}
             className="MiddleInputInputField"
             value={value}
             onChange={onChange}
@@ -205,15 +206,12 @@ const MiddleInput: FC = () => {
             autoFocus
             minHeight={40}
             maxHeight={200}
+            onInject={(injector) => setInjector(() => injector)}
           />
         </div>
       </section>
       <div className="MiddleInputActions">
-        <IconButton
-          size="large"
-          variant="outlined"
-          onClick={() => onSubmit(value)}
-        >
+        <IconButton size="large" variant="outlined" onClick={handleSubmit}>
           {hasValue ? <SendRounded /> : <MicRounded />}
         </IconButton>
       </div>

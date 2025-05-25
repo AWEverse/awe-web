@@ -1,14 +1,24 @@
-import { FC, Fragment, memo, useState } from "react";
+import { FC, memo, useState } from "react";
 import LeftChatListItem from "./LeftChatListItem";
 import { ChatAnimationTypes } from "./hooks/useChatAnimationType";
 import s from "./LeftChatList.module.scss";
 import { usePrevious, useStableCallback } from "@/shared/hooks/base";
 import TabList from "@/shared/ui/TabList";
-import buildClassName from "@/shared/lib/buildClassName";
-import { AnimatePresence, motion } from "framer-motion";
+import { AnimatePresence } from "framer-motion";
+
+import {
+  ApiChatType,
+  type ApiChatFolder,
+  type ApiChatFolderItem,
+} from "@/shared/api";
 
 interface OwnProps {
   className?: string;
+}
+
+interface StateProps {
+  chatFolders: ApiChatFolder[];
+  chatFolderItems: ApiChatFolderItem[];
 }
 
 const tabsData = [
@@ -49,18 +59,6 @@ const tabsData = [
     isBadgeActive: false,
   },
 ];
-
-const variants = {
-  initial: (direction: number) => ({
-    x: direction > 0 ? "100%" : "-100%",
-  }),
-  animate: {
-    x: 0,
-  },
-  exit: (direction: number) => ({
-    x: direction > 0 ? "-100%" : "100%",
-  }),
-};
 
 const LeftChatList: FC<OwnProps> = ({ className }) => {
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -113,12 +111,7 @@ const LeftChatList: FC<OwnProps> = ({ className }) => {
       <AnimatePresence custom={direction} initial={false} mode="popLayout">
         {Array.from({ length: 20 }, (_, i) => (
           <div key={i}>
-            <LeftChatListItem
-              animation={ChatAnimationTypes.Move}
-              chatId={`${i}`}
-              currentUserId="1"
-              orderDiff={i}
-            />
+            <LeftChatListItem chat={{ type: ApiChatType.PRIVATE }} />
             <hr className={s.LeftChatListDivider} />
           </div>
         ))}
