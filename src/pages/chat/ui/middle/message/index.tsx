@@ -20,6 +20,7 @@ import { EMouseButton } from "@/lib/core";
 import { useFastClick } from "@/shared/hooks/mouse/useFastClick";
 import buildClassName from "@/shared/lib/buildClassName";
 import useStateSignal from "@/lib/hooks/signals/useStateSignal";
+import { ApiChatType } from "@/shared/api";
 
 type PositionEntity = "Group" | "Document" | "List";
 type Position = "IsFirst" | "IsLast";
@@ -66,48 +67,12 @@ export type DirectionType = (typeof Directions)[number];
 
 type OwnProps = {
   isOwn: boolean;
-  message: ApiMessage;
-  album?: IAlbum;
-  withAvatar?: boolean;
-  withSenderName?: boolean;
-  threadId: ThreadId;
-  messageListType: MessageListType;
-  noComments: boolean;
-  noReplies: boolean;
-  isJustAdded: boolean;
-  memoFirstUnreadIdRef: { current: number | undefined };
-  accessibleList: () => boolean;
+  chatType: ApiChatType;
 } & MessagePositionProperties;
 
 interface StateProps {}
 
-const markdownContent = `
-**Наступ на Запоріжжя, підрив дамби, Гуляйполе і знання з географії**
-
-![World Icon](https://example.com/world-icon.png)
-
-Мережею ширяться повідомлення різного характеру, які помилково поєднують між собою, вводячи суспільство в оману та деструктив. Тож по порядку:
-
-![Yellow Dot](https://example.com/yellow-dot.png)
-
-**Наступ на Запоріжжя.** Вже близько місяця суспільство чує про "великий" наступ на Запоріжжя, який може початися в районі Василівки, а саме в Кам'янському. Абсолютно невідомо, на чому грунтується дана заява, адже такого великого накопичення в районі Василівки, як про це говорять — не спостерігається. Там певний час перебувають дві десантно-штурмові дивізії, одна з яких частково була перекинута в інший район, а також засвітився новий полк, зібраний зі зброду. На сьогодні великої активності в районі Кам'янська не прослідковується, а якщо там щось і почнеться, то до цього варто готуватися фізично, а не лякати щоденними заявами населення міста Запоріжжя. Так само незмінною є ситуація в Роботиному, де не прослідковується ніяких загострень.
-
-![Yellow Dot](https://example.com/yellow-dot.png)
-
-**Підрив дамби у Василівці.** Вчора мережею активно почала ширитися заява, що московити хочуть підірвати дамбу у н.п. Василівка. Однак, ми так і не зрозуміли, як можна це зробити з дамбою, яка вже до цього була підірвана у 2022 році і де майже немає води.
-
-![Yellow Dot](https://example.com/yellow-dot.png)
-
-**Окремо про "наступ на Запоріжжя" в контексті області і згадки активностей в районі Гуляйполя.** Ці події пов'язують через незнання географії та з просуванням кацапів в районі Рівнополя-Новодарівки та спроб прорватися зі Старомайорська в Макарівку. По-перше, Рівнопіль, Новодарівка та Макарівка — це Донецька область і географічно далеко не південь. По-друге, ці два населені пункти аж ніяк не в районі Гуляйполя і навіщо згадувати цей населений пункт — невідомо. По-третє, взагалі не зрозуміло, навіщо в цьому контексті згадувати Запорізьку область, яка дійсно проходить прям біля Рівнополя, але не є підставою для заяв про "наступ на Запоріжжя". Про обстановку в даному районі ми [писали окремо](https://t.me/DeepStateUA/20699) вчора.
-
-![Exclamation](https://example.com/exclamation.png)
-
-Інформаційне поле — це дуже важлива складова впливу на суспільство. У кожного своя мета, але варто пам'ятати про відповідальність, яку кожен бере, роблячи якісь заяви. Приєднуйтесь до збору, допомагаємо нашим бійцям — це буде корисно і набагато краще для всіх: [https://send.monobank.ua/jar/2y2T1i5wph](https://send.monobank.ua/jar/2y2T1i5wph)
-`;
-
-const ChatMessage: FC<OwnProps & StateProps> = ({ isOwn, message }) => {
-  const { content, isJustAdded } = message;
-
+const ChatMessage: FC<OwnProps & StateProps> = ({ isOwn }) => {
   const messageRef = useRef<HTMLDivElement>(null);
   const bottomMarkerRef = useRef<HTMLDivElement>(null);
 
@@ -118,25 +83,14 @@ const ChatMessage: FC<OwnProps & StateProps> = ({ isOwn, message }) => {
   } = useScrollProvider();
 
   const renderContent = (): ReactNode => {
-    return <MessageText content={markdownContent} />;
-  };
-
-  const renderAvatar = () => {
-    return <div>Avatar</div>;
-  };
-
-  const renderTitle = () => {
-    return <div>Title</div>;
-  };
-
-  const renderMessageText = () => {
-    return <MessageText content={markdownContent} />;
+    return "content";
   };
 
   const isLoading = useIsIntersecting(
     messageRef,
     observeIntersectionForLoading,
   );
+
   const isReading = useIsIntersecting(
     bottomMarkerRef,
     observeIntersectionForReading,

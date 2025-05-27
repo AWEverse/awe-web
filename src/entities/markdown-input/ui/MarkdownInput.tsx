@@ -6,6 +6,7 @@ import React, {
   useImperativeHandle,
   useMemo,
   useRef,
+  useState,
 } from "react";
 import MarkdownIt from "markdown-it";
 import DOMPurify from "dompurify";
@@ -19,6 +20,10 @@ import type {
 } from "../lib/markdownInput.types";
 import { parseMarkdownToOutput } from "../lib/engine/parser/parseMarkdownToOutput";
 import s from "./MarkdownInput.module.scss";
+import CursorManager from "../lib/CursorManager";
+import HistoryManager from "../lib/HistoryManager";
+import MarkdownInjector, { DOMPURIFY_CONFIG } from "../lib/MarkdownInjector";
+import { useStableCallback } from "@/shared/hooks/base";
 
 export interface MarkdownInputProps {
   value?: string;
@@ -29,7 +34,10 @@ export interface MarkdownInputProps {
   onSelectionChange?: (value: string) => void;
   onSelect?: (value: string) => void;
   onSelectionEnd?: (value: string) => void;
-  onInject?: (type: MarkdownElementType, value: string) => void;
+  onInject?: (
+    injectNode: (type: MarkdownElementType) => void,
+    action: string,
+  ) => void;
   className?: string;
   maxLength?: number;
   autoFocus?: boolean;
@@ -54,10 +62,16 @@ export interface MarkdownInputProps {
   isStylesRemoved?: boolean;
 }
 
+const MARKDOWN_IT_CONFIG = {
+  html: true,
+  linkify: true,
+  typographer: true,
+};
+
 const MarkdownInput = forwardRef<HTMLDivElement, MarkdownInputProps>(
   (
     {
-      value,
+      value = "",
       placeholder = "Type your message...",
       disabled = false,
       onChange,
@@ -73,14 +87,14 @@ const MarkdownInput = forwardRef<HTMLDivElement, MarkdownInputProps>(
       maxHeight = 200,
       containerStyle = {},
       inputStyle = {},
-      renderMarkdown = false,
+      renderMarkdown = true,
       actions,
       sanitizeFn,
       clearOnSubmit = false,
       submitOnCtrlEnter = false,
       submitKey = "Enter",
       showCharCount = false,
-      validate = (val) => val.length > 0,
+      validate = () => true, // Fixed: provide default validation function
       id,
       ariaLabel = "Markdown text input",
       required = false,
@@ -91,23 +105,24 @@ const MarkdownInput = forwardRef<HTMLDivElement, MarkdownInputProps>(
     ref,
   ) => {
     const editorRef = useRef<HTMLDivElement>(null);
-    const [isFocused, setIsFocused] = React.useState(false);
+    const [isFocused, setIsFocused] = useState(false);
+    const [isInitialized, setIsInitialized] = useState(false);
 
-    // Initialize MarkdownIt instance
-    const md = useMemo(
+    const historyManager = useMemo(() => new HistoryManager(), []);
+    const md = useMemo(() => new MarkdownIt(MARKDOWN_IT_CONFIG), []);
+
+    // Memoized sanitization function
+    const sanitize = useMemo(
       () =>
-        new MarkdownIt({
-          html: false,
-          linkify: true,
-          typographer: true,
-        }),
-      [],
+        sanitizeFn ||
+        ((val: string) => DOMPurify.sanitize(val, DOMPURIFY_CONFIG)),
+      [sanitizeFn],
     );
 
-    // Custom hook to manage input state and validation
+    // Custom hook with optimized handling
     const { text, error, handleTextChange } = useMarkdownInput({
       value,
-      sanitizeFn: sanitizeFn || ((val) => DOMPurify.sanitize(val)),
+      sanitizeFn: sanitize,
       validate,
       maxLength,
       clearOnSubmit,
@@ -116,202 +131,129 @@ const MarkdownInput = forwardRef<HTMLDivElement, MarkdownInputProps>(
       onChange,
       onSubmit: onSubmit
         ? (v) => {
-            parseMarkdownToOutput(v).then((parsed) => {
-              onSubmit(parsed);
-            });
+            // Handle async parsing properly
+            if (typeof v === "string") {
+              parseMarkdownToOutput(v)
+                .then((parsed) => {
+                  onSubmit(parsed);
+                })
+                .catch((error) => {
+                  console.error("Failed to parse markdown:", error);
+                  onSubmit(v); // Fallback to string
+                });
+            } else {
+              onSubmit(v);
+            }
           }
         : undefined,
-    }); // Sync editor content with state (only when not focused to avoid conflicts)
+    });
+
+    // Optimized function to get text
+    const getPlainText = useStableCallback(
+      (el: HTMLElement): string => el.textContent || "",
+    );
+
+    const injectNode = useCallback(
+      (type: MarkdownElementType) => {
+        const editor = editorRef.current;
+        if (!editor || disabled) return;
+
+        if (document.activeElement !== editor) {
+          editor.focus();
+        }
+
+        const selectedText = CursorManager.getSelectedText();
+        const cursorPos = CursorManager.getCursorPosition(editor);
+
+        historyManager.save(text, cursorPos);
+
+        MarkdownInjector.inject(type, selectedText, renderMarkdown);
+
+        requestMutation(() => {
+          handleTextChange(getPlainText(editor));
+        });
+      },
+      [
+        disabled,
+        text,
+        renderMarkdown,
+        handleTextChange,
+        getPlainText,
+        historyManager,
+      ],
+    );
+
     useEffect(() => {
       const editor = editorRef.current;
       if (!editor || isFocused) return;
 
-      if (renderMarkdown) {
-        const html = DOMPurify.sanitize(md.render(text), {
-          ALLOWED_TAGS: [
-            "p",
-            "strong",
-            "em",
-            "code",
-            "a",
-            "br",
-            "ul",
-            "ol",
-            "li",
-            "blockquote",
-            "h1",
-            "h2",
-            "h3",
-            "h4",
-            "h5",
-            "h6",
-            "hr",
-            "table",
-            "thead",
-            "tbody",
-            "tr",
-            "th",
-            "td",
-          ],
-          ALLOWED_ATTR: ["href", "title"],
-        });
-        requestMutation(() => {
-          editor.innerHTML = html;
-        });
-      } else if (editor.textContent !== text) {
-        requestMutation(() => {
-          editor.textContent = text;
-        });
-      }
-    }, [text, isFocused, renderMarkdown, md]);
+      requestMutation(() => {
+        if (renderMarkdown && text) {
+          const html = DOMPurify.sanitize(md.render(text), DOMPURIFY_CONFIG);
 
-    // Auto focus on mount
+          if (editor.innerHTML !== html) {
+            editor.innerHTML = html;
+          }
+        } else if (editor.textContent !== text) {
+          editor.textContent = text;
+        }
+
+        if (!isInitialized) {
+          setIsInitialized(true);
+        }
+      });
+    }, [text, isFocused, renderMarkdown, md, isInitialized]);
+
     useEffect(() => {
-      if (autoFocus && editorRef.current && !disabled) {
+      if (autoFocus && editorRef.current && !disabled && isInitialized) {
         requestMutation(() => {
           editorRef.current?.focus();
         });
       }
-    }, [autoFocus, disabled]);
+    }, [autoFocus, disabled, isInitialized]);
 
-    const getPlainText = useCallback(
-      (el: HTMLElement) => el.innerText || el.textContent || "",
-      [],
-    ); // Inject Markdown formatting (optimized version)
-    const injectMarkdown = useCallback(
-      (type: MarkdownElementType, value?: string) => {
-        const editor = editorRef.current;
-        if (!editor) return;
-
-        const selection = window.getSelection();
-        if (!selection || selection.rangeCount === 0) return;
-
-        const range = selection.getRangeAt(0);
-        let selectedText = selection.toString();
-        if (!selectedText && value) selectedText = value;
-
-        // Allow empty selection for certain types
-        if (
-          !selectedText &&
-          !["horizontalRule", "table", "list"].includes(type)
-        )
-          return;
-
-        let markdown = selectedText || "";
-
-        // Optimize switch with grouped cases
-        switch (type) {
-          case "bold":
-            markdown = `**${markdown}**`;
-            break;
-          case "italic":
-            markdown = `*${markdown}*`;
-            break;
-          case "code":
-            markdown = markdown.includes("\n")
-              ? `\`\`\`\n${markdown}\n\`\`\``
-              : `\`${markdown}\``;
-            break;
-          case "heading":
-            markdown = `# ${markdown}`;
-            break;
-          case "blockquote":
-            markdown = `> ${markdown.split("\n").join("\n> ")}`;
-            break;
-          case "link": {
-            const url = prompt("Enter URL:") || "#";
-            markdown = `[${markdown}](${url})`;
-            break;
-          }
-          case "image": {
-            const url = prompt("Enter image URL:") || "#";
-            const alt = markdown || "Image";
-            markdown = `![${alt}](${url})`;
-            break;
-          }
-          case "list":
-          case "listItem":
-            markdown = markdown
-              ? markdown
-                  .split("\n")
-                  .map((line) => `- ${line}`)
-                  .join("\n")
-              : "- ";
-            break;
-          case "horizontalRule":
-            markdown = "---";
-            break;
-          case "mention":
-            markdown = `@${markdown}`;
-            break;
-          case "hashtag":
-            markdown = `#${markdown}`;
-            break;
-          case "emoji":
-            markdown = `:${markdown}:`;
-            break;
-          case "table":
-            markdown =
-              "| Header 1 | Header 2 |\n| --- | --- |\n| Cell 1 | Cell 2 |";
-            break;
-          default:
-            markdown = markdown;
-            break;
-        }
-
-        // Insert as plain text instead of HTML to maintain consistency
-        range.deleteContents();
-        range.insertNode(document.createTextNode(markdown));
-
-        // Restore selection and update state
-        selection.collapseToEnd();
-        handleTextChange(getPlainText(editor));
-      },
-      [handleTextChange, getPlainText],
-    );
-
-    // Handle input changes
     const onInput = useCallback(
       (e: React.FormEvent<HTMLDivElement>) => {
-        handleTextChange(getPlainText(e.currentTarget));
+        const newContent = getPlainText(e.currentTarget);
+        const cursorPos = CursorManager.getCursorPosition(e.currentTarget);
+
+        // Save to history on significant changes
+        if (historyManager.canSave(newContent, text)) {
+          historyManager.save(text, cursorPos);
+        }
+
+        handleTextChange(newContent);
       },
-      [handleTextChange],
-    ); // Handle selection changes
+      [handleTextChange, getPlainText, text, historyManager],
+    );
+
     const onSelectHandler = useCallback(() => {
-      const sel = window.getSelection();
-      const selectedText = sel ? sel.toString() : "";
-      if (onSelect) onSelect(selectedText);
-      if (onSelectionChange) onSelectionChange(selectedText);
+      const selectedText = CursorManager.getSelectedText();
+      onSelect?.(selectedText);
+      onSelectionChange?.(selectedText);
     }, [onSelect, onSelectionChange]);
 
-    // Handle selection end
     const onMouseUpHandler = useCallback(() => {
       if (onSelectionEnd) {
         requestNextMutation(() => {
           onSelectionEnd(editorRef.current?.textContent || "");
         });
       }
-    }, [onSelectionEnd]); // Handle paste events (optimized to prevent default and insert plain text only)
+    }, [onSelectionEnd]);
+
     const onPasteHandler = useCallback(
       (e: React.ClipboardEvent<HTMLDivElement>) => {
         e.preventDefault();
-        const text = e.clipboardData.getData("text/plain");
-        // Use modern approach instead of deprecated execCommand
-        if (
-          document.queryCommandSupported &&
-          document.queryCommandSupported("insertText")
-        ) {
-          document.execCommand("insertText", false, text);
-        } else {
-          // Fallback for browsers that don't support execCommand
-          const selection = window.getSelection();
-          if (selection && selection.rangeCount > 0) {
-            const range = selection.getRangeAt(0);
-            range.deleteContents();
-            range.insertNode(document.createTextNode(text));
-            selection.collapseToEnd();
-          }
+        const pastedText = e.clipboardData.getData("text/plain");
+
+        const selection = window.getSelection();
+        if (selection?.rangeCount) {
+          const range = selection.getRangeAt(0);
+          range.deleteContents();
+          range.insertNode(document.createTextNode(pastedText));
+          selection.collapseToEnd();
         }
+
         requestMutation(() => {
           handleTextChange(getPlainText(e.currentTarget));
         });
@@ -319,31 +261,84 @@ const MarkdownInput = forwardRef<HTMLDivElement, MarkdownInputProps>(
       [handleTextChange, getPlainText],
     );
 
-    // Handle keyboard events (memoized with stable dependencies)
+    // Keyboard handler with optimization
     const onKeyDownHandler = useCallback(
       (e: React.KeyboardEvent<HTMLDivElement>) => {
+        const editor = editorRef.current;
+        if (!editor) return;
+
+        // Undo/Redo
+        if (e.ctrlKey || e.metaKey) {
+          if (e.key.toLowerCase() === "z" && !e.shiftKey) {
+            e.preventDefault();
+            const prevState = historyManager.undo();
+            if (prevState) {
+              editor.textContent = prevState.content;
+              handleTextChange(prevState.content);
+              CursorManager.setCursorPosition(editor, prevState.cursorPosition);
+            }
+            return;
+          } else if (
+            e.key.toLowerCase() === "y" ||
+            (e.key.toLowerCase() === "z" && e.shiftKey)
+          ) {
+            e.preventDefault();
+            const nextState = historyManager.redo();
+            if (nextState) {
+              editor.textContent = nextState.content;
+              handleTextChange(nextState.content);
+              CursorManager.setCursorPosition(editor, nextState.cursorPosition);
+            }
+            return;
+          }
+        }
+
+        // Markdown shortcuts
+        if (e.ctrlKey || e.metaKey) {
+          const cursorPos = CursorManager.getCursorPosition(editor);
+          historyManager.save(getPlainText(editor), cursorPos);
+
+          const shortcuts: Record<string, MarkdownElementType> = {
+            b: "bold",
+            i: "italic",
+            k: "link",
+            "`": "code",
+            e: "code",
+          };
+
+          const shortcut = shortcuts[e.key.toLowerCase()];
+          if (shortcut) {
+            e.preventDefault();
+            injectNode(shortcut);
+            return;
+          }
+
+          // Headers (Ctrl+1-6)
+          if (/^[1-6]$/.test(e.key)) {
+            e.preventDefault();
+            injectNode("heading");
+            return;
+          }
+        }
+
+        // Handle Enter and Tab
         if (submitOnCtrlEnter && e.key === "Enter" && e.ctrlKey) {
           e.preventDefault();
-          if (onSubmit) onSubmit(text);
+          onSubmit?.(text);
         } else if (!submitOnCtrlEnter && e.key === submitKey && !e.shiftKey) {
           e.preventDefault();
-          if (onSubmit) onSubmit(text);
+          onSubmit?.(text);
         } else if (enableTabCharacter && e.key === "Tab") {
           e.preventDefault();
           const spaces = " ".repeat(tabSize);
-          if (
-            document.queryCommandSupported &&
-            document.queryCommandSupported("insertText")
-          ) {
-            document.execCommand("insertText", false, spaces);
-          } else {
-            const selection = window.getSelection();
-            if (selection && selection.rangeCount > 0) {
-              const range = selection.getRangeAt(0);
-              range.deleteContents();
-              range.insertNode(document.createTextNode(spaces));
-              selection.collapseToEnd();
-            }
+
+          // Modern text insertion
+          const selection = window.getSelection();
+          if (selection?.rangeCount) {
+            const range = selection.getRangeAt(0);
+            range.deleteContents();
+            range.insertNode(document.createTextNode(spaces));
+            selection.collapseToEnd();
           }
         }
       },
@@ -354,42 +349,41 @@ const MarkdownInput = forwardRef<HTMLDivElement, MarkdownInputProps>(
         submitKey,
         enableTabCharacter,
         tabSize,
+        injectNode,
+        handleTextChange,
+        getPlainText,
+        historyManager,
       ],
-    ); // Handle focus and blur (optimized for markdown rendering)
+    );
+
+    // Focus handlers
     const onFocusHandler = useCallback(() => {
       setIsFocused(true);
       const editor = editorRef.current;
-      if (editor && renderMarkdown) {
-        // Convert from HTML back to plain text when focusing
+      if (!editor) return;
+
+      const cursorPos = CursorManager.getCursorPosition(editor);
+      historyManager.initialize(text, cursorPos);
+
+      if (renderMarkdown) {
         requestMutation(() => {
           editor.textContent = text;
-          // Position cursor at end
-          const range = document.createRange();
-          const selection = window.getSelection();
-          if (selection) {
-            range.selectNodeContents(editor);
-            range.collapse(false);
-            selection.removeAllRanges();
-            selection.addRange(range);
-          }
+          CursorManager.setEndPosition(editor);
         });
       }
-    }, [text, renderMarkdown]);
+    }, [text, renderMarkdown, historyManager]);
 
-    const onBlurHandler = useCallback(() => {
+    const onBlurHandler = useStableCallback(() => {
       setIsFocused(false);
-      // Content will be re-rendered as HTML via useEffect when isFocused becomes false
-    }, []);
+    });
 
-    // Expose editor ref
+    // Expose ref
     useImperativeHandle(ref, () => editorRef.current as HTMLDivElement, []);
 
-    // Expose injectMarkdown function
+    // Expose injectNode
     useEffect(() => {
-      if (onInject) {
-        onInject(injectMarkdown as any, "expose");
-      }
-    }, [onInject, injectMarkdown]);
+      onInject?.(injectNode, "expose");
+    }, [onInject, injectNode]);
 
     return (
       <div
@@ -416,7 +410,7 @@ const MarkdownInput = forwardRef<HTMLDivElement, MarkdownInputProps>(
           aria-required={required}
           aria-invalid={!!error}
           aria-multiline="true"
-          aria-describedby={error ? "error-message" : undefined}
+          aria-describedby={error ? `${id}-error-message` : undefined}
           data-disabled={disabled}
           className={buildClassName(!isStylesRemoved && s.editor, className)}
           onInput={onInput}
@@ -442,8 +436,10 @@ const MarkdownInput = forwardRef<HTMLDivElement, MarkdownInputProps>(
 
         {error && (
           <div
-            id="error-message"
+            id={`${id}-error-message`}
             className={buildClassName(!isStylesRemoved && s.errorMessage)}
+            role="alert"
+            aria-live="polite"
           >
             {error}
           </div>

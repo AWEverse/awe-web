@@ -1,0 +1,119 @@
+.header {
+  padding: 0 0 24px 0;
+}
+.title {
+  font-size: max(4dvh, 1.3rem);
+  font-weight: 700;
+  margin-bottom: 8px;
+  color: #fff;
+  letter-spacing: -1px;
+}
+.desc {
+  color: #b0b6c3;
+  font-size: max(1.2dvh, 0.92rem);
+  margin-bottom: 24px;
+  line-height: 1.6;
+  max-width: 800px;
+  @media (max-width: 900px) {
+    max-width: 100%;
+  }
+}
+.categoriesWrap {
+  margin: 32px 0;
+}
+.categoriesTitle {
+  font-size: max(3dvh, 1rem);
+  font-weight: 600;
+  margin-bottom: 12px;
+  color: #fff;
+  letter-spacing: -0.5px;
+}
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 16px;
+  @media (max-width: 900px) {
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 12px;
+  }
+  @media (max-width: 600px) {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+}
+.card {
+  padding-inline-start: 48px;
+  padding-block: 8px;
+  min-width: 0;
+  background: #23272f;
+  border-radius: 12px;
+  color: #fff;
+  box-shadow: 0 2px 8px #0002;
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 0;
+  transition:
+    box-shadow 0.2s,
+    background 0.2s,
+    transform 0.15s;
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+  outline: none;
+  &:hover,
+  &:focus {
+    background: #2a2f38;
+    box-shadow: 0 4px 16px #0004;
+    transform: translateY(-2px) scale(1.02);
+  }
+  @media (max-width: 900px) {
+    padding: 12px;
+    border-radius: 10px;
+  }
+  @media (max-width: 600px) {
+    padding: 10px;
+    border-radius: 8px;
+  }
+}
+.iconWrap {
+  position: absolute;
+  left: 8px;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  background: #1a1d22;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 12px;
+  @media (max-width: 900px) {
+    width: 28px;
+    height: 28px;
+    border-radius: 7px;
+    margin-bottom: 8px;
+  }
+  @media (max-width: 600px) {
+    width: 24px;
+    height: 24px;
+    border-radius: 6px;
+    margin-bottom: 6px;
+  }
+}
+.cardTitle {
+  font-size: max(1.1dvh, 14px);
+  font-weight: 600;
+  margin-bottom: 4px;
+  color: #fff;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.cardNodes {
+  font-size: max(0.9dvh, 11px);
+  opacity: 0.7;
+  margin: 0 0 2px 0;
+}
+.cardUpdated {
+  font-size: max(0.8dvh, 10px);
+  opacity: 0.5;
+}

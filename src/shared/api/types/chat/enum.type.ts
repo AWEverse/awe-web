@@ -8,13 +8,6 @@ export enum ApiChatType {
   FORUM = 'FORUM',
 }
 
-export enum ApiMessageListType {
-  PRIVATE = 'PRIVATE',
-  GROUP = 'GROUP',
-  CHANNEL = 'CHANNEL',
-  THREAD = 'THREAD',
-}
-
 export enum ApiChatRole {
   OWNER = 'OWNER',
   ADMIN = 'ADMIN',

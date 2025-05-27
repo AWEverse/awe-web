@@ -63,6 +63,7 @@ export const ROUTES = {
     THREAD: ":id",
     OVERVIEW: "overview",
     DISSCUSIONS: "disscusions",
+    SUBCATEGORIES: "subcategories",
     MEMBERS: "members",
   },
 

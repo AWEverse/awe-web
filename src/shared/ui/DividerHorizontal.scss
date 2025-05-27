@@ -1,0 +1,18 @@
+.divider-container {
+  position: relative;
+  width: 100%;
+
+  .divider-line {
+    position: absolute;
+    top: 50%;
+    width: 100%;
+    height: 2px;
+    border-radius: 2px;
+    background-color: var(--awe-palette-divider, #e0e0e0);
+  }
+
+  .divider-children {
+    width: fit-content;
+    background-color: var(--awe-palette-background-default, #fff);
+  }
+}

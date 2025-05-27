@@ -71,7 +71,6 @@ export interface ApiMessageThread {
   flags: number;
 }
 
-
 export interface ApiMessageSticker {
   id: bigint;
   messageId: bigint;

@@ -105,9 +105,8 @@ const MiddleInput: FC = () => {
     if (!isSel) dispatch({ readyToModify: false });
   });
 
-  const markdownInputRef = React.useRef<any>(null);
   const [injector, setInjector] = React.useState<
-    ((type: MarkdownElementType, value?: string) => void) | null
+    ((type: MarkdownElementType) => void) | null
   >(null);
 
   const toolbarItems = useMemo(
@@ -195,7 +194,6 @@ const MiddleInput: FC = () => {
           <EmotionPicker />
 
           <MarkdownInput
-            ref={markdownInputRef}
             className="MiddleInputInputField"
             value={value}
             onChange={onChange}
@@ -206,7 +204,6 @@ const MiddleInput: FC = () => {
             autoFocus
             minHeight={40}
             maxHeight={200}
-            onInject={(injector) => setInjector(() => injector)}
           />
         </div>
       </section>

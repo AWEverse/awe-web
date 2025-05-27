@@ -32,7 +32,7 @@
   ],
   "scripts": {
     "dev": "vite",
-    "dev:host": "vite --host=192.168.1.106 --mode development",
+    "dev:host": "vite --host=192.168.1.109 --mode development",
     "build": "vite build",
     "build:mode": "vite build --mode ${MODE:-platform}",
     "preview": "vite preview",

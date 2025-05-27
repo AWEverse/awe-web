@@ -1,11 +1,10 @@
-import React, { FC, memo, useEffect, useRef } from "react";
+import React, { FC, memo, useRef } from "react";
 
 import "./MiddleMessageList.scss";
 import ChatMessage from "../../message";
 import { ScrollProvider } from "@/shared/context";
-import { useStableCallback } from "@/shared/hooks/base";
 import { useDebouncedFunction } from "@/shared/hooks/shedulers";
-import { debounce, EMouseButton } from "@/lib/core";
+import { EMouseButton } from "@/lib/core";
 import { useComponentDidMount } from "@/shared/hooks/effects/useLifecycle";
 import ContextMenu, { useContextMenuHandlers } from "@/entities/context-menu";
 import { useFastClick } from "@/shared/hooks/mouse/useFastClick";
@@ -122,7 +121,7 @@ const MiddleMessageList: FC<OwnProps & StateProps> = () => {
         <p>Copy</p>
         <p>Copy link</p>
         <p>Forward</p>
-        <p>Reporst</p>
+        <p>Report</p>
       </ContextMenu>
     </>
   );
