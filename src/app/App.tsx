@@ -15,6 +15,7 @@ import { usePageVisibility } from "@/lib/hooks/ui/usePageVisibility";
 import useGlobalDragEventPrevention from "./lib/hooks/useGlobalDragEventPrevention";
 import ModalComposerProvider from "@/composers/modals/ModalComposer";
 import { ALLOW_DRAG_CLASS_NAME, ALLOW_DRAG_DATA_ATTR } from "@/lib/config";
+import { PersistentPlayer } from "@/process";
 
 interface StateProps {
   themeKey?: ThemeKey;
@@ -94,6 +95,8 @@ const App: FC<StateProps> = ({ themeKey = "dark" }) => {
         disableTransitionOnChange
       >
         <CssBaseline enableColorScheme />
+
+        <PersistentPlayer />
 
         <ModalComposerProvider>
           <AWERoutesBrowserRouter />

@@ -7,9 +7,7 @@ import { Tags } from "@/pages/d/model";
 import Linkify from "@/shared/ui/Linkify";
 import { Avatar } from "@mui/material";
 import formatLargeNumber from "@/lib/utils/helpers/number/formatLargeNumber";
-import CheckmarkCircle02Icon from "@/shared/common/icons/CheckmarkCircle02";
-import Message01Icon from "@/shared/common/icons/Message01Icon";
-import Task01Icon from "@/shared/common/icons/Task01";
+
 import IconExpand from "@/shared/ui/IconExpand";
 
 interface TopicItemProps extends WithDecorators {
@@ -96,17 +94,17 @@ const TopicItem: FC<TopicItemProps> = memo(
 
 const defaultState = [
   {
-    icon: <CheckmarkCircle02Icon size={20} title="Answers" />,
+    icon: <>s</>,
     label: "Replies",
     count: 2,
   },
   {
-    icon: <Message01Icon size={20} title="Posts" />,
+    icon: <>s</>,
     label: "Posts",
     count: 49322,
   },
   {
-    icon: <Task01Icon size={20} title="Topics" />,
+    icon: <>s</>,
     label: "Topics",
     count: 2423,
   },

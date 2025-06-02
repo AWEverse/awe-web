@@ -1,15 +1,17 @@
 import { configureStore } from "@reduxjs/toolkit";
 import { createReducerManager } from "./GlobalReducerManager";
 import { SharedStore } from "./GlobalTypes";
-import dummyReducer from "./dummyReducer";
 import { DEBUG } from "@/lib/config/dev";
+import authReducer from "../reducers/authReducer";
+import playerReducer from "../reducers/playerReducer";
 
 /**
  * The base reducers for the Redux store. Extend this object to add static reducers.
  * Dynamic reducers can be injected at runtime.
  */
 const baseReducers: Record<string, any> = {
-  dummy: dummyReducer,
+  auth: authReducer,
+  player: playerReducer
 };
 
 // Use string as the key type for dynamic/static reducers

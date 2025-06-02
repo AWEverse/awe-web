@@ -1,51 +1,35 @@
-const HISTORY_LIMIT = 50;
-const HISTORY_DEBOUNCE_THRESHOLD = 3;
-
-interface HistoryState {
-  content: string;
-  cursorPosition: number;
-  timestamp: number;
-}
-
 class HistoryManager {
-  private history: HistoryState[] = [];
+  private history: Array<{ content: string; cursorPosition: number }> = [];
   private currentIndex = -1;
+  private maxHistorySize = 50;
   private lastSaveTime = 0;
-  private readonly minSaveInterval = 300; // 300ms between saves
+  private minSaveInterval = 1000; // 1 second
 
-  canSave(content: string, currentContent: string): boolean {
+  canSave(content: string, lastContent: string): boolean {
     const now = Date.now();
     const timePassed = now - this.lastSaveTime > this.minSaveInterval;
-    const significantChange =
-      Math.abs(content.length - currentContent.length) >
-      HISTORY_DEBOUNCE_THRESHOLD;
-
-    return timePassed && significantChange;
+    const contentChanged = content !== lastContent;
+    return timePassed && contentChanged;
   }
 
   save(content: string, cursorPosition: number): void {
-    const now = Date.now();
+    this.lastSaveTime = Date.now();
 
-    if (this.currentIndex < this.history.length - 1) {
-      this.history.splice(this.currentIndex + 1);
-    }
+    // Remove any history after current index
+    this.history = this.history.slice(0, this.currentIndex + 1);
 
-    this.history.push({
-      content,
-      cursorPosition,
-      timestamp: now,
-    });
+    // Add new state
+    this.history.push({ content, cursorPosition });
+    this.currentIndex++;
 
-    this.currentIndex = this.history.length - 1;
-    this.lastSaveTime = now;
-
-    if (this.history.length > HISTORY_LIMIT) {
+    // Limit history size
+    if (this.history.length > this.maxHistorySize) {
       this.history.shift();
       this.currentIndex--;
     }
   }
 
-  undo(): HistoryState | null {
+  undo(): { content: string; cursorPosition: number } | null {
     if (this.currentIndex > 0) {
       this.currentIndex--;
       return this.history[this.currentIndex];
@@ -53,20 +37,13 @@ class HistoryManager {
     return null;
   }
 
-  redo(): HistoryState | null {
+  redo(): { content: string; cursorPosition: number } | null {
     if (this.currentIndex < this.history.length - 1) {
       this.currentIndex++;
       return this.history[this.currentIndex];
     }
     return null;
   }
-
-  initialize(content: string, cursorPosition: number): void {
-    if (this.history.length === 0) {
-      this.save(content, cursorPosition);
-    }
-  }
 }
 
 export default HistoryManager;
-export type { HistoryState };

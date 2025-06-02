@@ -2,7 +2,6 @@ import { RouterFactory as RouterFactory } from "@/shared/router";
 import { RouteConfig } from "@/shared/router/types";
 import HomePage from "@/pages/home/ui/HomePage";
 import LayoutOutlet from "@/widgets/layout-outlet";
-import { SingleThread } from "@/pages/threds/";
 import { ROUTES } from "./constants";
 
 const { HOME, MAIN, USER_PROFILE, CHAT, DIALOGS, DISCUS, VIDEO } = ROUTES;
@@ -32,15 +31,6 @@ export const AWERoutesBrowserRouter = () => (
                 },
               },
               {
-                path: MAIN,
-                lazy: () => import("@/pages/thread"),
-                componentId: "thread",
-                meta: {
-                  title: "AWE - Threads",
-                  priority: "high",
-                },
-              },
-              {
                 path: USER_PROFILE.BASE,
                 lazy: () => import("@/pages/profile"),
                 componentId: "profile",
@@ -49,15 +39,7 @@ export const AWERoutesBrowserRouter = () => (
                   priority: "medium",
                 },
               },
-              {
-                path: DIALOGS.THREAD,
-                element: <SingleThread />,
-                componentId: "single-thread",
-                meta: {
-                  title: "Dialog Thread",
-                  priority: "medium",
-                },
-              },
+
               {
                 path: DISCUS.BASE,
                 lazy: () => import("@/pages/d"),
@@ -116,39 +98,12 @@ export const AWERoutesBrowserRouter = () => (
                 },
               },
               {
-                path: DIALOGS.BASE,
-                lazy: () => import("@/pages/threds"),
-                componentId: "threads",
-                meta: {
-                  title: "Dialogs",
-                  priority: "medium",
-                },
-              },
-              {
                 path: VIDEO.BASE,
                 lazy: () => import("@/pages/video"),
                 componentId: "video",
                 meta: {
                   title: "Videos",
                   priority: "medium",
-                },
-              },
-              {
-                path: VIDEO.THREAD,
-                lazy: () => import("@/pages/threds"),
-                componentId: "video-threads",
-                meta: {
-                  title: "Video Threads",
-                  priority: "low",
-                },
-              },
-              {
-                path: VIDEO.THREAD_ID,
-                element: <SingleThread />,
-                componentId: "video-single-thread",
-                meta: {
-                  title: "Video Thread",
-                  priority: "low",
                 },
               },
             ],

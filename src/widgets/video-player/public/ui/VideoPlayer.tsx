@@ -2,7 +2,6 @@ import React, { lazy, memo, useEffect, useRef } from "react";
 import {
   clamp,
   clamp01,
-  EKeyboardKey,
   EMouseButton,
   IS_TOUCH_ENV,
   isBetween,
@@ -24,6 +23,7 @@ import useAppLayout from "@/lib/hooks/ui/useAppLayout";
 import usePictureInPicture from "../../private/hooks/usePictureInPicture";
 import buildClassName from "@/shared/lib/buildClassName";
 import { useBooleanState, useTriggerReRender } from "@/shared/hooks/state";
+import { useState } from "react";
 import parseMediaSources from "../../private/lib/source/parseMediaSources";
 import { useFastClick } from "@/shared/hooks/mouse/useFastClick";
 import { useContextMenuHandlers } from "@/entities/context-menu";
@@ -35,6 +35,7 @@ import { useScrollProvider } from "@/shared/context";
 import useKeyHandler from "../../private/hooks/useKeyHandler";
 import { useTouchControls } from "../../private/hooks/useTouchControls";
 import AmbientLight from "./AmbientLight";
+import useStateSignal from "@/lib/hooks/signals/useStateSignal";
 
 const TopPannel = lazy(() => import("../../private/ui/mobile/TopPannel"));
 
@@ -46,7 +47,9 @@ type OwnProps = {
   isGif?: boolean;
   isAudioMuted: boolean;
   posterSource?: string;
+  disableScrollTracking?: boolean;
   onAdsClick?: (triggeredFromMedia?: boolean) => void;
+  forceMobileVersion?: boolean;
 };
 
 const MAX_LOOP_DURATION = 30;
@@ -59,6 +62,8 @@ const VideoPlayer: React.FC<OwnProps> = ({
   isAudioMuted,
   totalFileSize,
   posterSource,
+  disableScrollTracking = false,
+  forceMobileVersion = false,
   onAdsClick,
 }) => {
   const { isMobile } = useAppLayout();
@@ -69,9 +74,10 @@ const VideoPlayer: React.FC<OwnProps> = ({
   const readingRef = useRef<HTMLDivElement>(null);
 
   const [reflows, forceReflow] = useTriggerReRender();
+  const [isSeeking, setIsSeeking] = useStateSignal(false);
 
   const { observeIntersectionForReading, observeIntersectionForLoading } =
-    useScrollProvider();
+    useScrollProvider(disableScrollTracking);
 
   const getVideoElement = useStableCallback(() => {
     const videoElement = videoRef?.current;
@@ -141,21 +147,9 @@ const VideoPlayer: React.FC<OwnProps> = ({
 
   useTouchControls(videoRef, {
     onLeftZone: () =>
-      handleSeek(
-        clamp(
-          currentTime.value + (currentTime.value - REWIND_STEP),
-          0,
-          duration,
-        ),
-      ),
+      handleSeek(clamp(currentTime.value - REWIND_STEP, 0, duration)),
     onRightZone: () =>
-      handleSeek(
-        clamp(
-          currentTime.value + (currentTime.value + REWIND_STEP),
-          0,
-          duration,
-        ),
-      ),
+      handleSeek(clamp(currentTime.value + REWIND_STEP, 0, duration)),
     onCenterZone: togglePlayState,
     zoneRatios: [0.2, 0.6, 0.2],
     debounceTime: 500,
@@ -249,7 +243,7 @@ const VideoPlayer: React.FC<OwnProps> = ({
         onClick={handleClick}
         onMouseDown={handleMouseDown}
       >
-        {isMobile && <TopPannel />}
+        {isMobile || (forceMobileVersion && <TopPannel />)}
 
         <video
           id="media-viewer-video"
@@ -288,7 +282,7 @@ const VideoPlayer: React.FC<OwnProps> = ({
           isMuted={isMuted}
           isReady={true}
           fileSize={totalFileSize}
-          isForceMobileVersion={isMobile}
+          isForceMobileVersion={isMobile || forceMobileVersion}
           isFullscreen={isFullscreen}
           isFullscreenSupported={Boolean(toggleFullscreen)}
           isPictureInPictureSupported={isPictureInPictureSupported}
@@ -301,11 +295,11 @@ const VideoPlayer: React.FC<OwnProps> = ({
           onPlayPause={togglePlayState}
           onSeek={handleSeek}
           onAmbientModeClick={toggleAmbientLight}
-          onSeekStart={function (): void {
-            throw new Error("Function not implemented.");
+          onSeekStart={() => {
+            setIsSeeking(true);
           }}
-          onSeekEnd={function (): void {
-            throw new Error("Function not implemented.");
+          onSeekEnd={() => {
+            setIsSeeking(false);
           }}
         />
 

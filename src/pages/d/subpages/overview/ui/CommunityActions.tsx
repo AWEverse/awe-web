@@ -1,7 +1,5 @@
 import { Button } from "@mui/material";
-import AtSignIcon from "@/shared/common/icons/AtSignIcon";
-import FavouriteIcon from "@/shared/common/icons/FavouriteIcon";
-import UserMultipleIcon from "@/shared/common/icons/UserMultipleIcon";
+
 import IconExpand from "@/shared/ui/IconExpand";
 
 import "./CommunityActions.scss";
@@ -41,17 +39,11 @@ const CommunityActions: React.FC<CommunityActionsProps> = ({
       </div>
       <div className="community-actions__info">
         <IconExpand
-          icon={<AtSignIcon size={24} />}
           label={communityHandle}
           aria-label={`Community handle: ${communityHandle}`}
         />
+        <IconExpand label="Favourite" aria-label="Add to favourites" />
         <IconExpand
-          icon={<FavouriteIcon size={24} />}
-          label="Favourite"
-          aria-label="Add to favourites"
-        />
-        <IconExpand
-          icon={<UserMultipleIcon size={24} />}
           label={memberCount}
           aria-label={`Community members: ${memberCount}`}
         />

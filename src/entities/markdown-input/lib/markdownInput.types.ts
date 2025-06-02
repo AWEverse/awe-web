@@ -1,26 +1,8 @@
 /**
  * Standard Markdown element types
  */
-export type MarkdownElementType =
-  | 'paragraph'
-  | 'heading'
-  | 'bold'
-  | 'italic'
-  | 'code'
-  | 'blockquote'
-  | 'link'
-  | 'image'
-  | 'list'
-  | 'listItem'
-  | 'table'
-  | 'tableHeader'
-  | 'tableRow'
-  | 'tableCell'
-  | 'horizontalRule'
-  | 'mention'
-  | 'hashtag'
-  | 'emoji'
-  | 'plain';
+
+import { MarkdownElementType } from "@/shared/markdown/public/MarkdownTypes";
 
 /**
  * Entity representing a formatted Markdown fragment.

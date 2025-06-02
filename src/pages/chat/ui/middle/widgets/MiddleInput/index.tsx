@@ -2,11 +2,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import React, { FC, useReducer, useMemo, JSX, useCallback } from "react";
 import "./index.scss";
 import { useStableCallback } from "@/shared/hooks/base";
-import {
-  MarkdownInput,
-  MarkdownOutput,
-  MarkdownElementType,
-} from "@/entities/markdown-input";
+import { MarkdownInput, MarkdownOutput } from "@/entities/markdown-input";
 import IconButton from "@/shared/ui/IconButton";
 import ActionButton from "@/shared/ui/ActionButton";
 import {
@@ -29,6 +25,8 @@ import {
 import EmotionPicker from "./EmotionPickers";
 import PinnedMessageButton from "../../common/PinnedMessageButton";
 import { parseMarkdownToOutput } from "@/entities/markdown-input/lib/engine/parser/parseMarkdownToOutput";
+import WysiwygEditor from "@/entities/markdown-input/ui/WysiwygEditor";
+import { MarkdownElementType } from "@/shared/markdown/public/MarkdownTypes";
 
 const validateMessage = (text: string): true | string =>
   text.length <= 2000 || "Message is too long";
@@ -91,6 +89,8 @@ const MiddleInput: FC = () => {
   const hasValue = Boolean(value.trim());
 
   const onChange = useStableCallback((text: string) => {
+    console.log("Input changed:", text);
+
     dispatch({ value: text });
   });
 
@@ -193,7 +193,7 @@ const MiddleInput: FC = () => {
         <div className="MiddleInputComposerField">
           <EmotionPicker />
 
-          <MarkdownInput
+          <WysiwygEditor
             className="MiddleInputInputField"
             value={value}
             onChange={onChange}

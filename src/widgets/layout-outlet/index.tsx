@@ -1,18 +1,12 @@
 import { Outlet } from "react-router";
 import "./index.scss";
 import { ScrollProvider } from "@/shared/context";
-import { FC, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import SearchInput from "@/shared/ui/SearchInput";
-import Dropdown, { TriggerProps } from "@/shared/ui/dropdown";
 import IconButton from "@/shared/ui/IconButton";
-import {
-  MenuRounded,
-  MicRounded,
-  NotificationsRounded,
-} from "@mui/icons-material";
+import { MenuRounded, MicRounded } from "@mui/icons-material";
 import NotificationDropdown from "./ui/NotificationDropdown";
 import PersonalDropdown from "./ui/PersonalDroprown";
-import { AnimatePresence, motion } from "framer-motion";
 import useAppLayout from "@/lib/hooks/ui/useAppLayout";
 import { useStableCallback } from "@/shared/hooks/base";
 

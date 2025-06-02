@@ -1,13 +1,17 @@
 import { FC, useState } from "react";
-import SortByDown02Icon from "@/shared/common/icons/SortByDown02Icon";
-import SortByUp02Icon from "@/shared/common/icons/SortByUp02Icon";
 
 import s from "./SortActions.module.scss";
 import { useStableCallback } from "@/shared/hooks/base";
 import DropdownMenu, { TriggerProps } from "@/shared/ui/dropdown";
 import IconButton from "@/shared/ui/IconButton";
 import ActionButton from "@/shared/ui/ActionButton";
-import { AccountCircle, AccountBox, Logout } from "@mui/icons-material";
+import {
+  AccountCircle,
+  AccountBox,
+  Logout,
+  SortOutlined,
+  SortByAlpha,
+} from "@mui/icons-material";
 
 type Order = "asc" | "desc";
 
@@ -28,7 +32,7 @@ const SortActions: FC<OwnProps> = (props) => {
   });
 
   const renderIcon = useStableCallback(() =>
-    order === "desc" ? <SortByDown02Icon /> : <SortByUp02Icon />,
+    order === "desc" ? <SortOutlined /> : <SortByAlpha />,
   );
 
   const TriggerButton: FC<TriggerProps> = ({ isOpen, onTrigger }) => (
