@@ -403,7 +403,7 @@ const PersistentPlayer: FC<OwnProps & StateProps> = () => {
 };
 
 export default memo(
-  withGlobalState((props: StateProps) => {
+  withGlobalState((props) => {
     return {
       ...props,
       position: props.position || { x: 0, y: 0 },

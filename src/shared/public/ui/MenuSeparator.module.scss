@@ -1,0 +1,43 @@
+.root {
+  border-radius: 0.0625rem;
+  background-color: var(--awe-palette-divider);
+}
+
+hr.horizontal {
+  outline: none;
+  border: none !important;
+}
+
+.horizontal {
+  margin: 0.25rem 0;
+  width: 100%;
+  
+  &.thin {
+    height: 0.0325rem;
+  }
+  
+  &.thick {
+    height: 0.0625rem;
+  }
+
+  &.thicker {
+    height: 0.125rem;
+  }
+}
+
+.vertical {
+  margin: 0 0.25rem;
+  height: 100%;
+
+  &.thin {
+    width: 0.0325rem;
+  }
+  
+  &.thick {
+    width: 0.0625rem;
+  }
+
+  &.thicker {
+    width: 0.125rem;
+  }
+}

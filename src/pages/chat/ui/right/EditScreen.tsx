@@ -1,15 +1,15 @@
 import { FC, memo, useState } from "react";
-import TextInput from "@/shared/ui/TextInput";
+import TextInput from "@/shared/public/ui/TextInput";
 import s from "./EditScreen.module.scss";
 import HeaderNavigation from "../common/HeaderNavigation";
-import buildClassName from "@/shared/lib/buildClassName";
-import TextArea from "@/shared/ui/TextArea";
-import ActionButton from "@/shared/ui/ActionButton";
+import buildClassName from "@/shared/public/lib/buildClassName";
+import TextArea from "@/shared/public/ui/TextArea";
+import ActionButton from "@/shared/public/ui/ActionButton";
 import { MAX_BIO_LENGTH } from "@/lib/config/app";
-import { useStableCallback } from "@/shared/hooks/base";
 import useChatStore from "@/pages/chat/store/useChatSelector";
-import Avatar from "@/shared/ui/Avatar";
+import Avatar from "@/shared/public/ui/Avatar";
 import { useModalComposer } from "@/composers/modals";
+import { useStableCallback } from "@/shared/public/hooks/base";
 
 interface OwnProps {
   nodeRef?: React.RefObject<HTMLDivElement>;

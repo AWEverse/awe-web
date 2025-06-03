@@ -1,0 +1,119 @@
+// Color Variables
+$border-color: var(--awe-palette-divider);
+$background-light: var(--awe-palette-seconday-main );
+$background-dark: var(--awe-palette-background-default);
+$background-tabs: var(--awe-palette-seconday-main);
+$caption-bg: var(--awe-palette-background-default);
+$text-color: var(--awe-palette-text-primary);
+$button-color: var(--awe-palette-primary-main);
+$button-hover-color: var(--awe-palette-primary-main);
+$button-focus-shadow: rgba(var(--awe-palette-primary-mainChannel) / 0.5);
+
+// Language-specific colors
+$javascript-color: #f7df1e;
+$python-color: #3572a5;
+$go-color: #00add8;
+
+// Code Snippet Styles
+.code-snippet {
+  margin: 1.5rem 0;
+  border: 1px solid $border-color;
+  border-radius: 6px;
+  background-color: $background-light;
+
+  &__caption {
+    font-weight: bold;
+    padding: 0.75rem 1rem;
+    background-color: $caption-bg;
+    border-bottom: 1px solid $border-color;
+    font-size: 1rem;
+    text-align: left;
+    color: $text-color;
+  }
+
+  &__tabs {
+    display: flex;
+    background-color: $background-tabs;
+    border-bottom: 1px solid $border-color;
+  }
+
+  &__tab {
+    padding: 0.5rem 1rem;
+    cursor: pointer;
+    font-size: 0.875rem;
+    background-color: transparent;
+    border: none;
+    border-bottom: 2px solid transparent;
+    transition: all 0.3s ease;
+
+    &:hover {
+      background-color: $background-light;
+    }
+
+    &--active {
+      border-bottom: 2px solid $button-color;
+       background-color: $background-light;
+    }
+  }
+
+  &__code {
+    padding: 1rem;
+    font-family: 'Fira Code', monospace;
+    font-size: 0.875rem;
+    background-color: $background-dark;
+    color: $text-color;
+    border-radius: 0 0 6px 6px;
+    overflow-x: auto;
+
+    code {
+      display: block;
+      white-space: pre-wrap;
+      line-height: 1.5;
+    }
+
+    /* Syntax highlighting */
+    .language-javascript,
+    .language-js {
+      color: $javascript-color;
+    }
+
+    .language-python,
+    .language-py {
+      color: $python-color;
+    }
+
+    .language-go {
+      color: $go-color;
+    }
+
+    .token {
+      display: inline-block;
+    }
+
+    /* Add more language-specific styles as needed */
+  }
+
+  &__copy-button {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background-color: $button-color;
+    color: #ffffff;
+    border: none;
+    border-radius: 4px;
+    padding: 0.5rem;
+    cursor: pointer;
+    font-size: 0.875rem;
+    display: inline-block;
+    transition: background-color 0.3s ease;
+
+    &:hover {
+      background-color: $button-hover-color;
+    }
+
+    &:focus {
+      outline: none;
+      box-shadow: 0 0 0 2px $button-focus-shadow;
+    }
+  }
+}

@@ -1,4 +1,12 @@
 {
   "name": "shared",
-  "type": "module"
+  "type": "module",
+  "ignore": [
+    "assets"
+  ],
+  "modules": [
+    "public",
+    "private",
+    "internal"
+  ]
 }
